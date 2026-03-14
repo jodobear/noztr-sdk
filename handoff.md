@@ -6,18 +6,22 @@ Current project context for `nzdk` bootstrap.
 
 - `nzdk` is a fresh SDK repo bootstrapped from `noztr` seed artifacts.
 - The kernel/SDK ownership boundary starts from `docs/plans/noztr-sdk-ownership-matrix.md`.
+- `docs/plans/build-plan.md` is a copied seed template and must be replaced by `nzdk`'s own
+  accepted execution baseline.
 - `noztr` is the protocol-kernel dependency target; `nzdk` should not duplicate kernel logic.
-- Applesauce is an important SDK/reference input for modeling higher-level client ergonomics,
+- Applesauce is the primary SDK/reference input for modeling higher-level client ergonomics,
   stores, and workflow composition.
+- Rust-nostr-sdk is a secondary ecosystem/reference input.
 
 ## Immediate Next Work
 
 1. Do SDK-specific research refresh using the copied studies and current upstream references.
 2. Create the initial `nzdk` planning docs.
-3. Tighten `AGENTS.md`, `agent-brief`, and this `handoff.md` from template state into real repo
+3. Replace the copied `build-plan.md` template with an `nzdk`-specific planning baseline.
+4. Tighten `AGENTS.md`, `agent-brief`, and this `handoff.md` from template state into real repo
    guidance.
-4. Decide initial repo/package layout and milestone order.
-5. Begin implementation only after the planning docs are in place.
+5. Decide initial repo/package layout and milestone order.
+6. Begin implementation only after the planning docs are in place.
 
 ## Open Starting Questions
 

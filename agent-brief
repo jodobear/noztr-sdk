@@ -12,6 +12,7 @@ printf -- '- git repo: `%s`\n' "$(if [ -d "$script_dir/.git" ]; then echo yes; e
 printf '\n## Read Now\n\n'
 printf -- '- `AGENTS.md`\n'
 printf -- '- `handoff.md`\n'
+printf -- '- `docs/plans/build-plan.md`\n'
 printf -- '- `docs/plans/noztr-sdk-ownership-matrix.md`\n'
 printf -- '- `docs/plans/nzdk-seeding-prompt.md`\n'
 
