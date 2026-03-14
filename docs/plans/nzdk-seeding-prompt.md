@@ -17,16 +17,20 @@ Your job is to proceed deliberately.
 3. Applesauce is the primary SDK modeling reference for clarity, store/client layering, and
    workflow design. Follow its spirit where that improves `nzdk`, but do not treat it as protocol
    truth or as permission to blur the `noztr` / `nzdk` boundary.
-4. Do not begin implementation until you have created the initial planning docs for `nzdk`.
-5. Tighten the copied template files so this repo stops relying on `noztr` wording:
+4. `nzdk` explicitly uses `noztr` as its Zig Nostr protocol kernel. Start with the local `../noztr`
+   checkout as the dependency target; do not wait for remote setup.
+5. Do not begin implementation until you have created the initial planning docs for `nzdk`.
+6. Tighten the copied template files so this repo stops relying on `noztr` wording:
    - `AGENTS.md`
    - `agent-brief`
    - `handoff.md`
    - `docs/plans/build-plan.md`
-6. Keep the `noztr` / `nzdk` boundary honest:
+7. Keep the `noztr` / `nzdk` boundary honest:
    - protocol parsing/validation/building belongs in `noztr`
    - orchestration, fetches, sync, stores, session handling, and workflow composition belong in `nzdk`
-7. Use a tight process:
+   - for each major SDK helper, answer why it is not already `noztr` and why it is not app code
+     above `nzdk`
+8. Use a tight process:
    - research
    - plan
    - implement
@@ -39,6 +43,7 @@ Your job is to proceed deliberately.
 - SDK kickoff / scope doc
 - replacement `build-plan.md`
 - package / module layout plan
+- `noztr` integration and dependency plan
 - initial milestone order
 - testing and parity strategy
 - dependency posture and build-tooling decision

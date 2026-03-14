@@ -31,6 +31,19 @@ Before broad implementation begins, replace this template with an `nzdk`-specifi
 - `nzdk` owns orchestration, workflow composition, network fetches, stores, session handling, sync,
   and higher-level client/server SDK ergonomics.
 
+## Current Dependency Reminder
+
+- `nzdk` explicitly builds on top of `noztr`.
+- bootstrap should use the local `../noztr` checkout first
+- remote/tagged dependency setup is a later release-management concern, not a bootstrap blocker
+
+## Boundary Questions To Preserve
+
+Before accepting a new SDK helper, answer:
+1. why is this not already a `noztr` concern?
+2. why is this not app code above `nzdk`?
+3. why is this the simplest useful SDK surface?
+
 ## Primary SDK Reference
 
 - applesauce is the primary SDK ergonomics/modeling input

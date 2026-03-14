@@ -15,6 +15,8 @@ instead of inventing process and scope from scratch.
 
 ## Initial direction
 
+- use `noztr` explicitly as the Zig Nostr protocol kernel dependency
+- start against the local `../noztr` checkout first
 - use `noztr` for protocol-kernel logic
 - keep orchestration, network fetches, stores, sync, and workflow composition in `nzdk`
 - model SDK ergonomics primarily after applesauce where that improves client-flow clarity

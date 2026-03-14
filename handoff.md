@@ -9,6 +9,7 @@ Current project context for `nzdk` bootstrap.
 - `docs/plans/build-plan.md` is a copied seed template and must be replaced by `nzdk`'s own
   accepted execution baseline.
 - `noztr` is the protocol-kernel dependency target; `nzdk` should not duplicate kernel logic.
+- bootstrap should use the local `../noztr` checkout first; remote setup is not a blocker
 - Applesauce is the primary SDK/reference input for modeling higher-level client ergonomics,
   stores, and workflow composition.
 - Rust-nostr-sdk is a secondary ecosystem/reference input.
@@ -22,6 +23,13 @@ Current project context for `nzdk` bootstrap.
    guidance.
 5. Decide initial repo/package layout and milestone order.
 6. Begin implementation only after the planning docs are in place.
+
+## Boundary Reminder
+
+For every major SDK helper, answer:
+- why is this not already a `noztr` concern?
+- why is this not app code above `nzdk`?
+- why is this the simplest useful SDK layer?
 
 ## Open Starting Questions
 

@@ -18,6 +18,7 @@ Zig Nostr SDK built on top of `noztr`.
 ## Project Posture
 
 - `nzdk` is higher-level than `noztr`, but it must stay deliberate.
+- `nzdk` explicitly depends on `noztr` as its Zig Nostr protocol kernel.
 - Use `noztr` for deterministic protocol parsing/validation/building whenever possible.
 - Keep orchestration, network fetches, session handling, caches, and workflow composition in `nzdk`.
 - Do not re-implement kernel logic that already exists correctly in `noztr`.
@@ -27,6 +28,13 @@ Zig Nostr SDK built on top of `noztr`.
 - Treat applesauce and rust-nostr-sdk as implementation references, not as protocol authority and
   not as permission to blur the `noztr` / `nzdk` boundary.
 - Research first, then plan, then implement.
+
+## Dependency Posture
+
+- Bootstrap `nzdk` against the local `noztr` checkout first.
+- Do not wait for a git remote to begin SDK work.
+- Document the local dependency path in the first real `nzdk` build plan.
+- Move to a tagged/remote dependency model later only when release discipline requires it.
 
 ## Phase And Process
 
@@ -41,6 +49,15 @@ Zig Nostr SDK built on top of `noztr`.
 - First tighten the repo’s own planning/process docs so `nzdk` can operate autonomously on its own
   terms.
 - Keep decisions explicit. Record default changes and accepted scope boundaries in planning docs.
+
+## Boundary Check
+
+For every major SDK helper or module, answer these explicitly:
+- why is this not already covered by `noztr`?
+- why is this not application code above `nzdk`?
+- why is this the simplest useful SDK layer?
+
+If those answers are weak, stop and tighten the boundary before implementing.
 
 ## Startup Work For A New Execution Lane
 
