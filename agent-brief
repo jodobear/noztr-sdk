@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+printf '# Agent Brief\n\n'
+printf 'Bootstrap snapshot for AI agents.\n\n'
+printf '## Repository\n\n'
+printf -- '- root: `%s`\n' "$script_dir"
+printf -- '- git repo: `%s`\n' "$(if [ -d "$script_dir/.git" ]; then echo yes; else echo no; fi)"
+
+printf '\n## Read Now\n\n'
+printf -- '- `AGENTS.md`\n'
+printf -- '- `handoff.md`\n'
+printf -- '- `docs/plans/noztr-sdk-ownership-matrix.md`\n'
+printf -- '- `docs/plans/nzdk-seeding-prompt.md`\n'
+
+printf '\n## Load On Demand\n\n'
+printf -- '- `docs/guides/TIGER_STYLE.md`, `docs/guides/NZDK_STYLE.md`, `docs/guides/zig-patterns.md`, and `docs/guides/zig-anti-patterns.md` for implementation/review work\n'
+printf -- '- `docs/research/` for SDK research refresh\n'
+printf -- '- `docs/nips/` for protocol references\n'
