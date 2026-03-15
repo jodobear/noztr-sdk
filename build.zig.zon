@@ -1,0 +1,14 @@
+.{
+    .name = .noztr_sdk,
+    .version = "0.0.0",
+    .dependencies = .{
+        .noztr = .{
+            .path = "../noztr",
+        },
+    },
+    .paths = .{
+        "",
+        "src",
+    },
+    .fingerprint = 0x3ef2501c4f2ec3ed,
+}

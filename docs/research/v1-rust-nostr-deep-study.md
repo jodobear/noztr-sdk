@@ -6,14 +6,14 @@ Scope: H1-selected NIPs and v1 build-plan modules only.
 
 ## Source Provenance
 
-- Local mirror path: `/workspace/pkgs/nostr`
+- Local mirror path: `/workspace/pkgs/nostr/rust-nostr/nostr`
 - Origin URL: `git@github.com:rust-nostr/nostr.git`
 - Commit hash: `9bcc6cd779a7c6eb41509b37aee4575fa5ae47b9`
 - Pin date: `2026-03-04` (frozen by `D-001`)
 - Reproducibility note:
   - Verify snapshot with:
-    - `git -C /workspace/pkgs/nostr remote get-url origin`
-    - `git -C /workspace/pkgs/nostr rev-parse HEAD`
+    - `git -C /workspace/pkgs/nostr/rust-nostr/nostr remote get-url origin`
+    - `git -C /workspace/pkgs/nostr/rust-nostr/nostr rev-parse HEAD`
   - Study is valid only for this pinned commit and must be re-run after any `D-001` refresh.
 
 ## Decisions

@@ -6,14 +6,14 @@ Scope: H1-selected NIPs and v1 build-plan modules only.
 
 ## Source Provenance
 
-- Local mirror path: `/workspace/pkgs/applesauce`
+- Local mirror path: `/workspace/pkgs/nostr/applesauce`
 - Origin URL: `git@github.com:hzrd149/applesauce.git`
 - Commit hash: `5f152fc98e5baa97e8176e54ce9b9345976c8b32`
 - Pin date: `2026-03-04` (frozen by `D-001`)
 - Reproducibility note:
   - Verify snapshot with:
-    - `git -C /workspace/pkgs/applesauce remote get-url origin`
-    - `git -C /workspace/pkgs/applesauce rev-parse HEAD`
+    - `git -C /workspace/pkgs/nostr/applesauce remote get-url origin`
+    - `git -C /workspace/pkgs/nostr/applesauce rev-parse HEAD`
   - Study is valid only for this pinned commit and must be re-run after any `D-001` refresh.
 
 ## Decisions

@@ -89,7 +89,7 @@ When a scope question comes up, answer these in order:
 
 If the answer to `5` is yes, the behavior probably belongs in the SDK.
 
-## NZDK Starter Priorities
+## Noztr SDK Starter Priorities
 
 - Start the SDK with the orchestration-heavy surfaces already intentionally left out of `noztr`:
   `NIP-46`, `NIP-39`, `NIP-29`, `NIP-17`, `NIP-03`, `NIP-11`, and `NIP-65`.
@@ -115,10 +115,10 @@ If the answer to `5` is yes, the behavior probably belongs in the SDK.
 
 ## Requested Next-NIP Mapping
 
-| NIP | Recommended placement | `noztr` slice | `nzdk` slice | Recommended order |
+| NIP | Recommended placement | `noztr` slice | `noztr-sdk` slice | Recommended order |
 | --- | --- | --- | --- | --- |
 | `05` | split | identifier validation plus `/.well-known/nostr.json` parse/build helpers | HTTP fetch, cache, trust policy, verification UX | medium |
-| `07` | `nzdk` | none | browser / signer adapter over `window.nostr` | sdk-only |
+| `07` | `noztr-sdk` | none | browser / signer adapter over `window.nostr` | sdk-only |
 | `26` | `noztr` | delegation tag parse / build / verify helpers | compose UX and signer workflow | high |
 | `32` | `noztr` | label / content-tag parse / build / validate helpers | higher-level label-management UX | highest |
 | `36` | `noztr` | content-warning tag/event helpers on top of NIP-32 | moderation / rendering policy | highest |
@@ -126,11 +126,11 @@ If the answer to `5` is yes, the behavior probably belongs in the SDK.
 | `56` | `noztr` | report event parse / build / validate helpers | reporting UX, relay submission workflow | highest |
 | `57` | split | zap request / receipt parse / build / validate helpers | LNURL fetch, invoice/payment flow, wallet orchestration | medium |
 | `58` | `noztr` | badge definition / award / profile-badge parse / build helpers | badge UX, profile presentation, sync | medium |
-| `60` | `nzdk` first | optional later offline validation helpers only | wallet state, mint interaction, spend / redeem workflow | sdk-first |
-| `61` | `nzdk` first | optional later offline validation helpers only | Nutzap wallet / payment workflow | sdk-first |
+| `60` | `noztr-sdk` first | optional later offline validation helpers only | wallet state, mint interaction, spend / redeem workflow | sdk-first |
+| `61` | `noztr-sdk` first | optional later offline validation helpers only | Nutzap wallet / payment workflow | sdk-first |
 | `84` | `noztr` | highlight event/tag parse / build helpers | article-reader UX and highlight workflows | medium |
 | `86` | split | relay-management RPC parse / build / validate helpers | admin auth, request orchestration, relay operator client flow | medium |
-| `B7` | `nzdk` first | at most later bounded event/tag helpers if needed | Blossom upload/download/service integration | sdk-first |
+| `B7` | `noztr-sdk` first | at most later bounded event/tag helpers if needed | Blossom upload/download/service integration | sdk-first |
 
 ## Recommended Next Sequence
 
