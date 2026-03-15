@@ -20,6 +20,7 @@ pub const MemoryStore = struct {
     pub fn putRelayInfo(self: *MemoryStore, record: *const traits.RelayInfoRecord) traits.StoreError!void {
         std.debug.assert(@intFromPtr(self) != 0);
 
+        try relay_url.relayUrlValidate(record.relayUrl());
         const existing = find_record_index(self, record.relayUrl());
         if (existing) |index| {
             self.records[index] = record.*;
@@ -37,6 +38,7 @@ pub const MemoryStore = struct {
     ) traits.StoreError!?traits.RelayInfoRecord {
         std.debug.assert(@intFromPtr(self) != 0);
 
+        try relay_url.relayUrlValidate(relay_url_text);
         const existing = find_record_index(self, relay_url_text);
         if (existing) |index| return self.records[index];
         return null;
@@ -106,4 +108,14 @@ test "memory store overwrites normalized-equivalent relay urls" {
     const cached = try store.getRelayInfo("wss://relay.example.com/path/exact");
     try std.testing.expect(cached != null);
     try std.testing.expectEqualStrings("beta", cached.?.nameSlice());
+}
+
+test "memory store rejects invalid relay urls for put and get" {
+    var store = MemoryStore{};
+    var record = traits.RelayInfoRecord{};
+    record.relay_url_len = 18;
+    @memcpy(record.relay_url[0..18], "https://relay.test");
+
+    try std.testing.expectError(error.InvalidRelayUrl, store.putRelayInfo(&record));
+    try std.testing.expectError(error.InvalidRelayUrl, store.getRelayInfo("https://relay.test"));
 }

@@ -9,8 +9,9 @@ pub const AuthSession = struct {
     relay_url_len: u16 = 0,
     state: noztr.nip42_auth.AuthState = .{},
 
-    pub fn init(relay_url_text: []const u8) error{RelayUrlTooLong}!AuthSession {
+    pub fn init(relay_url_text: []const u8) error{ InvalidRelayUrl, RelayUrlTooLong }!AuthSession {
         if (relay_url_text.len > relay_url_max_bytes) return error.RelayUrlTooLong;
+        try relay_url.relayUrlValidate(relay_url_text);
 
         var session = AuthSession{};
         session.relay_url_len = @intCast(relay_url_text.len);
@@ -45,3 +46,7 @@ pub const AuthSession = struct {
         );
     }
 };
+
+test "auth session rejects invalid relay urls" {
+    try std.testing.expectError(error.InvalidRelayUrl, AuthSession.init("https://relay.test"));
+}

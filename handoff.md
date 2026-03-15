@@ -22,6 +22,12 @@ Current project context for `noztr-sdk`.
     pool/store seams
   - regression tests now pin connect strictness, auth failure blocking, `switch_relays` `null`
     behavior, and reconnect-after-switch flow
+- A follow-up audit on 2026-03-15 tightened relay URL validation further:
+  - `relay.auth` and `relay.session` now reject invalid non-websocket relay URLs at init time
+  - `store.memory` now rejects invalid relay URLs on both put and lookup instead of silently
+    accepting impossible records or queries
+  - stale duplicated `nzdk`-named style/bootstrap docs were removed so startup docs now point at
+    only the current `noztr-sdk` artifacts
 - `zig build` and `zig build test --summary all` currently pass in both `/workspace/projects/noztr`
   and `/workspace/projects/nzdk`.
 - the March 14, 2026 applesauce and rust-nostr refresh is captured in
@@ -42,6 +48,13 @@ Current project context for `noztr-sdk`.
 - Rust-nostr-sdk is a secondary ecosystem/reference input.
 - `/workspace/projects/noztr/examples` is the current kernel recipe reference set and should inform
   the eventual `noztr-sdk` examples posture.
+- The current `noztr` examples set is broader than the original bootstrap snapshot and now includes
+  direct recipe references for discovery, identity proofs, wallet flows, private lists, and relay
+  admin helpers in addition to the `NIP-46` recipe.
+- Full `/workspace/projects/noztr/examples` test status is currently mixed: the wallet recipe lane
+  is failing upstream on a `child_hex.len` expectation (`expected 16, found 32`), so treat the
+  relevant `NIP-11`/`NIP-42`/`NIP-46` examples as reference inputs but do not assume the entire
+  examples package is green.
 - `docs/plans/implementation-quality-gate.md` is now the canonical execution gate for new
   NIP-backed workflow and substrate work.
 - The public root surface is still intentionally minimal; Phase 4 added `noztr_sdk.workflows` and

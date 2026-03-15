@@ -12,7 +12,7 @@ pub const RelaySession = struct {
     auth_session: auth.AuthSession,
     state: SessionState = .disconnected,
 
-    pub fn init(relay_url: []const u8) error{RelayUrlTooLong}!RelaySession {
+    pub fn init(relay_url: []const u8) error{ InvalidRelayUrl, RelayUrlTooLong }!RelaySession {
         return .{
             .auth_session = try auth.AuthSession.init(relay_url),
             .state = .disconnected,
@@ -63,4 +63,8 @@ test "relay session blocks requests when auth is required" {
 test "relay session rejects auth before connection" {
     var session = try RelaySession.init("wss://relay.test");
     try std.testing.expectError(error.NotConnected, session.requireAuth("challenge-1"));
+}
+
+test "relay session rejects invalid relay urls" {
+    try std.testing.expectError(error.InvalidRelayUrl, RelaySession.init("https://relay.test"));
 }
