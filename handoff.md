@@ -22,6 +22,9 @@ Current project context for `noztr-sdk`.
     pool/store seams
   - regression tests now pin connect strictness, auth failure blocking, `switch_relays` `null`
     behavior, and reconnect-after-switch flow
+  - malformed `NIP-46` response parse failures now also clear matched pending requests when the
+    response `id` can be recovered from the raw JSON, closing a leak path for invalid
+    `switch_relays` relay lists
 - A follow-up audit on 2026-03-15 tightened relay URL validation further:
   - `relay.auth` and `relay.session` now reject invalid non-websocket relay URLs at init time
   - `store.memory` now rejects invalid relay URLs on both put and lookup instead of silently
@@ -30,6 +33,8 @@ Current project context for `noztr-sdk`.
     only the current `noztr-sdk` artifacts
 - `zig build` and `zig build test --summary all` currently pass in both `/workspace/projects/noztr`
   and `/workspace/projects/nzdk`.
+- `/workspace/projects/noztr` is currently fully green again, including the examples lane:
+  `zig build test --summary all` passed with examples included.
 - the March 14, 2026 applesauce and rust-nostr refresh is captured in
   `docs/plans/research-refresh-2026-03-14.md`
 - copied March 4 research docs now use the correct local mirror paths for reproducible provenance
@@ -51,10 +56,8 @@ Current project context for `noztr-sdk`.
 - The current `noztr` examples set is broader than the original bootstrap snapshot and now includes
   direct recipe references for discovery, identity proofs, wallet flows, private lists, and relay
   admin helpers in addition to the `NIP-46` recipe.
-- Full `/workspace/projects/noztr/examples` test status is currently mixed: the wallet recipe lane
-  is failing upstream on a `child_hex.len` expectation (`expected 16, found 32`), so treat the
-  relevant `NIP-11`/`NIP-42`/`NIP-46` examples as reference inputs but do not assume the entire
-  examples package is green.
+- A recheck on 2026-03-15 confirmed that the full `/workspace/projects/noztr/examples` lane is now
+  green again, so the broader recipe set can be treated as current kernel reference material.
 - `docs/plans/implementation-quality-gate.md` is now the canonical execution gate for new
   NIP-backed workflow and substrate work.
 - The public root surface is still intentionally minimal; Phase 4 added `noztr_sdk.workflows` and

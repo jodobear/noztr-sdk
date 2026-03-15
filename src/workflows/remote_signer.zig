@@ -325,7 +325,10 @@ pub const RemoteSignerSession = struct {
         response_json: []const u8,
         scratch: std.mem.Allocator,
     ) RemoteSignerError!ResponseOutcome {
-        const message = try noztr.nip46_remote_signing.message_parse_json(response_json, scratch);
+        const message = noztr.nip46_remote_signing.message_parse_json(response_json, scratch) catch |err| {
+            self.clearPendingForMalformedResponse(response_json);
+            return err;
+        };
         return switch (message) {
             .response => |response| try self.acceptResponse(&response, scratch),
             .request => error.UnexpectedMessageType,
@@ -340,7 +343,8 @@ pub const RemoteSignerSession = struct {
         const pending_index =
             self.findPendingIndex(response.id) orelse return error.UnknownResponseId;
         const method = self._state.pending[pending_index].method;
-        errdefer self.removePendingIndex(pending_index);
+        var remove_pending_on_error = true;
+        errdefer if (remove_pending_on_error) self.removePendingIndex(pending_index);
         try noztr.nip46_remote_signing.response_validate(response, method, scratch);
         if (response.error_text) |error_text| {
             try self.storeSignerError(error_text);
@@ -379,7 +383,11 @@ pub const RemoteSignerSession = struct {
             },
             .switch_relays => {
                 const relays = try noztr.nip46_remote_signing.response_result_switch_relays(response);
-                try self.applySwitchedRelays(relays);
+                self.applySwitchedRelays(relays) catch |err| {
+                    remove_pending_on_error = false;
+                    self.removePendingIndex(pending_index);
+                    return err;
+                };
                 self.removePendingIndex(pending_index);
                 return .{ .relays_switched = self._state.pool.count };
             },
@@ -497,6 +505,36 @@ pub const RemoteSignerSession = struct {
         self.clearSignerError();
         @memcpy(self._state.last_signer_error[0..error_text.len], error_text);
         self._state.last_signer_error_len = @intCast(error_text.len);
+    }
+
+    fn clearPendingForMalformedResponse(self: *RemoteSignerSession, response_json: []const u8) void {
+        var parse_storage: [2048]u8 = undefined;
+        var parse_fba = std.heap.FixedBufferAllocator.init(&parse_storage);
+        const root = std.json.parseFromSliceLeaky(
+            std.json.Value,
+            parse_fba.allocator(),
+            response_json,
+            .{},
+        ) catch return;
+        if (root != .object) return;
+
+        var response_id: ?[]const u8 = null;
+        var has_response_shape = false;
+        var iterator = root.object.iterator();
+        while (iterator.next()) |entry| {
+            if (std.mem.eql(u8, entry.key_ptr.*, "id")) {
+                if (entry.value_ptr.* != .string) return;
+                response_id = entry.value_ptr.*.string;
+                continue;
+            }
+            if (std.mem.eql(u8, entry.key_ptr.*, "result") or std.mem.eql(u8, entry.key_ptr.*, "error")) {
+                has_response_shape = true;
+            }
+        }
+        if (!has_response_shape) return;
+        const id = response_id orelse return;
+        const pending_index = self.findPendingIndex(id) orelse return;
+        self.removePendingIndex(pending_index);
     }
 };
 
@@ -853,6 +891,20 @@ test "remote signer session applies switch relays responses" {
     try std.testing.expect(!session.isConnected());
 }
 
+test "remote signer session rejects invalid bunker relay urls" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const uri_text =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=https%3A%2F%2Frelay.one";
+
+    try std.testing.expectError(
+        error.InvalidRelayUrl,
+        RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator()),
+    );
+}
+
 test "remote signer session keeps state unchanged on null switch relays response" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -894,6 +946,54 @@ test "remote signer session keeps state unchanged on null switch relays response
 
     try std.testing.expect(outcome == .relays_switched);
     try std.testing.expectEqual(@as(u8, 2), outcome.relays_switched);
+    try std.testing.expectEqualStrings("wss://relay.one", session.currentRelayUrl());
+    try std.testing.expect(session.isConnected());
+}
+
+test "remote signer session rejects invalid switch relays urls and keeps state" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const uri_text =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
+    var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
+    session.markCurrentRelayConnected();
+
+    var connect_request_buffer = RequestBuffer{};
+    var connect_scratch_storage: [1024]u8 = undefined;
+    var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
+    _ = try session.beginConnect(&connect_request_buffer, "req-1", &.{}, connect_scratch.allocator());
+
+    var connect_response_json: [noztr.limits.nip46_message_json_bytes_max]u8 = undefined;
+    const connect_response = try serialize_response(connect_response_json[0..], .{
+        .id = "req-1",
+        .result = .{ .value = .{ .text = "ack" } },
+    });
+    var connect_response_scratch_storage: [2048]u8 = undefined;
+    var connect_response_scratch =
+        std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
+    _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
+
+    var request_buffer = RequestBuffer{};
+    var request_scratch_storage: [1024]u8 = undefined;
+    var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
+    _ = try session.beginSwitchRelays(&request_buffer, "req-2", request_scratch.allocator());
+
+    const relays = [_][]const u8{ "https://relay.bad", "wss://relay.four" };
+    var response_json: [noztr.limits.nip46_message_json_bytes_max]u8 = undefined;
+    const response = try serialize_response(response_json[0..], .{
+        .id = "req-2",
+        .result = .{ .value = .{ .relay_list = relays[0..] } },
+    });
+    var response_scratch_storage: [2048]u8 = undefined;
+    var response_scratch = std.heap.FixedBufferAllocator.init(&response_scratch_storage);
+    try std.testing.expectError(
+        error.InvalidRelayUrl,
+        session.acceptResponseJson(response, response_scratch.allocator()),
+    );
+
+    try std.testing.expectEqual(@as(u8, 0), session._state.pending_count);
     try std.testing.expectEqualStrings("wss://relay.one", session.currentRelayUrl());
     try std.testing.expect(session.isConnected());
 }
