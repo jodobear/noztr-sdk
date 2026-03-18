@@ -1,0 +1,110 @@
+const std = @import("std");
+const noztr = @import("noztr");
+const noztr_sdk = @import("noztr_sdk");
+
+// Explicit `NIP-46` connect flow followed by one identity request and one pubkey+text method.
+test "recipe: remote signer session stays explicit from connect to get_public_key and nip44_encrypt" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const bunker_uri =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&secret=secret";
+    var session = try noztr_sdk.workflows.RemoteSignerSession.initFromBunkerUriText(
+        bunker_uri,
+        arena.allocator(),
+    );
+    session.markCurrentRelayConnected();
+
+    var connect_buffer = noztr_sdk.workflows.RemoteSignerRequestBuffer{};
+    var connect_scratch_storage: [1024]u8 = undefined;
+    var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
+    const outbound_connect = try session.beginConnect(
+        .init("req-connect", &connect_buffer, connect_scratch.allocator()),
+        &.{.{ .method = .get_public_key }},
+    );
+    try std.testing.expectEqualStrings("wss://relay.one", outbound_connect.relay_url);
+    try std.testing.expect(std.mem.indexOf(u8, outbound_connect.json, "\"method\":\"connect\"") != null);
+
+    var connect_response_storage: [noztr.limits.nip46_message_json_bytes_max]u8 = undefined;
+    var connect_response_scratch_storage: [2048]u8 = undefined;
+    var connect_response_scratch =
+        std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
+    const connect_outcome = try session.acceptResponseJson(
+        try textResponse(connect_response_storage[0..], "req-connect", "secret"),
+        connect_response_scratch.allocator(),
+    );
+    try std.testing.expect(connect_outcome == .connected);
+    try std.testing.expect(session.isConnected());
+
+    var get_pubkey_buffer = noztr_sdk.workflows.RemoteSignerRequestBuffer{};
+    var get_pubkey_scratch_storage: [1024]u8 = undefined;
+    var get_pubkey_scratch = std.heap.FixedBufferAllocator.init(&get_pubkey_scratch_storage);
+    const outbound_get_pubkey = try session.beginGetPublicKey(
+        .init("req-pubkey", &get_pubkey_buffer, get_pubkey_scratch.allocator()),
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_get_pubkey.json, "\"method\":\"get_public_key\"") != null,
+    );
+
+    const user_pubkey = [_]u8{0x11} ** 32;
+    const user_pubkey_hex = std.fmt.bytesToHex(user_pubkey, .lower);
+    var get_pubkey_response_storage: [noztr.limits.nip46_message_json_bytes_max]u8 = undefined;
+    var get_pubkey_response_scratch_storage: [2048]u8 = undefined;
+    var get_pubkey_response_scratch =
+        std.heap.FixedBufferAllocator.init(&get_pubkey_response_scratch_storage);
+    const get_pubkey_outcome = try session.acceptResponseJson(
+        try textResponse(get_pubkey_response_storage[0..], "req-pubkey", user_pubkey_hex[0..]),
+        get_pubkey_response_scratch.allocator(),
+    );
+
+    try std.testing.expect(get_pubkey_outcome == .user_pubkey);
+    try std.testing.expect(std.mem.eql(u8, &user_pubkey, &get_pubkey_outcome.user_pubkey));
+    try std.testing.expect(std.mem.eql(u8, &user_pubkey, &session.getUserPubkey().?));
+
+    const peer_pubkey = [_]u8{0x22} ** 32;
+    var nip44_buffer = noztr_sdk.workflows.RemoteSignerRequestBuffer{};
+    var nip44_scratch_storage: [1024]u8 = undefined;
+    var nip44_scratch = std.heap.FixedBufferAllocator.init(&nip44_scratch_storage);
+    const outbound_nip44_encrypt = try session.beginNip44Encrypt(
+        .init("req-nip44", &nip44_buffer, nip44_scratch.allocator()),
+        &.{
+            .pubkey = peer_pubkey,
+            .text = "hello",
+        },
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_nip44_encrypt.json, "\"method\":\"nip44_encrypt\"") != null,
+    );
+
+    var nip44_response_storage: [noztr.limits.nip46_message_json_bytes_max]u8 = undefined;
+    var nip44_response_scratch_storage: [2048]u8 = undefined;
+    var nip44_response_scratch =
+        std.heap.FixedBufferAllocator.init(&nip44_response_scratch_storage);
+    const nip44_outcome = try session.acceptResponseJson(
+        try textResponse(nip44_response_storage[0..], "req-nip44", "ciphertext"),
+        nip44_response_scratch.allocator(),
+    );
+
+    try std.testing.expect(nip44_outcome == .text_response);
+    try std.testing.expectEqual(.nip44_encrypt, nip44_outcome.text_response.method);
+    try std.testing.expectEqualStrings("ciphertext", nip44_outcome.text_response.text);
+}
+
+fn textResponse(
+    output: []u8,
+    id: []const u8,
+    text: []const u8,
+) noztr.nip46_remote_signing.Nip46Error![]const u8 {
+    return serializeResponseJson(output, .{
+        .id = id,
+        .result = .{ .value = .{ .text = text } },
+    });
+}
+
+fn serializeResponseJson(
+    output: []u8,
+    response: noztr.nip46_remote_signing.Response,
+) noztr.nip46_remote_signing.Nip46Error![]const u8 {
+    return noztr.nip46_remote_signing.message_serialize_json(output, .{ .response = response });
+}

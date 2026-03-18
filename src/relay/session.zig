@@ -24,6 +24,10 @@ pub const RelaySession = struct {
         self.state = .connected;
     }
 
+    pub fn disconnect(self: *RelaySession) void {
+        self.state = .disconnected;
+    }
+
     pub fn requireAuth(
         self: *RelaySession,
         challenge: []const u8,
@@ -63,6 +67,15 @@ test "relay session blocks requests when auth is required" {
 test "relay session rejects auth before connection" {
     var session = try RelaySession.init("wss://relay.test");
     try std.testing.expectError(error.NotConnected, session.requireAuth("challenge-1"));
+}
+
+test "relay session can be explicitly disconnected" {
+    var session = try RelaySession.init("wss://relay.test");
+    session.connect();
+    try std.testing.expect(session.canSendRequests());
+    session.disconnect();
+    try std.testing.expect(!session.canSendRequests());
+    try std.testing.expectEqual(SessionState.disconnected, session.state);
 }
 
 test "relay session rejects invalid relay urls" {
