@@ -1,3 +1,15 @@
+---
+title: Noztr SDK Testing And Parity Strategy
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - designing_test_matrix
+  - revisiting_parity_policy
+depends_on:
+  - docs/plans/implementation-quality-gate.md
+---
+
 # Noztr SDK Testing And Parity Strategy
 
 Testing strategy for the first `noztr-sdk` implementation cycle.

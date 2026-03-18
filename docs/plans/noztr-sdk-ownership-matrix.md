@@ -1,3 +1,13 @@
+---
+title: noztr vs SDK Ownership Matrix
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - boundary_decisions
+  - deciding_kernel_vs_sdk_placement
+---
+
 # noztr vs SDK Ownership Matrix
 
 Canonical boundary guide for deciding what belongs in the `noztr` protocol kernel versus the

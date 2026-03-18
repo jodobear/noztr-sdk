@@ -1,3 +1,13 @@
+---
+title: Noztr SDK Package Layout Plan
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - changing_module_layout
+  - revisiting_public_surface_shape
+---
+
 # Noztr SDK Package Layout Plan
 
 Proposed package and module layout for the first implementation cycle.

@@ -1,3 +1,15 @@
+---
+title: Noztr SDK API Ownership Map
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - evaluating_new_public_api
+  - revisiting_sdk_surface_ownership
+depends_on:
+  - docs/plans/noztr-sdk-ownership-matrix.md
+---
+
 # Noztr SDK API Ownership Map
 
 Starter ownership map for public SDK surfaces above `noztr`.
@@ -10,9 +22,11 @@ deciding whether a new helper belongs in `noztr-sdk`.
 ## Starter SDK Surface Map
 
 Current public posture:
-- stable public root surface today: `noztr_sdk.workflows`
+- stable public root surface today:
+  - `noztr_sdk.workflows`
+  - `noztr_sdk.transport` for the narrow HTTP seam used by current HTTP-backed workflows
 - current stable workflow type: `noztr_sdk.workflows.RemoteSignerSession`
-- relay/store/transport seams below that remain internal until a later accepted API freeze
+- relay and store seams remain internal until a later accepted API freeze
 
 | SDK surface | What it owns | Why not `noztr` | Why not app code | Starter scope |
 | --- | --- | --- | --- | --- |

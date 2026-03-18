@@ -1,3 +1,13 @@
+---
+title: Noztr SDK Kickoff
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - understanding_initial_scope
+  - reviewing_bootstrap_decisions
+---
+
 # Noztr SDK Kickoff
 
 Initial scope and execution kickoff for `noztr-sdk`.

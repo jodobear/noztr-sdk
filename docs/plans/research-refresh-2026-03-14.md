@@ -1,3 +1,13 @@
+---
+title: Research Refresh 2026-03-14
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - refreshing_reference_inputs
+  - checking_applesauce_and_rust_nostr_provenance
+---
+
 # Research Refresh 2026-03-14
 
 Research refresh summary for `noztr-sdk` planning.

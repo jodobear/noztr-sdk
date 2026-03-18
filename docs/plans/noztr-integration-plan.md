@@ -1,3 +1,13 @@
+---
+title: Noztr SDK Noztr Integration Plan
+doc_type: reference
+status: reference
+owner: noztr-sdk
+read_when:
+  - changing_noztr_dependency_posture
+  - revisiting_kernel_integration_rules
+---
+
 # Noztr SDK Noztr Integration Plan
 
 Dependency and ownership plan for integrating `noztr-sdk` with the local `noztr` checkout.
