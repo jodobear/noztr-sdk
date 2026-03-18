@@ -1,93 +1,299 @@
+---
+title: Handoff
+doc_type: state
+status: active
+owner: noztr-sdk
+read_when:
+  - every_session
+  - determining_current_lane
+depends_on:
+  - docs/plans/build-plan.md
+  - docs/plans/implementation-quality-gate.md
+---
+
 # Handoff
 
 Current project context for `noztr-sdk`.
 
 ## Current Status
 
-- `noztr-sdk` now has an accepted planning baseline and a working Zig package scaffold.
-- Phase 2 of the autonomous loop is complete: `build.zig`, `build.zig.zon`, `src/root.zig`, and
-  starter namespace modules now exist.
-- Phase 3 of the autonomous loop is complete: the relay/session substrate now exists as internal
-  `noztr-sdk` modules with explicit HTTP/store seams, `NIP-11` relay-info fetch/cache flow, and
-  `NIP-42`-adjacent relay auth/session state.
-- Phase 3 review gates passed after multiple reruns for boundary, correctness, and API/ergonomics.
-- Phase 4 of the autonomous loop is complete: `src/workflows/remote_signer.zig` now exposes the
-  first stable SDK workflow, a step-driven `NIP-46` remote signer session built on the internal
-  relay/session substrate.
-- Phase 4 review gates were run for boundary, correctness, and API/ergonomics; the resulting fixes
-  are now validated by the local Zig lane.
-- The latest audit and fix pass tightened the Phase 3 and Phase 4 seams further:
-  - `sign_event` responses now require full signed-event verification, not parse-only acceptance
-  - relay URLs now follow current `noztr` bounds and normalized-equivalence behavior at the
-    pool/store seams
-  - regression tests now pin connect strictness, auth failure blocking, `switch_relays` `null`
-    behavior, and reconnect-after-switch flow
-  - malformed `NIP-46` response parse failures now also clear matched pending requests when the
-    response `id` can be recovered from the raw JSON, closing a leak path for invalid
-    `switch_relays` relay lists
-- A follow-up audit on 2026-03-15 tightened relay URL validation further:
-  - `relay.auth` and `relay.session` now reject invalid non-websocket relay URLs at init time
-  - `store.memory` now rejects invalid relay URLs on both put and lookup instead of silently
-    accepting impossible records or queries
-  - stale duplicated `nzdk`-named style/bootstrap docs were removed so startup docs now point at
-    only the current `noztr-sdk` artifacts
-- `zig build` and `zig build test --summary all` currently pass in both `/workspace/projects/noztr`
-  and `/workspace/projects/nzdk`.
-- `/workspace/projects/noztr` is currently fully green again, including the examples lane:
-  `zig build test --summary all` passed with examples included.
-- the March 14, 2026 applesauce and rust-nostr refresh is captured in
-  `docs/plans/research-refresh-2026-03-14.md`
-- copied March 4 research docs now use the correct local mirror paths for reproducible provenance
-- Phase 1 of the autonomous loop is complete: planning docs now reflect refreshed March 14, 2026
-  provenance and upstream deltas.
-- The kernel/SDK ownership boundary starts from `docs/plans/noztr-sdk-ownership-matrix.md`.
-- `docs/plans/build-plan.md` is now the canonical execution baseline.
-- Additional planning baselines exist for kickoff, package layout, `noztr` integration, testing,
-  and API ownership.
-- `docs/plans/autonomous-loop-phases-1-4.md` is now the canonical execution loop for Phases 1-4.
-- `noztr` is the protocol-kernel dependency target; `noztr-sdk` should not duplicate kernel logic.
-- bootstrap should use the local `/workspace/projects/noztr` checkout first; remote setup is not a
-  blocker
-- Applesauce is the primary SDK/reference input for modeling higher-level client ergonomics,
-  stores, and workflow composition.
-- Rust-nostr-sdk is a secondary ecosystem/reference input.
-- `/workspace/projects/noztr/examples` is the current kernel recipe reference set and should inform
-  the eventual `noztr-sdk` examples posture.
-- The current `noztr` examples set is broader than the original bootstrap snapshot and now includes
-  direct recipe references for discovery, identity proofs, wallet flows, private lists, and relay
-  admin helpers in addition to the `NIP-46` recipe.
-- A recheck on 2026-03-15 confirmed that the full `/workspace/projects/noztr/examples` lane is now
-  green again, so the broader recipe set can be treated as current kernel reference material.
-- `docs/plans/implementation-quality-gate.md` is now the canonical execution gate for new
-  NIP-backed workflow and substrate work.
-- The public root surface is still intentionally minimal; Phase 4 added `noztr_sdk.workflows` and
-  `workflows.RemoteSignerSession`, while `client` and substrate namespaces remain internal.
+- `noztr-sdk` is a working Zig package on top of local `/workspace/projects/noztr`.
+- The implemented workflow floor is:
+  - `NIP-46` remote signer
+  - `NIP-17` mailbox session plus sender-copy-aware delivery planning, explicit mailbox runtime
+    inspection and next-step selection, and file-message send/intake
+  - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
+    discovery plus preferred remembered-profile selection, explicit remembered runtime policy, and
+    explicit stale-profile refresh planning
+  - `NIP-03` local plus detached-proof, stored-proof, and freshness-classified remembered-
+    verification OpenTimestamps workflow plus explicit remembered runtime policy and explicit
+    stale-verification refresh planning
+  - `NIP-05` fetch/verify
+  - `NIP-29` relay-local group client core plus explicit multi-relay fleet routing, checkpoints,
+    reconciliation, component-level merge policy, explicit fleet runtime inspection, durable store seams, and fleet moderation fanout
+- The first structured SDK examples tree is in place and compile-verified.
+- The intended product target is explicit:
+  - `noztr-sdk` should become the Zig-native analogue to applesauce
+  - it should be ecosystem-compatible and app-facing
+  - it should preserve the `noztr` kernel boundary
+  - it should use Zig's strengths to be more deterministic, bounded, explicit, and easy to reason
+    about than a direct TypeScript port
+- Current local verification is green in `/workspace/projects/nzdk`:
+  - `zig build`
+  - `zig build test --summary all` with `204/204`
+
+## Read First
+
+- [AGENTS.md](./AGENTS.md)
+- [docs/index.md](./docs/index.md)
+- [docs/plans/build-plan.md](./docs/plans/build-plan.md)
+- [docs/plans/implementation-quality-gate.md](./docs/plans/implementation-quality-gate.md)
+- [docs/plans/implemented-nips-applesauce-audit-2026-03-15.md](./docs/plans/implemented-nips-applesauce-audit-2026-03-15.md)
+- [docs/plans/implemented-nips-zig-native-audit-2026-03-15.md](./docs/plans/implemented-nips-zig-native-audit-2026-03-15.md)
+- [docs/plans/docs-surface-audit.md](./docs/plans/docs-surface-audit.md) when refining process or
+  control docs
+
+## Active Gaps
+
+- `A-NIP29-001`: `NIP-29` now has explicit authored state, checkpoint export/restore, explicit
+  multi-relay routing, fleet checkpoint persistence, caller-owned durable store seams, explicit
+  source-led plus targeted reconciliation, explicit component-level merge policy, explicit fleet
+  runtime inspection, and fleet moderation fanout over relay-local clients, but it still lacks the
+  broader background-runtime posture of a fuller groups client.
+- `A-NIP17-001` and `Z-WORKFLOWS-001`: `NIP-17` now covers sender-copy-aware delivery planning,
+  explicit mailbox runtime inspection and next-step selection, and file-message send/intake, but
+  it is still not a higher-level mailbox sync/runtime workflow.
+- `A-NIP03-001`: `NIP-03` now covers detached proof retrieval plus explicit stored-proof reuse and
+  freshness-classified remembered verification plus explicit remembered runtime inspection and
+  stale-verification refresh planning over the explicit HTTP seam, but it is still not a complete
+  proof workflow.
+- `A-NIP39-001`: `NIP-39` now verifies full identity events, exposes provider-shaped claim
+  details, reuses explicit cached verification outcomes, remembers verified identities, and
+  supports hydrated stored discovery plus freshness-classified remembered discovery, preferred
+  remembered-profile selection, explicit remembered runtime inspection, and stale-profile refresh
+  planning, but still lacks broader long-lived store/discovery policy.
+
+## Current Slice Notes
+
+- `A-HTTP-001` and `Z-HTTP-001` are now resolved:
+  - `src/root.zig` exports the explicit HTTP seam intentionally through `noztr_sdk.transport`
+  - `examples/nip39_verification_recipe.zig` and `examples/nip05_resolution_recipe.zig` now teach
+    the HTTP-backed workflows through that public seam
+- `Z-NIP29-001` is now resolved:
+  - `GroupSession` now exposes named caller-owned storage and config wrappers plus a stable view
+    surface
+  - `examples/group_session_recipe.zig` now teaches that higher-level shape instead of raw reducer
+    storage layout
+- `A-NIP46-001` is now resolved:
+  - `RemoteSignerSession` now covers the kernel-supported `nip04_*` and `nip44_*` pubkey-plus-text
+    method family in addition to connect, key discovery, event signing, ping, and relay switching
+  - `examples/remote_signer_recipe.zig` now teaches one end-to-end `nip44_encrypt` request on that
+    public workflow surface
+- `NIP-17` mailbox flow is broader:
+  - `MailboxSession` now exposes one outbound `beginDirectMessage(...)` workflow entrypoint in
+    addition to relay hydration and unwrap handling
+  - `MailboxSession` now also exposes `planDirectMessageRelayFanout(...)` so the sender can build
+    one wrap once and receive a deduplicated recipient publish-relay plan from a verified
+    kind-10050 relay list
+  - `MailboxSession` now also exposes `planDirectMessageDelivery(...)` so the sender can union
+    verified sender-copy relays into that delivery plan and inspect relay roles without rebuilding
+    the wrap
+  - `MailboxSession` now also exposes `acceptWrappedFileMessageJson(...)` for typed `NIP-17`
+    file-message intake
+  - `MailboxSession` now also exposes `acceptWrappedEnvelopeJson(...)` so callers can classify
+    direct-message vs file-message rumors on one explicit mailbox intake path
+  - `MailboxSession` now also exposes `beginFileMessage(...)` for one explicit outbound `NIP-17`
+    file-message authoring path over the current relay
+  - `MailboxSession` now also exposes `planFileMessageRelayFanout(...)` and
+    `planFileMessageDelivery(...)` so the sender can plan recipient relays and optional sender-copy
+    delivery for one built file-message wrap without rebuilding the payload
+  - `MailboxSession` now also exposes `inspectRuntime(...)` so callers can classify all hydrated
+    mailbox relays as explicit `connect`, `authenticate`, or `receive` actions on one bounded
+    runtime view
+  - `MailboxRuntimePlan` now also exposes `nextEntry()` so callers can select the next actionable
+    relay step on that bounded runtime view without hand-scanning the plan above the mailbox
+    surface
+  - `MailboxSession` now also exposes `selectRelay(...)` so callers can act on that runtime view
+    without hand-scanning relay pool state above the mailbox surface
+  - `examples/mailbox_recipe.zig` now teaches one explicit send-plus-receive round trip over the
+    recipient relay list plus sender-copy delivery, runtime inspection plus explicit next-step
+    selection, then one explicit file-message send-plus-receive path on the same mailbox surface,
+    rather than pretending the sender's current relay is the real delivery target or that mailbox
+    intake is direct-message-only
+  - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
+    and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
+    transcript staging
+  - outbound file-message authoring now also uses
+    `noztr.nip17_private_messages.nip17_build_file_*_tag(...)` for exact-fit canonical kind-15
+    metadata tags instead of staging those tag shapes locally
+- `NIP-39` now has a clearer Zig-native surface:
+  - `IdentityVerifier` now takes `IdentityVerificationRequest` with caller-owned
+    `IdentityVerificationStorage` instead of three raw temporary buffers
+  - `IdentityVerifier` now also verifies full kind-10011 identity events through
+    `verifyProfile(...)` with caller-owned `IdentityProfileVerificationStorage`
+  - `IdentityVerifier` now reuses explicit cached verification outcomes through
+    `verifyProfileCached(...)` with caller-owned `IdentityVerificationCache`
+  - `IdentityVerifier` now also remembers verified profile summaries through an explicit
+    `IdentityProfileStore` seam and discovers stored identities through one explicit
+    provider-plus-identity query
+  - `IdentityVerifier` now also exposes `verifyProfileCachedAndRemember(...)` so callers can take
+    the common verify-plus-store step without re-stitching it above the cache plus store seams
+  - `IdentityVerifier` now also exposes `discoverStoredProfileEntries(...)` so provider-plus-
+    identity discovery can return hydrated stored profile records directly on the same explicit
+    workflow surface
+  - `IdentityVerifier` now also exposes `getLatestStoredProfile(...)` for the common newest-match
+    remembered lookup path
+  - `IdentityVerifier` now also exposes `getLatestStoredProfileFreshness(...)` so callers can
+    classify the newest remembered profile as fresh or stale without inventing hidden refresh
+    behavior
+  - `IdentityVerifier` now also exposes `discoverStoredProfileEntriesWithFreshness(...)` so
+    callers can classify all remembered matches for one provider identity as fresh or stale on one
+    hydrated discovery path instead of restitching multi-match age policy above the store seam
+  - `IdentityVerifier` now also exposes `getPreferredStoredProfile(...)` so callers can select one
+    preferred remembered profile under a freshness window with explicit stale-fallback policy
+    instead of rebuilding that policy above the store seam
+  - `IdentityVerifier` now also exposes `inspectStoredProfileRuntime(...)` so callers can classify
+    one remembered identity as `verify_now`, `refresh_existing`, `use_preferred`, or
+    `use_stale_and_refresh` on the same caller-owned freshness discovery path instead of
+    rebuilding that common runtime decision above the store seam
+  - `IdentityVerifier` now also exposes `planStoredProfileRefresh(...)` so callers can collect
+    only stale remembered matches newest-first under one explicit freshness window without hiding
+    fetch or refresh policy above the stored-profile seam
+  - verified profile claims now expose provider-shaped details through
+    `IdentityClaimVerification.providerDetails(...)` and
+    `IdentityProfileVerificationSummary.verifiedClaims(...)`
+  - `examples/nip39_verification_recipe.zig` now teaches one full identity event verified over the
+    public HTTP seam, remembered in a caller-owned profile store, hydrated directly by provider
+    identity, classified for freshness both across discovered entries and for the newest match,
+    selected once through explicit remembered-profile policy, inspected once through explicit
+    remembered runtime policy, planned once for stale refresh, and then replayed from the explicit
+    cache
+- `NIP-05` now has a clearer Zig-native surface:
+  - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
+    caller-owned `Nip05LookupStorage`
+  - `examples/nip05_resolution_recipe.zig` now teaches the wrapper shape directly
+- `NIP-46` now has a clearer Zig-native request-building surface:
+  - `RemoteSignerSession.begin...` methods now take one caller-owned `RemoteSignerRequestContext`
+    instead of repeating `buffer + id + scratch`
+  - `examples/remote_signer_recipe.zig` now teaches that request-context shape directly
+- `NIP-29` client breadth is broader:
+  - `GroupSession` now exposes explicit outbound join, leave, put-user, and remove-user publish
+    helpers through caller-owned `GroupPublishContext` and `GroupOutboundBuffer`
+  - the new `GroupClient` layer now owns previous-ref scratch and consumes mixed relay events on
+    top of `GroupSession`
+  - `GroupSession` and `GroupClient` now also author metadata, admins, members, and roles snapshot
+    state on the same explicit relay-local publish path
+  - `GroupSession` and `GroupClient` now export and restore one explicit single-relay checkpoint
+    without requiring live relay readiness
+  - the new `GroupFleet` layer now routes event intake and checkpoint export/restore by relay URL
+    across caller-owned relay-local `GroupClient`s without inventing hidden merge policy
+  - `GroupFleet` now also exports and restores one caller-owned fleet checkpoint set across all
+    relay-local clients without inventing reconciliation policy
+  - `GroupFleet` now also inspects relay-local divergence against one chosen baseline and can
+    reconcile the fleet from one explicit source relay without inventing hidden merge rules
+  - `GroupFleet` now also persists relay-local checkpoints into one explicit caller-owned store
+    seam and can restore a fresh fleet from that stored state without inventing hidden durable
+    runtime policy
+  - `GroupFleet` now also builds one merged fleet checkpoint from explicit per-component relay
+    choices and can apply that merged checkpoint across the fleet without inventing hidden
+    authority or automatic merge heuristics
+  - `GroupFleet` now also exposes `inspectRuntime(...)` so callers can classify each relay as
+    `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline without
+    hand-composing relay readiness plus divergence checks above the fleet
+  - `GroupFleet` now also exposes `reconcileRelayFromBaseline(...)` so callers can converge one
+    chosen divergent relay from one chosen baseline without restoring the same checkpoint across
+    the whole fleet
+  - `GroupFleet` now also plans `put-user` and `remove-user` moderation publishes across all
+    relays through one explicit caller-owned fleet publish context and per-relay buffers
+  - `examples/group_session_recipe.zig` now teaches authored snapshot state plus one outbound
+    moderation publish through the higher-level client shape, with checkpoint export/restore in the
+    middle
+  - `examples/group_fleet_recipe.zig` now teaches explicit fleet persistence into a caller-owned
+    store, restore into a fresh fleet through that fleet layer, inspect runtime actions over the
+    restored relays, merge divergent relay-local components by explicit relay choice, run one
+    explicit targeted baseline-to-target reconcile step, then one explicit moderation fanout
+    across the reconciled relays
+  - the real remaining gap is now broader background runtime/client policy above the explicit
+    multi-relay routing, store, runtime inspection, targeted reconcile, reconciliation, and merge
+    layer
+- local `noztr` compatibility is green again after manifest maintenance:
+  - `libwally-core` was repinned to a live upstream commit
+  - `secp256k1`'s Zig package hash was refreshed for the current toolchain
+  - the latest `/workspace/projects/noztr` compatibility rerun is green again during
+    `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global`
+- current `noztr` helper adoption is up to date for the implemented mailbox/group flows:
+  - `noztr-sdk` now uses `noztr`'s signed event-object JSON serializer for outbound mailbox and
+    group-client publish flows
+  - the mailbox outbound path now also uses `noztr`'s bounded one-recipient outbound
+    `NIP-17` / `NIP-59` transcript helper
+  - the 2026-03-18 remediation sync is now closed in
+    [docs/plans/noztr-remediation-sync-plan.md](./docs/plans/noztr-remediation-sync-plan.md):
+    mailbox now preserves `EntropyUnavailable` distinctly, the root smoke pins hardened `NIP-46`
+    direct-helper typed errors, and the local `noztr` compatibility lane is green again
+- `NIP-03` proof workflow is broader:
+  - `OpenTimestampsVerifier` now exposes an explicit caller-owned detached proof-store seam
+  - `OpenTimestampsVerifier.verifyRemoteCached(...)` now reuses stored proof bytes before falling
+    back to network fetch
+  - `OpenTimestampsVerifier` now also exposes an explicit caller-owned remembered-verification
+    store seam above the proof-store seam
+  - `OpenTimestampsVerifier.verifyRemoteCachedAndRemember(...)` now covers the common verify plus
+    remember path for one detached proof document
+  - `OpenTimestampsVerifier.getLatestStoredVerification(...)` now recovers the newest remembered
+    verification summary for one target event id without inventing hidden runtime policy
+  - `OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(...)` now classifies all
+    remembered verification entries for one target event as fresh or stale without inventing
+    hidden refresh or Bitcoin policy
+  - `OpenTimestampsVerifier.inspectStoredVerificationRuntime(...)` now classifies one target event
+    as `verify_now`, `refresh_existing`, `use_preferred`, or `use_stale_and_refresh` on the same
+    caller-owned freshness discovery surface instead of leaving that common runtime decision above
+    the stored verification seam
+  - `OpenTimestampsVerifier.planStoredVerificationRefresh(...)` now collects only stale remembered
+    verification matches newest-first under one explicit freshness window without hiding fetch or
+    Bitcoin policy above the stored verification seam
+  - `examples/nip03_verification_recipe.zig` now teaches verify, remember, freshness-classified
+    discovery, remembered runtime inspection, stale refresh planning, and latest remembered lookup
+    on the same explicit public surface
+  - the real remaining gap is broader Bitcoin verification, proof freshness, and longer-lived
+    durable proof policy above the current workflow
+
+## Process Rule
+
+- If the next slice refines an already-landed workflow, it must:
+  - name the targeted findings from both audit files before implementation
+  - rerun both audit frames after implementation
+  - update the audit docs explicitly before closeout
+- If the process changes materially, reconcile the affected control docs together instead of
+  treating the change as append-only.
 
 ## Immediate Next Work
 
-1. Treat Phases 1-4 from `docs/plans/autonomous-loop-phases-1-4.md` as complete.
-2. The next unstarted SDK milestone is mailbox/session orchestration (`NIP-17`) on top of the
-   existing substrate and signer-session patterns.
-3. Keep protocol message building/parsing/validation in `noztr`; `noztr-sdk` should continue to own
-   only orchestration, relay control, auth/session handling, and workflow composition.
-4. Keep the public root surface narrow until a second workflow proves that a broader `client`
-   namespace is worth freezing.
-5. Start the next cycle with an explicit follow-on loop for `NIP-17` rather than extending the
-   Phase 1-4 loop ad hoc.
-6. Start planning the top-level `examples/` directory so SDK workflows are taught through
-   structured recipes, not only tests and planning docs.
-7. For the next cycle, require the full implementation packet from
-   `docs/plans/implementation-quality-gate.md` before any mailbox/session code changes.
-
-## Boundary Reminder
-
-For every major SDK helper, answer:
-- why is this not already a `noztr` concern?
-- why is this not app code above `noztr-sdk`?
-- why is this the simplest useful SDK layer?
-
-## Open Starting Questions
-
-- should the first transport seam be step-driven, callback-driven, or both
-- whether the first reference HTTP adapter should land in `M2` or remain interface-only longer
-- whether `NIP-29` group sync should wait until after signer/mailbox workflows stabilize
+1. Use
+   [docs/plans/noztr-remediation-sync-plan.md](./docs/plans/noztr-remediation-sync-plan.md) as the
+   reference packet when future `noztr` hardening passes land. It is now completed, not the active
+   blocker.
+2. The next active packet is
+   [docs/plans/five-slice-selector-loop-plan.md](./docs/plans/five-slice-selector-loop-plan.md).
+   It scopes one bounded follow-on family above already-landed runtime, delivery, and publish
+   plans instead of jumping straight to hidden background loops.
+3. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
+   policy or another gap above the now-landed explicit fleet store, targeted reconcile,
+   reconciliation, merge, publish-planning, and runtime-inspection surfaces rather than repeating
+   already-landed relay-local authoring, checkpoint, explicit fleet-routing, or merge-selection
+   work.
+4. Continue `NIP-39` only if the next slice clearly targets broader autonomous discovery, refresh,
+   or longer-lived store policy beyond the now-landed remembered verify/store/discover/select and
+   runtime-policy path rather than repeating already-landed provider-detail, cache, or explicit
+   store/discovery work.
+5. The best broader product slice after the selector loop is still a real background-runtime
+   `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
+   `NIP-03` / `NIP-17` workflow policy. The last four-slice loop already closed the bounded
+   refresh-planning and mailbox next-step helpers.
+6. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
+7. Keep `examples/README.md` current whenever the public teaching surface changes.
+8. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
+9. Treat `docs/archive/` as historical context only, not startup reading.
+10. Keep `NIP-03` scoped to broader proof workflow work only:
+   `OpenTimestampsVerifier.verifyRemote(...)` and `verifyRemoteCached(...)` already cover the
+   explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
+   covers remembered runtime inspection; the remaining gap is broader Bitcoin verification,
+   freshness, and durable proof-store policy.
