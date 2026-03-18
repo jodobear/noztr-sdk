@@ -189,6 +189,9 @@ Observed friction:
 - `NIP-39` now also exposes one explicit remembered runtime-policy helper above the same caller-
   owned freshness discovery surface, so the common verify-vs-refresh-vs-use decision no longer
   has to be rebuilt entirely above the store seam
+- `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
+  selected remembered-profile step directly instead of re-matching the runtime-selected entry
+  above the workflow
 - `NIP-39` now also exposes one explicit stale-profile refresh-plan helper, so bounded remembered
   refresh targeting no longer has to be rebuilt above the same freshness discovery surface
 - `NIP-03` now also exposes one explicit stale-verification refresh-plan helper, so bounded proof

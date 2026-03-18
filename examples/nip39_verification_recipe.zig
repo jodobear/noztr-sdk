@@ -6,9 +6,10 @@ const common = @import("common.zig");
 // Verify all claims from one identity event over the public SDK HTTP seam, remember the verified
 // profile through the explicit store seam, hydrate one stored discovery result directly, classify
 // both discovered entries and the latest remembered profile for freshness, select one preferred
-// remembered profile under an explicit fallback policy, inspect the remembered runtime action for
-// that identity, then replay the same verification from an explicit caller-owned cache.
-test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime, and replays one profile event" {
+// remembered profile under an explicit fallback policy, inspect the remembered runtime action and
+// next entry for that identity, then replay the same verification from an explicit caller-owned
+// cache.
+test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime and next entry, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -218,6 +219,15 @@ test "recipe: identity verifier verifies, remembers, discovers, classifies fresh
     );
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
+    const next_entry = runtime.nextEntry().?;
+    try std.testing.expectEqualStrings(
+        "alice",
+        next_entry.matchedClaim().identitySlice(),
+    );
+    try std.testing.expectEqual(
+        @intFromPtr(runtime.preferredEntry().?),
+        @intFromPtr(next_entry),
+    );
     try std.testing.expectEqualStrings(
         "alice",
         runtime.preferredEntry().?.matchedClaim().identitySlice(),

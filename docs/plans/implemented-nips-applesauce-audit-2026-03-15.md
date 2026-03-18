@@ -240,6 +240,9 @@ Observed friction:
 - it now also exposes one explicit remembered runtime-policy helper that classifies one provider
   identity as `verify_now`, `refresh_existing`, `use_preferred`, or `use_stale_and_refresh`
   instead of leaving that common refresh/use decision entirely above the stored discovery seam
+- `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
+  selected remembered profile directly instead of re-matching the runtime-selected entry above the
+  workflow
 - it now also exposes one explicit stale-profile refresh-plan helper over remembered discovery
   freshness so callers do not have to rebuild bounded refresh targeting above the same store seam
 - broader identity-management flows are still deferred in
