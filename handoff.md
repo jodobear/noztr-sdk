@@ -250,12 +250,15 @@ Current project context for `noztr-sdk`.
     as `verify_now`, `refresh_existing`, `use_preferred`, or `use_stale_and_refresh` on the same
     caller-owned freshness discovery surface instead of leaving that common runtime decision above
     the stored verification seam
+  - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can
+    step that remembered runtime policy without hand-matching the selected stored verification
+    above the workflow surface
   - `OpenTimestampsVerifier.planStoredVerificationRefresh(...)` now collects only stale remembered
     verification matches newest-first under one explicit freshness window without hiding fetch or
     Bitcoin policy above the stored verification seam
   - `examples/nip03_verification_recipe.zig` now teaches verify, remember, freshness-classified
-    discovery, remembered runtime inspection, stale refresh planning, and latest remembered lookup
-    on the same explicit public surface
+    discovery, remembered runtime inspection plus its selected next entry, stale refresh
+    planning, and latest remembered lookup on the same explicit public surface
   - the real remaining gap is broader Bitcoin verification, proof freshness, and longer-lived
     durable proof policy above the current workflow
 

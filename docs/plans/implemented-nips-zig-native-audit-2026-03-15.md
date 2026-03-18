@@ -196,6 +196,9 @@ Observed friction:
   refresh targeting no longer has to be rebuilt above the same freshness discovery surface
 - `NIP-03` now also exposes one explicit stale-verification refresh-plan helper, so bounded proof
   refresh targeting no longer has to be rebuilt above the same freshness discovery surface
+- `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can
+  follow the selected remembered-verification step directly instead of re-matching the runtime-
+  selected entry above the workflow
 - but several public workflow surfaces still sit halfway between:
   - low-level bounded substrate
   - higher-level SDK workflow

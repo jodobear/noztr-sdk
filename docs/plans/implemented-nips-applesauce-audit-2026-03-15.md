@@ -136,6 +136,9 @@ Observed friction:
   target event
 - one explicit remembered runtime-policy helper that classifies one target event as `verify_now`,
   `refresh_existing`, `use_preferred`, or `use_stale_and_refresh`
+- `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can step
+  the selected remembered verification directly instead of re-matching the runtime-selected entry
+  above the workflow
 - one explicit stale-verification refresh-plan helper over remembered verification freshness
 - the detached proof path is still caller-directed and local-floor only in
   [src/workflows/opentimestamps_verifier.zig](/workspace/projects/nzdk/src/workflows/opentimestamps_verifier.zig#L50)

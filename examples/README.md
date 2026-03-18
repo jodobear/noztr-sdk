@@ -49,8 +49,8 @@ network daemons, or hidden runtime loops.
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify remembered verification entries for freshness, inspect the remembered
-    runtime action explicitly, plan refresh for stale remembered verifications, and recover the
-    latest remembered verification for the same target event
+    runtime action plus selected next entry explicitly, plan refresh for stale remembered
+    verifications, and recover the latest remembered verification for the same target event
   - public SDK surface: `OpenTimestampsVerifier`, `OpenTimestampsRemoteProofRequest`,
     `OpenTimestampsProofStore`, `MemoryOpenTimestampsProofStore`,
     `OpenTimestampsVerificationStore`, `MemoryOpenTimestampsVerificationStore`,
@@ -63,8 +63,8 @@ network daemons, or hidden runtime loops.
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
     verification store records over the explicit HTTP seam, then performs one explicit
     freshness-classified remembered discovery lookup plus one explicit remembered runtime
-    inspection step plus one explicit stale-proof refresh plan without hidden Bitcoin refresh
-    policy
+    inspection step plus one explicit next-entry selector step plus one explicit stale-proof
+    refresh plan without hidden Bitcoin refresh policy
 - `nip39_verification_recipe.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify

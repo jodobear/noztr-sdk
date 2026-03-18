@@ -256,6 +256,15 @@ pub const OpenTimestampsStoredVerificationRuntimePlan = struct {
         if (usize_index >= self.entries.len) return null;
         return &self.entries[usize_index];
     }
+
+    pub fn nextEntry(
+        self: *const OpenTimestampsStoredVerificationRuntimePlan,
+    ) ?*const OpenTimestampsStoredVerificationDiscoveryFreshnessEntry {
+        return switch (self.action) {
+            .verify_now => null,
+            .refresh_existing, .use_preferred, .use_stale_and_refresh => self.preferredEntry(),
+        };
+    }
 };
 
 pub const OpenTimestampsStoredVerificationRefreshEntry = struct {
@@ -1891,6 +1900,7 @@ test "opentimestamps verifier runtime policy requests verification when no remem
     try std.testing.expectEqual(@as(u32, 0), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
     try std.testing.expect(runtime.preferredEntry() == null);
+    try std.testing.expect(runtime.nextEntry() == null);
 }
 
 test "opentimestamps verifier runtime policy prefers a fresh remembered verification" {
@@ -1973,7 +1983,9 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 1), runtime.stale_count);
     const preferred = runtime.preferredEntry().?;
+    const next = runtime.nextEntry().?;
     try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.fresh, preferred.freshness);
+    try std.testing.expectEqual(@intFromPtr(preferred), @intFromPtr(next));
     try std.testing.expectEqualStrings(
         "https://proof.example/new.ots",
         preferred.entry.verification.proofUrl(),
@@ -2061,7 +2073,9 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
     try std.testing.expectEqual(@as(u32, 0), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 2), runtime.stale_count);
     const preferred = runtime.preferredEntry().?;
+    const next = runtime.nextEntry().?;
     try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.stale, preferred.freshness);
+    try std.testing.expectEqual(@intFromPtr(preferred), @intFromPtr(next));
     try std.testing.expectEqualStrings(
         "https://proof.example/new.ots",
         preferred.entry.verification.proofUrl(),
@@ -2122,7 +2136,9 @@ test "opentimestamps verifier runtime policy can require refresh for stale remem
     try std.testing.expectEqual(@as(u32, 0), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 1), runtime.stale_count);
     const preferred = runtime.preferredEntry().?;
+    const next = runtime.nextEntry().?;
     try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.stale, preferred.freshness);
+    try std.testing.expectEqual(@intFromPtr(preferred), @intFromPtr(next));
 }
 
 test "opentimestamps verifier refresh plan returns stale remembered verifications newest first" {
