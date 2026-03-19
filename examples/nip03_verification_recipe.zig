@@ -12,9 +12,9 @@ const ots_header_magic = [_]u8{
 const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 // Verify one detached OpenTimestamps proof document, remember the verification summary explicitly,
-// classify remembered discovery entries for freshness, inspect the remembered runtime action plus
-// selected next entry, then recover the latest remembered verification for the same target event.
-test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered runtime and next entry, and reuses one detached proof document" {
+// classify remembered discovery entries for freshness, inspect one typed remembered runtime step,
+// then recover the latest remembered verification for the same target event.
+test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered typed runtime step, and reuses one detached proof document" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try common.derivePublicKey(&signer_secret);
     var target = common.simpleEvent(1, signer_pubkey, 1, "hello", &.{});
@@ -120,14 +120,19 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
-    const next_entry = runtime.nextEntry().?;
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.OpenTimestampsStoredVerificationRuntimeAction.use_preferred,
+        next_step.action,
+    );
+    const next_entry = next_step.entry.?;
     try std.testing.expectEqualStrings(
         "https://proof.example/hello.ots",
         next_entry.entry.verification.proofUrl(),
     );
-    try std.testing.expectEqual(
-        @intFromPtr(runtime.preferredEntry().?),
-        @intFromPtr(next_entry),
+    try std.testing.expectEqualStrings(
+        runtime.preferredEntry().?.entry.verification.proofUrl(),
+        next_entry.entry.verification.proofUrl(),
     );
 
     var refresh_matches: [2]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;

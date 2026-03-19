@@ -141,6 +141,9 @@ Observed friction:
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can step
   the selected remembered verification directly instead of re-matching the runtime-selected entry
   above the workflow
+- `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextStep()` so callers can
+  consume the remembered runtime action plus its selected verification as one explicit SDK step
+  instead of stitching that view together above the workflow
 - one explicit stale-verification refresh-plan helper over remembered verification freshness
 - the detached proof path is still caller-directed and local-floor only in
   [src/workflows/opentimestamps_verifier.zig](/workspace/projects/nzdk/src/workflows/opentimestamps_verifier.zig#L50)

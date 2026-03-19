@@ -208,6 +208,9 @@ Observed friction:
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can
   follow the selected remembered-verification step directly instead of re-matching the runtime-
   selected entry above the workflow
+- `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextStep()` so callers can
+  package the selected remembered-verification action and entry as one explicit step value instead
+  of reconstructing that SDK view above the runtime plan
 - but several public workflow surfaces still sit halfway between:
   - low-level bounded substrate
   - higher-level SDK workflow

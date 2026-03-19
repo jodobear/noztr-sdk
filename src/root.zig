@@ -183,6 +183,7 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimeStorage) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimeRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimePlan) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimeStep) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRefreshEntry) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRefreshStorage) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRefreshRequest) == type);
