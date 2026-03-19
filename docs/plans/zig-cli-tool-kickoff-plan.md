@@ -1,7 +1,7 @@
 ---
 title: Zig CLI Tool Kickoff Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - preparing_the_first_external_cli_repo_move
@@ -60,3 +60,95 @@ This packet should produce:
 1. one CLI v1 scope definition
 2. one first command/feature order
 3. one explicit SDK-to-CLI boundary statement
+
+## Kickoff Outcome
+
+### CLI v1 Product Goal
+
+The first Zig CLI should be:
+
+- a developer/operator tool,
+- scriptable and explicit,
+- built on `noztr` plus `noztr-sdk`,
+- useful before any full end-user client exists.
+
+It should optimize first for:
+
+- inspect/query/debug value,
+- relay/runtime visibility,
+- signer interaction,
+- verification workflows,
+- and scripting-friendly output.
+
+It should not try to become a full end-user client, bot framework, or hidden runtime daemon in v1.
+
+### CLI v1 Included Command Families
+
+Include in CLI v1:
+
+1. archive/query commands
+   - local ingest
+   - bounded query
+   - named checkpoint inspection
+2. relay/runtime commands
+   - relay set inspection
+   - shared runtime readiness view
+   - checkpoint and replay-plan inspection
+3. verification commands
+   - `NIP-05`
+   - `NIP-39`
+   - `NIP-03` detached proof verification where the current SDK already supports it
+4. signer/debug commands
+   - narrow `NIP-46` developer tooling over the current remote-signer floor
+
+### Deferred From CLI v1
+
+Defer from CLI v1:
+
+- broad generic publish UX
+- mailbox command suites
+- groups moderation/admin suites
+- live subscription/follow UX
+- hidden background runtime ownership
+- durable backend commitments beyond local bootstrap needs
+
+### First Command / Feature Order
+
+Recommended order:
+
+1. repo bootstrap plus dependency/import smoke
+2. archive/query/checkpoint commands
+3. relay/runtime/checkpoint/replay-inspection commands
+4. verification commands
+5. narrow signer/debug commands
+
+This order matches the currently strongest SDK surfaces and gives the CLI immediate operator value
+before wider workflow UX exists.
+
+### SDK To CLI Boundary
+
+`noztr-sdk` should own:
+
+- reusable client/runtime/store composition
+- typed plans and next-step helpers
+- bounded workflow composition above `noztr`
+
+The separate CLI repo should own:
+
+- command vocabulary
+- flag/argument parsing
+- output formatting
+- config/env loading
+- file I/O and shell ergonomics
+- operator workflows and scripting posture
+
+### Recommendation
+
+The next active packet should be a CLI v1 command-surface plan.
+
+That packet should define:
+
+- exact first commands,
+- command grouping,
+- first SDK surfaces each command composes,
+- and what must stay deferred from CLI v1.
