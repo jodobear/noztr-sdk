@@ -10,12 +10,12 @@ const common = @import("common.zig");
 // set through the latest-freshness plan plus one typed next step, select one preferred remembered
 // profile per watched target and one preferred remembered profile across that watched target set,
 // plan refresh across that watched target set, inspect runtime policy plus grouped target-policy
-// views plus refresh-cadence, refresh-batch, and turn-policy views across that watched target set,
-// then select one preferred remembered profile under an explicit fallback policy for one identity,
-// inspect the remembered runtime action and typed next step for that identity, plan one typed
-// refresh step for stale remembered profiles, then replay the same verification from an explicit
-// caller-owned cache.
-test "recipe: identity verifier verifies, remembers, groups watched-target discovery, inspects target policy, refresh cadence, refresh batch, and turn policy, and replays one profile event" {
+// views plus refresh-cadence, refresh-batch, turn-policy, and turn-bucket views across that
+// watched target set, then select one preferred remembered profile under an explicit fallback
+// policy for one identity, inspect the remembered runtime action and typed next step for that
+// identity, plan one typed refresh step for stale remembered profiles, then replay the same
+// verification from an explicit caller-owned cache.
+test "recipe: identity verifier verifies, remembers, groups watched-target discovery, inspects target policy, refresh cadence, refresh batch, turn policy, and turn buckets, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -541,8 +541,17 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqual(@as(u32, 1), watched_turn_policy.defer_refresh_count);
     try std.testing.expectEqualStrings("carol", watched_turn_policy.nextWorkEntry().?.target.identity);
     try std.testing.expectEqualStrings("carol", watched_turn_policy.nextWorkStep().?.entry.target.identity);
+    try std.testing.expectEqual(@as(usize, 1), watched_turn_policy.verifyNowEntries().len);
+    try std.testing.expectEqualStrings("carol", watched_turn_policy.verifyNowEntries()[0].target.identity);
+    try std.testing.expectEqual(@as(usize, 1), watched_turn_policy.refreshSelectedEntries().len);
+    try std.testing.expectEqualStrings("alice", watched_turn_policy.refreshSelectedEntries()[0].target.identity);
+    try std.testing.expectEqual(@as(usize, 2), watched_turn_policy.workEntries().len);
+    try std.testing.expectEqualStrings("carol", watched_turn_policy.workEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("alice", watched_turn_policy.workEntries()[1].target.identity);
     try std.testing.expectEqual(@as(usize, 0), watched_turn_policy.useCachedEntries().len);
     try std.testing.expectEqual(@as(usize, 1), watched_turn_policy.deferredEntries().len);
+    try std.testing.expectEqual(@as(usize, 1), watched_turn_policy.idleEntries().len);
+    try std.testing.expectEqualStrings("bob", watched_turn_policy.idleEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", watched_turn_policy.deferredEntries()[0].target.identity);
 
     var preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;

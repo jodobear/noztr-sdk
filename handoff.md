@@ -27,7 +27,8 @@ Current project context for `noztr-sdk`.
 - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
   discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
   typed next-step selection, explicit watched-target policy and refresh-cadence classification,
-  refresh-batch selection, turn-policy classification, plus explicit stale-profile refresh planning
+  refresh-batch selection, turn-policy classification, turn-bucket views, plus explicit stale-
+  profile refresh planning
   - `NIP-03` local plus detached-proof, stored-proof, and freshness-classified remembered-
     verification OpenTimestamps workflow plus explicit remembered runtime policy and typed
     next-step selection plus explicit stale-verification refresh planning
@@ -44,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `267/267`
+  - `zig build test --summary all` with `271/271`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -253,6 +254,19 @@ Current project context for `noztr-sdk`.
   - `IdentityStoredProfileTargetTurnPolicyPlan.useCachedEntries()` and `deferredEntries()` now
     expose cached-now vs deferred-later identity groups explicitly instead of forcing apps to
     rebuild that split above the same watched-target helpers
+- the `NIP-39` watched-target turn-buckets loop is now complete:
+  - `IdentityStoredProfileTargetTurnPolicyPlan.verifyNowEntries()` now exposes the current-turn
+    verify-now bucket explicitly instead of forcing apps to reslice it above the same turn-policy
+    plan
+  - `IdentityStoredProfileTargetTurnPolicyPlan.refreshSelectedEntries()` now exposes the current-
+    turn refresh-selected bucket explicitly instead of forcing apps to reslice it above that same
+    turn-policy plan
+  - `IdentityStoredProfileTargetTurnPolicyPlan.workEntries()` now exposes the whole current-turn
+    actionable slice explicitly instead of forcing apps to concatenate verify-now and refresh-
+    selected buckets themselves
+  - `IdentityStoredProfileTargetTurnPolicyPlan.idleEntries()` now exposes the complementary cached-
+    or-deferred slice explicitly instead of forcing apps to restitch idle identities above the same
+    turn-policy surface
 - `NIP-39` now has a clearer Zig-native surface:
   - `IdentityVerifier` now takes `IdentityVerificationRequest` with caller-owned
     `IdentityVerificationStorage` instead of three raw temporary buffers
@@ -518,8 +532,9 @@ Current project context for `noztr-sdk`.
 15. The `NIP-39` watched-target turn-policy loop is
     [docs/plans/nip39-six-slice-turn-policy-loop-plan.md](./docs/plans/nip39-six-slice-turn-policy-loop-plan.md).
     Treat it as reference.
-16. The next coherent execution loop under that active `NIP-39` parent packet is
+16. The `NIP-39` watched-target turn-buckets loop is
     [docs/plans/nip39-five-slice-turn-buckets-loop-plan.md](./docs/plans/nip39-five-slice-turn-buckets-loop-plan.md).
+    Treat it as reference.
 17. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 18. Keep `examples/README.md` current whenever the public teaching surface changes.
 19. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

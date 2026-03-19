@@ -281,6 +281,9 @@ Observed friction:
   caller-owned current-turn helper over watched-target policy and refresh-batch selection, so
   verify-now, refresh-selected, use-cached, and deferred-refresh choice no longer has to be
   reconstructed above those same remembered-profile seams
+- `IdentityStoredProfileTargetTurnPolicyPlan` now also exposes explicit verify-now, refresh-
+  selected, work, and idle bucket views, so the current-turn plan no longer has to be resliced
+  above that same caller-owned watched-target surface
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
   selected remembered-profile step directly instead of re-matching the runtime-selected entry
   above the workflow

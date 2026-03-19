@@ -343,6 +343,9 @@ Observed friction:
   current-turn identity policy view over watched-target policy plus refresh-batch selection, so
   apps no longer have to restitch verify-now, refresh-selected, use-cached, and deferred-refresh
   decisions above those same watched-target helpers
+- `IdentityStoredProfileTargetTurnPolicyPlan` now also exposes explicit verify-now, refresh-
+  selected, work, and idle bucket views, so apps no longer have to reslice that current-turn
+  identity plan above the same watched-target surface
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow

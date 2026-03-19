@@ -52,7 +52,6 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
-- [nip39-five-slice-turn-buckets-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-five-slice-turn-buckets-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -112,6 +111,7 @@ Use `doc_type` plus `status` first:
 - [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
 - [nip39-six-slice-refresh-batch-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-six-slice-refresh-batch-loop-plan.md)
 - [nip39-six-slice-refresh-cadence-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-six-slice-refresh-cadence-loop-plan.md)
+- [nip39-five-slice-turn-buckets-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-five-slice-turn-buckets-loop-plan.md)
 - [nip39-six-slice-turn-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-six-slice-turn-policy-loop-plan.md)
 - [nip39-six-slice-target-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-six-slice-target-policy-loop-plan.md)
 - [nip39-six-slice-target-discovery-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-six-slice-target-discovery-loop-plan.md)
