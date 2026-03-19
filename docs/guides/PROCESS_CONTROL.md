@@ -32,6 +32,10 @@ One accepted slice should also become one git commit.
 Do not rely on `handoff.md`, packet docs, or chat history as a substitute for per-slice git
 checkpoints.
 
+When a major loop or packet family closes, restoring one explicit next active packet is part of
+steady-state closeout.
+Do not leave the repo between packets after a major closeout.
+
 ## Control Surface Roles
 
 - `index`

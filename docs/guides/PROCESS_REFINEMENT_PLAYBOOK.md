@@ -270,6 +270,8 @@ It requires making closeout consistency explicit:
 - update the examples catalog if the public teaching surface changed
 - update older reference packets when a new follow-on slice becomes part of that workflow's chain
 - trim startup docs back to the lean post-closeout state once the slice is finished
+- if a major loop or packet family just closed, restore one explicit next active packet before you
+  call the repo back in steady state
 
 This should be part of "done", not a nice-to-have cleanup pass.
 

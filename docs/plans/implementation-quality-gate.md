@@ -86,6 +86,8 @@ Interpretation:
 - Stage 5: docs and handoff closeout
   - update the packet, audits, examples catalog, handoff, and startup/discovery docs
   - return the repo to steady-state reading posture
+  - if the slice closes a major loop or packet family, restore one explicit next active packet as
+    part of steady state instead of leaving the repo between packets
   - cut one git commit for the accepted slice once the slice is back in steady state
 
 This is intentionally not a waterfall that makes examples, audits, or docs optional. It is a
