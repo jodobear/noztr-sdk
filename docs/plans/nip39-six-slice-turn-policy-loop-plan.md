@@ -1,7 +1,7 @@
 ---
 title: NIP-39 Six-Slice Turn Policy Loop
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [39]
 read_when:
@@ -104,3 +104,23 @@ This loop does not include:
 - keep one commit per accepted slice
 - keep this loop as the next likely execution packet under the active parent `NIP-39` plan until
   promoted
+
+## Outcome
+
+This loop is complete.
+
+It landed:
+- watched-target turn-policy vocabulary and caller-owned storage
+- `IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(...)`
+- `IdentityStoredProfileTargetTurnPolicyPlan.nextWorkEntry()`
+- `IdentityStoredProfileTargetTurnPolicyPlan.nextWorkStep()`
+- `IdentityStoredProfileTargetTurnPolicyPlan.useCachedEntries()` and `deferredEntries()`
+- recipe, audit, and active-doc closeout for the broader watched-target turn-policy surface
+
+It still leaves the broader `NIP-39` long-lived policy gap open:
+- no hidden autonomous discovery or refresh runtime
+- no durable watched-target scheduler
+- no HTTP ownership or background daemon policy
+
+The active parent remains
+[nip39-long-lived-policy-plan.md](./nip39-long-lived-policy-plan.md).

@@ -339,6 +339,10 @@ Observed friction:
   bounded selected-now vs deferred-later refresh-batch split over watched-target cadence, so apps
   no longer have to rebuild turn-level refresh-batch policy above the current watched-target
   cadence surface
+- `IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(...)` now also exposes one explicit
+  current-turn identity policy view over watched-target policy plus refresh-batch selection, so
+  apps no longer have to restitch verify-now, refresh-selected, use-cached, and deferred-refresh
+  decisions above those same watched-target helpers
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow
