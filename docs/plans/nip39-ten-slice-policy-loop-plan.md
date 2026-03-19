@@ -117,3 +117,8 @@ policy, while keeping capacity and selection caller-owned and deterministic.
   - `IdentityStoredProfileTargetLatestFreshnessStep`
   - `IdentityStoredProfileTargetLatestFreshnessPlan.nextStep()`
   - compatibility result: `green`
+- slice 4 accepted on 2026-03-19:
+  - `IdentityPreferredStoredProfileTargetRequest`
+  - `IdentityPreferredStoredProfileTarget`
+  - `IdentityVerifier.getPreferredStoredProfileForTargets(...)`
+  - compatibility result: `green`

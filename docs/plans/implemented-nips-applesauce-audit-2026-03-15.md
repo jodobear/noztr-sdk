@@ -278,6 +278,9 @@ Observed friction:
 - `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextStep()` so callers can
   consume that watched-target latest-freshness selection as one typed SDK value instead of
   restitching the selected target above the workflow
+- `IdentityVerifier.getPreferredStoredProfileForTargets(...)` now also selects one preferred
+  remembered profile across a caller-owned watched identity set, so callers no longer need to
+  rebuild fresh-vs-stale preferred choice entirely above the same watched-target surface
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow
