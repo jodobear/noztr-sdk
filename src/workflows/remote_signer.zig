@@ -26,6 +26,7 @@ pub const RemoteSignerError =
         PendingTableFull,
         DuplicateRequestId,
         UnknownResponseId,
+        InvalidRelayPoolStep,
         UnexpectedMessageType,
         RemoteSignerRejected,
         SignerErrorTooLong,
@@ -246,6 +247,14 @@ pub const RemoteSignerSession = struct {
         storage.* = .{};
         storage.relay_pool_storage.pool = self._state.pool;
         return shared_runtime.RelayPool.attach(&storage.relay_pool_storage);
+    }
+
+    pub fn inspectRelayPoolRuntime(
+        self: *const RemoteSignerSession,
+        storage: *RemoteSignerRelayPoolRuntimeStorage,
+    ) shared_runtime.RelayPoolPlan {
+        var pool = self.exportRelayPool(&storage.relay_pool_storage);
+        return pool.inspectRuntime(&storage.plan_storage);
     }
 
     pub fn beginConnect(
@@ -755,6 +764,25 @@ test "remote signer exports the shared relay-pool runtime floor" {
     const plan = pool.inspectRuntime(&plan_storage);
     try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
     try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
+}
+
+test "remote signer inspects shared relay-pool runtime through caller-owned storage" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const uri_text =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
+    var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
+    session.markCurrentRelayConnected();
+    try session.noteCurrentRelayAuthChallenge("challenge-1");
+
+    var runtime_storage = RemoteSignerRelayPoolRuntimeStorage{};
+    const plan = session.inspectRelayPoolRuntime(&runtime_storage);
+    try std.testing.expectEqual(@as(u8, 2), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
+    try std.testing.expectEqual(shared_runtime.RelayPoolAction.authenticate, plan.nextStep().?.entry.action);
 }
 
 test "remote signer session rejects mismatched secret echo" {
