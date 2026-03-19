@@ -697,6 +697,68 @@ pub const IdentityStoredProfileTargetPolicyPlan = struct {
     }
 };
 
+pub const IdentityStoredProfileTargetRefreshCadenceAction = enum {
+    verify_now,
+    refresh_now,
+    usable_while_refreshing,
+    refresh_soon,
+    stable,
+};
+
+pub const IdentityStoredProfileTargetRefreshCadenceEntry = struct {
+    target: IdentityStoredProfileTarget,
+    action: IdentityStoredProfileTargetRefreshCadenceAction,
+    latest: ?IdentityLatestStoredProfileFreshness = null,
+};
+
+pub const IdentityStoredProfileTargetRefreshCadenceGroup = struct {
+    action: IdentityStoredProfileTargetRefreshCadenceAction,
+    entries: []const IdentityStoredProfileTargetRefreshCadenceEntry,
+};
+
+pub const IdentityStoredProfileTargetRefreshCadenceStorage = struct {
+    matches: []IdentityProfileMatch,
+    latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+    entries: []IdentityStoredProfileTargetRefreshCadenceEntry,
+    groups: []IdentityStoredProfileTargetRefreshCadenceGroup,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+        entries: []IdentityStoredProfileTargetRefreshCadenceEntry,
+        groups: []IdentityStoredProfileTargetRefreshCadenceGroup,
+    ) IdentityStoredProfileTargetRefreshCadenceStorage {
+        return .{
+            .matches = matches,
+            .latest_entries = latest_entries,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetRefreshCadenceRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredProfileTargetRefreshCadenceStorage,
+};
+
+pub const IdentityStoredProfileTargetRefreshCadencePlan = struct {
+    entries: []const IdentityStoredProfileTargetRefreshCadenceEntry,
+    groups: []const IdentityStoredProfileTargetRefreshCadenceGroup,
+    verify_now_count: u32 = 0,
+    refresh_now_count: u32 = 0,
+    usable_while_refreshing_count: u32 = 0,
+    refresh_soon_count: u32 = 0,
+    stable_count: u32 = 0,
+    fresh_count: u32 = 0,
+    stale_count: u32 = 0,
+    missing_count: u32 = 0,
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
     entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
     fresh_count: u32 = 0,
