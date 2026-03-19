@@ -1,6 +1,8 @@
 const std = @import("std");
 const internal_pool = @import("../relay/pool.zig");
 const session = @import("../relay/session.zig");
+const relay_url = @import("../relay/url.zig");
+const client = @import("../store/client_traits.zig");
 const noztr = @import("noztr");
 
 pub const pool_capacity: u8 = internal_pool.pool_capacity;
@@ -40,6 +42,41 @@ pub const RelayPoolStorage = struct {
 
 pub const RelayPoolPlanStorage = struct {
     entries: [pool_capacity]RelayPoolEntry = undefined,
+};
+
+pub const RelayPoolCheckpointAction = enum {
+    export_checkpoint,
+    restore_checkpoint,
+};
+
+pub const RelayPoolCheckpointRecord = struct {
+    relay_url: [relay_url.relay_url_max_bytes]u8 = [_]u8{0} ** relay_url.relay_url_max_bytes,
+    relay_url_len: u16 = 0,
+    cursor: client.EventCursor = .{},
+
+    pub fn relayUrl(self: *const RelayPoolCheckpointRecord) []const u8 {
+        std.debug.assert(self.relay_url_len <= relay_url.relay_url_max_bytes);
+        return self.relay_url[0..self.relay_url_len];
+    }
+};
+
+pub const RelayPoolCheckpointStorage = struct {
+    records: [pool_capacity]RelayPoolCheckpointRecord = undefined,
+};
+
+pub const RelayPoolCheckpointSet = struct {
+    records: []const RelayPoolCheckpointRecord = &.{},
+    relay_count: u8 = 0,
+
+    pub fn entry(self: *const RelayPoolCheckpointSet, index: u8) ?RelayPoolCheckpointRecord {
+        if (index >= self.relay_count) return null;
+        return self.records[index];
+    }
+};
+
+pub const RelayPoolCheckpointStep = struct {
+    action: RelayPoolCheckpointAction,
+    record: RelayPoolCheckpointRecord,
 };
 
 pub const RelayPoolPlan = struct {
@@ -84,8 +121,8 @@ pub const RelayPool = struct {
         return .{ ._storage = storage };
     }
 
-    pub fn addRelay(self: *RelayPool, relay_url: []const u8) RelayPoolError!RelayDescriptor {
-        const relay_index = try self._storage.pool.addRelay(relay_url);
+    pub fn addRelay(self: *RelayPool, relay_url_text: []const u8) RelayPoolError!RelayDescriptor {
+        const relay_index = try self._storage.pool.addRelay(relay_url_text);
         return self.descriptor(relay_index).?;
     }
 
@@ -181,6 +218,16 @@ test "relay pool storage initializes bounded public runtime state" {
     var pool = RelayPool.init(&storage);
     _ = &pool;
     try std.testing.expectEqual(@as(u8, 0), storage.pool.count);
+}
+
+test "relay pool checkpoint record exposes one bounded relay url slice" {
+    var record = RelayPoolCheckpointRecord{
+        .relay_url_len = 15,
+        .cursor = .{ .offset = 7 },
+    };
+    @memcpy(record.relay_url[0..15], "wss://relay.one");
+    try std.testing.expectEqualStrings("wss://relay.one", record.relayUrl());
+    try std.testing.expectEqual(@as(u32, 7), record.cursor.offset);
 }
 
 test "relay pool wraps relay-local add and state transitions" {
