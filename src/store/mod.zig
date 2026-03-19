@@ -2,6 +2,7 @@ pub const traits = @import("traits.zig");
 pub const memory = @import("memory.zig");
 pub const client_traits = @import("client_traits.zig");
 pub const client_memory = @import("client_memory.zig");
+pub const archive = @import("archive.zig");
 
 pub const RelayInfoRecord = traits.RelayInfoRecord;
 pub const RelayInfoStore = traits.RelayInfoStore;
@@ -26,3 +27,5 @@ pub const client_checkpoint_record_from_name = client_traits.client_checkpoint_r
 pub const event_id_hex_from_text = client_traits.event_id_hex_from_text;
 pub const event_pubkey_hex_from_text = client_traits.event_pubkey_hex_from_text;
 pub const MemoryClientStore = client_memory.MemoryClientStore;
+pub const EventArchiveError = archive.EventArchiveError;
+pub const EventArchive = archive.EventArchive;

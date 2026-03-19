@@ -65,6 +65,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | understand the public SDK workflow surface | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [examples/README.md](/workspace/projects/nzdk/examples/README.md) |
 | verify install/import works | [consumer_smoke.zig](/workspace/projects/nzdk/examples/consumer_smoke.zig) | one workflow recipe |
 | build local bounded event/query/checkpoint storage first | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_query_recipe.zig](/workspace/projects/nzdk/examples/store_query_recipe.zig) |
+| build a first CLI-facing archive surface above shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig) |
 | build signer/session flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [remote_signer_recipe.zig](/workspace/projects/nzdk/examples/remote_signer_recipe.zig) |
 | build mailbox/private-message flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig) |
 | build identity/proof flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [nip39_verification_recipe.zig](/workspace/projects/nzdk/examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](/workspace/projects/nzdk/examples/nip03_verification_recipe.zig) |
@@ -78,6 +79,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first signer/session route
 - [store_query_recipe.zig](/workspace/projects/nzdk/examples/store_query_recipe.zig)
   - first bounded store/query/checkpoint route
+- [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig)
+  - first CLI-facing archive route over the shared store seam
 - [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig)
   - first private-message workflow route
 - [nip39_verification_recipe.zig](/workspace/projects/nzdk/examples/nip39_verification_recipe.zig)

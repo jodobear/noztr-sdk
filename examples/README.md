@@ -47,6 +47,14 @@ Use these docs when you need public routing or contract context before opening a
   - control points: caller builds event JSON on the kernel, converts it into bounded store
     records explicitly, queries through one backend-agnostic selection surface with caller-owned
     page storage, and persists one named checkpoint without committing to a durable backend yet
+- `store_archive_recipe.zig`
+  - goal: use one minimal CLI-facing archive helper above the shared store seam to ingest event
+    JSON, replay a bounded query, and restore one named checkpoint
+  - public SDK surface: `noztr_sdk.store`, `EventArchive`, `ClientStore`, `MemoryClientStore`
+  - kernel fixture help: `noztr.nip01_event`
+  - control points: caller still owns store construction, caller still supplies bounded scratch
+    for event parsing, and the archive helper proves the shared store seam is usable above raw
+    event/checkpoint stores without forcing a durable backend or hidden runtime
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, select one next workflow relay explicitly, unwrap it through a recipient

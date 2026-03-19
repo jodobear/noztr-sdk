@@ -176,11 +176,14 @@ The first pressure-test slice is now landed:
 - shared query/result/cursor/index types exist under the public `store` namespace
 - one compile-verified public recipe now exercises event persistence, query paging, and named
   checkpoints explicitly
+- one minimal CLI-facing archive helper now also proves the shared `ClientStore` aggregate is
+  usable above raw event/checkpoint seams without forcing a durable backend or hidden runtime
 
 Next likely slices:
 
-1. pressure-test one real SDK workflow or first CLI-facing surface against the shared store seams
-2. decide how relay-pool/runtime state should compose with the shared store layer
+1. decide how relay-pool/runtime state should compose with the shared store layer
+2. pressure-test one real SDK workflow against the shared store seams without prematurely
+   collapsing workflow-local remembered-state stores into the shared layer
 3. decide when the first durable backend implementation should land against the now-tested seam
 
 ## Review Lenses To Emphasize

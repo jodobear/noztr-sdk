@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `276/276`
+  - `zig build test --summary all` with `283/283`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -129,6 +129,16 @@ Current project context for `noztr-sdk`.
       - one workflow or CLI-facing integration against the shared store seams
       - relay-pool/runtime composition over the shared store layer
       - only then the first durable backend implementation against the tested seam
+  - the next pressure-test is now also landed through
+    [docs/plans/sdk-store-archive-pressure-test-plan.md](./docs/plans/sdk-store-archive-pressure-test-plan.md):
+    - `src/store/archive.zig` now exposes `EventArchive` as one minimal CLI-facing helper above the
+      shared `ClientStore` seam
+    - the archive helper ingests event JSON explicitly, replays bounded queries through
+      `ClientQuery` plus `EventQueryResultPage`, and persists named checkpoints without adding a
+      durable backend or hidden runtime
+    - `examples/store_archive_recipe.zig` now teaches that higher-level path explicitly
+    - this pressure-test confirms the aggregate `ClientStore` concept is useful above raw event and
+      checkpoint sub-seams instead of being only a theoretical vocabulary
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

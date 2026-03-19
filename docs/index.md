@@ -90,6 +90,7 @@ Use `doc_type` plus `status` first:
 - [sdk-runtime-client-store-architecture-decision.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-decision.md)
 - [sdk-store-query-index-baseline-decision.md](/workspace/projects/nzdk/docs/plans/sdk-store-query-index-baseline-decision.md)
 - [sdk-storage-backend-research-plan.md](/workspace/projects/nzdk/docs/plans/sdk-storage-backend-research-plan.md)
+- [sdk-store-archive-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-store-archive-pressure-test-plan.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
 - [nip17-outbound-mailbox-plan.md](/workspace/projects/nzdk/docs/plans/nip17-outbound-mailbox-plan.md)

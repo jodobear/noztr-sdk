@@ -3,6 +3,7 @@ comptime {
     _ = @import("common.zig");
     _ = @import("remote_signer_recipe.zig");
     _ = @import("store_query_recipe.zig");
+    _ = @import("store_archive_recipe.zig");
     _ = @import("mailbox_recipe.zig");
     _ = @import("nip39_verification_recipe.zig");
     _ = @import("nip03_verification_recipe.zig");
