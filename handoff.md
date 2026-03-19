@@ -111,7 +111,7 @@ Current project context for `noztr-sdk`.
       limited generic value seams
     - workflow-local remembered-state stores should not be generalized into SDK-core prematurely
     - query/result/cursor/index posture must stay backend-agnostic at the public SDK boundary
-  - the relay-pool/runtime child and its subscription/replay follow-on packets are now reference
+  - the relay-pool/runtime child and its follow-on packets are now reference
     architecture context:
     [docs/plans/sdk-relay-pool-runtime-baseline-plan.md](./docs/plans/sdk-relay-pool-runtime-baseline-plan.md),
     [docs/plans/sdk-relay-pool-runtime-baseline-decision.md](./docs/plans/sdk-relay-pool-runtime-baseline-decision.md),
@@ -272,6 +272,12 @@ Current project context for `noztr-sdk`.
   - that checkpoint exists to decide whether the SDK should add more CLI-facing client composition
     before the separate CLI repo starts, or whether the current `CliArchiveClient` is enough as
     the first reusable SDK floor
+- the CLI client boundary checkpoint is now complete:
+  - `CliArchiveClient` is enough as the first reusable CLI-supporting SDK floor
+  - more CLI-specific command, output, and operator UX should move to the separate CLI repo
+    instead of continuing to expand `noztr-sdk` by default
+  - the next move should be a CLI kickoff packet that defines CLI v1 scope and repo boundary
+    explicitly
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

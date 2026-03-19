@@ -1,7 +1,7 @@
 ---
 title: SDK CLI Client Boundary Checkpoint Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - deciding_the_next_cli_supporting_sdk_child
@@ -66,3 +66,36 @@ This packet should produce:
 1. one explicit keep/stop decision for CLI-facing SDK client growth
 2. one recommended next active packet or next repo-level move
 3. one rationale tied to the phased ecosystem order
+
+## Checkpoint Outcome
+
+Keep in `noztr-sdk` for now:
+
+- one minimal CLI-facing client composition surface
+- explicit local ingest/query/checkpoint helpers
+- explicit per-relay checkpoint composition
+- explicit relay runtime inspection
+- explicit replay planning
+
+Stop before adding more CLI-specific SDK surface:
+
+- command vocabulary
+- output formatting policy
+- flag/argument posture
+- operator workflow orchestration
+- hidden relay execution loops
+- product-specific publish/query UX
+
+## Decision
+
+`CliArchiveClient` is enough as the first reusable CLI-supporting SDK floor.
+
+The next move should not be another SDK client loop by default.
+
+It should be the first CLI product kickoff packet, because the remaining work is now mostly about:
+
+- command surface selection
+- operator/developer UX
+- which existing SDK surfaces the separate CLI repo should compose first
+
+That work belongs at the product boundary, not as more speculative SDK client growth.
