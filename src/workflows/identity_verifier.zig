@@ -952,6 +952,16 @@ pub const IdentityStoredProfileTargetTurnPolicyPlan = struct {
         if (work_count == 0) return null;
         return &self.entries[0];
     }
+
+    pub fn nextWorkStep(
+        self: *const IdentityStoredProfileTargetTurnPolicyPlan,
+    ) ?IdentityStoredProfileTargetTurnPolicyStep {
+        const entry = self.nextWorkEntry() orelse return null;
+        return .{
+            .action = entry.action,
+            .entry = entry.*,
+        };
+    }
 };
 
 pub const IdentityStoredProfileTargetTurnPolicyStep = struct {
@@ -5833,6 +5843,63 @@ test "identity verifier turn policy exposes next work entry" {
     );
 
     try std.testing.expectEqualStrings("carol", plan.nextWorkEntry().?.target.identity);
+}
+
+test "identity verifier turn policy exposes typed next work step" {
+    const stale_pubkey = [_]u8{0xa2} ** 32;
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [1]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [1]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries_storage: [1]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var policy_groups_storage: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    var cadence_entries_storage: [1]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    var entries_storage: [1]IdentityStoredProfileTargetTurnPolicyEntry = undefined;
+    var groups_storage: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 1,
+            .fallback_policy = .require_fresh,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                policy_entries_storage[0..],
+                policy_groups_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+                entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    const step = plan.nextWorkStep().?;
+    try std.testing.expectEqual(IdentityStoredProfileTargetTurnPolicyAction.refresh_selected, step.action);
+    try std.testing.expectEqualStrings("bob", step.entry.target.identity);
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
