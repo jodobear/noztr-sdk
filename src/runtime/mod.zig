@@ -26,6 +26,7 @@ pub const RelayPoolReplayAction = relay_pool.RelayPoolReplayAction;
 pub const RelayPoolReplayEntry = relay_pool.RelayPoolReplayEntry;
 pub const RelayPoolReplayStorage = relay_pool.RelayPoolReplayStorage;
 pub const RelayPoolReplayPlan = relay_pool.RelayPoolReplayPlan;
+pub const RelayPoolReplayStep = relay_pool.RelayPoolReplayStep;
 pub const RelayPool = relay_pool.RelayPool;
 pub const RelayPoolPlan = relay_pool.RelayPoolPlan;
 pub const RelayPoolStep = relay_pool.RelayPoolStep;

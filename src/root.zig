@@ -47,6 +47,7 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(runtime.RelayPoolReplayEntry) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolReplayStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolReplayPlan) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolReplayStep) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPool) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolPlan) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolStep) == type);
