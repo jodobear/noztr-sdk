@@ -687,6 +687,14 @@ pub const IdentityStoredProfileTargetPolicyPlan = struct {
     ) []const IdentityStoredProfileTargetPolicyEntry {
         return self.entries[0..@as(usize, @intCast(self.verify_now_count))];
     }
+
+    pub fn refreshNeededEntries(
+        self: *const IdentityStoredProfileTargetPolicyPlan,
+    ) []const IdentityStoredProfileTargetPolicyEntry {
+        const start =
+            @as(usize, @intCast(self.verify_now_count + self.use_preferred_count));
+        return self.entries[start..];
+    }
 };
 
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
@@ -4257,6 +4265,58 @@ test "identity verifier target policy exposes verify-now targets in stable calle
     try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, verify_now[0].action);
     try std.testing.expectEqualStrings("dave", verify_now[1].target.identity);
     try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, verify_now[1].action);
+}
+
+test "identity verifier target policy exposes refresh-needed targets under explicit fallback policy" {
+    const stale_pubkey = [_]u8{0xa2} ** 32;
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [1]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [2]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries_storage: [2]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var groups_storage: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .fallback_policy = .require_fresh,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                policy_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    const refresh_needed = plan.refreshNeededEntries();
+    try std.testing.expectEqual(@as(usize, 1), refresh_needed.len);
+    try std.testing.expectEqualStrings("bob", refresh_needed[0].target.identity);
+    try std.testing.expectEqual(
+        IdentityStoredProfileTargetRuntimeAction.refresh_existing,
+        refresh_needed[0].action,
+    );
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
