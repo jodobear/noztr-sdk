@@ -768,6 +768,21 @@ pub const IdentityStoredProfileTargetRefreshCadencePlan = struct {
         if (due_count == 0) return null;
         return &self.entries[0];
     }
+
+    pub fn nextDueStep(
+        self: *const IdentityStoredProfileTargetRefreshCadencePlan,
+    ) ?IdentityStoredProfileTargetRefreshCadenceStep {
+        const entry = self.nextDueEntry() orelse return null;
+        return .{
+            .action = entry.action,
+            .entry = entry.*,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetRefreshCadenceStep = struct {
+    action: IdentityStoredProfileTargetRefreshCadenceAction,
+    entry: IdentityStoredProfileTargetRefreshCadenceEntry,
 };
 
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
@@ -4801,6 +4816,53 @@ test "identity verifier refresh cadence next-due selector returns null when all 
         },
     );
     try std.testing.expect(plan.nextDueEntry() == null);
+}
+
+test "identity verifier refresh cadence exposes typed next-due step" {
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [1]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "carol" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [1]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries_storage: [1]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .require_fresh,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+    const step = plan.nextDueStep().?;
+    try std.testing.expectEqual(IdentityStoredProfileTargetRefreshCadenceAction.refresh_now, step.action);
+    try std.testing.expectEqualStrings("carol", step.entry.target.identity);
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {

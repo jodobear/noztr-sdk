@@ -181,6 +181,7 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetRefreshCadenceStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetRefreshCadenceRequest) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetRefreshCadencePlan) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetRefreshCadenceStep) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetLatestFreshnessPlan) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetLatestFreshnessStep) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileRuntimeAction) == type);
