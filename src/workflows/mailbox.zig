@@ -709,6 +709,23 @@ pub const MailboxSession = struct {
         return self.currentRelayUrl() orelse unreachable;
     }
 
+    pub fn selectRelayPoolStep(
+        self: *MailboxSession,
+        step: *const shared_runtime.RelayPoolStep,
+    ) MailboxError![]const u8 {
+        const descriptor = step.entry.descriptor;
+        const relay = self._state.pool.getRelayConst(descriptor.relay_index) orelse {
+            return error.InvalidRelayPoolStep;
+        };
+        if (!std.mem.eql(u8, relay.auth_session.relayUrl(), descriptor.relay_url)) {
+            return error.InvalidRelayPoolStep;
+        }
+        if (step.entry.action != classifyMailboxRelayAction(relay.state)) {
+            return error.InvalidRelayPoolStep;
+        }
+        return self.selectRelay(descriptor.relay_index);
+    }
+
     pub fn selectWorkflowRelay(
         self: *MailboxSession,
         step: WorkflowStep,
@@ -3038,6 +3055,45 @@ test "mailbox session inspects shared relay-pool runtime through caller-owned st
     try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
     try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
     try std.testing.expectEqual(shared_runtime.RelayPoolAction.authenticate, plan.nextStep().?.entry.action);
+}
+
+test "mailbox session selects a shared relay-pool step back onto the mailbox session" {
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    _ = try session._state.pool.addRelay("wss://relay.one");
+    _ = try session._state.pool.addRelay("wss://relay.two");
+
+    var relay_pool_runtime = RelayPoolRuntimeStorage{};
+    const plan = session.inspectRelayPoolRuntime(&relay_pool_runtime);
+    const second = plan.entry(1).?;
+    const selected_url = try session.selectRelayPoolStep(&.{ .entry = second });
+    try std.testing.expectEqualStrings("wss://relay.two", selected_url);
+    try std.testing.expectEqualStrings("wss://relay.two", session.currentRelayUrl().?);
+}
+
+test "mailbox session rejects stale relay-pool steps" {
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    _ = try session._state.pool.addRelay("wss://relay.one");
+
+    const bad_step = shared_runtime.RelayPoolStep{
+        .entry = .{
+            .descriptor = .{
+                .relay_index = 0,
+                .relay_url = "wss://relay.other",
+            },
+            .action = .connect,
+        },
+    };
+    try std.testing.expectError(error.InvalidRelayPoolStep, session.selectRelayPoolStep(&bad_step));
+}
+
+fn classifyMailboxRelayAction(state: relay_session.SessionState) shared_runtime.RelayPoolAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .ready,
+    };
 }
 
 const test_wrap_signer_pubkey = [_]u8{
