@@ -1114,6 +1114,58 @@ pub const OpenTimestampsVerifier = struct {
         return null;
     }
 
+    pub fn getPreferredStoredVerificationForTargets(
+        verification_store: OpenTimestampsVerificationStore,
+        request: OpenTimestampsPreferredStoredVerificationTargetRequest,
+    ) OpenTimestampsStoredVerificationDiscoveryError!?OpenTimestampsPreferredStoredVerificationTargetEntry {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+
+        var best_fresh: ?OpenTimestampsPreferredStoredVerificationTargetEntry = null;
+        var best_stale: ?OpenTimestampsPreferredStoredVerificationTargetEntry = null;
+        for (request.targets) |target| {
+            const preferred = try getPreferredStoredVerification(
+                verification_store,
+                .{
+                    .target_event_id = &target.target_event_id,
+                    .now_unix_seconds = request.now_unix_seconds,
+                    .max_age_seconds = request.max_age_seconds,
+                    .fallback_policy = request.fallback_policy,
+                    .storage = .init(
+                        request.storage.matches,
+                        request.storage.freshness_entries,
+                    ),
+                },
+            ) orelse continue;
+
+            const candidate: OpenTimestampsPreferredStoredVerificationTargetEntry = .{
+                .target = target,
+                .preferred = preferred,
+            };
+            switch (preferred.freshness) {
+                .fresh => {
+                    if (best_fresh == null or
+                        preferred.entry.match.created_at > best_fresh.?.preferred.?.entry.match.created_at)
+                    {
+                        best_fresh = candidate;
+                    }
+                },
+                .stale => {
+                    if (best_stale == null or
+                        preferred.entry.match.created_at > best_stale.?.preferred.?.entry.match.created_at)
+                    {
+                        best_stale = candidate;
+                    }
+                },
+            }
+        }
+
+        if (best_fresh) |preferred| return preferred;
+        return switch (request.fallback_policy) {
+            .require_fresh => null,
+            .allow_stale_latest => best_stale,
+        };
+    }
+
     pub fn discoverStoredVerificationEntriesWithFreshness(
         verification_store: OpenTimestampsVerificationStore,
         request: OpenTimestampsStoredVerificationDiscoveryFreshnessRequest,
@@ -2882,6 +2934,221 @@ test "opentimestamps verifier discovers latest remembered freshness for grouped 
     try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.fresh, entries[1].latest.?.freshness);
     try std.testing.expectEqual(@as(u64, 10), entries[1].latest.?.age_seconds);
     try std.testing.expect(entries[2].latest == null);
+}
+
+test "opentimestamps verifier prefers the freshest grouped remembered proof target" {
+    var first_target = try testTargetEvent(1, "hello");
+    var second_target = try testTargetEvent(1, "world");
+    first_target.id = [_]u8{0x91} ** 32;
+    second_target.id = [_]u8{0x92} ** 32;
+
+    const first_proof = testLocalProof(first_target.id, bitcoin_attestation_tag, &.{0x2c});
+    const second_proof = testLocalProof(second_target.id, bitcoin_attestation_tag, &.{0x2d});
+
+    var first_proof_base64_storage: [128]u8 = undefined;
+    var first_attestation_fixture = try testAttestationEvent(
+        first_proof_base64_storage[0..],
+        &first_target,
+        first_proof,
+        testLocalProofLen(1),
+    );
+    first_attestation_fixture.event.id = [_]u8{0x93} ** 32;
+    first_attestation_fixture.event.created_at = 5;
+    first_attestation_fixture.fixup();
+
+    var second_proof_base64_storage: [128]u8 = undefined;
+    var second_attestation_fixture = try testAttestationEvent(
+        second_proof_base64_storage[0..],
+        &second_target,
+        second_proof,
+        testLocalProofLen(1),
+    );
+    second_attestation_fixture.event.id = [_]u8{0x94} ** 32;
+    second_attestation_fixture.event.created_at = 40;
+    second_attestation_fixture.fixup();
+
+    var decoded_first_proof: [128]u8 = undefined;
+    var decoded_second_proof: [128]u8 = undefined;
+    const first_verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                decoded_first_proof[0..],
+                &first_attestation_fixture.event,
+            ),
+            .proof = first_proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = "https://proof.example/stale.ots",
+    };
+    const second_verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                decoded_second_proof[0..],
+                &second_attestation_fixture.event,
+            ),
+            .proof = second_proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = "https://proof.example/fresh.ots",
+    };
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        &first_target,
+        &first_attestation_fixture.event,
+        &first_verification,
+    );
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        &second_target,
+        &second_attestation_fixture.event,
+        &second_verification,
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = first_target.id },
+        .{ .target_event_id = second_target.id },
+        .{ .target_event_id = [_]u8{0x95} ** 32 },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var freshness_entries: [1]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+    var entries_storage: [3]OpenTimestampsPreferredStoredVerificationTargetEntry = undefined;
+    const preferred = (try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = .init(
+                matches_storage[0..],
+                freshness_entries[0..],
+                entries_storage[0..],
+            ),
+        },
+    )).?;
+
+    try std.testing.expectEqualSlices(u8, &second_target.id, &preferred.target.target_event_id);
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.fresh, preferred.preferred.?.freshness);
+    try std.testing.expectEqualStrings(
+        "https://proof.example/fresh.ots",
+        preferred.preferred.?.entry.verification.proofUrl(),
+    );
+}
+
+test "opentimestamps verifier grouped preferred helper can require fresh or fall back to stale latest" {
+    var first_target = try testTargetEvent(1, "hello");
+    var second_target = try testTargetEvent(1, "world");
+    first_target.id = [_]u8{0xa1} ** 32;
+    second_target.id = [_]u8{0xa2} ** 32;
+
+    const first_proof = testLocalProof(first_target.id, bitcoin_attestation_tag, &.{0x2e});
+    const second_proof = testLocalProof(second_target.id, bitcoin_attestation_tag, &.{0x2f});
+
+    var first_proof_base64_storage: [128]u8 = undefined;
+    var first_attestation_fixture = try testAttestationEvent(
+        first_proof_base64_storage[0..],
+        &first_target,
+        first_proof,
+        testLocalProofLen(1),
+    );
+    first_attestation_fixture.event.id = [_]u8{0xa3} ** 32;
+    first_attestation_fixture.event.created_at = 10;
+    first_attestation_fixture.fixup();
+
+    var second_proof_base64_storage: [128]u8 = undefined;
+    var second_attestation_fixture = try testAttestationEvent(
+        second_proof_base64_storage[0..],
+        &second_target,
+        second_proof,
+        testLocalProofLen(1),
+    );
+    second_attestation_fixture.event.id = [_]u8{0xa4} ** 32;
+    second_attestation_fixture.event.created_at = 20;
+    second_attestation_fixture.fixup();
+
+    var decoded_first_proof: [128]u8 = undefined;
+    var decoded_second_proof: [128]u8 = undefined;
+    const first_verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                decoded_first_proof[0..],
+                &first_attestation_fixture.event,
+            ),
+            .proof = first_proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = "https://proof.example/older.ots",
+    };
+    const second_verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                decoded_second_proof[0..],
+                &second_attestation_fixture.event,
+            ),
+            .proof = second_proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = "https://proof.example/newer.ots",
+    };
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        &first_target,
+        &first_attestation_fixture.event,
+        &first_verification,
+    );
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        &second_target,
+        &second_attestation_fixture.event,
+        &second_verification,
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = first_target.id },
+        .{ .target_event_id = second_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var freshness_entries: [1]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+    var entries_storage: [2]OpenTimestampsPreferredStoredVerificationTargetEntry = undefined;
+
+    try std.testing.expect((try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 5,
+            .fallback_policy = .require_fresh,
+            .storage = .init(
+                matches_storage[0..],
+                freshness_entries[0..],
+                entries_storage[0..],
+            ),
+        },
+    )) == null);
+
+    const preferred = (try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 5,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                freshness_entries[0..],
+                entries_storage[0..],
+            ),
+        },
+    )).?;
+    try std.testing.expectEqualSlices(u8, &second_target.id, &preferred.target.target_event_id);
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.stale, preferred.preferred.?.freshness);
+    try std.testing.expectEqualStrings(
+        "https://proof.example/newer.ots",
+        preferred.preferred.?.entry.verification.proofUrl(),
+    );
 }
 
 const ots_header_magic = [_]u8{
