@@ -6,6 +6,7 @@ const client = @import("../store/client_traits.zig");
 const noztr = @import("noztr");
 
 pub const pool_capacity: u8 = internal_pool.pool_capacity;
+pub const subscription_specs_capacity: u8 = 8;
 
 pub const RelayPoolError =
     noztr.nip42_auth.AuthError ||
@@ -52,6 +53,35 @@ pub const RelayPoolPlanStorage = struct {
 pub const RelayPoolCheckpointAction = enum {
     export_checkpoint,
     restore_checkpoint,
+};
+
+pub const RelaySubscriptionError = error{
+    TooManySubscriptionSpecs,
+    EmptySubscriptionId,
+    SubscriptionIdTooLong,
+    EmptySubscriptionFilters,
+};
+
+pub const RelaySubscriptionSpec = struct {
+    subscription_id: []const u8,
+    filters: []const noztr.nip01_filter.Filter,
+};
+
+pub const RelayPoolSubscriptionAction = enum {
+    connect,
+    authenticate,
+    subscribe,
+};
+
+pub const RelayPoolSubscriptionEntry = struct {
+    descriptor: RelayDescriptor,
+    subscription_id: []const u8,
+    filters: []const noztr.nip01_filter.Filter,
+    action: RelayPoolSubscriptionAction,
+};
+
+pub const RelayPoolSubscriptionStorage = struct {
+    entries: [@as(usize, pool_capacity) * @as(usize, subscription_specs_capacity)]RelayPoolSubscriptionEntry = undefined,
 };
 
 pub const RelayPoolCheckpointRecord = struct {
@@ -449,4 +479,17 @@ test "relay pool checkpoint set exposes typed export and restore steps" {
     const restore_step = checkpoints.nextRestoreStep().?;
     try std.testing.expectEqual(RelayPoolCheckpointAction.restore_checkpoint, restore_step.action);
     try std.testing.expectEqualStrings("wss://relay.one", restore_step.record.relayUrl());
+}
+
+test "relay pool exposes bounded subscription vocabulary" {
+    const filter = noztr.nip01_filter.Filter{ .kinds_count = 0 };
+    const spec = RelaySubscriptionSpec{
+        .subscription_id = "mailbox",
+        .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..],
+    };
+    const storage = RelayPoolSubscriptionStorage{};
+
+    try std.testing.expectEqualStrings("mailbox", spec.subscription_id);
+    try std.testing.expectEqual(@as(usize, 1), spec.filters.len);
+    try std.testing.expect(@TypeOf(storage) == RelayPoolSubscriptionStorage);
 }

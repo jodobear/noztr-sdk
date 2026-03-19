@@ -27,11 +27,17 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(runtime) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolPlanStorage) == type);
+    try std.testing.expectEqual(@as(u8, 8), runtime.subscription_specs_capacity);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointAction) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointRecord) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointSet) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointStep) == type);
+    try std.testing.expect(@TypeOf(runtime.RelaySubscriptionError) == type);
+    try std.testing.expect(@TypeOf(runtime.RelaySubscriptionSpec) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolSubscriptionAction) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolSubscriptionEntry) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolSubscriptionStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPool) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolPlan) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolStep) == type);
