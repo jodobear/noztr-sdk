@@ -97,6 +97,42 @@ pub const CliArchiveClient = struct {
             relay_url_text,
         );
     }
+
+    pub fn addRelay(
+        self: *CliArchiveClient,
+        relay_url_text: []const u8,
+    ) CliArchiveClientError!runtime.RelayDescriptor {
+        return self.relay_pool.addRelay(relay_url_text);
+    }
+
+    pub fn markRelayConnected(
+        self: *CliArchiveClient,
+        relay_index: u8,
+    ) CliArchiveClientError!void {
+        return self.relay_pool.markRelayConnected(relay_index);
+    }
+
+    pub fn noteRelayDisconnected(
+        self: *CliArchiveClient,
+        relay_index: u8,
+    ) CliArchiveClientError!void {
+        return self.relay_pool.noteRelayDisconnected(relay_index);
+    }
+
+    pub fn noteRelayAuthChallenge(
+        self: *CliArchiveClient,
+        relay_index: u8,
+        challenge: []const u8,
+    ) CliArchiveClientError!void {
+        return self.relay_pool.noteRelayAuthChallenge(relay_index, challenge);
+    }
+
+    pub fn inspectRelayRuntime(
+        self: *const CliArchiveClient,
+        storage: *runtime.RelayPoolPlanStorage,
+    ) runtime.RelayPoolPlan {
+        return self.relay_pool.inspectRuntime(storage);
+    }
 };
 
 test "cli archive client exposes caller-owned config and storage" {
@@ -162,4 +198,22 @@ test "cli archive client uses its configured relay checkpoint scope" {
     const restored = try client.loadRelayCheckpoint("wss://relay.one");
     try std.testing.expect(restored != null);
     try std.testing.expectEqual(@as(u32, 7), restored.?.cursor.offset);
+}
+
+test "cli archive client inspects shared relay runtime over its composed pool" {
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    var storage = CliArchiveClientStorage{};
+    var client = CliArchiveClient.init(.{}, memory_store.asClientStore(), &storage);
+
+    const first = try client.addRelay("wss://relay.one");
+    _ = try client.addRelay("wss://relay.two");
+    try client.markRelayConnected(first.relay_index);
+    try client.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+
+    var plan_storage = runtime.RelayPoolPlanStorage{};
+    const plan = client.inspectRelayRuntime(&plan_storage);
+    try std.testing.expectEqual(@as(u8, 2), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
+    try std.testing.expectEqual(runtime.RelayPoolAction.authenticate, plan.nextStep().?.entry.action);
 }
