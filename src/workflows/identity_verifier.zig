@@ -635,16 +635,19 @@ pub const IdentityStoredProfileTargetPolicyGroup = struct {
 };
 
 pub const IdentityStoredProfileTargetPolicyStorage = struct {
+    matches: []IdentityProfileMatch,
     latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
     entries: []IdentityStoredProfileTargetPolicyEntry,
     groups: []IdentityStoredProfileTargetPolicyGroup,
 
     pub fn init(
+        matches: []IdentityProfileMatch,
         latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
         entries: []IdentityStoredProfileTargetPolicyEntry,
         groups: []IdentityStoredProfileTargetPolicyGroup,
     ) IdentityStoredProfileTargetPolicyStorage {
         return .{
+            .matches = matches,
             .latest_entries = latest_entries,
             .entries = entries,
             .groups = groups,
@@ -663,6 +666,10 @@ pub const IdentityStoredProfileTargetPolicyRequest = struct {
 pub const IdentityStoredProfileTargetPolicyPlan = struct {
     entries: []const IdentityStoredProfileTargetPolicyEntry,
     groups: []const IdentityStoredProfileTargetPolicyGroup,
+    verify_now_count: u32 = 0,
+    use_preferred_count: u32 = 0,
+    use_stale_and_refresh_count: u32 = 0,
+    refresh_existing_count: u32 = 0,
     fresh_count: u32 = 0,
     stale_count: u32 = 0,
     missing_count: u32 = 0,
@@ -1613,6 +1620,142 @@ pub const IdentityVerifier = struct {
             .fresh_count = 0,
             .stale_count = 0,
             .missing_count = 0,
+        };
+    }
+
+    pub fn inspectStoredProfilePolicyForTargets(
+        store: IdentityProfileStore,
+        request: IdentityStoredProfileTargetPolicyRequest,
+    ) IdentityStoredProfileDiscoveryError!IdentityStoredProfileTargetPolicyPlan {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+        if (request.storage.groups.len < 4) return error.BufferTooSmall;
+
+        const latest_entries = try discoverLatestStoredProfileFreshnessForTargets(
+            store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = .{
+                    .matches = request.storage.matches,
+                    .entries = request.storage.latest_entries,
+                },
+            },
+        );
+
+        var verify_now_count: usize = 0;
+        var use_preferred_count: usize = 0;
+        var use_stale_and_refresh_count: usize = 0;
+        var refresh_existing_count: usize = 0;
+        var fresh_count: u32 = 0;
+        var stale_count: u32 = 0;
+        var missing_count: u32 = 0;
+
+        for (latest_entries) |entry| {
+            const action: IdentityStoredProfileTargetRuntimeAction = if (entry.latest) |latest|
+                switch (latest.freshness) {
+                    .fresh => .use_preferred,
+                    .stale => switch (request.fallback_policy) {
+                        .require_fresh => .refresh_existing,
+                        .allow_stale_latest => .use_stale_and_refresh,
+                    },
+                }
+            else
+                .verify_now;
+
+            switch (action) {
+                .verify_now => verify_now_count += 1,
+                .use_preferred => use_preferred_count += 1,
+                .use_stale_and_refresh => use_stale_and_refresh_count += 1,
+                .refresh_existing => refresh_existing_count += 1,
+            }
+
+            if (entry.latest) |latest| {
+                switch (latest.freshness) {
+                    .fresh => fresh_count += 1,
+                    .stale => stale_count += 1,
+                }
+            } else {
+                missing_count += 1;
+            }
+        }
+
+        const verify_now_start: usize = 0;
+        const use_preferred_start = verify_now_start + verify_now_count;
+        const use_stale_and_refresh_start = use_preferred_start + use_preferred_count;
+        const refresh_existing_start = use_stale_and_refresh_start + use_stale_and_refresh_count;
+
+        var next_verify_now = verify_now_start;
+        var next_use_preferred = use_preferred_start;
+        var next_use_stale_and_refresh = use_stale_and_refresh_start;
+        var next_refresh_existing = refresh_existing_start;
+
+        for (latest_entries) |entry| {
+            const action: IdentityStoredProfileTargetRuntimeAction = if (entry.latest) |latest|
+                switch (latest.freshness) {
+                    .fresh => .use_preferred,
+                    .stale => switch (request.fallback_policy) {
+                        .require_fresh => .refresh_existing,
+                        .allow_stale_latest => .use_stale_and_refresh,
+                    },
+                }
+            else
+                .verify_now;
+
+            const insert_index = switch (action) {
+                .verify_now => blk: {
+                    defer next_verify_now += 1;
+                    break :blk next_verify_now;
+                },
+                .use_preferred => blk: {
+                    defer next_use_preferred += 1;
+                    break :blk next_use_preferred;
+                },
+                .use_stale_and_refresh => blk: {
+                    defer next_use_stale_and_refresh += 1;
+                    break :blk next_use_stale_and_refresh;
+                },
+                .refresh_existing => blk: {
+                    defer next_refresh_existing += 1;
+                    break :blk next_refresh_existing;
+                },
+            };
+
+            request.storage.entries[insert_index] = .{
+                .target = entry.target,
+                .action = action,
+                .latest = entry.latest,
+            };
+        }
+
+        const total_entries = request.targets.len;
+        request.storage.groups[0] = .{
+            .action = .verify_now,
+            .entries = request.storage.entries[verify_now_start..use_preferred_start],
+        };
+        request.storage.groups[1] = .{
+            .action = .use_preferred,
+            .entries = request.storage.entries[use_preferred_start..use_stale_and_refresh_start],
+        };
+        request.storage.groups[2] = .{
+            .action = .use_stale_and_refresh,
+            .entries = request.storage.entries[use_stale_and_refresh_start..refresh_existing_start],
+        };
+        request.storage.groups[3] = .{
+            .action = .refresh_existing,
+            .entries = request.storage.entries[refresh_existing_start..total_entries],
+        };
+
+        return .{
+            .entries = request.storage.entries[0..total_entries],
+            .groups = request.storage.groups[0..4],
+            .verify_now_count = @intCast(verify_now_count),
+            .use_preferred_count = @intCast(use_preferred_count),
+            .use_stale_and_refresh_count = @intCast(use_stale_and_refresh_count),
+            .refresh_existing_count = @intCast(refresh_existing_count),
+            .fresh_count = fresh_count,
+            .stale_count = stale_count,
+            .missing_count = missing_count,
         };
     }
 
@@ -3862,6 +4005,127 @@ test "identity verifier preferred per-target helper respects require-fresh polic
     );
     try std.testing.expectEqual(@as(usize, 1), preferred.len);
     try std.testing.expect(preferred[0].preferred == null);
+}
+
+test "identity verifier groups watched-target policy entries by action in stable caller order" {
+    const fresh_pubkey = [_]u8{0xa1} ** 32;
+    const stale_pubkey = [_]u8{0xa2} ** 32;
+    const fresh_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-fresh",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-fresh",
+                        .expected_text = "npub-fresh",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-stale",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-stale",
+                        .expected_text = "npub-stale",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &fresh_pubkey, 45, &fresh_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries_storage: [3]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var groups_storage: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                policy_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 3), plan.entries.len);
+    try std.testing.expectEqual(@as(usize, 4), plan.groups.len);
+    try std.testing.expectEqual(@as(u32, 1), plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.refresh_existing_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.fresh_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.stale_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_count);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, plan.groups[0].action);
+    try std.testing.expectEqual(@as(usize, 1), plan.groups[0].entries.len);
+    try std.testing.expectEqualStrings("carol", plan.groups[0].entries[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.use_preferred, plan.groups[1].action);
+    try std.testing.expectEqual(@as(usize, 1), plan.groups[1].entries.len);
+    try std.testing.expectEqualStrings("alice", plan.groups[1].entries[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.use_stale_and_refresh, plan.groups[2].action);
+    try std.testing.expectEqual(@as(usize, 1), plan.groups[2].entries.len);
+    try std.testing.expectEqualStrings("bob", plan.groups[2].entries[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.refresh_existing, plan.groups[3].action);
+    try std.testing.expectEqual(@as(usize, 0), plan.groups[3].entries.len);
+}
+
+test "identity verifier target policy inspection stays bounded by caller-owned grouped storage" {
+    var store_records: [0]IdentityProfileRecord = .{};
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+    };
+    var matches_storage: [0]IdentityProfileMatch = .{};
+    var latest_entries_storage: [1]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries_storage: [1]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var groups_storage: [3]IdentityStoredProfileTargetPolicyGroup = undefined;
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        IdentityVerifier.inspectStoredProfilePolicyForTargets(
+            store.asStore(),
+            .{
+                .targets = targets[0..],
+                .now_unix_seconds = 50,
+                .max_age_seconds = 20,
+                .storage = .init(
+                    matches_storage[0..],
+                    latest_entries_storage[0..],
+                    policy_entries_storage[0..],
+                    groups_storage[0..],
+                ),
+            },
+        ),
+    );
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
