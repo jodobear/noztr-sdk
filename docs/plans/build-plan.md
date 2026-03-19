@@ -112,6 +112,7 @@ Use these only when the active task needs deeper planning context:
 - [zig-nostr-ecosystem-readiness-matrix.md](./zig-nostr-ecosystem-readiness-matrix.md)
 - [zig-nostr-ecosystem-phased-plan.md](./zig-nostr-ecosystem-phased-plan.md)
 - [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
+- [sdk-store-query-index-baseline-decision.md](./sdk-store-query-index-baseline-decision.md)
 - [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)
 
 ## Historical Archive

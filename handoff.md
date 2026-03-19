@@ -105,11 +105,16 @@ Current project context for `noztr-sdk`.
     that support posture rather than choosing a backend by intuition
   - that child packet is now
     [docs/plans/sdk-store-query-index-baseline-plan.md](./docs/plans/sdk-store-query-index-baseline-plan.md)
-  - its current job is to define:
-    - the canonical backend-agnostic store/query/index vocabulary
-    - the required memory/reference store posture
-    - the split between generic SDK seams and product-owned specialized storage
-    - the first follow-on implementation slices needed to pressure-test that baseline
+  - its baseline decision is now
+    [docs/plans/sdk-store-query-index-baseline-decision.md](./docs/plans/sdk-store-query-index-baseline-decision.md)
+  - that decision now makes explicit:
+    - `ClientStore` is aggregate vocabulary, not one mandatory god-interface
+    - the shared baseline should split into narrow event-store, query/read, checkpoint/cursor, and
+      limited generic value seams
+    - workflow-local remembered-state stores should not be generalized into SDK-core prematurely
+    - query/result/cursor/index posture must stay backend-agnostic at the public SDK boundary
+    - the next pressure-test should be bounded in-memory reference seams and one real integration
+      slice before any first durable backend lands
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

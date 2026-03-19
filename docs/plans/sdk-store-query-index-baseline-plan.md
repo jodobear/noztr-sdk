@@ -190,5 +190,6 @@ This child packet should produce:
 
 ## Current References
 
+- [sdk-store-query-index-baseline-decision.md](./sdk-store-query-index-baseline-decision.md)
 - [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
 - [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)

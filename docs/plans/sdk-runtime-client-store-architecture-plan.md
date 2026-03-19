@@ -124,3 +124,4 @@ This lane should produce:
 - [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
 - [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)
 - [sdk-store-query-index-baseline-plan.md](./sdk-store-query-index-baseline-plan.md)
+- [sdk-store-query-index-baseline-decision.md](./sdk-store-query-index-baseline-decision.md)

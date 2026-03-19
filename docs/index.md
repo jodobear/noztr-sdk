@@ -88,6 +88,7 @@ Use `doc_type` plus `status` first:
 - [zig-nostr-ecosystem-readiness-matrix.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
 - [zig-nostr-ecosystem-phased-plan.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-phased-plan.md)
 - [sdk-runtime-client-store-architecture-decision.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-decision.md)
+- [sdk-store-query-index-baseline-decision.md](/workspace/projects/nzdk/docs/plans/sdk-store-query-index-baseline-decision.md)
 - [sdk-storage-backend-research-plan.md](/workspace/projects/nzdk/docs/plans/sdk-storage-backend-research-plan.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
