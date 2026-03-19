@@ -469,6 +469,12 @@ pub const IdentityStoredProfileRefreshRequest = struct {
 pub const IdentityStoredProfileRefreshPlan = struct {
     entries: []const IdentityStoredProfileRefreshEntry,
 
+    pub fn nextEntry(
+        self: *const IdentityStoredProfileRefreshPlan,
+    ) ?*const IdentityStoredProfileRefreshEntry {
+        return self.newestEntry();
+    }
+
     pub fn newestEntry(
         self: *const IdentityStoredProfileRefreshPlan,
     ) ?*const IdentityStoredProfileRefreshEntry {
@@ -3113,6 +3119,7 @@ test "identity verifier refresh plan returns stale remembered profiles newest fi
     try std.testing.expectEqualStrings("gist-old", plan.entries[1].matchedClaim().proofSlice());
     try std.testing.expectEqual(@as(u64, 35), plan.entries[0].entry.age_seconds);
     try std.testing.expectEqual(@as(u64, 45), plan.entries[1].entry.age_seconds);
+    try std.testing.expectEqualStrings("gist-new", plan.nextEntry().?.matchedClaim().proofSlice());
     try std.testing.expectEqualStrings("gist-new", plan.newestEntry().?.matchedClaim().proofSlice());
 }
 
@@ -3159,6 +3166,7 @@ test "identity verifier refresh plan returns empty when remembered profiles are 
         },
     );
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
+    try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.newestEntry() == null);
 }
 
