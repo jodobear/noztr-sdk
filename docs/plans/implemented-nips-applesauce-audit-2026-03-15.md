@@ -188,6 +188,8 @@ Observed friction:
 - it now also exposes one explicit fleet runtime plan that classifies each relay as `connect`,
   `authenticate`, `reconcile`, or `ready` against a chosen baseline instead of forcing callers to
   hand-compose relay readiness plus divergence checks above the fleet
+- `GroupFleetRuntimePlan` now also exposes `nextEntry()` so callers can step one next runtime
+  relay/action without hand-scanning the bounded fleet runtime plan
 - it now also exposes one explicit targeted baseline-to-target reconcile helper, so callers no
   longer have to choose between hand-rolled checkpoint copy code and all-relays reconciliation
   when one runtime step only needs to converge one divergent relay

@@ -108,10 +108,10 @@ network daemons, or hidden runtime loops.
     history
 - `group_fleet_recipe.zig`
   - goal: persist relay-local `NIP-29` checkpoints from one explicit multi-relay fleet into a
-    caller-owned store, restore a fresh fleet from that stored state, inspect runtime actions over
-    the restored relays, merge divergent relay-local components by explicit relay selection, run
-    one explicit targeted baseline-to-target reconcile step, then plan one moderation publish
-    across all reconciled relays
+    caller-owned store, restore a fresh fleet from that stored state, inspect runtime actions plus
+    one explicit next runtime step over the restored relays, merge divergent relay-local
+    components by explicit relay selection, run one explicit targeted baseline-to-target reconcile
+    step, then plan one moderation publish across all reconciled relays
   - public SDK surface: `GroupFleet`, `GroupClient`, `GroupClientStorage`,
     `GroupRelayState`, `GroupFleetRuntimeAction`, `GroupFleetRuntimeStorage`,
     `GroupFleetRuntimePlan`,
@@ -125,11 +125,12 @@ network daemons, or hidden runtime loops.
   - control points: caller still owns the relay-local clients, chooses relay URLs explicitly,
     persists relay-local checkpoints into a bounded store through the fleet, restores only the
     matching relay-local checkpoints into a fresh fleet, inspects each relay as explicit
-    `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline, chooses which
-    relay contributes each merged checkpoint component explicitly, applies that merged checkpoint
-    across the fleet, can then reconcile one chosen target relay explicitly from the chosen
-    baseline without updating the whole fleet, and finally plans one explicit per-relay moderation
-    publish through caller-owned buffers without hidden merge or runtime policy
+    `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline, can ask the
+    runtime plan for the next recommended relay/action step without hand-scanning the fleet,
+    chooses which relay contributes each merged checkpoint component explicitly, applies that
+    merged checkpoint across the fleet, can then reconcile one chosen target relay explicitly from
+    the chosen baseline without updating the whole fleet, and finally plans one explicit per-relay
+    moderation publish through caller-owned buffers without hidden merge or runtime policy
 
 ## Adversarial Examples
 

@@ -82,6 +82,27 @@ pub const GroupFleetRuntimePlan = struct {
             .roles_divergent = self._storage.roles_divergent[index],
         };
     }
+
+    pub fn nextEntry(self: *const GroupFleetRuntimePlan) ?GroupFleetRuntimeEntry {
+        const priorities = [_]GroupFleetRuntimeAction{ .reconcile, .authenticate, .connect };
+        for (priorities) |priority| {
+            var baseline_match: ?GroupFleetRuntimeEntry = null;
+            var first_match: ?GroupFleetRuntimeEntry = null;
+            var index: u8 = 0;
+            while (index < self.relay_count) : (index += 1) {
+                const candidate = self.entry(index) orelse continue;
+                if (candidate.action != priority) continue;
+                if (first_match == null) first_match = candidate;
+                if (candidate.is_baseline) {
+                    baseline_match = candidate;
+                    break;
+                }
+            }
+            if (baseline_match) |runtime_entry| return runtime_entry;
+            if (first_match) |runtime_entry| return runtime_entry;
+        }
+        return null;
+    }
 };
 
 pub const GroupFleetEventOutcome = struct {
@@ -1429,6 +1450,9 @@ test "group fleet runtime inspection classifies connect authenticate reconcile a
     try std.testing.expectEqual(group_client.GroupRelayState.connected, fourth.relay_state);
     try std.testing.expectEqual(GroupFleetRuntimeAction.reconcile, fourth.action);
     try std.testing.expect(fourth.users_divergent);
+    const next = runtime.nextEntry().?;
+    try std.testing.expectEqualStrings("wss://relay.one:666", next.relay_url);
+    try std.testing.expectEqual(GroupFleetRuntimeAction.reconcile, next.action);
 }
 
 test "group fleet runtime inspection rejects unknown baseline relay urls" {
@@ -1450,6 +1474,33 @@ test "group fleet runtime inspection rejects unknown baseline relay urls" {
         error.UnknownRelayUrl,
         fleet.inspectRuntime("wss://missing", &runtime_storage),
     );
+}
+
+test "group fleet runtime next step prefers the baseline within one action tier and returns null when ready" {
+    storage_count = 0;
+
+    var baseline = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    var other = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = testStorage(),
+    });
+    var clients = [_]*group_client.GroupClient{ &baseline, &other };
+    const fleet = try GroupFleet.init(clients[0..]);
+
+    var runtime_storage = GroupFleetRuntimeStorage{};
+    var runtime = try fleet.inspectRuntime("wss://relay.one", &runtime_storage);
+    try std.testing.expectEqual(GroupFleetRuntimeAction.connect, runtime.nextEntry().?.action);
+    try std.testing.expectEqualStrings("wss://relay.one", runtime.nextEntry().?.relay_url);
+
+    baseline.markCurrentRelayConnected();
+    other.markCurrentRelayConnected();
+    runtime = try fleet.inspectRuntime("wss://relay.one", &runtime_storage);
+    try std.testing.expect(runtime.nextEntry() == null);
 }
 
 test "group fleet exports and restores a full checkpoint set across relay-local clients" {

@@ -206,6 +206,8 @@ Current project context for `noztr-sdk`.
   - `GroupFleet` now also exposes `inspectRuntime(...)` so callers can classify each relay as
     `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline without
     hand-composing relay readiness plus divergence checks above the fleet
+  - `GroupFleetRuntimePlan` now also exposes `nextEntry()` so callers can step one explicit
+    next runtime relay/action without hand-scanning the fleet runtime plan
   - `GroupFleet` now also exposes `reconcileRelayFromBaseline(...)` so callers can converge one
     chosen divergent relay from one chosen baseline without restoring the same checkpoint across
     the whole fleet
@@ -215,10 +217,10 @@ Current project context for `noztr-sdk`.
     moderation publish through the higher-level client shape, with checkpoint export/restore in the
     middle
   - `examples/group_fleet_recipe.zig` now teaches explicit fleet persistence into a caller-owned
-    store, restore into a fresh fleet through that fleet layer, inspect runtime actions over the
-    restored relays, merge divergent relay-local components by explicit relay choice, run one
-    explicit targeted baseline-to-target reconcile step, then one explicit moderation fanout
-    across the reconciled relays
+    store, restore into a fresh fleet through that fleet layer, inspect runtime actions plus one
+    explicit next runtime step over the restored relays, merge divergent relay-local components by
+    explicit relay choice, run one explicit targeted baseline-to-target reconcile step, then one
+    explicit moderation fanout across the reconciled relays
   - the real remaining gap is now broader background runtime/client policy above the explicit
     multi-relay routing, store, runtime inspection, targeted reconcile, reconciliation, and merge
     layer
