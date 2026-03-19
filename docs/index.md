@@ -86,6 +86,8 @@ Use `doc_type` plus `status` first:
 - [research-refresh-2026-03-14.md](/workspace/projects/nzdk/docs/plans/research-refresh-2026-03-14.md)
 - [zig-nostr-ecosystem-readiness-matrix.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
 - [zig-nostr-ecosystem-phased-plan.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-phased-plan.md)
+- [sdk-runtime-client-store-architecture-decision.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-decision.md)
+- [sdk-storage-backend-research-plan.md](/workspace/projects/nzdk/docs/plans/sdk-storage-backend-research-plan.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
 - [nip17-outbound-mailbox-plan.md](/workspace/projects/nzdk/docs/plans/nip17-outbound-mailbox-plan.md)

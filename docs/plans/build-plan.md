@@ -109,6 +109,8 @@ Use these only when the active task needs deeper planning context:
 - [research-refresh-2026-03-14.md](./research-refresh-2026-03-14.md)
 - [zig-nostr-ecosystem-readiness-matrix.md](./zig-nostr-ecosystem-readiness-matrix.md)
 - [zig-nostr-ecosystem-phased-plan.md](./zig-nostr-ecosystem-phased-plan.md)
+- [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
+- [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)
 
 ## Historical Archive
 

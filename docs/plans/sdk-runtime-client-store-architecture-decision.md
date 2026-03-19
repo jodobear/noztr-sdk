@@ -102,6 +102,9 @@ Rule:
 
 - stores remain explicit seams, not hidden globals
 - query/index posture should become shared where possible, not duplicated by workflow family
+- public workflow APIs must stay backend-agnostic
+- first-party storage support should be tiered explicitly instead of implied by whichever backend is
+  easiest to prototype first
 
 ### 5. Runtime Plan / Step Layer
 
@@ -224,6 +227,33 @@ Before adding many more workflow-local runtime helpers, define the shared relay-
 
 Before building a CLI, signer product, or relay framework, define what the shared store/query
 surface is supposed to look like.
+
+### Backend-Agnostic Public Surface
+
+- SDK-facing workflow APIs must not leak one backend's schema, transaction, or query worldview
+- backend-specific capabilities belong behind storage/query seams or explicit adapter modules
+- first-party backend support is allowed, but it must not become mandatory for downstream SDK users
+
+### Explicit Storage Support Tiers
+
+The storage posture should converge on explicit tiers:
+
+1. required in core:
+   - bounded in-memory/reference stores
+2. early first-party durable support:
+   - one embedded local durable backend suitable for CLI, signer tooling, and local client state
+3. adapter-first or optional first-party support:
+   - remote/service databases
+   - relay-grade specialized engines
+   - platform-specific client stores
+4. product-owned storage:
+   - backends whose requirements are too product-specific to shape the SDK core
+
+Current architectural expectation:
+
+- SQLite is the strongest current candidate for the first embedded durable backend
+- LMDB/MDBX-class engines matter most for relay-grade or specialized workloads
+- product repos should be free to use other backends through stable SDK seams
 
 ### Product Work Should Pressure-Test The SDK
 

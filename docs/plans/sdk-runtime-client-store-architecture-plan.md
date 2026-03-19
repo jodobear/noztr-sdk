@@ -94,7 +94,7 @@ This lane should produce:
 
 1. relay pool / session architecture
 2. subscription / sync model
-3. store / query / index architecture
+3. storage backend posture research plus store / query / index architecture
 4. background runtime ownership and step model
 5. first CLI-supporting client surface
 
@@ -106,6 +106,7 @@ This lane should produce:
 
 2. Planning
 - write architecture decisions before broad new implementation loops
+- make storage/backend support posture explicit before hardening the shared store/query/index model
 
 3. Implementation
 - prefer one coherent shared model over more isolated workflow-local helpers
@@ -121,3 +122,4 @@ This lane should produce:
 ## Current Architecture Reference
 
 - [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
+- [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)

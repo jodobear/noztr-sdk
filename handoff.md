@@ -91,6 +91,18 @@ Current project context for `noztr-sdk`.
     above deeper local `NIP-03` / `NIP-39` refinement
   - this lane is intended to make the SDK ready for the first serious product wave:
     Zig CLI, signer tooling, and later relay-framework work
+  - the first focused child architecture research packet is now
+    [docs/plans/sdk-storage-backend-research-plan.md](./docs/plans/sdk-storage-backend-research-plan.md)
+  - its current conclusions are:
+    - storage support should be workload-first, not backend-first
+    - public SDK workflow APIs must stay backend-agnostic
+    - in-memory/reference stores are required in core
+    - one embedded durable backend should likely get early first-party support
+    - SQLite is the strongest current candidate for that first embedded durable backend
+    - relay-grade or product-grade specialized backends should stay adapter-first or product-owned
+      until product pressure justifies tighter first-party support
+  - the next architecture child should now define the shared store/query/index baseline against
+    that support posture rather than choosing a backend by intuition
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
