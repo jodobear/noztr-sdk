@@ -115,10 +115,10 @@ network daemons, or hidden runtime loops.
 - `group_fleet_recipe.zig`
   - goal: persist relay-local `NIP-29` checkpoints from one explicit multi-relay fleet into a
     caller-owned store, restore a fresh fleet from that stored state, inspect runtime actions plus
-    one explicit next runtime step over the restored relays, inspect one next consistency entry,
-    merge divergent relay-local components by explicit relay selection, run one explicit targeted
-    baseline-to-target reconcile step, then select one next moderation publish relay from the
-    resulting fanout
+    one explicit next runtime step over the restored relays, inspect one typed next consistency
+    step, merge divergent relay-local components by explicit relay selection, run one explicit
+    targeted baseline-to-target reconcile step, then select one next moderation publish relay from
+    the resulting fanout
   - public SDK surface: `GroupFleet`, `GroupClient`, `GroupClientStorage`,
     `GroupRelayState`, `GroupFleetRuntimeAction`, `GroupFleetRuntimeStorage`,
     `GroupFleetRuntimePlan`,
@@ -135,8 +135,9 @@ network daemons, or hidden runtime loops.
     matching relay-local checkpoints into a fresh fleet, inspects each relay as explicit
     `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline, can ask the
     runtime plan for one typed next runtime step without hand-scanning the fleet or re-stitching
-    baseline context above the workflow, can ask the consistency report for one next divergent
-    relay entry without hand-scanning the divergent slice above the workflow,
+    baseline context above the workflow, can ask the consistency report for one typed next
+    divergent-relay step without hand-scanning the divergent slice or re-stitching baseline
+    context above the workflow,
     chooses which relay contributes each merged checkpoint component explicitly, applies that
     merged checkpoint across the fleet, can then reconcile one chosen target relay explicitly from
     the chosen baseline without updating the whole fleet, and finally plans one explicit per-relay

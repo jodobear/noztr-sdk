@@ -229,6 +229,7 @@ test "phase9 exposes the group session workflow surface" {
     try std.testing.expect(@TypeOf(workflows.GroupFleetBatchOutcome) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetRelayDivergence) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetConsistencyReport) == type);
+    try std.testing.expect(@TypeOf(workflows.GroupFleetConsistencyStep) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetReconcileOutcome) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetTargetReconcileOutcome) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetPublishStep) == type);

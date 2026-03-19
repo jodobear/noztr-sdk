@@ -149,6 +149,19 @@ pub const GroupFleetConsistencyReport = struct {
         if (self.divergent_relays.len == 0) return null;
         return &self.divergent_relays[0];
     }
+
+    pub fn nextStep(self: *const GroupFleetConsistencyReport) ?GroupFleetConsistencyStep {
+        const selected_entry = self.nextEntry() orelse return null;
+        return .{
+            .baseline_relay_url = self.baseline_relay_url,
+            .entry = selected_entry.*,
+        };
+    }
+};
+
+pub const GroupFleetConsistencyStep = struct {
+    baseline_relay_url: []const u8,
+    entry: GroupFleetRelayDivergence,
 };
 
 pub const GroupFleetReconcileOutcome = struct {
@@ -1661,6 +1674,9 @@ test "group fleet reports divergence and reconciles all relays from an explicit 
     try std.testing.expectEqualStrings("wss://relay.one:444", before.divergent_relays[0].relay_url);
     try std.testing.expect(before.divergent_relays[0].metadata);
     try std.testing.expectEqualStrings("wss://relay.one:444", before.nextEntry().?.relay_url);
+    const before_step = before.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", before_step.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", before_step.entry.relay_url);
 
     var checkpoint_storage = GroupFleetCheckpointStorage{};
     var checkpoint_context = GroupFleetCheckpointContext.init(
@@ -1683,6 +1699,7 @@ test "group fleet reports divergence and reconciles all relays from an explicit 
     try std.testing.expectEqual(@as(u8, 2), after.matching_relays);
     try std.testing.expectEqual(@as(usize, 0), after.divergent_relays.len);
     try std.testing.expect(after.nextEntry() == null);
+    try std.testing.expect(after.nextStep() == null);
 }
 
 test "group fleet rejects unknown baseline and source relay urls during reconciliation work" {

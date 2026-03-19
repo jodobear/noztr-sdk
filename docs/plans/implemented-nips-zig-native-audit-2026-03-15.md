@@ -195,6 +195,8 @@ Observed friction:
   context above the workflow
 - `GroupFleetConsistencyReport` now also exposes `nextEntry()` so callers can follow one divergent
   relay without hand-scanning the consistency slice above the workflow
+- `GroupFleetConsistencyReport` now also exposes `nextStep()` so callers can package that next
+  divergent relay together with its baseline context into one typed SDK value
 - `NIP-29` now also has one explicit targeted baseline-to-target reconcile helper, so callers can
   step one divergent relay toward the chosen runtime baseline without falling back to all-relay
   reconcile helpers or hand-rolled checkpoint copy code

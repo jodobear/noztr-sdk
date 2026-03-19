@@ -20,6 +20,7 @@ pub const GroupFleetEventOutcome = group_fleet.GroupFleetEventOutcome;
 pub const GroupFleetBatchOutcome = group_fleet.GroupFleetBatchOutcome;
 pub const GroupFleetRelayDivergence = group_fleet.GroupFleetRelayDivergence;
 pub const GroupFleetConsistencyReport = group_fleet.GroupFleetConsistencyReport;
+pub const GroupFleetConsistencyStep = group_fleet.GroupFleetConsistencyStep;
 pub const GroupFleetReconcileOutcome = group_fleet.GroupFleetReconcileOutcome;
 pub const GroupFleetTargetReconcileOutcome = group_fleet.GroupFleetTargetReconcileOutcome;
 pub const GroupFleetPublishStep = group_fleet.GroupFleetPublishStep;
