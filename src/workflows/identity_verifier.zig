@@ -778,6 +778,26 @@ pub const IdentityStoredProfileTargetRefreshCadencePlan = struct {
             .entry = entry.*,
         };
     }
+
+    pub fn usableWhileRefreshingEntries(
+        self: *const IdentityStoredProfileTargetRefreshCadencePlan,
+    ) []const IdentityStoredProfileTargetRefreshCadenceEntry {
+        const start =
+            @as(usize, @intCast(self.verify_now_count + self.refresh_now_count));
+        const end = start + @as(usize, @intCast(self.usable_while_refreshing_count));
+        return self.entries[start..end];
+    }
+
+    pub fn refreshSoonEntries(
+        self: *const IdentityStoredProfileTargetRefreshCadencePlan,
+    ) []const IdentityStoredProfileTargetRefreshCadenceEntry {
+        const start = @as(
+            usize,
+            @intCast(self.verify_now_count + self.refresh_now_count + self.usable_while_refreshing_count),
+        );
+        const end = start + @as(usize, @intCast(self.refresh_soon_count));
+        return self.entries[start..end];
+    }
 };
 
 pub const IdentityStoredProfileTargetRefreshCadenceStep = struct {
@@ -4863,6 +4883,78 @@ test "identity verifier refresh cadence exposes typed next-due step" {
     const step = plan.nextDueStep().?;
     try std.testing.expectEqual(IdentityStoredProfileTargetRefreshCadenceAction.refresh_now, step.action);
     try std.testing.expectEqualStrings("carol", step.entry.target.identity);
+}
+
+test "identity verifier refresh cadence exposes usable-while-refreshing and refresh-soon views" {
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const soon_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [2]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries_storage: [2]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 1), plan.usableWhileRefreshingEntries().len);
+    try std.testing.expectEqualStrings("carol", plan.usableWhileRefreshingEntries()[0].target.identity);
+    try std.testing.expectEqual(
+        IdentityStoredProfileTargetRefreshCadenceAction.usable_while_refreshing,
+        plan.usableWhileRefreshingEntries()[0].action,
+    );
+    try std.testing.expectEqual(@as(usize, 1), plan.refreshSoonEntries().len);
+    try std.testing.expectEqualStrings("bob", plan.refreshSoonEntries()[0].target.identity);
+    try std.testing.expectEqual(
+        IdentityStoredProfileTargetRefreshCadenceAction.refresh_soon,
+        plan.refreshSoonEntries()[0].action,
+    );
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
