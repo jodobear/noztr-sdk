@@ -88,8 +88,12 @@ Resolution note for `NIP-46`:
 - `src/workflows/remote_signer.zig` now exposes `RequestContext` so callers provide one explicit
   request id, buffer, and scratch wrapper to every `begin...` method
 - `src/workflows/mod.zig` now exports `RemoteSignerRequestContext`
-- `examples/remote_signer_recipe.zig` now teaches the request-context shape instead of repeating
-  raw `buffer + id + scratch` arguments on each call
+- `src/workflows/remote_signer.zig` now also exposes caller-owned relay-pool export/runtime storage
+  plus one typed `RelayPoolStep` selection path back onto the signer session, instead of leaving
+  signer tooling to invent a second multi-relay runtime shape above the workflow
+- `examples/remote_signer_recipe.zig` now teaches the request-context shape plus the shared
+  relay-pool inspect/select path instead of repeating raw `buffer + id + scratch` arguments on
+  each call
 
 ### `Z-NIP29-001` Resolved: `GroupSession` now uses a clearer Zig-native config/storage/view surface
 

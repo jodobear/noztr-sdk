@@ -397,6 +397,10 @@ Current state:
 - current kernel-supported method coverage is now present for connect, key discovery, event signing,
   ping, relay switching, and the pubkey-plus-text encrypt/decrypt family
 - examples exist and teach the current surface
+- `RemoteSignerSession` now also exports the current bunker relay set into the shared
+  `noztr_sdk.runtime` floor and can consume one typed `RelayPoolStep` back onto the signer session,
+  so signer tooling no longer has to invent its own separate multi-relay readiness view above the
+  workflow
 
 Current gap:
 - no currently open product-breadth finding; later work, if needed, would be higher-level client

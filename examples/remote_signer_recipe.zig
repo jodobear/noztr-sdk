@@ -2,14 +2,15 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-// Explicit `NIP-46` connect flow followed by one identity request and one pubkey+text method.
+// Explicit `NIP-46` connect flow followed by one identity request, one pubkey+text method, and
+// one shared relay-pool inspect/select step.
 test "recipe: remote signer session stays explicit from connect to get_public_key and nip44_encrypt" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
-        "?relay=wss%3A%2F%2Frelay.one&secret=secret";
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two&secret=secret";
     var session = try noztr_sdk.workflows.RemoteSignerSession.initFromBunkerUriText(
         bunker_uri,
         arena.allocator(),
@@ -89,6 +90,19 @@ test "recipe: remote signer session stays explicit from connect to get_public_ke
     try std.testing.expect(nip44_outcome == .text_response);
     try std.testing.expectEqual(.nip44_encrypt, nip44_outcome.text_response.method);
     try std.testing.expectEqualStrings("ciphertext", nip44_outcome.text_response.text);
+
+    var runtime_storage = noztr_sdk.workflows.RemoteSignerRelayPoolRuntimeStorage{};
+    const runtime_plan = session.inspectRelayPoolRuntime(&runtime_storage);
+    try std.testing.expectEqual(@as(u8, 1), runtime_plan.ready_count);
+    try std.testing.expectEqual(@as(u8, 1), runtime_plan.connect_count);
+
+    const relay_two_step = noztr_sdk.runtime.RelayPoolStep{
+        .entry = runtime_plan.entry(1).?,
+    };
+    const selected_relay = try session.selectRelayPoolStep(&relay_two_step);
+    try std.testing.expectEqualStrings("wss://relay.two", selected_relay);
+    try std.testing.expectEqualStrings("wss://relay.two", session.currentRelayUrl());
+    try std.testing.expect(!session.isConnected());
 }
 
 fn textResponse(

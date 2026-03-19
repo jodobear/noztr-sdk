@@ -32,13 +32,16 @@ Use these docs when you need public routing or contract context before opening a
   - public SDK surface: `noztr_sdk.workflows`
   - control point: verify the workflow namespace is the stable top-level entry
 - `remote_signer_recipe.zig`
-  - goal: explicit `NIP-46` connect plus `get_public_key` and one `nip44_encrypt` request
-  - public SDK surface: `RemoteSignerSession`
+  - goal: explicit `NIP-46` connect plus `get_public_key`, one `nip44_encrypt` request, and one
+    shared relay-pool inspect/select step
+  - public SDK surface: `RemoteSignerSession`, `RemoteSignerRelayPoolRuntimeStorage`,
+    `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip46_remote_signing`
   - control points: caller starts connect, caller starts later signer requests, caller feeds
     responses back in explicitly, caller reuses one request context shape instead of repeating
-    `buffer + id + scratch`, and the recipe keeps repetitive response JSON wiring in one small
-    helper so the public session flow stays primary
+    `buffer + id + scratch`, the shared relay-pool runtime stays explicit instead of becoming
+    hidden signer policy, and the recipe keeps repetitive response JSON wiring in one small helper
+    so the public session flow stays primary
 - `store_query_recipe.zig`
   - goal: persist bounded event records, query them with one explicit cursor/page surface, and
     remember one named checkpoint

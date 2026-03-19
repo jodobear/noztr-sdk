@@ -1,7 +1,7 @@
 ---
 title: Five Slice Remote Signer Relay Pool Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - executing_the_shared_relay_pool_runtime_baseline
@@ -71,3 +71,16 @@ This loop should prove:
   runtime vocabulary
 - the shared pool floor helps signer tooling readiness without dragging signer-specific request
   semantics into `runtime`
+
+## Closeout
+
+This loop is complete.
+
+It landed:
+
+1. remote-signer relay-pool adapter storage and caller-owned runtime scratch
+2. `RemoteSignerSession.exportRelayPool(...)`
+3. `RemoteSignerSession.inspectRelayPoolRuntime(...)`
+4. typed `RelayPoolStep`-driven selection back onto the signer session with stale-step rejection
+5. public recipe and docs/audit/handoff closeout for the first real workflow adaptation over the
+   shared pool floor
