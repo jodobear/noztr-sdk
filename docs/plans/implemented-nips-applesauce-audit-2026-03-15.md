@@ -247,6 +247,9 @@ Observed friction:
 - that shared runtime layer now also exports one bounded relay-pool checkpoint set and composes it
   with the shared checkpoint seam through the public recipe, so future groups/CLI/signer products
   do not have to invent a bespoke relay-set checkpoint model above the SDK
+- that same shared runtime layer now also exposes one bounded replay-spec plan and typed next
+  replay step over the shared checkpoint seam, so early CLI/signing/runtime work no longer has to
+  hand-compose relay-by-relay replay posture above the shared pool floor
 - that new shared pool layer is not yet a fuller groups client by itself, but it is useful
   applesauce-like progress because CLI, signer, and later groups/relay products now have one SDK
   route for multi-relay readiness instead of only workflow-local fleet helpers

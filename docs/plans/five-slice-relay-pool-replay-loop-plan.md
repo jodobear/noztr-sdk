@@ -1,7 +1,7 @@
 ---
 title: Five Slice Relay Pool Replay Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - implementing_shared_relay_pool_replay_composition
@@ -78,3 +78,10 @@ After this loop, the shared relay-pool lane should have:
 
 That is enough to reassess whether the next lane should become broader sync boundary work or one
 real product-facing composition slice above the shared pool floor.
+
+## Closeout
+
+- landed shared replay target vocabulary and caller-owned storage
+- landed `RelayPool.inspectReplay(...)` over checkpoint-scoped `ClientQuery` values
+- landed deterministic `nextEntry()` and typed `nextStep()` selection
+- reconciled the checkpoint recipe, release docs, audits, and handoff

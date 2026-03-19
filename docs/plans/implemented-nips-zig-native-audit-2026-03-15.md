@@ -235,6 +235,9 @@ Observed friction:
 - that shared runtime layer now also exposes one bounded relay-pool checkpoint set and typed
   export/restore steps, while still routing actual persistence through the shared checkpoint seam
   instead of hard-wiring backend policy into `runtime`
+- that same shared runtime layer now also exposes one caller-owned replay-spec plan and one typed
+  next replay step over checkpoint-scoped `ClientQuery` values, which is a better Zig-native
+  shared floor than pushing early CLI/signer products toward bespoke relay-by-relay replay loops
 - that shared runtime layer is still intentionally narrow, but it is a better Zig-native
   abstraction direction than forcing every future CLI, signer, or groups surface to invent its own
   pool-shaped readiness model

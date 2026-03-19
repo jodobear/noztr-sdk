@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `319/319`
+  - `zig build test --summary all` with `325/325`
   - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -231,6 +231,17 @@ Current project context for `noztr-sdk`.
     above the pool/runtime floor plus shared checkpoint/store seams
   - it is intentionally narrower than full sync ownership, workflow-local replay policy, or
     product-local background execution
+- the relay-pool replay loop is now complete:
+  - `src/runtime/relay_pool.zig` now also exposes `RelayReplaySpec`,
+    `RelayPoolReplayStorage`, `RelayPoolReplayPlan`, and `RelayPoolReplayStep`
+  - `RelayPool.inspectReplay(...)` now combines caller-owned checkpoint scope plus `ClientQuery`
+    intent with stored per-relay checkpoint cursors and current relay readiness into one bounded
+    shared replay plan
+  - `RelayPoolReplayPlan` now also exposes `nextEntry()` and `nextStep()` so callers can follow
+    one explicit replay-now target without hand-scanning the derived plan above the shared pool
+  - `examples/relay_pool_checkpoint_recipe.zig` now teaches that replay-composition path on top of
+    the same shared checkpoint seam instead of pushing replay stitching back into product-local
+    code
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

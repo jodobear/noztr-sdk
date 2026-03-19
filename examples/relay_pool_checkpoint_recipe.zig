@@ -2,8 +2,9 @@ const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 
 // Export one shared relay-pool checkpoint set, persist the per-relay cursors through the shared
-// checkpoint seam, then restore a fresh shared pool from that bounded checkpoint set explicitly.
-test "recipe: relay pool checkpoints compose with shared checkpoint storage" {
+// checkpoint seam, restore a fresh shared pool from that bounded checkpoint set explicitly, then
+// derive one typed replay-now step over the same shared pool plus checkpoint seam.
+test "recipe: relay pool checkpoints compose with shared checkpoint storage and replay planning" {
     var pool_storage = noztr_sdk.runtime.RelayPoolStorage{};
     var pool = noztr_sdk.runtime.RelayPool.init(&pool_storage);
     _ = try pool.addRelay("wss://relay.one");
@@ -56,10 +57,39 @@ test "recipe: relay pool checkpoints compose with shared checkpoint storage" {
     var restored_pool_storage = noztr_sdk.runtime.RelayPoolStorage{};
     var restored_pool = noztr_sdk.runtime.RelayPool.init(&restored_pool_storage);
     try restored_pool.restoreCheckpoints(&restored_checkpoints);
+    try restored_pool.markRelayConnected(0);
+    try restored_pool.markRelayConnected(1);
 
     var plan_storage = noztr_sdk.runtime.RelayPoolPlanStorage{};
     const restored_plan = restored_pool.inspectRuntime(&plan_storage);
-    try std.testing.expectEqual(@as(u8, 2), restored_plan.connect_count);
+    try std.testing.expectEqual(@as(u8, 2), restored_plan.ready_count);
     try std.testing.expectEqualStrings("wss://relay.one", restored_pool.descriptor(0).?.relay_url);
     try std.testing.expectEqualStrings("wss://relay.two", restored_pool.descriptor(1).?.relay_url);
+
+    const replay_specs = [_]noztr_sdk.runtime.RelayReplaySpec{
+        .{
+            .checkpoint_scope = "relay-pool",
+            .query = .{ .limit = 16 },
+        },
+    };
+    var replay_storage = noztr_sdk.runtime.RelayPoolReplayStorage{};
+    const replay_plan = try restored_pool.inspectReplay(
+        store.asClientStore().checkpoint_store.?,
+        replay_specs[0..],
+        &replay_storage,
+    );
+    try std.testing.expectEqual(@as(u8, 2), replay_plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), replay_plan.spec_count);
+    try std.testing.expectEqual(@as(u16, 2), replay_plan.replay_count);
+    const replay_step = replay_plan.nextStep().?;
+    try std.testing.expectEqual(
+        noztr_sdk.runtime.RelayPoolReplayAction.replay,
+        replay_step.entry.action,
+    );
+    try std.testing.expectEqualStrings("relay-pool", replay_step.entry.checkpoint_scope);
+    try std.testing.expectEqual(@as(u32, 7), replay_step.entry.query.cursor.?.offset);
+    try std.testing.expectEqual(
+        noztr_sdk.store.IndexSelection.checkpoint_replay,
+        replay_step.entry.query.index_selection,
+    );
 }
