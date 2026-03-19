@@ -132,3 +132,7 @@ policy, while keeping capacity and selection caller-owned and deterministic.
 - slice 6 accepted on 2026-03-19:
   - `IdentityStoredProfileTargetRefreshPlan.nextEntry()`
   - compatibility result: `green`
+- slice 7 accepted on 2026-03-19:
+  - `IdentityStoredProfileTargetRefreshStep`
+  - `IdentityStoredProfileTargetRefreshPlan.nextStep()`
+  - compatibility result: `green`

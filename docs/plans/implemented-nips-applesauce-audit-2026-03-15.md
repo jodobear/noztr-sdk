@@ -287,6 +287,9 @@ Observed friction:
 - `IdentityStoredProfileTargetRefreshPlan` now also exposes `nextEntry()` so callers can follow
   the next watched identity to refresh without hand-scanning that set-level refresh plan above
   the workflow
+- `IdentityStoredProfileTargetRefreshPlan` now also exposes `nextStep()` so callers can consume
+  that watched-target refresh selection as one typed SDK value instead of restitching the selected
+  target above the workflow
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow

@@ -452,6 +452,17 @@ pub const IdentityStoredProfileTargetRefreshPlan = struct {
         if (self.entries.len == 0) return null;
         return &self.entries[0];
     }
+
+    pub fn nextStep(
+        self: *const IdentityStoredProfileTargetRefreshPlan,
+    ) ?IdentityStoredProfileTargetRefreshStep {
+        const entry = self.nextEntry() orelse return null;
+        return .{ .entry = entry.* };
+    }
+};
+
+pub const IdentityStoredProfileTargetRefreshStep = struct {
+    entry: IdentityStoredProfileTargetRefreshEntry,
 };
 
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
@@ -3416,6 +3427,7 @@ test "identity verifier target-set refresh plan returns stale watched targets ne
     try std.testing.expectEqualStrings("gist-new", plan.entries[0].matchedClaim().proofSlice());
     try std.testing.expectEqualStrings("gist-old", plan.entries[1].matchedClaim().proofSlice());
     try std.testing.expectEqualStrings("bob", plan.nextEntry().?.target.identity);
+    try std.testing.expectEqualStrings("bob", plan.nextStep().?.entry.target.identity);
 }
 
 test "identity verifier target-set refresh plan returns empty for fresh or missing watched targets" {
@@ -3462,6 +3474,7 @@ test "identity verifier target-set refresh plan returns empty for fresh or missi
 
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
     try std.testing.expect(plan.nextEntry() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
 
 test "identity verifier selects the newest fresh preferred stored profile" {
