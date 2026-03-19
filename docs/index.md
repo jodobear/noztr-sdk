@@ -51,7 +51,6 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
-- [ten-slice-runtime-refresh-loop-plan.md](/workspace/projects/nzdk/docs/plans/ten-slice-runtime-refresh-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 

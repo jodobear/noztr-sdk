@@ -1,7 +1,7 @@
 ---
 title: Ten-Slice Runtime And Refresh Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [17, 3, 39, 29]
 read_when:
@@ -24,6 +24,22 @@ touches_startup_docs: yes
 ---
 
 # Ten-Slice Runtime And Refresh Loop Plan
+
+## Closeout
+
+Completed on 2026-03-19.
+
+Accepted slice commits:
+- `08a73b5` `Add NIP-39 refresh next-entry helper`
+- `57b8d09` `Add NIP-39 typed refresh step view`
+- `e36b616` `Add NIP-03 latest freshness helper`
+- `7525576` `Add NIP-03 preferred verification helper`
+- `7f35c9f` `Add NIP-03 refresh next-entry helper`
+- `1607e1a` `Add NIP-03 typed refresh step view`
+- `3fa18bb` `Add NIP-17 typed runtime step view`
+- `09eece5` `Add NIP-17 delivery role selectors`
+- `0e5b4e1` `Add NIP-29 consistency next-entry helper`
+- `f946bb3` `Add NIP-29 typed consistency step view`
 
 ## Scope Delta
 
