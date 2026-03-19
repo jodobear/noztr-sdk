@@ -4,6 +4,7 @@ const noztr = @import("noztr");
 const relay_pool = @import("../relay/pool.zig");
 const relay_session = @import("../relay/session.zig");
 const relay_url = @import("../relay/url.zig");
+const shared_runtime = @import("../runtime/mod.zig");
 
 pub const max_seen_wraps: u8 = relay_pool.pool_capacity;
 const seal_event_kind: u32 = 13;
@@ -29,6 +30,7 @@ pub const MailboxError =
         PoolFull,
         NoRelays,
         InvalidRelayIndex,
+        InvalidRelayPoolStep,
         WorkflowRelayMissing,
         RelayDisconnected,
         RelayAuthRequired,
@@ -249,6 +251,15 @@ pub const RuntimeEntry = struct {
 
 pub const RuntimeStep = struct {
     entry: RuntimeEntry,
+};
+
+pub const RelayPoolStorage = struct {
+    relay_pool_storage: shared_runtime.RelayPoolStorage = .{},
+};
+
+pub const RelayPoolRuntimeStorage = struct {
+    relay_pool_storage: RelayPoolStorage = .{},
+    plan_storage: shared_runtime.RelayPoolPlanStorage = .{},
 };
 
 pub const WorkflowAction = enum {
@@ -2969,6 +2980,13 @@ test "mailbox session evicts oldest seen wrap when duplicate table fills" {
     try std.testing.expect(!session.hasSeenWrap(&first_id));
     const newest_id = [_]u8{0} ** 31 ++ [_]u8{max_seen_wraps};
     try std.testing.expect(session.hasSeenWrap(&newest_id));
+}
+
+test "mailbox session exposes caller-owned relay-pool adapter storage" {
+    var relay_pool_storage = RelayPoolStorage{};
+    var runtime_storage = RelayPoolRuntimeStorage{};
+    _ = &relay_pool_storage;
+    _ = &runtime_storage;
 }
 
 const test_wrap_signer_pubkey = [_]u8{
