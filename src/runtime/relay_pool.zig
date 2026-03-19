@@ -53,6 +53,23 @@ pub const RelayPoolPlan = struct {
         if (index >= self.relay_count) return null;
         return self.entries[index];
     }
+
+    pub fn nextEntry(self: *const RelayPoolPlan) ?RelayPoolEntry {
+        var index: usize = 0;
+        while (index < self.entries.len) : (index += 1) {
+            if (self.entries[index].action == .authenticate) return self.entries[index];
+        }
+        index = 0;
+        while (index < self.entries.len) : (index += 1) {
+            if (self.entries[index].action == .connect) return self.entries[index];
+        }
+        return null;
+    }
+
+    pub fn nextStep(self: *const RelayPoolPlan) ?RelayPoolStep {
+        const selected = self.nextEntry() orelse return null;
+        return .{ .entry = selected };
+    }
 };
 
 pub const RelayPoolStep = struct {
@@ -202,4 +219,38 @@ test "relay pool inspects bounded runtime state by relay" {
     try std.testing.expectEqual(@as(u8, 0), plan.ready_count);
     try std.testing.expectEqual(RelayPoolAction.authenticate, plan.entry(first.relay_index).?.action);
     try std.testing.expectEqual(RelayPoolAction.connect, plan.entry(second.relay_index).?.action);
+}
+
+test "relay pool runtime next-step prefers authenticate before connect" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+
+    var plan_storage = RelayPoolPlanStorage{};
+    const plan = pool.inspectRuntime(&plan_storage);
+    const next_entry = plan.nextEntry().?;
+    try std.testing.expectEqual(first.relay_index, next_entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolAction.authenticate, next_entry.action);
+
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(first.relay_index, next_step.entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolAction.authenticate, next_step.entry.action);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.entry.descriptor.relay_url);
+
+    _ = second;
+}
+
+test "relay pool runtime next-step is null when all relays are ready" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const relay = try pool.addRelay("wss://relay.one");
+    try pool.markRelayConnected(relay.relay_index);
+
+    var plan_storage = RelayPoolPlanStorage{};
+    const plan = pool.inspectRuntime(&plan_storage);
+    try std.testing.expect(plan.nextEntry() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
