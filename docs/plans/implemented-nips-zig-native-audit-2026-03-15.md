@@ -209,6 +209,8 @@ Observed friction:
 - `GroupFleetBackgroundRuntimePlan` now also exposes `nextEntry()` so callers can follow one
   bounded next background relay/action without hand-scanning the broader background plan above the
   fleet
+- `GroupFleetBackgroundRuntimePlan` now also exposes `nextStep()` so callers can package that next
+  background relay/action together with baseline context into one typed Zig-facing value
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

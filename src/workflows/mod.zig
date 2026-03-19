@@ -14,6 +14,7 @@ pub const GroupFleetRelayStatus = group_fleet.GroupFleetRelayStatus;
 pub const GroupFleetRuntimeAction = group_fleet.GroupFleetRuntimeAction;
 pub const GroupFleetBackgroundAction = group_fleet.GroupFleetBackgroundAction;
 pub const GroupFleetBackgroundEntry = group_fleet.GroupFleetBackgroundEntry;
+pub const GroupFleetBackgroundRuntimeStep = group_fleet.GroupFleetBackgroundRuntimeStep;
 pub const GroupFleetBackgroundRuntimeStorage = group_fleet.GroupFleetBackgroundRuntimeStorage;
 pub const GroupFleetBackgroundRuntimeRequest = group_fleet.GroupFleetBackgroundRuntimeRequest;
 pub const GroupFleetBackgroundRuntimePlan = group_fleet.GroupFleetBackgroundRuntimePlan;

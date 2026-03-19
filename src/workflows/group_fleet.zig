@@ -59,6 +59,11 @@ pub const GroupFleetBackgroundEntry = struct {
     is_baseline: bool = false,
 };
 
+pub const GroupFleetBackgroundRuntimeStep = struct {
+    baseline_relay_url: []const u8,
+    entry: GroupFleetBackgroundEntry,
+};
+
 pub const GroupFleetBackgroundRuntimeStorage = struct {
     runtime: GroupFleetRuntimeStorage = .{},
     divergences: [relay_pool.pool_capacity]GroupFleetRelayDivergence =
@@ -128,6 +133,14 @@ pub const GroupFleetBackgroundRuntimePlan = struct {
             if (first_match) |selected_entry| return selected_entry;
         }
         return null;
+    }
+
+    pub fn nextStep(self: *const GroupFleetBackgroundRuntimePlan) ?GroupFleetBackgroundRuntimeStep {
+        const selected_entry = self.nextEntry() orelse return null;
+        return .{
+            .baseline_relay_url = self.baseline_relay_url,
+            .entry = selected_entry,
+        };
     }
 
     pub fn runtimePlan(self: *const GroupFleetBackgroundRuntimePlan) *const GroupFleetRuntimePlan {
@@ -1825,6 +1838,10 @@ test "group fleet background runtime inspection classifies connect authenticate 
     const next = background.nextEntry().?;
     try std.testing.expectEqualStrings("wss://relay.one:666", next.relay_url.?);
     try std.testing.expectEqual(GroupFleetBackgroundAction.reconcile, next.action);
+    const next_step = background.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:666", next_step.entry.relay_url.?);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.reconcile, next_step.entry.action);
 }
 
 test "group fleet background runtime inspection can prioritize merge apply across ready relays" {
@@ -1878,6 +1895,11 @@ test "group fleet background runtime inspection can prioritize merge apply acros
     try std.testing.expectEqualStrings("wss://relay.one", next.relay_url.?);
     try std.testing.expect(next.is_baseline);
     try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, next.action);
+    const next_step = background.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.entry.relay_url.?);
+    try std.testing.expect(next_step.entry.is_baseline);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, next_step.entry.action);
 }
 
 test "group fleet background runtime inspection can prioritize publish over idle on ready relays" {
@@ -1947,6 +1969,11 @@ test "group fleet background runtime inspection can prioritize publish over idle
     try std.testing.expectEqualStrings("wss://relay.one", next.relay_url.?);
     try std.testing.expect(next.is_baseline);
     try std.testing.expectEqual(GroupFleetBackgroundAction.publish, next.action);
+    const next_step = background.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.entry.relay_url.?);
+    try std.testing.expect(next_step.entry.is_baseline);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.publish, next_step.entry.action);
 }
 
 test "group fleet background runtime next entry returns null when every relay is idle" {
@@ -1979,6 +2006,7 @@ test "group fleet background runtime next entry returns null when every relay is
 
     try std.testing.expectEqual(@as(u8, 2), background.idle_count);
     try std.testing.expect(background.nextEntry() == null);
+    try std.testing.expect(background.nextStep() == null);
 }
 
 test "group fleet exports and restores a full checkpoint set across relay-local clients" {

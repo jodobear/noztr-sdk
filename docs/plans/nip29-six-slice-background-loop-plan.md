@@ -106,3 +106,7 @@ control explicit, deterministic, and caller-owned.
 - slice 3 accepted on 2026-03-19:
   - `GroupFleetBackgroundRuntimePlan.nextEntry()`
   - compatibility result: `green`
+- slice 4 accepted on 2026-03-19:
+  - `GroupFleetBackgroundRuntimeStep`
+  - `GroupFleetBackgroundRuntimePlan.nextStep()`
+  - compatibility result: `green`

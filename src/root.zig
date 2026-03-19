@@ -240,6 +240,7 @@ test "phase9 exposes the group session workflow surface" {
     try std.testing.expect(@TypeOf(workflows.GroupFleetRuntimeAction) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetBackgroundAction) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetBackgroundEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.GroupFleetBackgroundRuntimeStep) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetBackgroundRuntimeStorage) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetBackgroundRuntimeRequest) == type);
     try std.testing.expect(@TypeOf(workflows.GroupFleetBackgroundRuntimePlan) == type);

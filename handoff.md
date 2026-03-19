@@ -92,6 +92,8 @@ Current project context for `noztr-sdk`.
     that broader coordinator posture implicit above the fleet
   - `GroupFleetBackgroundRuntimePlan` now also exposes `nextEntry()` so callers can select one
     bounded next background relay/action without hand-scanning that broader plan above the fleet
+  - `GroupFleetBackgroundRuntimePlan` now also exposes `nextStep()` so callers can package that
+    next background relay/action together with baseline context into one typed SDK step
 - `A-HTTP-001` and `Z-HTTP-001` are now resolved:
   - `src/root.zig` exports the explicit HTTP seam intentionally through `noztr_sdk.transport`
   - `examples/nip39_verification_recipe.zig` and `examples/nip05_resolution_recipe.zig` now teach
