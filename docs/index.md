@@ -84,6 +84,7 @@ Use `doc_type` plus `status` first:
 - [nip17-file-intake-plan.md](/workspace/projects/nzdk/docs/plans/nip17-file-intake-plan.md)
 - [nip17-file-send-plan.md](/workspace/projects/nzdk/docs/plans/nip17-file-send-plan.md)
 - [nip17-runtime-plan.md](/workspace/projects/nzdk/docs/plans/nip17-runtime-plan.md)
+- [nip17-six-slice-workflow-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip17-six-slice-workflow-loop-plan.md)
 - [nip17-runtime-next-step-plan.md](/workspace/projects/nzdk/docs/plans/nip17-runtime-next-step-plan.md)
 - [five-slice-selector-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-selector-loop-plan.md)
 - [five-slice-step-view-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-step-view-loop-plan.md)
