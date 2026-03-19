@@ -3,6 +3,7 @@ pub const relay_pool = @import("relay_pool.zig");
 pub const pool_capacity = relay_pool.pool_capacity;
 pub const subscription_specs_capacity = relay_pool.subscription_specs_capacity;
 pub const replay_specs_capacity = relay_pool.replay_specs_capacity;
+pub const RelayPoolError = relay_pool.RelayPoolError;
 pub const RelayPoolAction = relay_pool.RelayPoolAction;
 pub const RelayDescriptor = relay_pool.RelayDescriptor;
 pub const RelayPoolEntry = relay_pool.RelayPoolEntry;

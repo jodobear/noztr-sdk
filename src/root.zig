@@ -2,6 +2,8 @@ const std = @import("std");
 
 /// Stable workflow namespace.
 pub const workflows = @import("workflows/mod.zig");
+/// Stable client composition namespace.
+pub const client = @import("client/mod.zig");
 /// Stable store/query reference namespace.
 pub const store = @import("store/mod.zig");
 /// Stable relay-pool/runtime reference namespace.
@@ -11,7 +13,11 @@ pub const transport = @import("transport/mod.zig");
 
 test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(!@hasDecl(@This(), "noztr"));
-    try std.testing.expect(!@hasDecl(@This(), "client"));
+    try std.testing.expect(@TypeOf(client) == type);
+    try std.testing.expect(@TypeOf(client.CliArchiveClientError) == type);
+    try std.testing.expect(@TypeOf(client.CliArchiveClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.CliArchiveClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.CliArchiveClient) == type);
     try std.testing.expect(@TypeOf(store) == type);
     try std.testing.expect(@TypeOf(store.ClientStore) == type);
     try std.testing.expect(@TypeOf(store.ClientEventRecord) == type);
