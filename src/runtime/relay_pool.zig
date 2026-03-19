@@ -20,6 +20,11 @@ pub const RelayPoolError =
         AuthNotRequired,
     };
 
+pub const RelayPoolCheckpointError = RelayPoolError || error{
+    CursorCountMismatch,
+    PoolNotEmpty,
+};
+
 pub const RelayPoolAction = enum {
     connect,
     authenticate,
@@ -200,6 +205,32 @@ pub const RelayPool = struct {
         };
     }
 
+    pub fn exportCheckpoints(
+        self: *const RelayPool,
+        cursors: []const client.EventCursor,
+        storage: *RelayPoolCheckpointStorage,
+    ) RelayPoolCheckpointError!RelayPoolCheckpointSet {
+        if (cursors.len < self._storage.pool.count) return error.CursorCountMismatch;
+
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const relay_url_text = relay.auth_session.relayUrl();
+            if (relay_url_text.len > relay_url.relay_url_max_bytes) return error.RelayUrlTooLong;
+
+            storage.records[relay_index] = .{
+                .relay_url_len = @intCast(relay_url_text.len),
+                .cursor = cursors[relay_index],
+            };
+            @memcpy(storage.records[relay_index].relay_url[0..relay_url_text.len], relay_url_text);
+        }
+
+        return .{
+            .records = storage.records[0..self._storage.pool.count],
+            .relay_count = self._storage.pool.count,
+        };
+    }
+
     fn requireRelay(self: *RelayPool, relay_index: u8) RelayPoolError!*session.RelaySession {
         return self._storage.pool.getRelay(relay_index) orelse error.InvalidRelayIndex;
     }
@@ -300,4 +331,23 @@ test "relay pool runtime next-step is null when all relays are ready" {
     const plan = pool.inspectRuntime(&plan_storage);
     try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.nextStep() == null);
+}
+
+test "relay pool exports bounded relay checkpoints in pool order" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    _ = try pool.addRelay("wss://relay.one");
+    _ = try pool.addRelay("wss://relay.two");
+
+    const cursors = [_]client.EventCursor{
+        .{ .offset = 7 },
+        .{ .offset = 9 },
+    };
+    var checkpoint_storage = RelayPoolCheckpointStorage{};
+    const checkpoints = try pool.exportCheckpoints(cursors[0..], &checkpoint_storage);
+    try std.testing.expectEqual(@as(u8, 2), checkpoints.relay_count);
+    try std.testing.expectEqualStrings("wss://relay.one", checkpoints.entry(0).?.relayUrl());
+    try std.testing.expectEqual(@as(u32, 7), checkpoints.entry(0).?.cursor.offset);
+    try std.testing.expectEqualStrings("wss://relay.two", checkpoints.entry(1).?.relayUrl());
+    try std.testing.expectEqual(@as(u32, 9), checkpoints.entry(1).?.cursor.offset);
 }
