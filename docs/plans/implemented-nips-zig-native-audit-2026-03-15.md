@@ -178,6 +178,8 @@ Observed friction:
 - `NIP-29` now also has an explicit caller-owned fleet publish-planning surface for moderation
   events, so multi-relay app flows no longer need to hand-compose per-relay previous-ref
   selection and publish-buffer wiring above the fleet
+- `GroupFleet.nextPublishEvent(...)` now also exposes one explicit next-relay selector above that
+  fanout so callers can step one publish target without hand-scanning the returned fleet slice
 - `NIP-29` now also has one explicit fleet runtime plan over relay readiness and divergence against
   a chosen baseline, so callers no longer need to hand-compose runtime action selection above the
   fleet

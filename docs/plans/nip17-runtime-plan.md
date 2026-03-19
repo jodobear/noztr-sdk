@@ -118,3 +118,6 @@ Verification:
 
 Follow-on explicit runtime next-step selection for this workflow now lives in
 [nip17-runtime-next-step-plan.md](./nip17-runtime-next-step-plan.md).
+
+Follow-on explicit delivery next-relay selection for this workflow now lives in
+[five-slice-selector-loop-plan.md](./five-slice-selector-loop-plan.md).

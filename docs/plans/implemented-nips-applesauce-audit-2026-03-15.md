@@ -185,6 +185,8 @@ Observed friction:
   conflict resolution
 - it now also plans `put-user` and `remove-user` moderation publishes across all relays in the
   fleet through explicit caller-owned buffers and relay-local previous-ref selection
+- `GroupFleet.nextPublishEvent(...)` now also selects one next per-relay moderation publish step
+  without hand-scanning the fleet fanout slice
 - it now also exposes one explicit fleet runtime plan that classifies each relay as `connect`,
   `authenticate`, `reconcile`, or `ready` against a chosen baseline instead of forcing callers to
   hand-compose relay readiness plus divergence checks above the fleet

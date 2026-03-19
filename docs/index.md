@@ -51,7 +51,6 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
-- [five-slice-selector-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-selector-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -85,6 +84,7 @@ Use `doc_type` plus `status` first:
 - [nip17-file-send-plan.md](/workspace/projects/nzdk/docs/plans/nip17-file-send-plan.md)
 - [nip17-runtime-plan.md](/workspace/projects/nzdk/docs/plans/nip17-runtime-plan.md)
 - [nip17-runtime-next-step-plan.md](/workspace/projects/nzdk/docs/plans/nip17-runtime-next-step-plan.md)
+- [five-slice-selector-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-selector-loop-plan.md)
 - [nip03-remote-proof-plan.md](/workspace/projects/nzdk/docs/plans/nip03-remote-proof-plan.md)
 - [nip03-proof-store-plan.md](/workspace/projects/nzdk/docs/plans/nip03-proof-store-plan.md)
 - [nip03-remembered-verification-plan.md](/workspace/projects/nzdk/docs/plans/nip03-remembered-verification-plan.md)

@@ -118,3 +118,6 @@ Verification:
 
 Follow-on explicit stale-profile refresh planning for this workflow now lives in
 [nip39-refresh-plan.md](./nip39-refresh-plan.md).
+
+Follow-on explicit runtime next-entry selection for this workflow now lives in
+[five-slice-selector-loop-plan.md](./five-slice-selector-loop-plan.md).

@@ -116,3 +116,6 @@ Follow-on explicit merge-policy broadening for this workflow now lives in
 
 Follow-on fleet runtime-policy broadening for this workflow now lives in
 [nip29-runtime-policy-plan.md](./nip29-runtime-policy-plan.md).
+
+Follow-on explicit publish next-relay selection for this workflow now lives in
+[five-slice-selector-loop-plan.md](./five-slice-selector-loop-plan.md).

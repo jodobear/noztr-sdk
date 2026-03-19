@@ -112,3 +112,6 @@ Verification:
 
 Follow-on explicit targeted baseline-to-target reconcile stepping for this workflow now lives in
 [nip29-targeted-reconcile-plan.md](./nip29-targeted-reconcile-plan.md).
+
+Follow-on explicit runtime next-step selection for this workflow now lives in
+[five-slice-selector-loop-plan.md](./five-slice-selector-loop-plan.md).

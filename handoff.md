@@ -21,16 +21,18 @@ Current project context for `noztr-sdk`.
 - The implemented workflow floor is:
   - `NIP-46` remote signer
   - `NIP-17` mailbox session plus sender-copy-aware delivery planning, explicit mailbox runtime
-    inspection and next-step selection, and file-message send/intake
+    inspection and next-step selection, explicit next delivery-relay selection, and file-message
+    send/intake
   - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
-    discovery plus preferred remembered-profile selection, explicit remembered runtime policy, and
-    explicit stale-profile refresh planning
+    discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
+    next-entry selection, and explicit stale-profile refresh planning
   - `NIP-03` local plus detached-proof, stored-proof, and freshness-classified remembered-
-    verification OpenTimestamps workflow plus explicit remembered runtime policy and explicit
-    stale-verification refresh planning
+    verification OpenTimestamps workflow plus explicit remembered runtime policy and next-entry
+    selection plus explicit stale-verification refresh planning
   - `NIP-05` fetch/verify
   - `NIP-29` relay-local group client core plus explicit multi-relay fleet routing, checkpoints,
     reconciliation, component-level merge policy, explicit fleet runtime inspection, durable store seams, and fleet moderation fanout
+    plus explicit next-step selectors over runtime and publish fanout
 - The first structured SDK examples tree is in place and compile-verified.
 - The intended product target is explicit:
   - `noztr-sdk` should become the Zig-native analogue to applesauce
@@ -40,7 +42,8 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `204/204`
+  - `zig build test --summary all` with `209/209`
+  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `98/98`
 
 ## Read First
 
@@ -61,17 +64,18 @@ Current project context for `noztr-sdk`.
   runtime inspection, and fleet moderation fanout over relay-local clients, but it still lacks the
   broader background-runtime posture of a fuller groups client.
 - `A-NIP17-001` and `Z-WORKFLOWS-001`: `NIP-17` now covers sender-copy-aware delivery planning,
-  explicit mailbox runtime inspection and next-step selection, and file-message send/intake, but
-  it is still not a higher-level mailbox sync/runtime workflow.
+  explicit mailbox runtime inspection and next-step selection, explicit next delivery-relay
+  selection, and file-message send/intake, but it is still not a higher-level mailbox
+  sync/runtime workflow.
 - `A-NIP03-001`: `NIP-03` now covers detached proof retrieval plus explicit stored-proof reuse and
   freshness-classified remembered verification plus explicit remembered runtime inspection and
-  stale-verification refresh planning over the explicit HTTP seam, but it is still not a complete
-  proof workflow.
+  next-entry selection plus stale-verification refresh planning over the explicit HTTP seam, but
+  it is still not a complete proof workflow.
 - `A-NIP39-001`: `NIP-39` now verifies full identity events, exposes provider-shaped claim
   details, reuses explicit cached verification outcomes, remembers verified identities, and
   supports hydrated stored discovery plus freshness-classified remembered discovery, preferred
-  remembered-profile selection, explicit remembered runtime inspection, and stale-profile refresh
-  planning, but still lacks broader long-lived store/discovery policy.
+  remembered-profile selection, explicit remembered runtime inspection and next-entry selection,
+  and stale-profile refresh planning, but still lacks broader long-lived store/discovery policy.
 
 ## Current Slice Notes
 
@@ -213,6 +217,8 @@ Current project context for `noztr-sdk`.
     the whole fleet
   - `GroupFleet` now also plans `put-user` and `remove-user` moderation publishes across all
     relays through one explicit caller-owned fleet publish context and per-relay buffers
+  - `GroupFleet.nextPublishEvent(...)` now also selects the next per-relay moderation publish step
+    without hand-scanning the fleet fanout slice
   - `examples/group_session_recipe.zig` now teaches authored snapshot state plus one outbound
     moderation publish through the higher-level client shape, with checkpoint export/restore in the
     middle
@@ -220,7 +226,7 @@ Current project context for `noztr-sdk`.
     store, restore into a fresh fleet through that fleet layer, inspect runtime actions plus one
     explicit next runtime step over the restored relays, merge divergent relay-local components by
     explicit relay choice, run one explicit targeted baseline-to-target reconcile step, then one
-    explicit moderation fanout across the reconciled relays
+    explicit next moderation publish step across the reconciled relays
   - the real remaining gap is now broader background runtime/client policy above the explicit
     multi-relay routing, store, runtime inspection, targeted reconcile, reconciliation, and merge
     layer
@@ -282,23 +288,23 @@ Current project context for `noztr-sdk`.
    [docs/plans/noztr-remediation-sync-plan.md](./docs/plans/noztr-remediation-sync-plan.md) as the
    reference packet when future `noztr` hardening passes land. It is now completed, not the active
    blocker.
-2. The next active packet is
+2. The five-slice selector loop is now closed in
    [docs/plans/five-slice-selector-loop-plan.md](./docs/plans/five-slice-selector-loop-plan.md).
-   It scopes one bounded follow-on family above already-landed runtime, delivery, and publish
-   plans instead of jumping straight to hidden background loops.
+   The next implementation lane should start from a fresh packet, not continue appending to the
+   completed selector loop.
 3. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
-   reconciliation, merge, publish-planning, and runtime-inspection surfaces rather than repeating
-   already-landed relay-local authoring, checkpoint, explicit fleet-routing, or merge-selection
-   work.
+   reconciliation, merge, publish-planning, runtime-inspection, and next-step selector surfaces
+   rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
+   or merge-selection work.
 4. Continue `NIP-39` only if the next slice clearly targets broader autonomous discovery, refresh,
    or longer-lived store policy beyond the now-landed remembered verify/store/discover/select and
-   runtime-policy path rather than repeating already-landed provider-detail, cache, or explicit
-   store/discovery work.
+   runtime-policy plus next-entry path rather than repeating already-landed provider-detail,
+   cache, or explicit store/discovery work.
 5. The best broader product slice after the selector loop is still a real background-runtime
    `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
-   `NIP-03` / `NIP-17` workflow policy. The last four-slice loop already closed the bounded
-   refresh-planning and mailbox next-step helpers.
+   `NIP-03` / `NIP-17` workflow policy. The selector loop closed the bounded refresh, delivery,
+   runtime, and publish-step helpers.
 6. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 7. Keep `examples/README.md` current whenever the public teaching surface changes.
 8. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
@@ -306,5 +312,5 @@ Current project context for `noztr-sdk`.
 10. Keep `NIP-03` scoped to broader proof workflow work only:
    `OpenTimestampsVerifier.verifyRemote(...)` and `verifyRemoteCached(...)` already cover the
    explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
-   covers remembered runtime inspection; the remaining gap is broader Bitcoin verification,
-   freshness, and durable proof-store policy.
+   covers remembered runtime inspection plus next-entry selection; the remaining gap is broader
+   Bitcoin verification, freshness, and durable proof-store policy.

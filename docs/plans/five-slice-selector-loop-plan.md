@@ -1,7 +1,7 @@
 ---
 title: Five-Slice Selector Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [17, 3, 39, 29]
 read_when:
@@ -125,3 +125,19 @@ without crossing into hidden orchestration.
 - the shared pattern is small and already proven by `MailboxRuntimePlan.nextEntry()`
 - the loop can materially improve app-driving ergonomics without forcing hidden background runtime
   decisions
+
+## Closeout
+
+Status: completed on 2026-03-18.
+
+Landed slices:
+1. `NIP-39`: `IdentityStoredProfileRuntimePlan.nextEntry()`
+2. `NIP-03`: `OpenTimestampsStoredVerificationRuntimePlan.nextEntry()`
+3. `NIP-17`: `MailboxDeliveryPlan.nextRelayIndex()`
+4. `NIP-29`: `GroupFleetRuntimePlan.nextEntry()`
+5. `NIP-29`: `GroupFleet.nextPublishEvent(...)`
+
+Closeout notes:
+- examples now call the selector helpers directly on the touched workflow surfaces
+- audits and handoff were reconciled in the same loop
+- compatibility rerun status: `green`

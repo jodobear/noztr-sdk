@@ -111,7 +111,7 @@ network daemons, or hidden runtime loops.
     caller-owned store, restore a fresh fleet from that stored state, inspect runtime actions plus
     one explicit next runtime step over the restored relays, merge divergent relay-local
     components by explicit relay selection, run one explicit targeted baseline-to-target reconcile
-    step, then plan one moderation publish across all reconciled relays
+    step, then select one next moderation publish relay from the resulting fanout
   - public SDK surface: `GroupFleet`, `GroupClient`, `GroupClientStorage`,
     `GroupRelayState`, `GroupFleetRuntimeAction`, `GroupFleetRuntimeStorage`,
     `GroupFleetRuntimePlan`,
@@ -130,7 +130,8 @@ network daemons, or hidden runtime loops.
     chooses which relay contributes each merged checkpoint component explicitly, applies that
     merged checkpoint across the fleet, can then reconcile one chosen target relay explicitly from
     the chosen baseline without updating the whole fleet, and finally plans one explicit per-relay
-    moderation publish through caller-owned buffers without hidden merge or runtime policy
+    moderation publish through caller-owned buffers plus one explicit next-publish selector
+    without hidden merge or runtime policy
 
 ## Adversarial Examples
 
