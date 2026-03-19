@@ -241,9 +241,16 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessStorage) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTarget) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsLatestStoredVerificationTargetEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsLatestStoredVerificationTargetStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsLatestStoredVerificationTargetRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationFallbackPolicy) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsPreferredStoredVerificationRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsPreferredStoredVerification) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsPreferredStoredVerificationTargetEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsPreferredStoredVerificationTargetStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsPreferredStoredVerificationTargetRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimeAction) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimeStorage) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRuntimeRequest) == type);
@@ -254,6 +261,11 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRefreshRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRefreshPlan) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationRefreshStep) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshStep) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.MemoryOpenTimestampsVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsRemoteProofRequest) == type);
