@@ -57,6 +57,7 @@ network daemons, or hidden runtime loops.
     `OpenTimestampsProofStore`, `MemoryOpenTimestampsProofStore`,
     `OpenTimestampsVerificationStore`, `MemoryOpenTimestampsVerificationStore`,
     `OpenTimestampsStoredVerificationDiscoveryFreshnessStorage`,
+    `OpenTimestampsPreferredStoredVerificationRequest`,
     `OpenTimestampsStoredVerificationRuntimeStorage`,
     `OpenTimestampsStoredVerificationRuntimeAction`,
     `OpenTimestampsStoredVerificationRefreshStorage`, `transport.HttpClient`
@@ -64,7 +65,8 @@ network daemons, or hidden runtime loops.
   - control points: caller supplies the target event, attestation event, detached proof URL,
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
     verification store records over the explicit HTTP seam, then performs one explicit
-    latest-verification freshness lookup plus one explicit freshness-classified remembered
+    latest-verification freshness lookup plus one explicit preferred-verification selection plus
+    one explicit freshness-classified remembered
     discovery lookup plus one typed remembered runtime-step helper plus one explicit stale-proof
     refresh plan without hidden Bitcoin refresh policy
 - `nip39_verification_recipe.zig`

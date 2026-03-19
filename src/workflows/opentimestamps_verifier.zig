@@ -224,6 +224,20 @@ pub const OpenTimestampsStoredVerificationFallbackPolicy = enum {
     allow_stale_latest,
 };
 
+pub const OpenTimestampsPreferredStoredVerificationRequest = struct {
+    target_event_id: *const [32]u8,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    matches: []OpenTimestampsStoredVerificationMatch,
+    fallback_policy: OpenTimestampsStoredVerificationFallbackPolicy = .allow_stale_latest,
+};
+
+pub const OpenTimestampsPreferredStoredVerification = struct {
+    entry: OpenTimestampsStoredVerificationDiscoveryEntry,
+    freshness: OpenTimestampsStoredVerificationFreshness,
+    age_seconds: u64,
+};
+
 pub const OpenTimestampsStoredVerificationRuntimeAction = enum {
     verify_now,
     refresh_existing,
@@ -894,6 +908,57 @@ pub const OpenTimestampsVerifier = struct {
             .freshness = if (age_seconds <= request.max_age_seconds) .fresh else .stale,
             .age_seconds = age_seconds,
         };
+    }
+
+    pub fn getPreferredStoredVerification(
+        verification_store: OpenTimestampsVerificationStore,
+        request: OpenTimestampsPreferredStoredVerificationRequest,
+    ) OpenTimestampsStoredVerificationDiscoveryError!?OpenTimestampsPreferredStoredVerification {
+        var freshness_entries: [32]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+        if (request.matches.len > freshness_entries.len) return error.BufferTooSmall;
+
+        const entries = try discoverStoredVerificationEntriesWithFreshness(
+            verification_store,
+            .{
+                .target_event_id = request.target_event_id,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = .{
+                    .matches = request.matches,
+                    .entries = freshness_entries[0..request.matches.len],
+                },
+            },
+        );
+
+        var latest_stale: ?OpenTimestampsPreferredStoredVerification = null;
+        var best_fresh: ?OpenTimestampsPreferredStoredVerification = null;
+        for (entries) |entry| {
+            const candidate: OpenTimestampsPreferredStoredVerification = .{
+                .entry = entry.entry,
+                .freshness = entry.freshness,
+                .age_seconds = entry.age_seconds,
+            };
+            switch (entry.freshness) {
+                .fresh => {
+                    if (best_fresh == null or
+                        candidate.entry.match.created_at > best_fresh.?.entry.match.created_at)
+                    {
+                        best_fresh = candidate;
+                    }
+                },
+                .stale => {
+                    if (latest_stale == null or
+                        candidate.entry.match.created_at > latest_stale.?.entry.match.created_at)
+                    {
+                        latest_stale = candidate;
+                    }
+                },
+            }
+        }
+
+        if (best_fresh) |preferred| return preferred;
+        if (request.fallback_policy == .allow_stale_latest) return latest_stale;
+        return null;
     }
 
     pub fn discoverStoredVerificationEntriesWithFreshness(
@@ -2070,6 +2135,21 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
         "https://proof.example/new.ots",
         preferred.entry.verification.proofUrl(),
     );
+
+    var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    const selected = (try OpenTimestampsVerifier.getPreferredStoredVerification(
+        verification_store.asStore(),
+        .{
+            .target_event_id = &target_event.id,
+            .now_unix_seconds = 12,
+            .max_age_seconds = 5,
+            .matches = preferred_matches[0..],
+            .fallback_policy = .require_fresh,
+        },
+    )).?;
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.fresh, selected.freshness);
+    try std.testing.expectEqual(@as(u64, 3), selected.age_seconds);
+    try std.testing.expectEqualStrings("https://proof.example/new.ots", selected.entry.verification.proofUrl());
 }
 
 test "opentimestamps verifier runtime policy can use stale verification and refresh" {
@@ -2169,6 +2249,21 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
         "https://proof.example/new.ots",
         preferred.entry.verification.proofUrl(),
     );
+
+    var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    const selected = (try OpenTimestampsVerifier.getPreferredStoredVerification(
+        verification_store.asStore(),
+        .{
+            .target_event_id = &target_event.id,
+            .now_unix_seconds = 20,
+            .max_age_seconds = 5,
+            .matches = preferred_matches[0..],
+            .fallback_policy = .allow_stale_latest,
+        },
+    )).?;
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.stale, selected.freshness);
+    try std.testing.expectEqual(@as(u64, 11), selected.age_seconds);
+    try std.testing.expectEqualStrings("https://proof.example/new.ots", selected.entry.verification.proofUrl());
 }
 
 test "opentimestamps verifier runtime policy can require refresh for stale remembered verification" {

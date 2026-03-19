@@ -266,6 +266,9 @@ Current project context for `noztr-sdk`.
   - `OpenTimestampsVerifier.getLatestStoredVerificationFreshness(...)` now classifies that newest
     remembered verification as fresh or stale under one explicit freshness window instead of
     leaving that common latest-match age policy above the store seam
+  - `OpenTimestampsVerifier.getPreferredStoredVerification(...)` now selects one preferred
+    remembered verification under an explicit stale-fallback policy instead of leaving that choice
+    entirely above the store seam
   - `OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(...)` now classifies all
     remembered verification entries for one target event as fresh or stale without inventing
     hidden refresh or Bitcoin policy

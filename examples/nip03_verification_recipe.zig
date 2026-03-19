@@ -95,6 +95,23 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
     try std.testing.expectEqual(@as(u64, 60), latest_freshness.age_seconds);
 
+    var preferred_matches: [2]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    const preferred = (try noztr_sdk.workflows.OpenTimestampsVerifier.getPreferredStoredVerification(
+        verification_store.asStore(),
+        .{
+            .target_event_id = &target.id,
+            .now_unix_seconds = 62,
+            .max_age_seconds = 120,
+            .matches = preferred_matches[0..],
+            .fallback_policy = .require_fresh,
+        },
+    )).?;
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.OpenTimestampsStoredVerificationFreshness.fresh,
+        preferred.freshness,
+    );
+    try std.testing.expectEqual(@as(u64, 60), preferred.age_seconds);
+
     var freshness_matches: [2]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
     var freshness_entries: [2]noztr_sdk.workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
     const discovered_with_freshness =
