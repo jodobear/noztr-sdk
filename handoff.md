@@ -192,8 +192,10 @@ Current project context for `noztr-sdk`.
   - `examples/relay_pool_checkpoint_recipe.zig` now proves that this shared pool checkpoint shape
     composes with `noztr_sdk.store.RelayCheckpointArchive` instead of absorbing store policy into
     `runtime`
-  - the next likely child work is one real workflow adaptation above the shared pool floor or one
-    explicit pool-level replay composition decision, not subscription/sync expansion yet
+  - the next active implementation loop under that child is now
+    [docs/plans/five-slice-remote-signer-relay-pool-loop-plan.md](./docs/plans/five-slice-remote-signer-relay-pool-loop-plan.md)
+  - that loop exists to prove one real workflow adaptation over the shared pool floor before
+    broader mailbox/groups reuse or subscription/sync expansion
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
