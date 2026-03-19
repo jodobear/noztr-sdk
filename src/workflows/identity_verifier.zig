@@ -1652,6 +1652,32 @@ pub const IdentityVerifier = struct {
         };
     }
 
+    pub fn getPreferredStoredProfilesForTargets(
+        store: IdentityProfileStore,
+        request: IdentityPreferredStoredProfileTargetSelectionRequest,
+    ) IdentityStoredProfileDiscoveryError![]const IdentityPreferredStoredProfileTargetEntry {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+
+        for (request.targets, 0..) |target, index| {
+            request.storage.entries[index] = .{
+                .target = target,
+                .preferred = try getPreferredStoredProfile(
+                    store,
+                    .{
+                        .provider = target.provider,
+                        .identity = target.identity,
+                        .now_unix_seconds = request.now_unix_seconds,
+                        .max_age_seconds = request.max_age_seconds,
+                        .matches = request.storage.matches,
+                        .fallback_policy = request.fallback_policy,
+                    },
+                ),
+            };
+        }
+
+        return request.storage.entries[0..request.targets.len];
+    }
+
     pub fn inspectStoredProfileRuntime(
         store: IdentityProfileStore,
         request: IdentityStoredProfileRuntimeRequest,
@@ -3667,6 +3693,130 @@ test "identity verifier latest per-target helper stays bounded by caller-owned t
             },
         ),
     );
+}
+
+test "identity verifier gets preferred remembered profile per watched target in caller order" {
+    const alice_pubkey = [_]u8{0xb1} ** 32;
+    const bob_pubkey = [_]u8{0xb2} ** 32;
+    const alice_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice",
+                        .expected_text = "npub-alice",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey, 10, &alice_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &bob_pubkey, 5, &bob_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+        .{ .provider = .github, .identity = "carol" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var preferred_entries: [3]IdentityPreferredStoredProfileTargetEntry = undefined;
+    const preferred = try IdentityVerifier.getPreferredStoredProfilesForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 20,
+            .max_age_seconds = 8,
+            .fallback_policy = .allow_stale_latest,
+            .storage = IdentityPreferredStoredProfileTargetStorage.init(
+                matches_storage[0..],
+                preferred_entries[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 3), preferred.len);
+    try std.testing.expectEqualStrings("alice", preferred[0].target.identity);
+    try std.testing.expectEqualStrings("gist-alice", preferred[0].preferred.?.entry.matchedClaim().proofSlice());
+    try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, preferred[0].preferred.?.freshness);
+    try std.testing.expectEqualStrings("bob", preferred[1].target.identity);
+    try std.testing.expectEqualStrings("gist-bob", preferred[1].preferred.?.entry.matchedClaim().proofSlice());
+    try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, preferred[1].preferred.?.freshness);
+    try std.testing.expectEqualStrings("carol", preferred[2].target.identity);
+    try std.testing.expect(preferred[2].preferred == null);
+}
+
+test "identity verifier preferred per-target helper respects require-fresh policy" {
+    const alice_pubkey = [_]u8{0xb1} ** 32;
+    const alice_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice",
+                        .expected_text = "npub-alice",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [1]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey, 1, &alice_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var preferred_entries: [1]IdentityPreferredStoredProfileTargetEntry = undefined;
+    const preferred = try IdentityVerifier.getPreferredStoredProfilesForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 20,
+            .max_age_seconds = 5,
+            .fallback_policy = .require_fresh,
+            .storage = IdentityPreferredStoredProfileTargetStorage.init(
+                matches_storage[0..],
+                preferred_entries[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(usize, 1), preferred.len);
+    try std.testing.expect(preferred[0].preferred == null);
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
