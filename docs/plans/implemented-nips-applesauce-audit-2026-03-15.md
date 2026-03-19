@@ -241,6 +241,9 @@ Observed friction:
 - `src/root.zig` now also exports a stable public `noztr_sdk.runtime` namespace, and
   `src/runtime/relay_pool.zig` now exposes one shared `RelayPool` floor above bounded relay-local
   sessions
+- that shared runtime layer now also exports one bounded relay-pool checkpoint set and composes it
+  with the shared checkpoint seam through the public recipe, so future groups/CLI/signer products
+  do not have to invent a bespoke relay-set checkpoint model above the SDK
 - that new shared pool layer is not yet a fuller groups client by itself, but it is useful
   applesauce-like progress because CLI, signer, and later groups/relay products now have one SDK
   route for multi-relay readiness instead of only workflow-local fleet helpers

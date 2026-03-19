@@ -225,6 +225,9 @@ Observed friction:
   `src/runtime/relay_pool.zig` now exposes one bounded shared `RelayPool` floor above relay-local
   session state instead of leaving multi-relay runtime vocabulary trapped in workflow-local
   helpers
+- that shared runtime layer now also exposes one bounded relay-pool checkpoint set and typed
+  export/restore steps, while still routing actual persistence through the shared checkpoint seam
+  instead of hard-wiring backend policy into `runtime`
 - that shared runtime layer is still intentionally narrow, but it is a better Zig-native
   abstraction direction than forcing every future CLI, signer, or groups surface to invent its own
   pool-shaped readiness model

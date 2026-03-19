@@ -42,6 +42,7 @@ The current public workflow floor includes:
 - one relay-local checkpoint helper over that shared checkpoint seam
 - one relay-local `NIP-29` replay helper over that shared event seam
 - one shared relay-pool runtime floor over bounded relay-local sessions
+- one shared relay-pool checkpoint composition path over the shared checkpoint seam
 - `NIP-46` remote signer workflow
 - `NIP-17` mailbox workflow
 - `NIP-39` identity verification workflow

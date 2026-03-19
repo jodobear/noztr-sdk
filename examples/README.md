@@ -82,6 +82,16 @@ Use these docs when you need public routing or contract context before opening a
     surface exposes one shared inspect/plan/step model without mailbox/groups/signer semantics,
     and the recipe teaches that the shared runtime floor is explicit and side-effect free rather
     than hidden background coordination
+- `relay_pool_checkpoint_recipe.zig`
+  - goal: export one shared relay-pool checkpoint set, persist its per-relay cursors through the
+    shared checkpoint seam, then restore a fresh shared pool from that bounded set explicitly
+  - public SDK surface: `noztr_sdk.runtime`, `RelayPool`, `RelayPoolCheckpointStorage`,
+    `RelayPoolCheckpointSet`, `RelayPoolCheckpointStep`, `noztr_sdk.store.RelayCheckpointArchive`
+  - kernel fixture help: none beyond the shared relay URL validation and session/runtime layer
+  - control points: caller still owns cursor values, pool checkpoint records stay bounded and
+    backend-agnostic, persistence still routes through the shared checkpoint seam instead of being
+    absorbed into `runtime`, and restore still targets one fresh shared pool without hidden reset
+    or background runtime
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, select one next workflow relay explicitly, unwrap it through a recipient

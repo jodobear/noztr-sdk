@@ -1,7 +1,7 @@
 ---
 title: Five Slice Relay Pool Checkpoint Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - executing_the_shared_relay_pool_runtime_baseline
@@ -55,3 +55,16 @@ This loop should make the next architectural statement explicit:
 - shared pool runtime plus shared checkpoint persistence can meet at one backend-agnostic SDK seam
 - future CLI, signer, and relay-framework work can restore bounded relay readiness state without
   inventing separate relay-set checkpoint models
+
+## Closeout
+
+This loop is complete.
+
+It landed:
+
+1. shared relay-pool checkpoint vocabulary and caller-owned batch storage
+2. explicit `RelayPool.exportCheckpoints(...)` over current pool relays plus caller-supplied cursors
+3. explicit `RelayPool.restoreCheckpoints(...)` into one fresh shared pool
+4. typed `nextEntry()` plus `nextExportStep()` / `nextRestoreStep()` over the bounded checkpoint set
+5. one public recipe proving composition with `RelayCheckpointArchive` instead of absorbing
+   persistence policy into `runtime`

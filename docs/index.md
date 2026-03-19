@@ -61,7 +61,6 @@ Use `doc_type` plus `status` first:
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
 - [sdk-relay-pool-runtime-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
-- [five-slice-relay-pool-checkpoint-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -97,6 +96,7 @@ Use `doc_type` plus `status` first:
 - [sdk-relay-checkpoint-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-checkpoint-pressure-test-plan.md)
 - [sdk-group-replay-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-group-replay-pressure-test-plan.md)
 - [five-slice-relay-pool-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-loop-plan.md)
+- [five-slice-relay-pool-checkpoint-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
 - [nip17-outbound-mailbox-plan.md](/workspace/projects/nzdk/docs/plans/nip17-outbound-mailbox-plan.md)

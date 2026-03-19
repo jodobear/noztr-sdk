@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `297/297`
+  - `zig build test --summary all` with `303/303`
   - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -179,6 +179,21 @@ Current project context for `noztr-sdk`.
     [docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md](./docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md)
   - that loop exists to prove shared pool plus shared checkpoint composition before broader
     workflow adaptation or subscription/sync expansion
+- the shared relay-pool checkpoint loop is now complete:
+  - `src/runtime/relay_pool.zig` now also exposes bounded `RelayPoolCheckpointRecord`,
+    `RelayPoolCheckpointStorage`, `RelayPoolCheckpointSet`, and `RelayPoolCheckpointStep`
+  - `RelayPool.exportCheckpoints(...)` now derives one bounded relay-url-plus-cursor record per
+    current pool relay from caller-supplied cursor values
+  - `RelayPool.restoreCheckpoints(...)` now restores relay membership into one fresh shared pool
+    from that bounded checkpoint set without inventing hidden reset or persistence behavior
+  - `RelayPoolCheckpointSet` now also exposes `nextEntry()`, `nextExportStep()`, and
+    `nextRestoreStep()` so callers can drive one explicit checkpoint action without rebuilding
+    step typing above the runtime layer
+  - `examples/relay_pool_checkpoint_recipe.zig` now proves that this shared pool checkpoint shape
+    composes with `noztr_sdk.store.RelayCheckpointArchive` instead of absorbing store policy into
+    `runtime`
+  - the next likely child work is one real workflow adaptation above the shared pool floor or one
+    explicit pool-level replay composition decision, not subscription/sync expansion yet
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
