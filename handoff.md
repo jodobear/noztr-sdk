@@ -178,6 +178,9 @@ Current project context for `noztr-sdk`.
   - `IdentityVerifier.discoverStoredProfileEntriesForTargets(...)` now hydrates all remembered
     profile matches for one watched target set into grouped caller-owned slices in target order
     instead of leaving broader multi-identity remembered discovery entirely above the SDK
+  - `IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(...)` now also groups
+    freshness-classified remembered profile entries for one watched target set instead of leaving
+    multi-identity age classification entirely above the SDK
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging
