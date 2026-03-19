@@ -355,6 +355,11 @@ pub const WorkflowPlan = struct {
         return null;
     }
 
+    pub fn nextStep(self: *const WorkflowPlan) ?WorkflowStep {
+        const selected_entry = self.nextEntry() orelse return null;
+        return .{ .entry = selected_entry };
+    }
+
     fn entryForDeliveryIndex(
         self: *const WorkflowPlan,
         delivery_index: u8,
@@ -2091,6 +2096,61 @@ test "mailbox workflow next entry falls back to current receive when no delivery
     try std.testing.expectEqual(WorkflowAction.receive, next.action);
     try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
     try std.testing.expect(next.is_current);
+}
+
+test "mailbox workflow next step packages the selected workflow entry" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonThree(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        "wss://relay.three",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var workflow_storage = WorkflowStorage{};
+    const workflow = try session.inspectWorkflow(.{
+        .storage = &workflow_storage,
+    });
+    const next = workflow.nextEntry().?;
+    const next_step = workflow.nextStep().?;
+    try std.testing.expectEqual(next.action, next_step.entry.action);
+    try std.testing.expectEqual(next.relay_index, next_step.entry.relay_index);
+    try std.testing.expectEqualStrings(next.relay_url, next_step.entry.relay_url);
+    try std.testing.expectEqual(next.is_current, next_step.entry.is_current);
+}
+
+test "mailbox workflow next step returns null for an empty plan" {
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    var workflow_storage = WorkflowStorage{};
+    var runtime_storage = RuntimeStorage{};
+    const workflow = WorkflowPlan{
+        .relay_count = 0,
+        ._session = &session,
+        ._runtime = .{
+            .relay_count = 0,
+            .connect_count = 0,
+            .authenticate_count = 0,
+            .receive_count = 0,
+            ._session = &session,
+            ._storage = &runtime_storage,
+        },
+        ._delivery = null,
+        ._storage = &workflow_storage,
+    };
+    try std.testing.expect(workflow.nextEntry() == null);
+    try std.testing.expect(workflow.nextStep() == null);
 }
 
 test "mailbox session relay list hydration replaces stale relays" {

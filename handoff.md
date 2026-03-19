@@ -123,6 +123,9 @@ Current project context for `noztr-sdk`.
   - `MailboxWorkflowPlan.nextEntry()` now follows pending delivery order while preserving actual
     relay readiness preconditions, so callers can select one next mailbox workflow relay without
     flattening auth/connect/publish differences above the session
+  - `MailboxWorkflowPlan.nextStep()` now packages that selected mailbox workflow action plus its
+    relay context into one typed SDK step instead of forcing callers to restitch workflow entry
+    state above the plan
   - `MailboxSession` now exposes one outbound `beginDirectMessage(...)` workflow entrypoint in
     addition to relay hydration and unwrap handling
   - `MailboxSession` now also exposes `planDirectMessageRelayFanout(...)` so the sender can build
