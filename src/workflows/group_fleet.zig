@@ -103,6 +103,33 @@ pub const GroupFleetBackgroundRuntimePlan = struct {
         };
     }
 
+    pub fn nextEntry(self: *const GroupFleetBackgroundRuntimePlan) ?GroupFleetBackgroundEntry {
+        const priorities = [_]GroupFleetBackgroundAction{
+            .reconcile,
+            .authenticate,
+            .connect,
+            .merge_apply,
+            .publish,
+        };
+        for (priorities) |priority| {
+            var baseline_match: ?GroupFleetBackgroundEntry = null;
+            var first_match: ?GroupFleetBackgroundEntry = null;
+            var index: u8 = 0;
+            while (index < self.relay_count) : (index += 1) {
+                const candidate = self.entry(index) orelse continue;
+                if (candidate.action != priority) continue;
+                if (first_match == null) first_match = candidate;
+                if (candidate.is_baseline) {
+                    baseline_match = candidate;
+                    break;
+                }
+            }
+            if (baseline_match) |selected_entry| return selected_entry;
+            if (first_match) |selected_entry| return selected_entry;
+        }
+        return null;
+    }
+
     pub fn runtimePlan(self: *const GroupFleetBackgroundRuntimePlan) *const GroupFleetRuntimePlan {
         return &self._runtime;
     }
@@ -1795,6 +1822,9 @@ test "group fleet background runtime inspection classifies connect authenticate 
     try std.testing.expectEqual(GroupFleetBackgroundAction.reconcile, background.entry(3).?.action);
     try std.testing.expectEqual(@as(usize, 2), background.consistencyReport().divergent_relays.len);
     try std.testing.expectEqual(@as(u8, 1), background.runtimePlan().reconcile_count);
+    const next = background.nextEntry().?;
+    try std.testing.expectEqualStrings("wss://relay.one:666", next.relay_url.?);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.reconcile, next.action);
 }
 
 test "group fleet background runtime inspection can prioritize merge apply across ready relays" {
@@ -1844,6 +1874,10 @@ test "group fleet background runtime inspection can prioritize merge apply acros
     try std.testing.expectEqual(@as(u8, 0), background.idle_count);
     try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, background.entry(0).?.action);
     try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, background.entry(1).?.action);
+    const next = background.nextEntry().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next.relay_url.?);
+    try std.testing.expect(next.is_baseline);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, next.action);
 }
 
 test "group fleet background runtime inspection can prioritize publish over idle on ready relays" {
@@ -1909,6 +1943,42 @@ test "group fleet background runtime inspection can prioritize publish over idle
     try std.testing.expectEqualStrings("wss://relay.one", background.entry(0).?.relay_url.?);
     try std.testing.expectEqual(GroupFleetBackgroundAction.publish, background.entry(0).?.action);
     try std.testing.expectEqual(GroupFleetBackgroundAction.idle, background.entry(1).?.action);
+    const next = background.nextEntry().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next.relay_url.?);
+    try std.testing.expect(next.is_baseline);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.publish, next.action);
+}
+
+test "group fleet background runtime next entry returns null when every relay is idle" {
+    storage_count = 0;
+
+    var client_a = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    client_a.markCurrentRelayConnected();
+    var client_b = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = testStorage(),
+    });
+    client_b.markCurrentRelayConnected();
+
+    const snapshot_events = try buildSnapshotEvents("pizza-lovers");
+    try client_a.applySnapshotEvents(snapshot_events[0..]);
+    try client_b.applySnapshotEvents(snapshot_events[0..]);
+
+    var clients = [_]*group_client.GroupClient{ &client_a, &client_b };
+    const fleet = try GroupFleet.init(clients[0..]);
+    var background_storage = GroupFleetBackgroundRuntimeStorage{};
+    const background = try fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one",
+        .storage = &background_storage,
+    });
+
+    try std.testing.expectEqual(@as(u8, 2), background.idle_count);
+    try std.testing.expect(background.nextEntry() == null);
 }
 
 test "group fleet exports and restores a full checkpoint set across relay-local clients" {

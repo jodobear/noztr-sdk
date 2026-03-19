@@ -42,7 +42,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `228/228`
+  - `zig build test --summary all` with `229/229`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `105/105`
 
 ## Read First
@@ -90,6 +90,8 @@ Current project context for `noztr-sdk`.
   - `GroupFleet.inspectBackgroundRuntime(...)` now exposes one explicit caller-owned background
     plan over relay runtime state, divergence, and pending merge/publish inputs instead of leaving
     that broader coordinator posture implicit above the fleet
+  - `GroupFleetBackgroundRuntimePlan` now also exposes `nextEntry()` so callers can select one
+    bounded next background relay/action without hand-scanning that broader plan above the fleet
 - `A-HTTP-001` and `Z-HTTP-001` are now resolved:
   - `src/root.zig` exports the explicit HTTP seam intentionally through `noztr_sdk.transport`
   - `examples/nip39_verification_recipe.zig` and `examples/nip05_resolution_recipe.zig` now teach

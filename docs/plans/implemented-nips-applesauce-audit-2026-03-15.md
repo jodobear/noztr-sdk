@@ -221,6 +221,9 @@ Observed friction:
 - `GroupFleet.inspectBackgroundRuntime(...)` now also exposes one explicit side-effect-free fleet
   background plan over runtime state, divergence, and pending merge/publish inputs, so callers can
   inspect broader coordinator posture without inventing that classification above the fleet
+- `GroupFleetBackgroundRuntimePlan` now also exposes `nextEntry()` so callers can step one
+  bounded next background relay/action without hand-scanning the broader background plan above the
+  fleet
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping

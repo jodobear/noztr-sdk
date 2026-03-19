@@ -206,6 +206,9 @@ Observed friction:
 - `GroupFleet.inspectBackgroundRuntime(...)` now also exposes one caller-owned background plan
   over runtime state, divergence, and pending merge/publish inputs, so broader fleet coordination
   no longer has to begin as hand-stitched caller policy above the existing runtime surfaces
+- `GroupFleetBackgroundRuntimePlan` now also exposes `nextEntry()` so callers can follow one
+  bounded next background relay/action without hand-scanning the broader background plan above the
+  fleet
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead
