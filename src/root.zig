@@ -4,10 +4,12 @@ const std = @import("std");
 pub const workflows = @import("workflows/mod.zig");
 /// Stable store/query reference namespace.
 pub const store = @import("store/mod.zig");
+/// Stable relay-pool/runtime reference namespace.
+pub const runtime = @import("runtime/mod.zig");
 /// Explicit HTTP seam for the current HTTP-backed workflow slices.
 pub const transport = @import("transport/mod.zig");
 
-test "root module exposes workflows store plus the explicit http seam" {
+test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(!@hasDecl(@This(), "noztr"));
     try std.testing.expect(!@hasDecl(@This(), "client"));
     try std.testing.expect(@TypeOf(store) == type);
@@ -22,6 +24,12 @@ test "root module exposes workflows store plus the explicit http seam" {
     try std.testing.expect(@TypeOf(store.EventArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayCheckpointArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayLocalGroupArchive) == type);
+    try std.testing.expect(@TypeOf(runtime) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolStorage) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolPlanStorage) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPool) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolPlan) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolStep) == type);
     try std.testing.expect(@TypeOf(transport) == type);
     try std.testing.expect(@TypeOf(transport.HttpClient) == type);
     try std.testing.expect(@TypeOf(transport.HttpError) == type);
