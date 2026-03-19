@@ -147,6 +147,10 @@ pub const RelayPool = struct {
         return .{ ._storage = storage };
     }
 
+    pub fn attach(storage: *RelayPoolStorage) RelayPool {
+        return .{ ._storage = storage };
+    }
+
     pub fn addRelay(self: *RelayPool, relay_url_text: []const u8) RelayPoolError!RelayDescriptor {
         const relay_index = try self._storage.pool.addRelay(relay_url_text);
         return self.descriptor(relay_index).?;

@@ -298,3 +298,5 @@ pub const RemoteSignerRequestContext = remote_signer.RequestContext;
 pub const RemoteSignerOutboundRequest = remote_signer.OutboundRequest;
 pub const RemoteSignerTextResponse = remote_signer.TextResponse;
 pub const RemoteSignerResponseOutcome = remote_signer.ResponseOutcome;
+pub const RemoteSignerRelayPoolStorage = remote_signer.RemoteSignerRelayPoolStorage;
+pub const RemoteSignerRelayPoolRuntimeStorage = remote_signer.RemoteSignerRelayPoolRuntimeStorage;

@@ -115,6 +115,8 @@ test "phase4 exposes the remote signer workflow surface" {
     try std.testing.expect(@TypeOf(workflows.RemoteSignerPubkeyTextRequest) == type);
     try std.testing.expect(@TypeOf(workflows.RemoteSignerRequestContext) == type);
     try std.testing.expect(@TypeOf(workflows.RemoteSignerTextResponse) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerRelayPoolStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerRelayPoolRuntimeStorage) == type);
 }
 
 test "phase5 exposes the mailbox workflow surface" {

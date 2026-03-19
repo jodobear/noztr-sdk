@@ -2,6 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const relay_pool = @import("../relay/pool.zig");
 const relay_session = @import("../relay/session.zig");
+const shared_runtime = @import("../runtime/mod.zig");
 
 pub const max_pending_requests: u8 = 8;
 pub const max_secret_bytes: u16 = noztr.limits.nip46_secret_bytes_max;
@@ -96,6 +97,15 @@ pub const ResponseOutcome = union(enum) {
     text_response: TextResponse,
     pong,
     relays_switched: u8,
+};
+
+pub const RemoteSignerRelayPoolStorage = struct {
+    relay_pool_storage: shared_runtime.RelayPoolStorage = .{},
+};
+
+pub const RemoteSignerRelayPoolRuntimeStorage = struct {
+    relay_pool_storage: RemoteSignerRelayPoolStorage = .{},
+    plan_storage: shared_runtime.RelayPoolPlanStorage = .{},
 };
 
 const PendingRequest = struct {
@@ -708,6 +718,13 @@ test "remote signer session connects with matching secret echo" {
     try std.testing.expect(outcome == .connected);
     try std.testing.expect(session.isConnected());
     try std.testing.expectEqual(@as(u8, 0), session._state.pending_count);
+}
+
+test "remote signer exposes caller-owned relay-pool adapter storage" {
+    var relay_pool_storage = RemoteSignerRelayPoolStorage{};
+    var runtime_storage = RemoteSignerRelayPoolRuntimeStorage{};
+    _ = &relay_pool_storage;
+    _ = &runtime_storage;
 }
 
 test "remote signer session rejects mismatched secret echo" {
