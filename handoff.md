@@ -518,11 +518,13 @@ Current project context for `noztr-sdk`.
 15. The `NIP-39` watched-target turn-policy loop is
     [docs/plans/nip39-six-slice-turn-policy-loop-plan.md](./docs/plans/nip39-six-slice-turn-policy-loop-plan.md).
     Treat it as reference.
-16. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
-17. Keep `examples/README.md` current whenever the public teaching surface changes.
-18. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
-19. Treat `docs/archive/` as historical context only, not startup reading.
-20. Keep `NIP-03` scoped to broader proof workflow work only:
+16. The next coherent execution loop under that active `NIP-39` parent packet is
+    [docs/plans/nip39-five-slice-turn-buckets-loop-plan.md](./docs/plans/nip39-five-slice-turn-buckets-loop-plan.md).
+17. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
+18. Keep `examples/README.md` current whenever the public teaching surface changes.
+19. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
+20. Treat `docs/archive/` as historical context only, not startup reading.
+21. Keep `NIP-03` scoped to broader proof workflow work only:
    `OpenTimestampsVerifier.verifyRemote(...)` and `verifyRemoteCached(...)` already cover the
    explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
    covers remembered runtime inspection plus typed next-step selection; the remaining gap is broader
