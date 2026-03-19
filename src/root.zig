@@ -20,6 +20,7 @@ test "root module exposes workflows store plus the explicit http seam" {
     try std.testing.expect(@TypeOf(store.IndexSelection) == type);
     try std.testing.expect(@TypeOf(store.MemoryClientStore) == type);
     try std.testing.expect(@TypeOf(store.EventArchive) == type);
+    try std.testing.expect(@TypeOf(store.RelayCheckpointArchive) == type);
     try std.testing.expect(@TypeOf(transport) == type);
     try std.testing.expect(@TypeOf(transport.HttpClient) == type);
     try std.testing.expect(@TypeOf(transport.HttpError) == type);

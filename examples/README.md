@@ -55,6 +55,13 @@ Use these docs when you need public routing or contract context before opening a
   - control points: caller still owns store construction, caller still supplies bounded scratch
     for event parsing, and the archive helper proves the shared store seam is usable above raw
     event/checkpoint stores without forcing a durable backend or hidden runtime
+- `relay_checkpoint_recipe.zig`
+  - goal: persist one named cursor per relay and scope on top of the shared checkpoint seam
+  - public SDK surface: `noztr_sdk.store`, `RelayCheckpointArchive`, `MemoryClientStore`
+  - kernel fixture help: relay URL validation still routes through the SDK's relay URL seam
+  - control points: caller still owns store construction and relay URL choice, and the helper
+    proves relay-local runtime state can ride the shared checkpoint seam without exposing backend
+    schema or forcing the internal relay pool module into the public surface
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, select one next workflow relay explicitly, unwrap it through a recipient

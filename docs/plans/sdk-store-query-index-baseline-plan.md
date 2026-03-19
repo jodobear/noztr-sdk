@@ -178,12 +178,15 @@ The first pressure-test slice is now landed:
   checkpoints explicitly
 - one minimal CLI-facing archive helper now also proves the shared `ClientStore` aggregate is
   usable above raw event/checkpoint seams without forcing a durable backend or hidden runtime
+- one relay-local checkpoint helper now also proves relay-local runtime cursors can ride the shared
+  checkpoint seam without exposing the internal relay pool module publicly
 
 Next likely slices:
 
-1. decide how relay-pool/runtime state should compose with the shared store layer
-2. pressure-test one real SDK workflow against the shared store seams without prematurely
+1. pressure-test one real SDK workflow against the shared store seams without prematurely
    collapsing workflow-local remembered-state stores into the shared layer
+2. decide whether the eventual public relay-pool layer should absorb or merely reuse the current
+   relay checkpoint helper
 3. decide when the first durable backend implementation should land against the now-tested seam
 
 ## Review Lenses To Emphasize

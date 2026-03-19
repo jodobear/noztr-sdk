@@ -66,6 +66,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | verify install/import works | [consumer_smoke.zig](/workspace/projects/nzdk/examples/consumer_smoke.zig) | one workflow recipe |
 | build local bounded event/query/checkpoint storage first | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_query_recipe.zig](/workspace/projects/nzdk/examples/store_query_recipe.zig) |
 | build a first CLI-facing archive surface above shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig) |
+| persist relay-local runtime cursors over shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_checkpoint_recipe.zig) |
 | build signer/session flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [remote_signer_recipe.zig](/workspace/projects/nzdk/examples/remote_signer_recipe.zig) |
 | build mailbox/private-message flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig) |
 | build identity/proof flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [nip39_verification_recipe.zig](/workspace/projects/nzdk/examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](/workspace/projects/nzdk/examples/nip03_verification_recipe.zig) |
@@ -81,6 +82,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first bounded store/query/checkpoint route
 - [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig)
   - first CLI-facing archive route over the shared store seam
+- [relay_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_checkpoint_recipe.zig)
+  - first relay-local checkpoint route over shared storage
 - [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig)
   - first private-message workflow route
 - [nip39_verification_recipe.zig](/workspace/projects/nzdk/examples/nip39_verification_recipe.zig)

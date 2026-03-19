@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `283/283`
+  - `zig build test --summary all` with `287/287`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -139,6 +139,15 @@ Current project context for `noztr-sdk`.
     - `examples/store_archive_recipe.zig` now teaches that higher-level path explicitly
     - this pressure-test confirms the aggregate `ClientStore` concept is useful above raw event and
       checkpoint sub-seams instead of being only a theoretical vocabulary
+  - the relay/store composition pressure-test is now also landed through
+    [docs/plans/sdk-relay-checkpoint-pressure-test-plan.md](./docs/plans/sdk-relay-checkpoint-pressure-test-plan.md):
+    - `src/store/relay_checkpoint.zig` now exposes `RelayCheckpointArchive` above the shared
+      `ClientStore` seam
+    - the helper persists one named cursor per relay URL and scope through the shared checkpoint
+      store without exposing the internal relay pool module publicly
+    - `examples/relay_checkpoint_recipe.zig` now teaches that relay-local checkpoint path
+    - this confirms that relay-local runtime progress can compose with the shared checkpoint seam
+      before the broader public relay-pool layer exists
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
