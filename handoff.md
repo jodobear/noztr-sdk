@@ -195,6 +195,9 @@ Current project context for `noztr-sdk`.
     can classify one watched identity set as `verify_now`, `use_preferred`, `refresh_existing`,
     or `use_stale_and_refresh` instead of leaving that set-level verify-vs-use-vs-refresh
     decision above the same watched-target surfaces
+  - `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextEntry()` so callers can follow
+    the next watched identity selected by that runtime policy without hand-scanning the set-level
+    runtime plan above the workflow
   - remembered-profile discovery, freshness, and preferred-selection helpers now return
     `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
     a custom profile store reports matches it cannot hydrate
@@ -224,9 +227,9 @@ Current project context for `noztr-sdk`.
     next step, selected once more through explicit watched-target preferred selection, selected
     once through explicit remembered-profile policy, planned once more through explicit watched-
     target stale refresh targeting plus one typed next refresh step, inspected once through
-    explicit watched-target runtime policy, inspected once through explicit remembered runtime
-    policy plus one typed next step, planned once for stale refresh plus one typed refresh step,
-    and then replayed from the explicit cache
+    explicit watched-target runtime policy plus one next runtime target, inspected once through
+    explicit remembered runtime policy plus one typed next step, planned once for stale refresh
+    plus one typed refresh step, and then replayed from the explicit cache
 - `NIP-05` now has a clearer Zig-native surface:
   - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
     caller-owned `Nip05LookupStorage`

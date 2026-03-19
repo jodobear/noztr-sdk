@@ -294,6 +294,9 @@ Observed friction:
   identity set as `verify_now`, `use_preferred`, `refresh_existing`, or `use_stale_and_refresh`
   instead of leaving that set-level verify-vs-use-vs-refresh decision entirely above the same
   watched-target surfaces
+- `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextEntry()` so callers can follow
+  the next watched identity selected by that runtime policy without hand-scanning the set-level
+  runtime plan above the workflow
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow

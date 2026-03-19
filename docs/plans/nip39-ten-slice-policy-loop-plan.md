@@ -142,3 +142,6 @@ policy, while keeping capacity and selection caller-owned and deterministic.
   - `IdentityStoredProfileTargetRuntimePlan`
   - `IdentityVerifier.inspectStoredProfileRuntimeForTargets(...)`
   - compatibility result: `green`
+- slice 9 accepted on 2026-03-19:
+  - `IdentityStoredProfileTargetRuntimePlan.nextEntry()`
+  - compatibility result: `green`

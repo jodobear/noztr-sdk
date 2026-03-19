@@ -102,7 +102,7 @@ network daemons, or hidden runtime loops.
     lookup, one newest-match remembered lookup, one caller-owned watched-target latest-freshness
     plan plus one typed next watched-target step, one explicit watched-target preferred-selection
     step, one explicit watched-target stale-refresh plan plus one typed next refresh step, one explicit preferred-profile
-    selection step, one explicit watched-target runtime plan, one explicit remembered runtime
+    selection step, one explicit watched-target runtime plan plus one next runtime target, one explicit remembered runtime
     inspection step plus one typed next-step helper, one explicit stale-profile refresh plan plus
     one typed refresh step, and one explicit freshness check without hidden background policy
 - `nip05_resolution_recipe.zig`
