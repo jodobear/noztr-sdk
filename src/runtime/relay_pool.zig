@@ -231,6 +231,19 @@ pub const RelayPool = struct {
         };
     }
 
+    pub fn restoreCheckpoints(
+        self: *RelayPool,
+        checkpoints: *const RelayPoolCheckpointSet,
+    ) RelayPoolCheckpointError!void {
+        if (self._storage.pool.count != 0) return error.PoolNotEmpty;
+
+        var index: u8 = 0;
+        while (index < checkpoints.relay_count) : (index += 1) {
+            const record = checkpoints.entry(index) orelse unreachable;
+            _ = try self.addRelay(record.relayUrl());
+        }
+    }
+
     fn requireRelay(self: *RelayPool, relay_index: u8) RelayPoolError!*session.RelaySession {
         return self._storage.pool.getRelay(relay_index) orelse error.InvalidRelayIndex;
     }
@@ -350,4 +363,44 @@ test "relay pool exports bounded relay checkpoints in pool order" {
     try std.testing.expectEqual(@as(u32, 7), checkpoints.entry(0).?.cursor.offset);
     try std.testing.expectEqualStrings("wss://relay.two", checkpoints.entry(1).?.relayUrl());
     try std.testing.expectEqual(@as(u32, 9), checkpoints.entry(1).?.cursor.offset);
+}
+
+test "relay pool restores relay membership from exported checkpoints" {
+    var source_storage = RelayPoolStorage{};
+    var source = RelayPool.init(&source_storage);
+    _ = try source.addRelay("wss://relay.one");
+    _ = try source.addRelay("wss://relay.two");
+
+    const cursors = [_]client.EventCursor{
+        .{ .offset = 7 },
+        .{ .offset = 9 },
+    };
+    var checkpoint_storage = RelayPoolCheckpointStorage{};
+    const checkpoints = try source.exportCheckpoints(cursors[0..], &checkpoint_storage);
+
+    var restored_storage = RelayPoolStorage{};
+    var restored = RelayPool.init(&restored_storage);
+    try restored.restoreCheckpoints(&checkpoints);
+    try std.testing.expectEqual(@as(u8, 2), restored.relayCount());
+    try std.testing.expectEqualStrings("wss://relay.one", restored.descriptor(0).?.relay_url);
+    try std.testing.expectEqualStrings("wss://relay.two", restored.descriptor(1).?.relay_url);
+
+    var plan_storage = RelayPoolPlanStorage{};
+    const plan = restored.inspectRuntime(&plan_storage);
+    try std.testing.expectEqual(@as(u8, 2), plan.connect_count);
+}
+
+test "relay pool restore rejects non-empty pools" {
+    var source_storage = RelayPoolStorage{};
+    var source = RelayPool.init(&source_storage);
+    _ = try source.addRelay("wss://relay.one");
+
+    const cursors = [_]client.EventCursor{.{ .offset = 7 }};
+    var checkpoint_storage = RelayPoolCheckpointStorage{};
+    const checkpoints = try source.exportCheckpoints(cursors[0..], &checkpoint_storage);
+
+    var target_storage = RelayPoolStorage{};
+    var target = RelayPool.init(&target_storage);
+    _ = try target.addRelay("wss://relay.other");
+    try std.testing.expectError(error.PoolNotEmpty, target.restoreCheckpoints(&checkpoints));
 }
