@@ -105,6 +105,7 @@ Use these only when the active task needs deeper planning context:
 - [api-ownership-map.md](./api-ownership-map.md)
 - [research-refresh-2026-03-14.md](./research-refresh-2026-03-14.md)
 - [zig-nostr-ecosystem-readiness-matrix.md](./zig-nostr-ecosystem-readiness-matrix.md)
+- [zig-nostr-ecosystem-phased-plan.md](./zig-nostr-ecosystem-phased-plan.md)
 
 ## Historical Archive
 

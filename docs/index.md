@@ -51,8 +51,7 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
-- [nip03-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip03-long-lived-policy-plan.md)
-- [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
+- [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -78,6 +77,7 @@ Use `doc_type` plus `status` first:
 - [api-ownership-map.md](/workspace/projects/nzdk/docs/plans/api-ownership-map.md)
 - [research-refresh-2026-03-14.md](/workspace/projects/nzdk/docs/plans/research-refresh-2026-03-14.md)
 - [zig-nostr-ecosystem-readiness-matrix.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
+- [zig-nostr-ecosystem-phased-plan.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-phased-plan.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
 - [nip17-outbound-mailbox-plan.md](/workspace/projects/nzdk/docs/plans/nip17-outbound-mailbox-plan.md)
@@ -99,6 +99,7 @@ Use `doc_type` plus `status` first:
 - [nip03-runtime-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip03-runtime-policy-plan.md)
 - [nip03-refresh-plan.md](/workspace/projects/nzdk/docs/plans/nip03-refresh-plan.md)
 - [nip03-six-slice-target-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip03-six-slice-target-policy-loop-plan.md)
+- [nip03-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip03-long-lived-policy-plan.md)
 - [nip05-ergonomic-surface-plan.md](/workspace/projects/nzdk/docs/plans/nip05-ergonomic-surface-plan.md)
 - [nip39-ergonomic-surface-plan.md](/workspace/projects/nzdk/docs/plans/nip39-ergonomic-surface-plan.md)
 - [nip39-profile-workflow-plan.md](/workspace/projects/nzdk/docs/plans/nip39-profile-workflow-plan.md)

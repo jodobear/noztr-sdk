@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `271/271`
+  - `zig build test --summary all` with `276/276`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -85,6 +85,12 @@ Current project context for `noztr-sdk`.
 
 ## Current Slice Notes
 
+- the new top-level active lane is
+  [docs/plans/sdk-runtime-client-store-architecture-plan.md](./docs/plans/sdk-runtime-client-store-architecture-plan.md):
+  - `noztr-sdk` now explicitly prioritizes one shared client/runtime/store architecture baseline
+    above deeper local `NIP-03` / `NIP-39` refinement
+  - this lane is intended to make the SDK ready for the first serious product wave:
+    Zig CLI, signer tooling, and later relay-framework work
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
@@ -527,8 +533,8 @@ Current project context for `noztr-sdk`.
 9. The `NIP-17` six-slice workflow loop is complete in
    [docs/plans/nip17-six-slice-workflow-loop-plan.md](./docs/plans/nip17-six-slice-workflow-loop-plan.md).
    Treat it as reference.
-10. The active parent packet is
-    [docs/plans/nip39-long-lived-policy-plan.md](./docs/plans/nip39-long-lived-policy-plan.md).
+10. The active top-level packet is
+    [docs/plans/sdk-runtime-client-store-architecture-plan.md](./docs/plans/sdk-runtime-client-store-architecture-plan.md).
 11. The `NIP-39` grouped target-discovery loop is
     [docs/plans/nip39-six-slice-target-discovery-loop-plan.md](./docs/plans/nip39-six-slice-target-discovery-loop-plan.md).
     Treat it as reference.
@@ -547,8 +553,9 @@ Current project context for `noztr-sdk`.
 16. The `NIP-39` watched-target turn-buckets loop is
     [docs/plans/nip39-five-slice-turn-buckets-loop-plan.md](./docs/plans/nip39-five-slice-turn-buckets-loop-plan.md).
     Treat it as reference.
-17. The active broader proof-policy packet is
+17. The broader `NIP-03` proof-policy parent packet is
     [docs/plans/nip03-long-lived-policy-plan.md](./docs/plans/nip03-long-lived-policy-plan.md).
+    Treat it as reference unless it directly supports the active top-level SDK architecture lane.
 18. The `NIP-03` grouped target-policy loop is
     [docs/plans/nip03-six-slice-target-policy-loop-plan.md](./docs/plans/nip03-six-slice-target-policy-loop-plan.md).
     Treat it as reference.
@@ -565,3 +572,8 @@ Current project context for `noztr-sdk`.
     [docs/plans/zig-nostr-ecosystem-readiness-matrix.md](./docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
     when selecting broader nontrivial lanes so we keep optimizing for a real Zig Nostr ecosystem,
     not only incremental NIP count.
+25. Use
+    [docs/plans/zig-nostr-ecosystem-phased-plan.md](./docs/plans/zig-nostr-ecosystem-phased-plan.md)
+    to keep implementation ordered as:
+    shared SDK architecture -> CLI -> signer tooling -> relay framework -> performant relay ->
+    Blossom -> broader client ecosystem.

@@ -1,7 +1,7 @@
 ---
 title: NIP-03 Long-Lived Policy Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [3]
 read_when:
@@ -23,10 +23,10 @@ touches_startup_docs: yes
 
 ## Status
 
-This broader lane is active after the recent `NIP-39` watched-target loop family closeout.
-The grouped remembered-proof target-policy loop is now complete under this parent lane; the
-remaining gap is broader current-turn and longer-lived remembered-proof policy above those grouped
-target helpers.
+This broader lane is now reference context.
+The grouped remembered-proof target-policy loop is complete under this parent lane; deeper `NIP-03`
+policy work should resume only if it directly supports the current top-level SDK architecture or
+the first tooling/product phases.
 
 ## Scope Delta
 
