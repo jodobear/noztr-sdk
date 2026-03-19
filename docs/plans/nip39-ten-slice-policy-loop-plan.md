@@ -136,3 +136,9 @@ policy, while keeping capacity and selection caller-owned and deterministic.
   - `IdentityStoredProfileTargetRefreshStep`
   - `IdentityStoredProfileTargetRefreshPlan.nextStep()`
   - compatibility result: `green`
+- slice 8 accepted on 2026-03-19:
+  - `IdentityStoredProfileTargetRuntimeAction`
+  - `IdentityStoredProfileTargetRuntimeRequest`
+  - `IdentityStoredProfileTargetRuntimePlan`
+  - `IdentityVerifier.inspectStoredProfileRuntimeForTargets(...)`
+  - compatibility result: `green`

@@ -290,6 +290,10 @@ Observed friction:
 - `IdentityStoredProfileTargetRefreshPlan` now also exposes `nextStep()` so callers can consume
   that watched-target refresh selection as one typed SDK value instead of restitching the selected
   target above the workflow
+- `IdentityVerifier.inspectStoredProfileRuntimeForTargets(...)` now also classifies one watched
+  identity set as `verify_now`, `use_preferred`, `refresh_existing`, or `use_stale_and_refresh`
+  instead of leaving that set-level verify-vs-use-vs-refresh decision entirely above the same
+  watched-target surfaces
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow

@@ -8,10 +8,10 @@ const common = @import("common.zig");
 // both discovered entries and the latest remembered profile for freshness, inspect one explicit
 // watched identity set through the latest-freshness plan plus one typed next step, select one
 // preferred remembered profile across that watched target set, plan refresh across that watched
-// target set, then select one preferred remembered profile under an explicit fallback policy for
-// one identity, inspect the remembered runtime action and typed next step for that identity, plan
-// one typed refresh step for stale remembered profiles, then replay the same verification from an
-// explicit caller-owned cache.
+// target set, inspect runtime policy across that watched target set, then select one preferred
+// remembered profile under an explicit fallback policy for one identity, inspect the remembered
+// runtime action and typed next step for that identity, plan one typed refresh step for stale
+// remembered profiles, then replay the same verification from an explicit caller-owned cache.
 test "recipe: identity verifier verifies, remembers, discovers, inspects watched-target latest freshness, selects preferred remembered profile, inspects remembered runtime and refresh steps, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
@@ -296,6 +296,31 @@ test "recipe: identity verifier verifies, remembers, discovers, inspects watched
     try std.testing.expectEqualStrings("alice", watched_refresh.entries[1].target.identity);
     try std.testing.expectEqualStrings("bob", watched_refresh.nextEntry().?.target.identity);
     try std.testing.expectEqualStrings("bob", watched_refresh.nextStep().?.entry.target.identity);
+    var watched_runtime_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
+    var watched_runtime_entries: [3]noztr_sdk.workflows.IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    const watched_runtime = try noztr_sdk.workflows.IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+        profile_store.asStore(),
+        .{
+            .targets = watched_targets[0..],
+            .now_unix_seconds = 31,
+            .max_age_seconds = 20,
+            .storage = noztr_sdk.workflows.IdentityStoredProfileTargetLatestFreshnessStorage.init(
+                watched_runtime_matches[0..],
+                watched_runtime_entries[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.IdentityStoredProfileTargetRuntimeAction.verify_now,
+        watched_runtime.action,
+    );
+    try std.testing.expectEqual(@as(u32, 0), watched_runtime.fresh_count);
+    try std.testing.expectEqual(@as(u32, 2), watched_runtime.stale_count);
+    try std.testing.expectEqual(@as(u32, 1), watched_runtime.missing_count);
+    try std.testing.expectEqualStrings(
+        "carol",
+        watched_runtime.entries[watched_runtime.selected_index.?].target.identity,
+    );
 
     var preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
     const preferred = (try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfile(

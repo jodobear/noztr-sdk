@@ -465,6 +465,30 @@ pub const IdentityStoredProfileTargetRefreshStep = struct {
     entry: IdentityStoredProfileTargetRefreshEntry,
 };
 
+pub const IdentityStoredProfileTargetRuntimeAction = enum {
+    verify_now,
+    refresh_existing,
+    use_preferred,
+    use_stale_and_refresh,
+};
+
+pub const IdentityStoredProfileTargetRuntimeRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredProfileTargetLatestFreshnessStorage,
+};
+
+pub const IdentityStoredProfileTargetRuntimePlan = struct {
+    action: IdentityStoredProfileTargetRuntimeAction,
+    entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
+    selected_index: ?u32 = null,
+    fresh_count: u32 = 0,
+    stale_count: u32 = 0,
+    missing_count: u32 = 0,
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
     entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
     fresh_count: u32 = 0,
@@ -1218,6 +1242,98 @@ pub const IdentityVerifier = struct {
 
         return .{
             .entries = request.storage.entries[0..stale_count],
+        };
+    }
+
+    pub fn inspectStoredProfileRuntimeForTargets(
+        store: IdentityProfileStore,
+        request: IdentityStoredProfileTargetRuntimeRequest,
+    ) IdentityStoredProfileDiscoveryError!IdentityStoredProfileTargetRuntimePlan {
+        const entries = try discoverLatestStoredProfileFreshnessForTargets(
+            store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = request.storage,
+            },
+        );
+
+        var fresh_count: u32 = 0;
+        var stale_count: u32 = 0;
+        var missing_count: u32 = 0;
+        var first_missing_index: ?u32 = null;
+        var best_fresh_index: ?u32 = null;
+        var best_stale_index: ?u32 = null;
+
+        for (entries, 0..) |entry, index| {
+            const entry_index: u32 = @intCast(index);
+            const latest = entry.latest orelse {
+                missing_count += 1;
+                if (first_missing_index == null) first_missing_index = entry_index;
+                continue;
+            };
+            switch (latest.freshness) {
+                .fresh => {
+                    fresh_count += 1;
+                    if (best_fresh_index == null or
+                        latest.latest.match.created_at >
+                            entries[@intCast(best_fresh_index.?)].latest.?.latest.match.created_at)
+                    {
+                        best_fresh_index = entry_index;
+                    }
+                },
+                .stale => {
+                    stale_count += 1;
+                    if (best_stale_index == null or
+                        latest.latest.match.created_at >
+                            entries[@intCast(best_stale_index.?)].latest.?.latest.match.created_at)
+                    {
+                        best_stale_index = entry_index;
+                    }
+                },
+            }
+        }
+
+        if (first_missing_index) |selected_index| {
+            return .{
+                .action = .verify_now,
+                .entries = entries,
+                .selected_index = selected_index,
+                .fresh_count = fresh_count,
+                .stale_count = stale_count,
+                .missing_count = missing_count,
+            };
+        }
+        if (best_fresh_index) |selected_index| {
+            return .{
+                .action = .use_preferred,
+                .entries = entries,
+                .selected_index = selected_index,
+                .fresh_count = fresh_count,
+                .stale_count = stale_count,
+                .missing_count = missing_count,
+            };
+        }
+        if (best_stale_index) |selected_index| {
+            return .{
+                .action = switch (request.fallback_policy) {
+                    .require_fresh => .refresh_existing,
+                    .allow_stale_latest => .use_stale_and_refresh,
+                },
+                .entries = entries,
+                .selected_index = selected_index,
+                .fresh_count = fresh_count,
+                .stale_count = stale_count,
+                .missing_count = missing_count,
+            };
+        }
+        return .{
+            .action = .verify_now,
+            .entries = entries,
+            .fresh_count = 0,
+            .stale_count = 0,
+            .missing_count = 0,
         };
     }
 
@@ -3475,6 +3591,215 @@ test "identity verifier target-set refresh plan returns empty for fresh or missi
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
     try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.nextStep() == null);
+}
+
+test "identity verifier watched-target runtime prefers verifying the first missing target" {
+    const fresh_pubkey = [_]u8{0xa1} ** 32;
+    const stale_pubkey = [_]u8{0xa2} ** 32;
+    const fresh_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-fresh",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-fresh",
+                        .expected_text = "npub-fresh",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-stale",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-stale",
+                        .expected_text = "npub-stale",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &fresh_pubkey, 45, &fresh_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = .init(matches_storage[0..], entries_storage[0..]),
+        },
+    );
+
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, runtime.action);
+    try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.stale_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.missing_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.selected_index.?);
+    try std.testing.expectEqualStrings("carol", runtime.entries[runtime.selected_index.?].target.identity);
+}
+
+test "identity verifier watched-target runtime can prefer the freshest remembered target" {
+    const older_pubkey = [_]u8{0xb1} ** 32;
+    const newer_pubkey = [_]u8{0xb2} ** 32;
+    const older_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-old",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-old",
+                        .expected_text = "npub-old",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const newer_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-new",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-new",
+                        .expected_text = "npub-new",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &older_pubkey, 40, &older_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &newer_pubkey, 45, &newer_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var entries_storage: [2]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = .init(matches_storage[0..], entries_storage[0..]),
+        },
+    );
+
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.use_preferred, runtime.action);
+    try std.testing.expectEqual(@as(u32, 2), runtime.fresh_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.missing_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.selected_index.?);
+    try std.testing.expectEqualStrings("bob", runtime.entries[runtime.selected_index.?].target.identity);
+}
+
+test "identity verifier watched-target runtime can require refresh for stale targets" {
+    const older_pubkey = [_]u8{0xc1} ** 32;
+    const newer_pubkey = [_]u8{0xc2} ** 32;
+    const older_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-old",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-old",
+                        .expected_text = "npub-old",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const newer_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-new",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-new",
+                        .expected_text = "npub-new",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &older_pubkey, 5, &older_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &newer_pubkey, 15, &newer_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var entries_storage: [2]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 10,
+            .fallback_policy = .require_fresh,
+            .storage = .init(matches_storage[0..], entries_storage[0..]),
+        },
+    );
+
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.refresh_existing, runtime.action);
+    try std.testing.expectEqual(@as(u32, 0), runtime.fresh_count);
+    try std.testing.expectEqual(@as(u32, 2), runtime.stale_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.missing_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.selected_index.?);
+    try std.testing.expectEqualStrings("bob", runtime.entries[runtime.selected_index.?].target.identity);
 }
 
 test "identity verifier selects the newest fresh preferred stored profile" {

@@ -80,13 +80,15 @@ network daemons, or hidden runtime loops.
     explicit watched identity set through one latest-freshness plan plus one typed next step,
     select one preferred remembered profile across that watched set, select one preferred
     remembered profile explicitly for one identity, plan refresh across that watched set, inspect
-    one typed remembered runtime step explicitly, plan refresh for stale remembered profiles
-    explicitly, and replay the same identity from remembered state
+    runtime policy across that watched set, inspect one typed remembered runtime step explicitly,
+    plan refresh for stale remembered profiles explicitly, and replay the same identity from
+    remembered state
   - public SDK surface: `IdentityVerifier`, `IdentityProfileVerificationStorage`,
     `IdentityProviderDetails`, `MemoryIdentityVerificationCache`, `MemoryIdentityProfileStore`,
     `IdentityStoredProfileDiscoveryStorage`, `IdentityStoredProfileDiscoveryFreshnessStorage`,
     `IdentityStoredProfileTarget`, `IdentityStoredProfileTargetLatestFreshnessStorage`,
     `IdentityPreferredStoredProfileTargetRequest`, `IdentityStoredProfileTargetRefreshStorage`,
+    `IdentityStoredProfileTargetRuntimeRequest`, `IdentityStoredProfileTargetRuntimeAction`,
     `IdentityLatestStoredProfileFreshnessRequest`, `IdentityPreferredStoredProfileRequest`,
     `IdentityStoredProfileFallbackPolicy`, `IdentityStoredProfileRuntimeStorage`,
     `IdentityStoredProfileRuntimeAction`, `IdentityStoredProfileRefreshStorage`,
@@ -100,9 +102,9 @@ network daemons, or hidden runtime loops.
     lookup, one newest-match remembered lookup, one caller-owned watched-target latest-freshness
     plan plus one typed next watched-target step, one explicit watched-target preferred-selection
     step, one explicit watched-target stale-refresh plan plus one typed next refresh step, one explicit preferred-profile
-    selection step, one explicit remembered runtime inspection step plus one typed next-step
-    helper, one explicit stale-profile refresh plan plus one typed refresh step, and one explicit
-    freshness check without hidden background policy
+    selection step, one explicit watched-target runtime plan, one explicit remembered runtime
+    inspection step plus one typed next-step helper, one explicit stale-profile refresh plan plus
+    one typed refresh step, and one explicit freshness check without hidden background policy
 - `nip05_resolution_recipe.zig`
   - goal: resolve and verify one `NIP-05` address over the public HTTP seam
   - public SDK surface: `Nip05Resolver`, `transport.HttpClient`
