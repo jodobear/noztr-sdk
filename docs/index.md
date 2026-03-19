@@ -77,6 +77,7 @@ Use `doc_type` plus `status` first:
 - [testing-parity-strategy.md](/workspace/projects/nzdk/docs/plans/testing-parity-strategy.md)
 - [api-ownership-map.md](/workspace/projects/nzdk/docs/plans/api-ownership-map.md)
 - [research-refresh-2026-03-14.md](/workspace/projects/nzdk/docs/plans/research-refresh-2026-03-14.md)
+- [zig-nostr-ecosystem-readiness-matrix.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
 - [nip17-outbound-mailbox-plan.md](/workspace/projects/nzdk/docs/plans/nip17-outbound-mailbox-plan.md)

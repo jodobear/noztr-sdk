@@ -561,3 +561,7 @@ Current project context for `noztr-sdk`.
    explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
    covers remembered runtime inspection plus typed next-step selection; the remaining gap is broader
    Bitcoin verification, freshness, and durable proof-store policy.
+24. Use
+    [docs/plans/zig-nostr-ecosystem-readiness-matrix.md](./docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
+    when selecting broader nontrivial lanes so we keep optimizing for a real Zig Nostr ecosystem,
+    not only incremental NIP count.
