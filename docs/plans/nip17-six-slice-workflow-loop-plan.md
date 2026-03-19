@@ -1,7 +1,7 @@
 ---
 title: NIP-17 Six-Slice Workflow Loop
 doc_type: packet
-status: reference
+status: active
 owner: noztr-sdk
 nips: [17]
 read_when:
@@ -95,3 +95,6 @@ This loop does not include:
 5. Docs and handoff closeout
 - keep one commit per accepted slice
 - promote this packet to active only when the current `NIP-29` lane closes
+
+Status: active after the recent-loops audit closed with no findings on the `NIP-39` watched-target
+and `NIP-29` background-runtime loop families.

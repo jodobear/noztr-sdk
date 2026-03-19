@@ -51,7 +51,7 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
-- [recent-loops-audit-plan.md](/workspace/projects/nzdk/docs/plans/recent-loops-audit-plan.md)
+- [nip17-six-slice-workflow-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip17-six-slice-workflow-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 

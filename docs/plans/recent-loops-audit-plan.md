@@ -1,7 +1,7 @@
 ---
 title: Recent Loops Audit Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - auditing_recent_autonomous_loops
@@ -55,3 +55,24 @@ Audit lanes:
 - record concrete findings first
 - fix or narrow any real escaped issues
 - then select the next broader product lane from a clean audited baseline
+
+## Audit Outcome
+
+Audit result: no findings.
+
+What held up:
+- the `NIP-39` watched-target loop materially reduces caller stitching without taking hidden
+  runtime ownership
+- the `NIP-29` background-runtime loop stays bounded, side-effect free, and product-meaningful
+  instead of only renaming lower-level routing
+- the public recipes still teach the safe/common path on both surfaces
+- the recent loop packets, handoff state, and docs index stayed coherent through loop closeout
+
+Residual risks to keep watching:
+- `NIP-39` still has broader autonomous discovery and refresh policy above the current
+  caller-owned watched-target inputs
+- `NIP-29` still has broader hidden-runtime and fuller groups-client posture above the current
+  explicit background-runtime helper layer
+
+The next active packet is
+[nip17-six-slice-workflow-loop-plan.md](./nip17-six-slice-workflow-loop-plan.md).
