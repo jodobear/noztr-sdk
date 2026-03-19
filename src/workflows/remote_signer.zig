@@ -257,6 +257,29 @@ pub const RemoteSignerSession = struct {
         return pool.inspectRuntime(&storage.plan_storage);
     }
 
+    pub fn selectRelayPoolStep(
+        self: *RemoteSignerSession,
+        step: *const shared_runtime.RelayPoolStep,
+    ) RemoteSignerError![]const u8 {
+        if (self._state.pending_count != 0) return error.PendingRequestsInFlight;
+
+        const descriptor = step.entry.descriptor;
+        const relay = self._state.pool.getRelayConst(descriptor.relay_index) orelse {
+            return error.InvalidRelayPoolStep;
+        };
+        if (!std.mem.eql(u8, relay.auth_session.relayUrl(), descriptor.relay_url)) {
+            return error.InvalidRelayPoolStep;
+        }
+        if (step.entry.action != classifySignerRelayAction(relay.state)) {
+            return error.InvalidRelayPoolStep;
+        }
+
+        const switching_relays = descriptor.relay_index != self._state.current_relay_index;
+        self._state.current_relay_index = descriptor.relay_index;
+        if (switching_relays) self._state.connected = false;
+        return self.currentRelayUrl();
+    }
+
     pub fn beginConnect(
         self: *RemoteSignerSession,
         context: RequestContext,
@@ -685,6 +708,14 @@ fn serialize_request(
     );
 }
 
+fn classifySignerRelayAction(state: relay_session.SessionState) shared_runtime.RelayPoolAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .ready,
+    };
+}
+
 fn serialize_response(
     json_out: []u8,
     response: noztr.nip46_remote_signing.Response,
@@ -783,6 +814,62 @@ test "remote signer inspects shared relay-pool runtime through caller-owned stor
     try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
     try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
     try std.testing.expectEqual(shared_runtime.RelayPoolAction.authenticate, plan.nextStep().?.entry.action);
+}
+
+test "remote signer selects a shared relay-pool step back onto the signer session" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const uri_text =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
+    var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
+    session.markCurrentRelayConnected();
+
+    var request_buffer = RequestBuffer{};
+    var request_scratch_storage: [1024]u8 = undefined;
+    var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
+    _ = try session.beginConnect(
+        requestContext("req-1", &request_buffer, request_scratch.allocator()),
+        &.{},
+    );
+
+    var response_json: [noztr.limits.nip46_message_json_bytes_max]u8 = undefined;
+    const response = try serialize_response(response_json[0..], .{
+        .id = "req-1",
+        .result = .{ .value = .{ .text = "ack" } },
+    });
+    _ = try session.acceptResponseJson(response, arena.allocator());
+    try std.testing.expect(session.isConnected());
+
+    var runtime_storage = RemoteSignerRelayPoolRuntimeStorage{};
+    const plan = session.inspectRelayPoolRuntime(&runtime_storage);
+    const second = plan.entry(1).?;
+    const selected_url = try session.selectRelayPoolStep(&.{ .entry = second });
+    try std.testing.expectEqualStrings("wss://relay.two", selected_url);
+    try std.testing.expectEqualStrings("wss://relay.two", session.currentRelayUrl());
+    try std.testing.expect(!session.isConnected());
+}
+
+test "remote signer rejects stale relay-pool steps" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const uri_text =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one";
+    var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
+
+    const bad_step = shared_runtime.RelayPoolStep{
+        .entry = .{
+            .descriptor = .{
+                .relay_index = 0,
+                .relay_url = "wss://relay.other",
+            },
+            .action = .connect,
+        },
+    };
+    try std.testing.expectError(error.InvalidRelayPoolStep, session.selectRelayPoolStep(&bad_step));
 }
 
 test "remote signer session rejects mismatched secret echo" {
