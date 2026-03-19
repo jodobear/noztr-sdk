@@ -7,9 +7,9 @@ const common = @import("common.zig");
 // profile through the explicit store seam, hydrate one stored discovery result directly, classify
 // both discovered entries and the latest remembered profile for freshness, select one preferred
 // remembered profile under an explicit fallback policy, inspect the remembered runtime action and
-// typed next step for that identity, then replay the same verification from an explicit
-// caller-owned cache.
-test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime and typed next step, and replays one profile event" {
+// typed next step for that identity, plan one typed refresh step for stale remembered profiles,
+// then replay the same verification from an explicit caller-owned cache.
+test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime and refresh steps, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -256,6 +256,8 @@ test "recipe: identity verifier verifies, remembers, discovers, classifies fresh
         },
     );
     try std.testing.expectEqual(@as(usize, 1), refresh_plan.entries.len);
+    const refresh_step = refresh_plan.nextStep().?;
+    try std.testing.expectEqualStrings("alice", refresh_step.entry.matchedClaim().identitySlice());
     try std.testing.expectEqualStrings(
         "alice",
         refresh_plan.newestEntry().?.matchedClaim().identitySlice(),

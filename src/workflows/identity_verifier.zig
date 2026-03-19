@@ -481,6 +481,17 @@ pub const IdentityStoredProfileRefreshPlan = struct {
         if (self.entries.len == 0) return null;
         return &self.entries[0];
     }
+
+    pub fn nextStep(
+        self: *const IdentityStoredProfileRefreshPlan,
+    ) ?IdentityStoredProfileRefreshStep {
+        const entry = self.nextEntry() orelse return null;
+        return .{ .entry = entry.* };
+    }
+};
+
+pub const IdentityStoredProfileRefreshStep = struct {
+    entry: IdentityStoredProfileRefreshEntry,
 };
 
 pub const IdentityProfileStoreVTable = struct {
@@ -3121,6 +3132,7 @@ test "identity verifier refresh plan returns stale remembered profiles newest fi
     try std.testing.expectEqual(@as(u64, 45), plan.entries[1].entry.age_seconds);
     try std.testing.expectEqualStrings("gist-new", plan.nextEntry().?.matchedClaim().proofSlice());
     try std.testing.expectEqualStrings("gist-new", plan.newestEntry().?.matchedClaim().proofSlice());
+    try std.testing.expectEqualStrings("gist-new", plan.nextStep().?.entry.matchedClaim().proofSlice());
 }
 
 test "identity verifier refresh plan returns empty when remembered profiles are fresh" {
@@ -3168,6 +3180,7 @@ test "identity verifier refresh plan returns empty when remembered profiles are 
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
     try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.newestEntry() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
 
 const TestHttpResponse = struct {

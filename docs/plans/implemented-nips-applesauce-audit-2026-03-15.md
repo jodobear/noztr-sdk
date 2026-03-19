@@ -262,7 +262,8 @@ Observed friction:
   remembered runtime action plus its selected stored profile as one explicit SDK step instead of
   stitching that view together above the workflow
 - it now also exposes one explicit stale-profile refresh-plan helper over remembered discovery
-  freshness so callers do not have to rebuild bounded refresh targeting above the same store seam
+  freshness, and `IdentityStoredProfileRefreshPlan` now exposes `nextEntry()` and `nextStep()`,
+  so callers do not have to rebuild bounded refresh targeting above the same store seam
 - broader identity-management flows are still deferred in
   [docs/plans/nip39-identity-verifier-plan.md](/workspace/projects/nzdk/docs/plans/nip39-identity-verifier-plan.md)
   and [docs/plans/nip39-profile-workflow-plan.md](/workspace/projects/nzdk/docs/plans/nip39-profile-workflow-plan.md)

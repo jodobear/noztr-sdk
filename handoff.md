@@ -173,6 +173,9 @@ Current project context for `noztr-sdk`.
   - `IdentityVerifier` now also exposes `planStoredProfileRefresh(...)` so callers can collect
     only stale remembered matches newest-first under one explicit freshness window without hiding
     fetch or refresh policy above the stored-profile seam
+  - `IdentityStoredProfileRefreshPlan` now also exposes `nextEntry()` and `nextStep()` so callers
+    can consume one typed stale-profile refresh target without re-stitching that selection above
+    the refresh plan
   - verified profile claims now expose provider-shaped details through
     `IdentityClaimVerification.providerDetails(...)` and
     `IdentityProfileVerificationSummary.verifiedClaims(...)`
@@ -180,8 +183,8 @@ Current project context for `noztr-sdk`.
     public HTTP seam, remembered in a caller-owned profile store, hydrated directly by provider
     identity, classified for freshness both across discovered entries and for the newest match,
     selected once through explicit remembered-profile policy, inspected once through explicit
-    remembered runtime policy plus one typed next step, planned once for stale refresh, and then
-    replayed from the explicit cache
+    remembered runtime policy plus one typed next step, planned once for stale refresh plus one
+    typed refresh step, and then replayed from the explicit cache
 - `NIP-05` now has a clearer Zig-native surface:
   - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
     caller-owned `Nip05LookupStorage`

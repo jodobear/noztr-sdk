@@ -112,6 +112,7 @@ pub const IdentityStoredProfileRefreshEntry = identity_verifier.IdentityStoredPr
 pub const IdentityStoredProfileRefreshStorage = identity_verifier.IdentityStoredProfileRefreshStorage;
 pub const IdentityStoredProfileRefreshRequest = identity_verifier.IdentityStoredProfileRefreshRequest;
 pub const IdentityStoredProfileRefreshPlan = identity_verifier.IdentityStoredProfileRefreshPlan;
+pub const IdentityStoredProfileRefreshStep = identity_verifier.IdentityStoredProfileRefreshStep;
 pub const IdentityProfileStore = identity_verifier.IdentityProfileStore;
 pub const MemoryIdentityProfileStore = identity_verifier.MemoryIdentityProfileStore;
 pub const IdentityVerificationStorage = identity_verifier.IdentityVerificationStorage;

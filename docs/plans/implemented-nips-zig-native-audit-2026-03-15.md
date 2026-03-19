@@ -204,8 +204,10 @@ Observed friction:
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextStep()` so callers can package the
   selected remembered-profile action and entry as one explicit step value instead of reconstructing
   that SDK view above the runtime plan
-- `NIP-39` now also exposes one explicit stale-profile refresh-plan helper, so bounded remembered
-  refresh targeting no longer has to be rebuilt above the same freshness discovery surface
+- `NIP-39` now also exposes one explicit stale-profile refresh-plan helper, and
+  `IdentityStoredProfileRefreshPlan` now exposes `nextEntry()` and `nextStep()`, so bounded
+  remembered refresh targeting no longer has to be rebuilt above the same freshness discovery
+  surface
 - `NIP-03` now also exposes one explicit stale-verification refresh-plan helper, so bounded proof
   refresh targeting no longer has to be rebuilt above the same freshness discovery surface
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can
