@@ -1843,6 +1843,161 @@ pub const IdentityVerifier = struct {
         };
     }
 
+    pub fn inspectStoredProfileRefreshCadenceForTargets(
+        store: IdentityProfileStore,
+        request: IdentityStoredProfileTargetRefreshCadenceRequest,
+    ) IdentityStoredProfileDiscoveryError!IdentityStoredProfileTargetRefreshCadencePlan {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+        if (request.storage.groups.len < 5) return error.BufferTooSmall;
+
+        const latest_entries = try discoverLatestStoredProfileFreshnessForTargets(
+            store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = .{
+                    .matches = request.storage.matches,
+                    .entries = request.storage.latest_entries,
+                },
+            },
+        );
+
+        var verify_now_count: usize = 0;
+        var refresh_now_count: usize = 0;
+        var usable_while_refreshing_count: usize = 0;
+        var refresh_soon_count: usize = 0;
+        var stable_count: usize = 0;
+        var fresh_count: u32 = 0;
+        var stale_count: u32 = 0;
+        var missing_count: u32 = 0;
+
+        for (latest_entries) |entry| {
+            const action: IdentityStoredProfileTargetRefreshCadenceAction = if (entry.latest) |latest|
+                switch (latest.freshness) {
+                    .fresh => if (latest.age_seconds >= request.refresh_soon_age_seconds)
+                        .refresh_soon
+                    else
+                        .stable,
+                    .stale => switch (request.fallback_policy) {
+                        .require_fresh => .refresh_now,
+                        .allow_stale_latest => .usable_while_refreshing,
+                    },
+                }
+            else
+                .verify_now;
+
+            switch (action) {
+                .verify_now => verify_now_count += 1,
+                .refresh_now => refresh_now_count += 1,
+                .usable_while_refreshing => usable_while_refreshing_count += 1,
+                .refresh_soon => refresh_soon_count += 1,
+                .stable => stable_count += 1,
+            }
+
+            if (entry.latest) |latest| {
+                switch (latest.freshness) {
+                    .fresh => fresh_count += 1,
+                    .stale => stale_count += 1,
+                }
+            } else {
+                missing_count += 1;
+            }
+        }
+
+        const verify_now_start: usize = 0;
+        const refresh_now_start = verify_now_start + verify_now_count;
+        const usable_while_refreshing_start = refresh_now_start + refresh_now_count;
+        const refresh_soon_start = usable_while_refreshing_start + usable_while_refreshing_count;
+        const stable_start = refresh_soon_start + refresh_soon_count;
+
+        var next_verify_now = verify_now_start;
+        var next_refresh_now = refresh_now_start;
+        var next_usable_while_refreshing = usable_while_refreshing_start;
+        var next_refresh_soon = refresh_soon_start;
+        var next_stable = stable_start;
+
+        for (latest_entries) |entry| {
+            const action: IdentityStoredProfileTargetRefreshCadenceAction = if (entry.latest) |latest|
+                switch (latest.freshness) {
+                    .fresh => if (latest.age_seconds >= request.refresh_soon_age_seconds)
+                        .refresh_soon
+                    else
+                        .stable,
+                    .stale => switch (request.fallback_policy) {
+                        .require_fresh => .refresh_now,
+                        .allow_stale_latest => .usable_while_refreshing,
+                    },
+                }
+            else
+                .verify_now;
+
+            const insert_index = switch (action) {
+                .verify_now => blk: {
+                    defer next_verify_now += 1;
+                    break :blk next_verify_now;
+                },
+                .refresh_now => blk: {
+                    defer next_refresh_now += 1;
+                    break :blk next_refresh_now;
+                },
+                .usable_while_refreshing => blk: {
+                    defer next_usable_while_refreshing += 1;
+                    break :blk next_usable_while_refreshing;
+                },
+                .refresh_soon => blk: {
+                    defer next_refresh_soon += 1;
+                    break :blk next_refresh_soon;
+                },
+                .stable => blk: {
+                    defer next_stable += 1;
+                    break :blk next_stable;
+                },
+            };
+
+            request.storage.entries[insert_index] = .{
+                .target = entry.target,
+                .action = action,
+                .latest = entry.latest,
+            };
+        }
+
+        const total_entries = request.targets.len;
+        request.storage.groups[0] = .{
+            .action = .verify_now,
+            .entries = request.storage.entries[verify_now_start..refresh_now_start],
+        };
+        request.storage.groups[1] = .{
+            .action = .refresh_now,
+            .entries = request.storage.entries[refresh_now_start..usable_while_refreshing_start],
+        };
+        request.storage.groups[2] = .{
+            .action = .usable_while_refreshing,
+            .entries = request.storage.entries[usable_while_refreshing_start..refresh_soon_start],
+        };
+        request.storage.groups[3] = .{
+            .action = .refresh_soon,
+            .entries = request.storage.entries[refresh_soon_start..stable_start],
+        };
+        request.storage.groups[4] = .{
+            .action = .stable,
+            .entries = request.storage.entries[stable_start..total_entries],
+        };
+
+        return .{
+            .entries = request.storage.entries[0..total_entries],
+            .groups = request.storage.groups[0..5],
+            .verify_now_count = @intCast(verify_now_count),
+            .refresh_now_count = @intCast(refresh_now_count),
+            .usable_while_refreshing_count = @intCast(usable_while_refreshing_count),
+            .refresh_soon_count = @intCast(refresh_soon_count),
+            .stable_count = @intCast(stable_count),
+            .fresh_count = fresh_count,
+            .stale_count = stale_count,
+            .missing_count = missing_count,
+        };
+    }
+
     pub fn discoverStoredProfileEntriesWithFreshness(
         store: IdentityProfileStore,
         request: IdentityStoredProfileDiscoveryFreshnessRequest,
@@ -4378,6 +4533,131 @@ test "identity verifier target policy exposes refresh-needed targets under expli
     try std.testing.expectEqual(
         IdentityStoredProfileTargetRuntimeAction.refresh_existing,
         refresh_needed[0].action,
+    );
+}
+
+test "identity verifier groups watched-target refresh cadence entries by action in stable caller order" {
+    const stable_pubkey = [_]u8{0xa1} ** 32;
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const stable_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-stable",
+                    .expected_text = "npub-stable",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const soon_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [3]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "dave" },
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "bob" },
+        .{ .provider = .github, .identity = "alice" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [4]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries_storage: [4]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 4), plan.entries.len);
+    try std.testing.expectEqual(@as(usize, 5), plan.groups.len);
+    try std.testing.expectEqual(@as(u32, 1), plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.stable_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.fresh_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.stale_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_count);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRefreshCadenceAction.verify_now, plan.groups[0].action);
+    try std.testing.expectEqualStrings("dave", plan.groups[0].entries[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRefreshCadenceAction.usable_while_refreshing, plan.groups[2].action);
+    try std.testing.expectEqualStrings("carol", plan.groups[2].entries[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRefreshCadenceAction.refresh_soon, plan.groups[3].action);
+    try std.testing.expectEqualStrings("bob", plan.groups[3].entries[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRefreshCadenceAction.stable, plan.groups[4].action);
+    try std.testing.expectEqualStrings("alice", plan.groups[4].entries[0].target.identity);
+}
+
+test "identity verifier refresh cadence inspection stays bounded by caller-owned grouped storage" {
+    var store_records: [0]IdentityProfileRecord = .{};
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+    };
+    var matches_storage: [0]IdentityProfileMatch = .{};
+    var latest_entries_storage: [1]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries_storage: [1]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [4]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+            store.asStore(),
+            .{
+                .targets = targets[0..],
+                .now_unix_seconds = 50,
+                .max_age_seconds = 20,
+                .refresh_soon_age_seconds = 10,
+                .storage = .init(
+                    matches_storage[0..],
+                    latest_entries_storage[0..],
+                    cadence_entries_storage[0..],
+                    groups_storage[0..],
+                ),
+            },
+        ),
     );
 }
 
