@@ -334,21 +334,19 @@ Current project context for `noztr-sdk`.
 3. The stored-workflow remediation slice is complete in
    [docs/plans/stored-workflow-hardening-plan.md](./docs/plans/stored-workflow-hardening-plan.md).
    Treat it as reference.
-4. The next active packet should target a broader remaining product gap rather than another
-   bounded selector/helper loop.
+4. The next active packet is
+   [docs/plans/nip39-long-lived-policy-plan.md](./docs/plans/nip39-long-lived-policy-plan.md).
 5. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
    rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
    or merge-selection work.
-6. Continue `NIP-39` only if the next slice clearly targets broader autonomous discovery, refresh,
-   or longer-lived store policy beyond the now-landed remembered verify/store/discover/select and
-   runtime-policy plus next-step path rather than repeating already-landed provider-detail,
-   cache, or explicit store/discovery work.
-7. The best broader product slice after this runtime/refresh loop is still a real background-
-   runtime `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
-   `NIP-03` / `NIP-17` workflow policy. This loop should stop at bounded refresh/runtime/
-   consistency driving helpers rather than jumping to hidden background loops.
+6. Use the new `NIP-39` packet to target broader autonomous discovery, refresh, or longer-lived
+   store policy beyond the now-landed remembered verify/store/discover/select and runtime-policy
+   plus next-step path rather than repeating already-landed provider-detail, cache, or explicit
+   store/discovery work.
+7. The next best broader product lane after that remains a real background-runtime `NIP-29` lane
+   or broader `NIP-03` / `NIP-17` workflow policy.
 8. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 9. Keep `examples/README.md` current whenever the public teaching surface changes.
 10. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
