@@ -184,8 +184,9 @@ Observed friction:
 - `NIP-29` now also has one explicit fleet runtime plan over relay readiness and divergence against
   a chosen baseline, so callers no longer need to hand-compose runtime action selection above the
   fleet
-- `GroupFleetRuntimePlan` now also exposes `nextEntry()` so callers can follow that bounded
-  runtime policy without hand-scanning the fleet plan
+- `GroupFleetRuntimePlan` now also exposes `nextEntry()` and `nextStep()` so callers can follow
+  that bounded runtime policy without hand-scanning the fleet plan or re-stitching baseline
+  context above the workflow
 - `NIP-29` now also has one explicit targeted baseline-to-target reconcile helper, so callers can
   step one divergent relay toward the chosen runtime baseline without falling back to all-relay
   reconcile helpers or hand-rolled checkpoint copy code

@@ -39,6 +39,11 @@ pub const GroupFleetRuntimeEntry = struct {
     }
 };
 
+pub const GroupFleetRuntimeStep = struct {
+    baseline_relay_url: []const u8,
+    entry: GroupFleetRuntimeEntry,
+};
+
 pub const GroupFleetRuntimeStorage = struct {
     relay_states: [relay_pool.pool_capacity]group_client.GroupRelayState =
         [_]group_client.GroupRelayState{.disconnected} ** relay_pool.pool_capacity,
@@ -102,6 +107,14 @@ pub const GroupFleetRuntimePlan = struct {
             if (first_match) |runtime_entry| return runtime_entry;
         }
         return null;
+    }
+
+    pub fn nextStep(self: *const GroupFleetRuntimePlan) ?GroupFleetRuntimeStep {
+        const selected_entry = self.nextEntry() orelse return null;
+        return .{
+            .baseline_relay_url = self.baseline_relay_url,
+            .entry = selected_entry,
+        };
     }
 };
 
@@ -1460,6 +1473,10 @@ test "group fleet runtime inspection classifies connect authenticate reconcile a
     const next = runtime.nextEntry().?;
     try std.testing.expectEqualStrings("wss://relay.one:666", next.relay_url);
     try std.testing.expectEqual(GroupFleetRuntimeAction.reconcile, next.action);
+    const next_step = runtime.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:666", next_step.entry.relay_url);
+    try std.testing.expectEqual(GroupFleetRuntimeAction.reconcile, next_step.entry.action);
 }
 
 test "group fleet runtime inspection rejects unknown baseline relay urls" {
@@ -1503,11 +1520,16 @@ test "group fleet runtime next step prefers the baseline within one action tier 
     var runtime = try fleet.inspectRuntime("wss://relay.one", &runtime_storage);
     try std.testing.expectEqual(GroupFleetRuntimeAction.connect, runtime.nextEntry().?.action);
     try std.testing.expectEqualStrings("wss://relay.one", runtime.nextEntry().?.relay_url);
+    const next_step = runtime.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.entry.relay_url);
+    try std.testing.expectEqual(GroupFleetRuntimeAction.connect, next_step.entry.action);
 
     baseline.markCurrentRelayConnected();
     other.markCurrentRelayConnected();
     runtime = try fleet.inspectRuntime("wss://relay.one", &runtime_storage);
     try std.testing.expect(runtime.nextEntry() == null);
+    try std.testing.expect(runtime.nextStep() == null);
 }
 
 test "group fleet exports and restores a full checkpoint set across relay-local clients" {

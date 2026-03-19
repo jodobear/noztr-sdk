@@ -13,6 +13,7 @@ pub const GroupFleetError = group_fleet.GroupFleetError;
 pub const GroupFleetRelayStatus = group_fleet.GroupFleetRelayStatus;
 pub const GroupFleetRuntimeAction = group_fleet.GroupFleetRuntimeAction;
 pub const GroupFleetRuntimeEntry = group_fleet.GroupFleetRuntimeEntry;
+pub const GroupFleetRuntimeStep = group_fleet.GroupFleetRuntimeStep;
 pub const GroupFleetRuntimeStorage = group_fleet.GroupFleetRuntimeStorage;
 pub const GroupFleetRuntimePlan = group_fleet.GroupFleetRuntimePlan;
 pub const GroupFleetEventOutcome = group_fleet.GroupFleetEventOutcome;

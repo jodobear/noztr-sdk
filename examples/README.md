@@ -124,7 +124,8 @@ network daemons, or hidden runtime loops.
     persists relay-local checkpoints into a bounded store through the fleet, restores only the
     matching relay-local checkpoints into a fresh fleet, inspects each relay as explicit
     `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline, can ask the
-    runtime plan for the next recommended relay/action step without hand-scanning the fleet,
+    runtime plan for one typed next runtime step without hand-scanning the fleet or re-stitching
+    baseline context above the workflow,
     chooses which relay contributes each merged checkpoint component explicitly, applies that
     merged checkpoint across the fleet, can then reconcile one chosen target relay explicitly from
     the chosen baseline without updating the whole fleet, and finally plans one explicit per-relay

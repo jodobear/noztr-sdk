@@ -3,12 +3,12 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
 // Persist one explicit multi-relay fleet into a caller-owned checkpoint store, restore that
-// relay-local state into a fresh fleet, inspect fleet runtime actions plus one explicit next
+// relay-local state into a fresh fleet, inspect fleet runtime actions plus one typed next
 // runtime step, merge divergent relay-local components by explicit relay selection, run one
 // explicit targeted baseline-to-target reconcile step, then select one next moderation publish
 // relay and build one fanout across the reconciled relays without inventing hidden merge or
 // runtime policy.
-test "recipe: group fleet persists restores inspects runtime and next step merges targets reconcile and selects the next moderation publish relay" {
+test "recipe: group fleet persists restores inspects runtime and one typed next step merges targets reconcile and selects the next moderation publish relay" {
     var source_users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
     var source_roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
     var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
@@ -186,12 +186,13 @@ test "recipe: group fleet persists restores inspects runtime and next step merge
         runtime.entry(0).?.action,
     );
     try std.testing.expect(runtime.entry(0).?.metadata_divergent);
-    const next_runtime = runtime.nextEntry().?;
+    const next_runtime = runtime.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one:444", next_runtime.baseline_relay_url);
     try std.testing.expectEqual(
         noztr_sdk.workflows.GroupFleetRuntimeAction.reconcile,
-        next_runtime.action,
+        next_runtime.entry.action,
     );
-    try std.testing.expectEqualStrings("wss://relay.one", next_runtime.relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", next_runtime.entry.relay_url);
     try std.testing.expectEqual(
         noztr_sdk.workflows.GroupFleetRuntimeAction.ready,
         runtime.entry(1).?.action,

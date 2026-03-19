@@ -32,7 +32,7 @@ Current project context for `noztr-sdk`.
   - `NIP-05` fetch/verify
   - `NIP-29` relay-local group client core plus explicit multi-relay fleet routing, checkpoints,
     reconciliation, component-level merge policy, explicit fleet runtime inspection, durable store seams, and fleet moderation fanout
-    plus explicit next-step selectors over runtime and publish fanout
+    plus explicit typed next-step views over runtime and publish fanout
 - The first structured SDK examples tree is in place and compile-verified.
 - The intended product target is explicit:
   - `noztr-sdk` should become the Zig-native analogue to applesauce
@@ -214,8 +214,9 @@ Current project context for `noztr-sdk`.
   - `GroupFleet` now also exposes `inspectRuntime(...)` so callers can classify each relay as
     `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline without
     hand-composing relay readiness plus divergence checks above the fleet
-  - `GroupFleetRuntimePlan` now also exposes `nextEntry()` so callers can step one explicit
-    next runtime relay/action without hand-scanning the fleet runtime plan
+  - `GroupFleetRuntimePlan` now also exposes `nextEntry()` and `nextStep()` so callers can step
+    one typed next runtime relay/action without hand-scanning the fleet runtime plan or
+    re-stitching baseline context above the workflow
   - `GroupFleet` now also exposes `reconcileRelayFromBaseline(...)` so callers can converge one
     chosen divergent relay from one chosen baseline without restoring the same checkpoint across
     the whole fleet
