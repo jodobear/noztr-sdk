@@ -175,9 +175,10 @@ Current project context for `noztr-sdk`.
     semantics into the shared layer
   - `examples/relay_pool_recipe.zig` now teaches one explicit inspect-plan-step path over two
     relays on that shared runtime floor
-  - the next likely child work is store-aware checkpoint or replay composition over the shared
-    pool floor and then one real workflow adaptation above it, not immediate subscription/sync
-    expansion
+  - the next active implementation loop under that child is now
+    [docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md](./docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md)
+  - that loop exists to prove shared pool plus shared checkpoint composition before broader
+    workflow adaptation or subscription/sync expansion
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
