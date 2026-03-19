@@ -60,9 +60,7 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
-- [sdk-relay-pool-runtime-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
-- [relay-pool-subscription-boundary-plan.md](/workspace/projects/nzdk/docs/plans/relay-pool-subscription-boundary-plan.md)
-- [relay-pool-sync-boundary-checkpoint-plan.md](/workspace/projects/nzdk/docs/plans/relay-pool-sync-boundary-checkpoint-plan.md)
+- [sdk-cli-client-composition-plan.md](/workspace/projects/nzdk/docs/plans/sdk-cli-client-composition-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
