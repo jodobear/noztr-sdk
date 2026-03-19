@@ -501,6 +501,15 @@ pub const MailboxSession = struct {
         return current.canSendRequests();
     }
 
+    pub fn exportRelayPool(
+        self: *const MailboxSession,
+        storage: *RelayPoolStorage,
+    ) shared_runtime.RelayPool {
+        storage.* = .{};
+        storage.relay_pool_storage.pool = self._state.pool;
+        return shared_runtime.RelayPool.attach(&storage.relay_pool_storage);
+    }
+
     pub fn inspectRuntime(
         self: *const MailboxSession,
         runtime_storage: *RuntimeStorage,
@@ -2987,6 +2996,24 @@ test "mailbox session exposes caller-owned relay-pool adapter storage" {
     var runtime_storage = RelayPoolRuntimeStorage{};
     _ = &relay_pool_storage;
     _ = &runtime_storage;
+}
+
+test "mailbox session exports the shared relay-pool runtime floor" {
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    _ = try session._state.pool.addRelay("wss://relay.one");
+    _ = try session._state.pool.addRelay("wss://relay.two");
+    try session.markCurrentRelayConnected();
+    try session.noteCurrentRelayAuthChallenge("challenge-1");
+
+    var relay_pool_storage = RelayPoolStorage{};
+    var relay_pool_view = session.exportRelayPool(&relay_pool_storage);
+    try std.testing.expectEqual(@as(u8, 2), relay_pool_view.relayCount());
+
+    var plan_storage = shared_runtime.RelayPoolPlanStorage{};
+    const plan = relay_pool_view.inspectRuntime(&plan_storage);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
 }
 
 const test_wrap_signer_pubkey = [_]u8{
