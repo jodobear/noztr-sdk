@@ -216,6 +216,10 @@ Current project context for `noztr-sdk`.
     [docs/plans/relay-pool-subscription-boundary-plan.md](./docs/plans/relay-pool-subscription-boundary-plan.md)
   - that packet exists to decide what pool-level subscription, replay, and sync posture belongs in
     the shared runtime layer before groups adaptation or broader relay-framework work continue
+- the first implementation loop under that subscription-boundary child is now
+  [docs/plans/five-slice-relay-pool-subscription-spec-loop-plan.md](./docs/plans/five-slice-relay-pool-subscription-spec-loop-plan.md)
+  - it exists to land one bounded shared subscription-spec vocabulary, one caller-owned
+    subscription plan, and one typed next subscription step before any broader sync execution work
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
