@@ -29,6 +29,7 @@ pub const MailboxError =
         PoolFull,
         NoRelays,
         InvalidRelayIndex,
+        WorkflowRelayMissing,
         RelayDisconnected,
         RelayAuthRequired,
         AuthNotRequired,
@@ -269,6 +270,71 @@ pub const WorkflowEntry = struct {
     wrap_event_json: ?[]const u8 = null,
 };
 
+pub const WorkflowStep = struct {
+    entry: WorkflowEntry,
+};
+
+pub const WorkflowStorage = struct {
+    runtime: RuntimeStorage = .{},
+    actions: [relay_pool.pool_capacity]WorkflowAction = [_]WorkflowAction{.idle} **
+        relay_pool.pool_capacity,
+    recipient_targets: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
+    sender_copy_targets: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
+
+    fn clear(self: *WorkflowStorage) void {
+        self.runtime.clear();
+        self.actions = [_]WorkflowAction{.idle} ** relay_pool.pool_capacity;
+        self.recipient_targets = [_]bool{false} ** relay_pool.pool_capacity;
+        self.sender_copy_targets = [_]bool{false} ** relay_pool.pool_capacity;
+    }
+};
+
+pub const WorkflowRequest = struct {
+    pending_delivery: ?*const DeliveryPlan = null,
+    storage: *WorkflowStorage,
+};
+
+pub const WorkflowPlan = struct {
+    relay_count: u8,
+    connect_count: u8 = 0,
+    authenticate_count: u8 = 0,
+    receive_count: u8 = 0,
+    publish_recipient_count: u8 = 0,
+    publish_sender_copy_count: u8 = 0,
+    idle_count: u8 = 0,
+    _session: *const MailboxSession,
+    _runtime: RuntimePlan,
+    _delivery: ?*const DeliveryPlan,
+    _storage: *const WorkflowStorage,
+
+    pub fn entry(self: *const WorkflowPlan, index: u8) ?WorkflowEntry {
+        const runtime_entry = self._runtime.entry(index) orelse return null;
+        const delivery_role: DeliveryRole = .{
+            .recipient = self._storage.recipient_targets[index],
+            .sender_copy = self._storage.sender_copy_targets[index],
+        };
+        return .{
+            .relay_index = runtime_entry.relay_index,
+            .relay_url = runtime_entry.relay_url,
+            .action = self._storage.actions[index],
+            .is_current = runtime_entry.is_current,
+            .role = delivery_role,
+            .wrap_event_id = if (delivery_role.recipient or delivery_role.sender_copy)
+                self._delivery.?.wrap_event_id
+            else
+                null,
+            .wrap_event_json = if (delivery_role.recipient or delivery_role.sender_copy)
+                self._delivery.?.wrap_event_json
+            else
+                null,
+        };
+    }
+
+    pub fn runtimePlan(self: *const WorkflowPlan) *const RuntimePlan {
+        return &self._runtime;
+    }
+};
+
 pub const RuntimeStorage = struct {
     relay_indexes: [relay_pool.pool_capacity]u8 = [_]u8{0} ** relay_pool.pool_capacity,
     actions: [relay_pool.pool_capacity]RuntimeAction = [_]RuntimeAction{.connect} ** relay_pool.pool_capacity,
@@ -402,6 +468,67 @@ pub const MailboxSession = struct {
             ._session = self,
             ._storage = runtime_storage,
         };
+    }
+
+    pub fn inspectWorkflow(
+        self: *const MailboxSession,
+        request: WorkflowRequest,
+    ) MailboxError!WorkflowPlan {
+        request.storage.clear();
+        const runtime = try self.inspectRuntime(&request.storage.runtime);
+
+        if (request.pending_delivery) |delivery| {
+            var delivery_index: u8 = 0;
+            while (delivery_index < delivery.relay_count) : (delivery_index += 1) {
+                _ = self.findRelayIndexByUrl(delivery.relayUrl(delivery_index).?) orelse {
+                    return error.WorkflowRelayMissing;
+                };
+            }
+        }
+
+        var plan: WorkflowPlan = .{
+            .relay_count = runtime.relay_count,
+            ._session = self,
+            ._runtime = runtime,
+            ._delivery = request.pending_delivery,
+            ._storage = request.storage,
+        };
+
+        var index: u8 = 0;
+        while (index < runtime.relay_count) : (index += 1) {
+            const runtime_entry = runtime.entry(index) orelse continue;
+            const delivery_role = if (request.pending_delivery) |delivery|
+                self.deliveryRoleForRelay(delivery, runtime_entry.relay_url)
+            else
+                DeliveryRole{};
+            request.storage.recipient_targets[index] = delivery_role.recipient;
+            request.storage.sender_copy_targets[index] = delivery_role.sender_copy;
+            request.storage.actions[index] = switch (runtime_entry.action) {
+                .connect => blk: {
+                    plan.connect_count += 1;
+                    break :blk .connect;
+                },
+                .authenticate => blk: {
+                    plan.authenticate_count += 1;
+                    break :blk .authenticate;
+                },
+                .receive => if (delivery_role.recipient) blk: {
+                    plan.publish_recipient_count += 1;
+                    break :blk .publish_recipient;
+                } else if (delivery_role.sender_copy) blk: {
+                    plan.publish_sender_copy_count += 1;
+                    break :blk .publish_sender_copy;
+                } else if (runtime_entry.is_current) blk: {
+                    plan.receive_count += 1;
+                    break :blk .receive;
+                } else blk: {
+                    plan.idle_count += 1;
+                    break :blk .idle;
+                },
+            };
+        }
+
+        return plan;
     }
 
     pub fn hydrateRelayListEventJson(
@@ -716,6 +843,35 @@ pub const MailboxSession = struct {
 
     fn currentRelay(self: *MailboxSession) ?*relay_session.RelaySession {
         return self._state.pool.getRelay(self._state.current_relay_index);
+    }
+
+    fn findRelayIndexByUrl(self: *const MailboxSession, relay_url_text: []const u8) ?u8 {
+        var index: u8 = 0;
+        while (index < self._state.pool.count) : (index += 1) {
+            const relay = self._state.pool.getRelayConst(index) orelse continue;
+            if (relay_url.relayUrlsEquivalent(relay.auth_session.relayUrl(), relay_url_text)) {
+                return index;
+            }
+        }
+        return null;
+    }
+
+    fn deliveryRoleForRelay(
+        self: *const MailboxSession,
+        delivery: *const DeliveryPlan,
+        relay_url_text: []const u8,
+    ) DeliveryRole {
+        _ = self;
+        var role = DeliveryRole{};
+        var index: u8 = 0;
+        while (index < delivery.relay_count) : (index += 1) {
+            const delivery_relay_url = delivery.relayUrl(index) orelse continue;
+            if (!relay_url.relayUrlsEquivalent(delivery_relay_url, relay_url_text)) continue;
+            role.recipient = delivery.deliversToRecipient(index);
+            role.sender_copy = delivery.deliversSenderCopy(index);
+            break;
+        }
+        return role;
     }
 
     fn buildDirectMessageWrap(
@@ -1678,6 +1834,114 @@ test "mailbox runtime next step returns null for an empty plan" {
     };
     try std.testing.expect(runtime.nextEntry() == null);
     try std.testing.expect(runtime.nextStep() == null);
+}
+
+test "mailbox workflow inspection keeps only the current connected relay on receive and leaves others idle" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonThree(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        "wss://relay.three",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var workflow_storage = WorkflowStorage{};
+    const workflow = try session.inspectWorkflow(.{
+        .storage = &workflow_storage,
+    });
+    try std.testing.expectEqual(@as(u8, 1), workflow.receive_count);
+    try std.testing.expectEqual(@as(u8, 1), workflow.idle_count);
+    try std.testing.expectEqual(@as(u8, 1), workflow.connect_count);
+    try std.testing.expectEqual(WorkflowAction.idle, workflow.entry(0).?.action);
+    try std.testing.expectEqual(WorkflowAction.receive, workflow.entry(1).?.action);
+    try std.testing.expect(workflow.entry(1).?.is_current);
+    try std.testing.expectEqual(WorkflowAction.connect, workflow.entry(2).?.action);
+}
+
+test "mailbox workflow inspection promotes pending direct-message delivery relays into publish actions" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const sender_private_key = [_]u8{0x11} ** 32;
+    const recipient_private_key = [_]u8{0x33} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
+
+    var session = MailboxSession.init(&sender_private_key);
+    var sender_relay_list_storage: [4096]u8 = undefined;
+    const sender_relay_list_json = try buildRelayListEventJsonThree(
+        sender_relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two/inbox",
+        "wss://relay.three",
+        1_710_000_030,
+        &sender_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.three", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var outbound_buffer = OutboundBuffer{};
+    var delivery_storage = DeliveryStorage{};
+    var recipient_relay_list_storage: [4096]u8 = undefined;
+    const recipient_relay_list_json = try buildRelayListEventJsonTwo(
+        recipient_relay_list_storage[0..],
+        "wss://relay.one",
+        "WSS://RELAY.TWO:443/inbox?x=1#f",
+        1_710_000_040,
+        &recipient_private_key,
+    );
+    const delivery = try session.planDirectMessageDelivery(
+        &outbound_buffer,
+        &delivery_storage,
+        recipient_relay_list_json,
+        sender_relay_list_json,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://relay.two/inbox",
+            .content = "hello workflow",
+            .created_at = 1_710_000_100,
+            .wrap_signer_private_key = [_]u8{0x22} ** 32,
+            .seal_nonce = [_]u8{0x44} ** 32,
+            .wrap_nonce = [_]u8{0x55} ** 32,
+        },
+        arena.allocator(),
+    );
+
+    var workflow_storage = WorkflowStorage{};
+    const workflow = try session.inspectWorkflow(.{
+        .pending_delivery = &delivery,
+        .storage = &workflow_storage,
+    });
+    try std.testing.expectEqual(@as(u8, 2), workflow.publish_recipient_count);
+    try std.testing.expectEqual(@as(u8, 1), workflow.publish_sender_copy_count);
+    try std.testing.expectEqual(@as(u8, 0), workflow.receive_count);
+    const first = workflow.entry(0).?;
+    try std.testing.expectEqual(WorkflowAction.publish_recipient, first.action);
+    try std.testing.expect(first.role.recipient);
+    try std.testing.expect(first.role.sender_copy);
+    try std.testing.expect(first.wrap_event_json != null);
+    const second = workflow.entry(1).?;
+    try std.testing.expectEqual(WorkflowAction.publish_recipient, second.action);
+    try std.testing.expect(second.role.recipient);
+    try std.testing.expect(second.role.sender_copy);
+    const third = workflow.entry(2).?;
+    try std.testing.expectEqual(WorkflowAction.publish_sender_copy, third.action);
+    try std.testing.expect(!third.role.recipient);
+    try std.testing.expect(third.role.sender_copy);
 }
 
 test "mailbox session relay list hydration replaces stale relays" {

@@ -117,6 +117,9 @@ Current project context for `noztr-sdk`.
   - the active `NIP-17` workflow loop is now started, and `MailboxWorkflowAction` plus
     `MailboxWorkflowEntry` now provide the bounded mailbox workflow vocabulary above the existing
     runtime and delivery-plan surfaces without taking inspect/selector behavior early
+  - `MailboxSession.inspectWorkflow(...)` now exposes one explicit caller-owned mailbox workflow
+    plan over runtime state plus optional pending delivery work, so callers no longer need to
+    hand-compose pending publish-vs-receive posture above the mailbox session
   - `MailboxSession` now exposes one outbound `beginDirectMessage(...)` workflow entrypoint in
     addition to relay hydration and unwrap handling
   - `MailboxSession` now also exposes `planDirectMessageRelayFanout(...)` so the sender can build
