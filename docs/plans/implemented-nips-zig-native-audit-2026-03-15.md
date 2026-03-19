@@ -214,6 +214,9 @@ Observed friction:
   have to restitch newest-match age policy above the remembered-verification store seam
 - `NIP-03` now also exposes one explicit preferred remembered-verification selection helper, so
   callers do not have to rebuild fresh-vs-stale fallback choice above the same store seam
+- `OpenTimestampsStoredVerificationRefreshPlan` now also exposes `nextEntry()` and `nextStep()`,
+  so callers do not have to re-stitch newest-first stale-verification refresh targeting above the
+  same freshness discovery surface
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can
   follow the selected remembered-verification step directly instead of re-matching the runtime-
   selected entry above the workflow

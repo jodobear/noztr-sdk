@@ -352,6 +352,17 @@ pub const OpenTimestampsStoredVerificationRefreshPlan = struct {
         if (self.entries.len == 0) return null;
         return &self.entries[0];
     }
+
+    pub fn nextStep(
+        self: *const OpenTimestampsStoredVerificationRefreshPlan,
+    ) ?OpenTimestampsStoredVerificationRefreshStep {
+        const entry = self.nextEntry() orelse return null;
+        return .{ .entry = entry.* };
+    }
+};
+
+pub const OpenTimestampsStoredVerificationRefreshStep = struct {
+    entry: OpenTimestampsStoredVerificationRefreshEntry,
 };
 
 pub const OpenTimestampsVerificationStoreVTable = struct {
@@ -2437,6 +2448,10 @@ test "opentimestamps verifier refresh plan returns stale remembered verification
         "https://proof.example/new.ots",
         plan.newestEntry().?.entry.entry.verification.proofUrl(),
     );
+    try std.testing.expectEqualStrings(
+        "https://proof.example/new.ots",
+        plan.nextStep().?.entry.entry.entry.verification.proofUrl(),
+    );
 }
 
 test "opentimestamps verifier refresh plan returns empty when remembered verifications are fresh" {
@@ -2493,6 +2508,7 @@ test "opentimestamps verifier refresh plan returns empty when remembered verific
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
     try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.newestEntry() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
 
 const ots_header_magic = [_]u8{

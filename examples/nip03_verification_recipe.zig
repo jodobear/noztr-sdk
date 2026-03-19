@@ -190,6 +190,10 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         "https://proof.example/hello.ots",
         refresh_plan.newestEntry().?.entry.entry.verification.proofUrl(),
     );
+    try std.testing.expectEqualStrings(
+        "https://proof.example/hello.ots",
+        refresh_plan.nextStep().?.entry.entry.entry.verification.proofUrl(),
+    );
 }
 
 fn buildLocalBitcoinProof(output: []u8, digest: *const [32]u8) []const u8 {

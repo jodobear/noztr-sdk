@@ -269,6 +269,9 @@ Current project context for `noztr-sdk`.
   - `OpenTimestampsVerifier.getPreferredStoredVerification(...)` now selects one preferred
     remembered verification under an explicit stale-fallback policy instead of leaving that choice
     entirely above the store seam
+  - `OpenTimestampsStoredVerificationRefreshPlan` now also exposes `nextEntry()` and `nextStep()`
+    so callers can consume one typed stale-verification refresh target without re-stitching that
+    selection above the refresh plan
   - `OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(...)` now classifies all
     remembered verification entries for one target event as fresh or stale without inventing
     hidden refresh or Bitcoin policy

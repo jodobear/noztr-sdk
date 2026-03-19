@@ -60,7 +60,8 @@ network daemons, or hidden runtime loops.
     `OpenTimestampsPreferredStoredVerificationRequest`,
     `OpenTimestampsStoredVerificationRuntimeStorage`,
     `OpenTimestampsStoredVerificationRuntimeAction`,
-    `OpenTimestampsStoredVerificationRefreshStorage`, `transport.HttpClient`
+    `OpenTimestampsStoredVerificationRefreshStorage`,
+    `OpenTimestampsStoredVerificationRefreshStep`, `transport.HttpClient`
   - kernel fixture help: `noztr.nostr_keys`
   - control points: caller supplies the target event, attestation event, detached proof URL,
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
@@ -68,7 +69,7 @@ network daemons, or hidden runtime loops.
     latest-verification freshness lookup plus one explicit preferred-verification selection plus
     one explicit freshness-classified remembered
     discovery lookup plus one typed remembered runtime-step helper plus one explicit stale-proof
-    refresh plan without hidden Bitcoin refresh policy
+    refresh plan plus one typed refresh step without hidden Bitcoin refresh policy
 - `nip39_verification_recipe.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify
