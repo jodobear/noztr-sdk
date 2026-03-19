@@ -26,7 +26,8 @@ Current project context for `noztr-sdk`.
     send/intake
   - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
     discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
-    typed next-step selection, plus explicit stale-profile refresh planning
+    typed next-step selection, explicit watched-target policy and refresh-cadence classification,
+    plus explicit stale-profile refresh planning
   - `NIP-03` local plus detached-proof, stored-proof, and freshness-classified remembered-
     verification OpenTimestamps workflow plus explicit remembered runtime policy and typed
     next-step selection plus explicit stale-verification refresh planning
@@ -43,8 +44,8 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `251/251`
-  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `110/110`
+  - `zig build test --summary all` with `257/257`
+  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
 
@@ -202,6 +203,22 @@ Current project context for `noztr-sdk`.
   - `IdentityStoredProfileTargetPolicyPlan.refreshNeededEntries()` now exposes the watched
     identities that still need refresh under the chosen fallback policy without forcing apps to
     rebuild that grouped view above the same policy plan
+- the `NIP-39` watched-target refresh-cadence loop is now complete:
+  - caller-owned watched-target refresh-cadence storage and grouped cadence entry/group
+    vocabulary now exist as the stable surface for explicit watched-target refresh timing policy
+  - `IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(...)` now groups one watched
+    identity set into explicit verify-now, refresh-now, usable-while-refreshing, refresh-soon,
+    and stable cadence buckets instead of leaving that cadence policy entirely above the SDK
+  - `IdentityStoredProfileTargetRefreshCadencePlan.nextDueEntry()` now exposes the next watched
+    identity due for work under that cadence plan without forcing apps to restitch urgency order
+    above the grouped cadence surface
+  - `IdentityStoredProfileTargetRefreshCadencePlan.nextDueStep()` now packages that next-due
+    cadence choice as one typed SDK value instead of requiring apps to restitch the selected
+    target and action above the cadence plan
+  - `IdentityStoredProfileTargetRefreshCadencePlan.usableWhileRefreshingEntries()` now exposes
+    watched identities that remain usable while refresh is still due, and
+    `refreshSoonEntries()` now exposes watched identities nearing refresh, instead of forcing apps
+    to slice those grouped cadence buckets themselves
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging
@@ -464,8 +481,9 @@ Current project context for `noztr-sdk`.
 12. The `NIP-39` watched-target policy loop is
     [docs/plans/nip39-six-slice-target-policy-loop-plan.md](./docs/plans/nip39-six-slice-target-policy-loop-plan.md).
     Treat it as reference.
-13. The next coherent execution loop under that active `NIP-39` parent packet is
+13. The `NIP-39` watched-target refresh-cadence loop is
     [docs/plans/nip39-six-slice-refresh-cadence-loop-plan.md](./docs/plans/nip39-six-slice-refresh-cadence-loop-plan.md).
+    Treat it as reference.
 14. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 15. Keep `examples/README.md` current whenever the public teaching surface changes.
 16. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

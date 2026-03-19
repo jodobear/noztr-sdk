@@ -269,6 +269,10 @@ Observed friction:
   watched-target set into explicit verify-now, usable-preferred, and refresh-needed policy
   buckets, so that longer-lived watched-target policy no longer has to be rebuilt above the same
   remembered-profile seams
+- `IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(...)` now also groups one
+  caller-owned watched-target set into explicit verify-now, refresh-now, usable-while-refreshing,
+  refresh-soon, and stable cadence buckets, so watched-target refresh cadence no longer has to be
+  rebuilt above the same remembered-profile seams
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
   selected remembered-profile step directly instead of re-matching the runtime-selected entry
   above the workflow
