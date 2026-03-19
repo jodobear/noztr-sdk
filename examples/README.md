@@ -19,6 +19,7 @@ Use these docs when you need public routing or contract context before opening a
 
 - public SDK imports come from `@import("noztr_sdk").workflows`
 - shared store/query imports come from `@import("noztr_sdk").store`
+- shared relay-pool/runtime imports come from `@import("noztr_sdk").runtime`
 - HTTP-backed workflow recipes also use `@import("noztr_sdk").transport`
 - protocol fixture construction stays on `noztr` kernel helpers
 - examples are compile-verified recipes, not hidden runtimes or framework demos
@@ -72,6 +73,15 @@ Use these docs when you need public routing or contract context before opening a
     keeps replay relay-local instead of pretending the current shared event seam is already a
     multi-relay archive model, and the restore path makes snapshot ordering explicit instead of
     hiding newest-first query behavior behind implicit reordering
+- `relay_pool_recipe.zig`
+  - goal: inspect one shared multi-relay runtime plan and select one typed next pool step
+  - public SDK surface: `noztr_sdk.runtime`, `RelayPool`, `RelayPoolStorage`,
+    `RelayPoolPlanStorage`, `RelayPoolPlan`, `RelayPoolStep`
+  - kernel fixture help: none beyond the shared session/runtime layer
+  - control points: caller still owns bounded pool storage, relay URLs remain explicit, the pool
+    surface exposes one shared inspect/plan/step model without mailbox/groups/signer semantics,
+    and the recipe teaches that the shared runtime floor is explicit and side-effect free rather
+    than hidden background coordination
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, select one next workflow relay explicitly, unwrap it through a recipient

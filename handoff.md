@@ -45,8 +45,8 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `290/290`
-  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
+  - `zig build test --summary all` with `297/297`
+  - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
 
@@ -115,9 +115,9 @@ Current project context for `noztr-sdk`.
     [docs/plans/sdk-relay-pool-runtime-baseline-plan.md](./docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
   - its baseline decision is now
     [docs/plans/sdk-relay-pool-runtime-baseline-decision.md](./docs/plans/sdk-relay-pool-runtime-baseline-decision.md)
-  - the active implementation loop under that child is now
+  - the first bounded implementation loop under that child is now complete in
     [docs/plans/five-slice-relay-pool-loop-plan.md](./docs/plans/five-slice-relay-pool-loop-plan.md)
-  - that child exists to keep the sequence coherent:
+  - that child still exists to keep the sequence coherent:
     - shared relay-pool/runtime vocabulary before another round of workflow-local runtime growth
     - explicit reuse of the shared store/query/checkpoint seams instead of another isolated pool
       storage model
@@ -164,6 +164,20 @@ Current project context for `noztr-sdk`.
     - this confirms the shared event seam can support one real SDK workflow without forcing
       workflow-local remembered-state stores into the shared core, while also making the current
       relay-local limitation explicit until the broader relay-pool layer hardens
+- the first shared relay-pool/runtime loop is now complete:
+  - `src/root.zig` now exports a stable public `noztr_sdk.runtime` namespace
+  - `src/runtime/relay_pool.zig` now exposes `RelayPool`, `RelayPoolStorage`,
+    `RelayPoolPlanStorage`, `RelayPoolPlan`, and `RelayPoolStep`
+  - `RelayPool` now wraps bounded relay-local session state into one shared multi-relay floor and
+    exposes explicit `addRelay(...)`, readiness transitions, and `inspectRuntime(...)`
+  - `RelayPoolPlan` now exposes bounded `nextEntry()` and typed `nextStep()` selection over
+    shared `connect` / `authenticate` / `ready` state without pulling mailbox, signer, or groups
+    semantics into the shared layer
+  - `examples/relay_pool_recipe.zig` now teaches one explicit inspect-plan-step path over two
+    relays on that shared runtime floor
+  - the next likely child work is store-aware checkpoint or replay composition over the shared
+    pool floor and then one real workflow adaptation above it, not immediate subscription/sync
+    expansion
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

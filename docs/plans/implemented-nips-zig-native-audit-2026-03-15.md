@@ -221,6 +221,13 @@ Observed friction:
   generic event seam, which is a better Zig-native proof point than raw storage traits alone
 - that helper is still deliberately relay-local, which is the right current boundary because the
   generic event record does not yet encode source-relay identity
+- `src/root.zig` now also exports a stable public `noztr_sdk.runtime` namespace, and
+  `src/runtime/relay_pool.zig` now exposes one bounded shared `RelayPool` floor above relay-local
+  session state instead of leaving multi-relay runtime vocabulary trapped in workflow-local
+  helpers
+- that shared runtime layer is still intentionally narrow, but it is a better Zig-native
+  abstraction direction than forcing every future CLI, signer, or groups surface to invent its own
+  pool-shaped readiness model
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

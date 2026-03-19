@@ -238,6 +238,12 @@ Observed friction:
 - `GroupFleet.selectBackgroundRelay(...)` now also validates and normalizes the relay target for
   one typed background step so callers can act on that broader background plan without restitching
   relay lookup above the fleet
+- `src/root.zig` now also exports a stable public `noztr_sdk.runtime` namespace, and
+  `src/runtime/relay_pool.zig` now exposes one shared `RelayPool` floor above bounded relay-local
+  sessions
+- that new shared pool layer is not yet a fuller groups client by itself, but it is useful
+  applesauce-like progress because CLI, signer, and later groups/relay products now have one SDK
+  route for multi-relay readiness instead of only workflow-local fleet helpers
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping

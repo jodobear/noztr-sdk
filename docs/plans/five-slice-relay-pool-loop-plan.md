@@ -1,7 +1,7 @@
 ---
 title: Five Slice Relay Pool Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - executing_the_shared_relay_pool_runtime_baseline
@@ -44,3 +44,15 @@ the architecture expands into subscription/sync or product-specific adaptation.
 - workflow-local runtime plans already prove the inspect/plan/step pattern
 - shared store/query pressure tests are already landed
 - this loop only extracts the shared pool floor, not a full product client
+
+## Closeout
+
+This loop is complete.
+
+It landed:
+
+1. shared public `runtime` namespace plus bounded relay-pool vocabulary and storage
+2. public `RelayPool` wrapper above relay-local session state
+3. side-effect-free pool runtime inspection through `inspectRuntime(...)`
+4. typed `nextEntry()` and `nextStep()` selection over that bounded runtime plan
+5. public recipe and release-doc routing for the shared relay-pool runtime floor
