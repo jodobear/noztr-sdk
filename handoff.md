@@ -42,7 +42,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `214/214`
+  - `zig build test --summary all` with `216/216`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `105/105`
 
 ## Read First
@@ -172,6 +172,10 @@ Current project context for `noztr-sdk`.
     callers can classify the newest remembered profile for one explicit watched identity set in
     caller order instead of hand-looping one provider identity at a time above the same store
     seam
+  - `IdentityVerifier` now also exposes `inspectLatestStoredProfileFreshnessForTargets(...)`, and
+    `IdentityStoredProfileTargetLatestFreshnessPlan` now exposes `nextEntry()`, so callers can
+    identify the first non-fresh watched identity in caller order without hand-scanning that
+    watched-target latest-freshness surface above the workflow
   - remembered-profile discovery, freshness, and preferred-selection helpers now return
     `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
     a custom profile store reports matches it cannot hydrate
@@ -197,10 +201,10 @@ Current project context for `noztr-sdk`.
   - `examples/nip39_verification_recipe.zig` now teaches one full identity event verified over the
     public HTTP seam, remembered in a caller-owned profile store, hydrated directly by provider
     identity, classified for freshness both across discovered entries and for the newest match,
-    classified once more across one explicit watched identity set, selected once through explicit
-    remembered-profile policy, inspected once through explicit remembered runtime policy plus one
-    typed next step, planned once for stale refresh plus one typed refresh step, and then replayed
-    from the explicit cache
+    classified once more through one explicit watched-target latest-freshness plan plus one next
+    entry, selected once through explicit remembered-profile policy, inspected once through
+    explicit remembered runtime policy plus one typed next step, planned once for stale refresh
+    plus one typed refresh step, and then replayed from the explicit cache
 - `NIP-05` now has a clearer Zig-native surface:
   - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
     caller-owned `Nip05LookupStorage`

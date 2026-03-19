@@ -210,6 +210,9 @@ Observed friction:
 - `NIP-39` now also exposes one explicit watched-target latest-freshness helper above the same
   remembered-profile seams, so callers can drive multi-identity remembered policy from one
   caller-owned target set instead of hand-looping single-identity helpers above the workflow
+- `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextEntry()` so callers can
+  follow the first non-fresh watched identity in caller order without hand-scanning that
+  watched-target latest-freshness surface above the workflow
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
   selected remembered-profile step directly instead of re-matching the runtime-selected entry
   above the workflow

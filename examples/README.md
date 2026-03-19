@@ -77,9 +77,10 @@ network daemons, or hidden runtime loops.
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify
     both discovered stored entries and the latest remembered profile for freshness, classify one
-    explicit watched identity set by latest remembered freshness, select one preferred remembered
-    profile explicitly, inspect one typed remembered runtime step explicitly, plan refresh for
-    stale remembered profiles explicitly, and replay the same identity from remembered state
+    explicit watched identity set through one latest-freshness plan and next entry, select one
+    preferred remembered profile explicitly, inspect one typed remembered runtime step explicitly,
+    plan refresh for stale remembered profiles explicitly, and replay the same identity from
+    remembered state
   - public SDK surface: `IdentityVerifier`, `IdentityProfileVerificationStorage`,
     `IdentityProviderDetails`, `MemoryIdentityVerificationCache`, `MemoryIdentityProfileStore`,
     `IdentityStoredProfileDiscoveryStorage`, `IdentityStoredProfileDiscoveryFreshnessStorage`,
@@ -95,7 +96,8 @@ network daemons, or hidden runtime loops.
     store records, inspects provider-shaped details from the verified claims, then performs one
     explicit remembered discovery lookup, one explicit freshness-classified remembered discovery
     lookup, one newest-match remembered lookup, one caller-owned watched-target latest-freshness
-    lookup, one explicit preferred-profile selection step, one explicit remembered runtime
+    plan plus one explicit next watched-target entry, one explicit preferred-profile selection
+    step, one explicit remembered runtime
     inspection step plus one typed next-step helper, one explicit stale-profile refresh plan plus
     one typed refresh step, and one explicit freshness check without hidden background policy
 - `nip05_resolution_recipe.zig`

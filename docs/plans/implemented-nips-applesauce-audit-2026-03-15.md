@@ -272,6 +272,9 @@ Observed friction:
 - it now also exposes one explicit watched-target latest-freshness helper so callers can classify
   the newest remembered state for a caller-owned identity set without hand-looping one provider
   identity at a time above the same stored-profile seam
+- `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextEntry()` so callers can
+  follow the first non-fresh watched identity in caller order without hand-scanning that
+  latest-freshness view above the workflow
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow

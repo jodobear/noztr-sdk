@@ -108,3 +108,8 @@ policy, while keeping capacity and selection caller-owned and deterministic.
   - `IdentityStoredProfileTargetLatestFreshnessEntry`
   - `IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(...)`
   - compatibility result: `green`
+- slice 2 accepted on 2026-03-19:
+  - `IdentityStoredProfileTargetLatestFreshnessPlan`
+  - `IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(...)`
+  - `IdentityStoredProfileTargetLatestFreshnessPlan.nextEntry()`
+  - compatibility result: `green`
