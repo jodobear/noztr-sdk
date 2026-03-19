@@ -42,7 +42,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `224/224`
+  - `zig build test --summary all` with `225/225`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `105/105`
 
 ## Read First
@@ -75,8 +75,10 @@ Current project context for `noztr-sdk`.
   details, reuses explicit cached verification outcomes, remembers verified identities, and
   supports hydrated stored discovery plus freshness-classified remembered discovery, preferred
   remembered-profile selection, explicit watched-target latest-freshness discovery, explicit
-  remembered runtime inspection and next-entry selection, and stale-profile refresh planning, but
-  still lacks broader long-lived store/discovery policy.
+  watched-target preferred-selection, watched-target stale-refresh planning, watched-target
+  runtime policy plus typed next-step driving, explicit remembered runtime inspection and next-
+  entry selection, and stale-profile refresh planning, but still lacks broader autonomous
+  discovery/refresh policy above the current caller-owned watched-target inputs.
 
 ## Current Slice Notes
 
@@ -198,6 +200,9 @@ Current project context for `noztr-sdk`.
   - `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextEntry()` so callers can follow
     the next watched identity selected by that runtime policy without hand-scanning the set-level
     runtime plan above the workflow
+  - `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextStep()` so callers can consume
+    that watched-target runtime choice as one typed SDK value instead of restitching the selected
+    target and action above the workflow
   - remembered-profile discovery, freshness, and preferred-selection helpers now return
     `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
     a custom profile store reports matches it cannot hydrate
@@ -227,9 +232,9 @@ Current project context for `noztr-sdk`.
     next step, selected once more through explicit watched-target preferred selection, selected
     once through explicit remembered-profile policy, planned once more through explicit watched-
     target stale refresh targeting plus one typed next refresh step, inspected once through
-    explicit watched-target runtime policy plus one next runtime target, inspected once through
-    explicit remembered runtime policy plus one typed next step, planned once for stale refresh
-    plus one typed refresh step, and then replayed from the explicit cache
+    explicit watched-target runtime policy plus one typed next runtime step, inspected once
+    through explicit remembered runtime policy plus one typed next step, planned once for stale
+    refresh plus one typed refresh step, and then replayed from the explicit cache
 - `NIP-05` now has a clearer Zig-native surface:
   - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
     caller-owned `Nip05LookupStorage`
@@ -369,24 +374,26 @@ Current project context for `noztr-sdk`.
 3. The stored-workflow remediation slice is complete in
    [docs/plans/stored-workflow-hardening-plan.md](./docs/plans/stored-workflow-hardening-plan.md).
    Treat it as reference.
-4. The next active packet is
+4. The `NIP-39` ten-slice policy loop is complete in
    [docs/plans/nip39-ten-slice-policy-loop-plan.md](./docs/plans/nip39-ten-slice-policy-loop-plan.md).
-5. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
+   Treat it as reference.
+5. The next active packet is
+   [docs/plans/nip29-background-runtime-plan.md](./docs/plans/nip29-background-runtime-plan.md).
+6. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
    rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
    or merge-selection work.
-6. Use the active `NIP-39` packet to keep broadening watched-target and longer-lived remembered
-   identity policy above the now-landed remembered verify/store/discover/select, watched-target
-   latest-freshness, and runtime-policy plus next-step path rather than repeating already-landed
-   provider-detail, cache, or explicit single-identity store/discovery work.
-7. The next best broader product lane after that remains a real background-runtime `NIP-29` lane
-   or broader `NIP-03` / `NIP-17` workflow policy.
-8. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
-9. Keep `examples/README.md` current whenever the public teaching surface changes.
-10. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
-11. Treat `docs/archive/` as historical context only, not startup reading.
-12. Keep `NIP-03` scoped to broader proof workflow work only:
+7. The remaining `NIP-39` gap is now autonomous discovery/refresh policy above the current
+   caller-owned watched-target inputs; do not reopen already-landed watched-target freshness,
+   preferred-selection, refresh, or runtime helpers unless a real bug appears.
+8. The next best broader product lane after that remains broader `NIP-03` / `NIP-17` workflow
+   policy.
+9. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
+10. Keep `examples/README.md` current whenever the public teaching surface changes.
+11. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
+12. Treat `docs/archive/` as historical context only, not startup reading.
+13. Keep `NIP-03` scoped to broader proof workflow work only:
    `OpenTimestampsVerifier.verifyRemote(...)` and `verifyRemoteCached(...)` already cover the
    explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
    covers remembered runtime inspection plus typed next-step selection; the remaining gap is broader

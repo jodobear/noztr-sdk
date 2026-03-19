@@ -102,9 +102,10 @@ network daemons, or hidden runtime loops.
     lookup, one newest-match remembered lookup, one caller-owned watched-target latest-freshness
     plan plus one typed next watched-target step, one explicit watched-target preferred-selection
     step, one explicit watched-target stale-refresh plan plus one typed next refresh step, one explicit preferred-profile
-    selection step, one explicit watched-target runtime plan plus one next runtime target, one explicit remembered runtime
-    inspection step plus one typed next-step helper, one explicit stale-profile refresh plan plus
-    one typed refresh step, and one explicit freshness check without hidden background policy
+    selection step, one explicit watched-target runtime plan plus one typed next runtime step,
+    one explicit remembered runtime inspection step plus one typed next-step helper, one explicit
+    stale-profile refresh plan plus one typed refresh step, and one explicit freshness check
+    without hidden background policy
 - `nip05_resolution_recipe.zig`
   - goal: resolve and verify one `NIP-05` address over the public HTTP seam
   - public SDK surface: `Nip05Resolver`, `transport.HttpClient`
@@ -167,7 +168,7 @@ Still intentionally deferred:
 - live HTTP adapters or runtime clients
 - redirect-aware `NIP-05` teaching beyond the current explicit seam limit
 - broader autonomous `NIP-39` discovery and refresh policy beyond the current explicit watched-
-  target and remembered-profile helpers
+  target freshness, preferred-selection, refresh, and runtime helpers
 - longer-lived autonomous identity discovery or hidden runtime policy
 
 Reason:

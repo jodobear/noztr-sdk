@@ -1,7 +1,7 @@
 ---
 title: NIP-39 Ten-Slice Long-Lived Policy Loop
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [39]
 read_when:
@@ -145,3 +145,23 @@ policy, while keeping capacity and selection caller-owned and deterministic.
 - slice 9 accepted on 2026-03-19:
   - `IdentityStoredProfileTargetRuntimePlan.nextEntry()`
   - compatibility result: `green`
+- slice 10 accepted on 2026-03-19:
+  - `IdentityStoredProfileTargetRuntimeStep`
+  - `IdentityStoredProfileTargetRuntimePlan.nextStep()`
+  - compatibility result: `green`
+
+## Closeout
+
+Status: completed on 2026-03-19.
+
+The loop is now closed. `NIP-39` has explicit watched-target freshness, preferred-selection,
+refresh, and runtime-policy helpers plus typed next-step helpers across each of those set-level
+surfaces.
+
+The remaining `NIP-39` gap is now narrower:
+- broader autonomous discovery/refresh policy still remains above the current caller-owned watched-
+  target inputs
+- hidden background refresh/runtime ownership still remains intentionally out of scope
+
+The next active packet is
+[nip29-background-runtime-plan.md](./nip29-background-runtime-plan.md).

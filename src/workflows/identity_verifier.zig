@@ -496,6 +496,20 @@ pub const IdentityStoredProfileTargetRuntimePlan = struct {
         if (usize_index >= self.entries.len) return null;
         return &self.entries[usize_index];
     }
+
+    pub fn nextStep(
+        self: *const IdentityStoredProfileTargetRuntimePlan,
+    ) IdentityStoredProfileTargetRuntimeStep {
+        return .{
+            .action = self.action,
+            .entry = if (self.nextEntry()) |entry| entry.* else null,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetRuntimeStep = struct {
+    action: IdentityStoredProfileTargetRuntimeAction,
+    entry: ?IdentityStoredProfileTargetLatestFreshnessEntry = null,
 };
 
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
@@ -3671,6 +3685,9 @@ test "identity verifier watched-target runtime prefers verifying the first missi
     try std.testing.expectEqual(@as(u32, 0), runtime.selected_index.?);
     try std.testing.expectEqualStrings("carol", runtime.entries[runtime.selected_index.?].target.identity);
     try std.testing.expectEqualStrings("carol", runtime.nextEntry().?.target.identity);
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, next_step.action);
+    try std.testing.expectEqualStrings("carol", next_step.entry.?.target.identity);
 }
 
 test "identity verifier watched-target runtime can prefer the freshest remembered target" {
@@ -3741,6 +3758,9 @@ test "identity verifier watched-target runtime can prefer the freshest remembere
     try std.testing.expectEqual(@as(u32, 1), runtime.selected_index.?);
     try std.testing.expectEqualStrings("bob", runtime.entries[runtime.selected_index.?].target.identity);
     try std.testing.expectEqualStrings("bob", runtime.nextEntry().?.target.identity);
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.use_preferred, next_step.action);
+    try std.testing.expectEqualStrings("bob", next_step.entry.?.target.identity);
 }
 
 test "identity verifier watched-target runtime can require refresh for stale targets" {
@@ -3812,6 +3832,39 @@ test "identity verifier watched-target runtime can require refresh for stale tar
     try std.testing.expectEqual(@as(u32, 1), runtime.selected_index.?);
     try std.testing.expectEqualStrings("bob", runtime.entries[runtime.selected_index.?].target.identity);
     try std.testing.expectEqualStrings("bob", runtime.nextEntry().?.target.identity);
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(
+        IdentityStoredProfileTargetRuntimeAction.refresh_existing,
+        next_step.action,
+    );
+    try std.testing.expectEqualStrings("bob", next_step.entry.?.target.identity);
+}
+
+test "identity verifier watched-target runtime handles an empty watched set" {
+    var store_records: [1]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    const targets = [_]IdentityStoredProfileTarget{};
+    var matches_storage: [0]IdentityProfileMatch = .{};
+    var entries_storage: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = .init(matches_storage[0..], entries_storage[0..]),
+        },
+    );
+
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, runtime.action);
+    try std.testing.expectEqual(@as(usize, 0), runtime.entries.len);
+    try std.testing.expectEqual(@as(u32, 0), runtime.fresh_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.missing_count);
+    try std.testing.expect(runtime.nextEntry() == null);
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.verify_now, next_step.action);
+    try std.testing.expect(next_step.entry == null);
 }
 
 test "identity verifier selects the newest fresh preferred stored profile" {

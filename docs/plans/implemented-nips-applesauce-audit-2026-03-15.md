@@ -297,6 +297,9 @@ Observed friction:
 - `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextEntry()` so callers can follow
   the next watched identity selected by that runtime policy without hand-scanning the set-level
   runtime plan above the workflow
+- `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextStep()` so callers can consume
+  that watched-target runtime choice as one typed SDK value instead of restitching the selected
+  target and action above the workflow
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow
