@@ -301,6 +301,18 @@ Observed friction:
 - `NIP-03` now also exposes one explicit preferred remembered-verification selection helper, so
   callers do not have to rebuild fresh-vs-stale fallback choice above the same store seam, and it
   now stays caller-bounded instead of hiding a fixed helper-local `32`-entry cap
+- `OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(...)` now also
+  groups newest remembered-proof freshness across a caller-owned target set, so apps do not have
+  to hand-loop per-target latest-age policy above the same verification store seam
+- `OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(...)` now also selects one
+  preferred remembered proof across that grouped target set, so callers do not have to rebuild
+  grouped fresh-vs-stale fallback choice above the same remembered-proof surface
+- `OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(...)` now also collects stale
+  remembered proof targets newest-first, so grouped proof-refresh targeting no longer has to be
+  reconstructed above the same latest-freshness surface
+- `OpenTimestampsStoredVerificationTargetRefreshPlan` now also exposes `nextEntry()` and
+  `nextStep()`, so grouped proof-refresh driving no longer has to restitch the selected target
+  above that refresh plan
 - `OpenTimestampsStoredVerificationRefreshPlan` now also exposes `nextEntry()` and `nextStep()`,
   so callers do not have to re-stitch newest-first stale-verification refresh targeting above the
   same freshness discovery surface
@@ -398,6 +410,8 @@ Strengths:
   global state
 - now also exposes one explicit freshness-classified remembered-discovery helper for all stored
   verifications of one target event
+- now also exposes one explicit grouped remembered-target freshness, preferred-selection, and
+  refresh-planning layer above the same caller-owned remembered verification store seam
 - now also exposes one explicit remembered runtime-policy helper that classifies the common
   verify/refresh/use decision over caller-owned remembered verification discovery
 

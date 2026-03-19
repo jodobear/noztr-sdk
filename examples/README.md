@@ -54,18 +54,23 @@ network daemons, or hidden runtime loops.
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
-    entries for freshness, inspect one typed remembered runtime step explicitly, plan refresh for
-    stale remembered verifications, and recover the latest remembered verification for the same
-    target event
+    entries for freshness, inspect one typed remembered runtime step explicitly, drive grouped
+    remembered-target freshness, preferred-selection, and refresh policy, plan refresh for stale
+    remembered verifications, and recover the latest remembered verification for the same target
+    event
   - public SDK surface: `OpenTimestampsVerifier`, `OpenTimestampsRemoteProofRequest`,
     `OpenTimestampsProofStore`, `MemoryOpenTimestampsProofStore`,
     `OpenTimestampsVerificationStore`, `MemoryOpenTimestampsVerificationStore`,
     `OpenTimestampsStoredVerificationDiscoveryFreshnessStorage`,
     `OpenTimestampsPreferredStoredVerificationRequest`,
+    `OpenTimestampsLatestStoredVerificationTargetStorage`,
+    `OpenTimestampsPreferredStoredVerificationTargetStorage`,
+    `OpenTimestampsStoredVerificationTargetRefreshStorage`,
     `OpenTimestampsStoredVerificationRuntimeStorage`,
     `OpenTimestampsStoredVerificationRuntimeAction`,
     `OpenTimestampsStoredVerificationRefreshStorage`,
-    `OpenTimestampsStoredVerificationRefreshStep`, `transport.HttpClient`
+    `OpenTimestampsStoredVerificationRefreshStep`,
+    `OpenTimestampsStoredVerificationTargetRefreshStep`, `transport.HttpClient`
   - kernel fixture help: `noztr.nostr_keys`
   - control points: caller supplies the target event, attestation event, detached proof URL,
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-

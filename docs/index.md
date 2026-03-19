@@ -52,7 +52,6 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [nip03-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip03-long-lived-policy-plan.md)
-- [nip03-six-slice-target-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip03-six-slice-target-policy-loop-plan.md)
 - [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
@@ -98,6 +97,7 @@ Use `doc_type` plus `status` first:
 - [nip03-discovery-freshness-plan.md](/workspace/projects/nzdk/docs/plans/nip03-discovery-freshness-plan.md)
 - [nip03-runtime-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip03-runtime-policy-plan.md)
 - [nip03-refresh-plan.md](/workspace/projects/nzdk/docs/plans/nip03-refresh-plan.md)
+- [nip03-six-slice-target-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip03-six-slice-target-policy-loop-plan.md)
 - [nip05-ergonomic-surface-plan.md](/workspace/projects/nzdk/docs/plans/nip05-ergonomic-surface-plan.md)
 - [nip39-ergonomic-surface-plan.md](/workspace/projects/nzdk/docs/plans/nip39-ergonomic-surface-plan.md)
 - [nip39-profile-workflow-plan.md](/workspace/projects/nzdk/docs/plans/nip39-profile-workflow-plan.md)

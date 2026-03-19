@@ -24,6 +24,9 @@ touches_startup_docs: yes
 ## Status
 
 This broader lane is active after the recent `NIP-39` watched-target loop family closeout.
+The grouped remembered-proof target-policy loop is now complete under this parent lane; the
+remaining gap is broader current-turn and longer-lived remembered-proof policy above those grouped
+target helpers.
 
 ## Scope Delta
 

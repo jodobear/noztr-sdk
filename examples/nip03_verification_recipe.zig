@@ -13,8 +13,9 @@ const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 // Verify one detached OpenTimestamps proof document, remember the verification summary explicitly,
 // classify remembered discovery entries for freshness, inspect one typed remembered runtime step,
-// then recover the latest remembered verification for the same target event.
-test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered typed runtime step, and reuses one detached proof document" {
+// drive one grouped remembered-target policy pass, then recover the latest remembered verification
+// for the same target event.
+test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered typed runtime step, and drives grouped remembered proof policy" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try common.derivePublicKey(&signer_secret);
     var target = common.simpleEvent(1, signer_pubkey, 1, "hello", &.{});
@@ -198,6 +199,71 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         "https://proof.example/hello.ots",
         refresh_plan.nextStep().?.entry.entry.entry.verification.proofUrl(),
     );
+
+    const grouped_targets = [_]noztr_sdk.workflows.OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = target.id },
+        .{ .target_event_id = [_]u8{0x99} ** 32 },
+    };
+    var grouped_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    var grouped_latest_entries: [2]noztr_sdk.workflows.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    const grouped_latest =
+        try noztr_sdk.workflows.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+            verification_store.asStore(),
+            .{
+                .targets = grouped_targets[0..],
+                .now_unix_seconds = 62,
+                .max_age_seconds = 120,
+                .storage = .init(grouped_matches[0..], grouped_latest_entries[0..]),
+            },
+        );
+    try std.testing.expectEqual(@as(usize, 2), grouped_latest.len);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.OpenTimestampsStoredVerificationFreshness.fresh,
+        grouped_latest[0].latest.?.freshness,
+    );
+    try std.testing.expect(grouped_latest[1].latest == null);
+
+    var grouped_preferred_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    var grouped_preferred_freshness: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+    var grouped_preferred_entries: [2]noztr_sdk.workflows.OpenTimestampsPreferredStoredVerificationTargetEntry = undefined;
+    const grouped_preferred =
+        (try noztr_sdk.workflows.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+            verification_store.asStore(),
+            .{
+                .targets = grouped_targets[0..],
+                .now_unix_seconds = 62,
+                .max_age_seconds = 120,
+                .storage = .init(
+                    grouped_preferred_matches[0..],
+                    grouped_preferred_freshness[0..],
+                    grouped_preferred_entries[0..],
+                ),
+            },
+        )).?;
+    try std.testing.expectEqualSlices(u8, &target.id, &grouped_preferred.target.target_event_id);
+
+    var grouped_refresh_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    var grouped_refresh_freshness: [2]noztr_sdk.workflows.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    const grouped_refresh_entries = [_]noztr_sdk.workflows.OpenTimestampsStoredVerificationRefreshEntry{};
+    var grouped_refresh_targets: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    const grouped_refresh =
+        try noztr_sdk.workflows.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+            verification_store.asStore(),
+            .{
+                .targets = grouped_targets[0..],
+                .now_unix_seconds = 200,
+                .max_age_seconds = 120,
+                .storage = .init(
+                    grouped_refresh_matches[0..],
+                    grouped_refresh_freshness[0..],
+                    grouped_refresh_entries[0..],
+                    grouped_refresh_targets[0..],
+                ),
+            },
+        );
+    try std.testing.expectEqual(@as(usize, 1), grouped_refresh.entries.len);
+    try std.testing.expectEqualSlices(u8, &target.id, &grouped_refresh.nextEntry().?.target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &target.id, &grouped_refresh.nextStep().?.entry.target.target_event_id);
 }
 
 fn buildLocalBitcoinProof(output: []u8, digest: *const [32]u8) []const u8 {

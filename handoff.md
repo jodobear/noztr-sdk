@@ -467,12 +467,24 @@ Current project context for `noztr-sdk`.
   - `OpenTimestampsVerifier.planStoredVerificationRefresh(...)` now collects only stale remembered
     verification matches newest-first under one explicit freshness window without hiding fetch or
     Bitcoin policy above the stored verification seam
+  - `OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(...)` now
+    classifies newest remembered verification freshness across one caller-owned proof target set
+    instead of forcing apps to hand-loop per-target latest-age policy above the same store seam
+  - `OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(...)` now selects one
+    preferred remembered verification across that grouped target set instead of rebuilding grouped
+    fresh-vs-stale fallback policy above the same remembered-proof surface
+  - `OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(...)` now collects stale
+    remembered proof targets newest-first across one caller-owned target set, and
+    `OpenTimestampsStoredVerificationTargetRefreshPlan` now also exposes `nextEntry()` and
+    `nextStep()` so grouped refresh driving no longer has to be reconstructed above the same
+    latest-freshness surface
   - remembered-verification discovery, freshness, and preferred-selection helpers now return
     `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
     a custom verification store reports matches it cannot hydrate
   - `examples/nip03_verification_recipe.zig` now teaches verify, remember, freshness-classified
-    discovery, one typed remembered runtime step, stale refresh planning, and latest remembered
-    lookup on the same explicit public surface
+    discovery, one typed remembered runtime step, grouped target freshness/preferred/refresh
+    policy, stale refresh planning, and latest remembered lookup on the same explicit public
+    surface
   - the real remaining gap is broader Bitcoin verification, proof freshness, and longer-lived
     durable proof policy above the current workflow
 
@@ -537,8 +549,9 @@ Current project context for `noztr-sdk`.
     Treat it as reference.
 17. The active broader proof-policy packet is
     [docs/plans/nip03-long-lived-policy-plan.md](./docs/plans/nip03-long-lived-policy-plan.md).
-18. The next coherent execution loop under that active `NIP-03` parent packet is
+18. The `NIP-03` grouped target-policy loop is
     [docs/plans/nip03-six-slice-target-policy-loop-plan.md](./docs/plans/nip03-six-slice-target-policy-loop-plan.md).
+    Treat it as reference.
 19. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 20. Keep `examples/README.md` current whenever the public teaching surface changes.
 21. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

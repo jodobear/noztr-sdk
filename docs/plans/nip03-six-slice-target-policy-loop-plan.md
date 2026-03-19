@@ -1,7 +1,7 @@
 ---
 title: NIP-03 Six-Slice Target Policy Loop
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [3]
 read_when:
@@ -24,7 +24,7 @@ touches_startup_docs: yes
 
 ## Scope Delta
 
-This is the next coherent execution loop under the active
+This loop is now complete under the active
 [nip03-long-lived-policy-plan.md](./nip03-long-lived-policy-plan.md) parent packet.
 
 `NIP-03` already has explicit per-target remembered verification freshness, preferred selection,
@@ -93,3 +93,9 @@ This loop does not include:
 - keep one commit per accepted slice
 - keep this loop as the next likely execution packet under the active parent `NIP-03` plan until
   promoted
+
+## Closeout
+
+- completed on 2026-03-19
+- grouped latest-freshness, grouped preferred selection, grouped refresh planning, and grouped
+  refresh step selection now exist for remembered proof target sets

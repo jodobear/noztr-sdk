@@ -146,6 +146,9 @@ Observed friction:
   and caller-owned freshness storage
 - one explicit freshness-classified remembered-discovery helper over all stored verifications for a
   target event
+- one explicit grouped latest-freshness helper across a caller-owned remembered proof target set
+- one explicit grouped preferred remembered-verification selector across that target set
+- one explicit grouped stale-target refresh planner with typed next-entry and next-step selection
 - one explicit remembered runtime-policy helper that classifies one target event as `verify_now`,
   `refresh_existing`, `use_preferred`, or `use_stale_and_refresh`
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can step
@@ -423,6 +426,7 @@ Current state:
 - useful typed outcomes for local and detached-proof checks
 - one explicit caller-owned proof-store seam for detached-proof reuse without hidden runtime
 - explicit remembered runtime inspection over stored verification freshness and preferred reuse
+- explicit grouped remembered-target freshness, preferred-selection, and refresh-planning helpers
 
 Current gap:
 - not yet a fuller proof retrieval/verification workflow with Bitcoin-client, freshness, or durable
