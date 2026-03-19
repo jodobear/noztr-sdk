@@ -1,7 +1,7 @@
 ---
 title: NIP-29 Six-Slice Background Runtime Loop
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [29]
 read_when:
@@ -113,3 +113,27 @@ control explicit, deterministic, and caller-owned.
 - slice 5 accepted on 2026-03-19:
   - `GroupFleet.selectBackgroundRelay(...)`
   - compatibility result: `green`
+- slice 6 accepted on 2026-03-19:
+  - `examples/group_fleet_recipe.zig` now teaches one explicit background merge step and one
+    explicit background publish step
+  - startup and audit docs reconciled
+  - compatibility result: `green`
+
+## Closeout
+
+Status: completed on 2026-03-19.
+
+The loop is now closed. `NIP-29` has a bounded background-runtime surface above fleet runtime,
+consistency, merge, targeted reconcile, and publish planning:
+- `GroupFleetBackgroundAction`
+- `GroupFleetBackgroundEntry`
+- `GroupFleet.inspectBackgroundRuntime(...)`
+- `GroupFleetBackgroundRuntimePlan.nextEntry()`
+- `GroupFleetBackgroundRuntimePlan.nextStep()`
+- `GroupFleet.selectBackgroundRelay(...)`
+
+The remaining `NIP-29` gap is now narrower:
+- broader hidden-runtime ownership is still intentionally out of scope
+- fuller groups-client posture above explicit caller-owned scheduling still remains open
+
+The next active packet is [recent-loops-audit-plan.md](./recent-loops-audit-plan.md).

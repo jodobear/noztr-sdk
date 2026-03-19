@@ -42,8 +42,8 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `229/229`
-  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `105/105`
+  - `zig build test --summary all` with `231/231`
+  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `108/108`
 
 ## Read First
 
@@ -82,7 +82,7 @@ Current project context for `noztr-sdk`.
 
 ## Current Slice Notes
 
-- `NIP-29` background-runtime broadening is now active:
+- `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
   - `GroupFleetBackgroundEntry` now provides the stable SDK-facing relay-target shape that later
@@ -96,6 +96,9 @@ Current project context for `noztr-sdk`.
     next background relay/action together with baseline context into one typed SDK step
   - `GroupFleet.selectBackgroundRelay(...)` now also validates and normalizes the relay target for
     one typed background step instead of forcing callers to redo relay lookup above the fleet
+  - `examples/group_fleet_recipe.zig` now teaches one explicit background merge step and one
+    explicit background publish step on top of the existing fleet runtime, consistency, targeted
+    reconcile, and publish-plan surfaces
 - `A-HTTP-001` and `Z-HTTP-001` are now resolved:
   - `src/root.zig` exports the explicit HTTP seam intentionally through `noztr_sdk.transport`
   - `examples/nip39_verification_recipe.zig` and `examples/nip05_resolution_recipe.zig` now teach
@@ -392,20 +395,18 @@ Current project context for `noztr-sdk`.
    [docs/plans/nip39-ten-slice-policy-loop-plan.md](./docs/plans/nip39-ten-slice-policy-loop-plan.md).
    Treat it as reference.
 5. The next active packet is
-   [docs/plans/nip29-six-slice-background-loop-plan.md](./docs/plans/nip29-six-slice-background-loop-plan.md).
+   [docs/plans/recent-loops-audit-plan.md](./docs/plans/recent-loops-audit-plan.md).
 6. Treat
+   [docs/plans/nip29-six-slice-background-loop-plan.md](./docs/plans/nip29-six-slice-background-loop-plan.md)
+   as completed reference context for the just-closed `NIP-29` loop.
+7. Treat
    [docs/plans/nip29-background-runtime-plan.md](./docs/plans/nip29-background-runtime-plan.md)
-   as the broader reference baseline for that active loop.
-7. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
-   policy or another gap above the now-landed explicit fleet store, targeted reconcile,
-   reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
-   rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
-   or merge-selection work.
+   as the broader reference baseline behind that completed loop.
 8. The remaining `NIP-39` gap is now autonomous discovery/refresh policy above the current
    caller-owned watched-target inputs; do not reopen already-landed watched-target freshness,
    preferred-selection, refresh, or runtime helpers unless a real bug appears.
-9. The next best broader product lane after that remains broader `NIP-03` / `NIP-17` workflow
-   policy.
+9. After the recent-loops audit, the next best broader product lane remains broader `NIP-03` /
+   `NIP-17` workflow policy.
 10. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 11. Keep `examples/README.md` current whenever the public teaching surface changes.
 12. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

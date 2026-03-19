@@ -126,33 +126,36 @@ network daemons, or hidden runtime loops.
 - `group_fleet_recipe.zig`
   - goal: persist relay-local `NIP-29` checkpoints from one explicit multi-relay fleet into a
     caller-owned store, restore a fresh fleet from that stored state, inspect runtime actions plus
-    one explicit next runtime step over the restored relays, inspect one typed next consistency
-    step, merge divergent relay-local components by explicit relay selection, run one explicit
-    targeted baseline-to-target reconcile step, then select one next moderation publish relay from
-    the resulting fanout
+    one explicit next runtime step over the restored relays, inspect one explicit background-
+    runtime step over pending merge and publish work, inspect one typed next consistency step,
+    merge divergent relay-local components by explicit relay selection, run one explicit targeted
+    baseline-to-target reconcile step, then select one next moderation publish relay and one
+    explicit background relay from the resulting fanout
   - public SDK surface: `GroupFleet`, `GroupClient`, `GroupClientStorage`,
-    `GroupRelayState`, `GroupFleetRuntimeAction`, `GroupFleetRuntimeStorage`,
-    `GroupFleetRuntimePlan`,
+    `GroupRelayState`, `GroupFleetRuntimeAction`, `GroupFleetBackgroundAction`,
+    `GroupFleetRuntimeStorage`, `GroupFleetBackgroundRuntimeStorage`, `GroupFleetRuntimePlan`,
+    `GroupFleetBackgroundRuntimePlan`,
     `GroupFleetCheckpointStorage`, `GroupFleetCheckpointContext`,
     `GroupFleetMergeStorage`, `GroupFleetMergeContext`, `GroupFleetMergeSelection`,
     `GroupFleetMergedCheckpoint`, `GroupFleetTargetReconcileOutcome`,
     `GroupFleetCheckpointRecord`, `MemoryGroupFleetCheckpointStore`,
     `GroupFleetStorePersistOutcome`, `GroupFleetStoreRestoreOutcome`,
     `GroupFleetPublishStorage`, `GroupFleetPublishContext`, `GroupFleetRuntimeStep`,
-    `GroupFleetPublishStep`
+    `GroupFleetBackgroundRuntimeStep`, `GroupFleetPublishStep`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller still owns the relay-local clients, chooses relay URLs explicitly,
     persists relay-local checkpoints into a bounded store through the fleet, restores only the
     matching relay-local checkpoints into a fresh fleet, inspects each relay as explicit
     `connect`, `authenticate`, `reconcile`, or `ready` against a chosen baseline, can ask the
     runtime plan for one typed next runtime step without hand-scanning the fleet or re-stitching
-    baseline context above the workflow, can ask the consistency report for one typed next
-    divergent-relay step without hand-scanning the divergent slice or re-stitching baseline
-    context above the workflow,
-    chooses which relay contributes each merged checkpoint component explicitly, applies that
-    merged checkpoint across the fleet, can then reconcile one chosen target relay explicitly from
-    the chosen baseline without updating the whole fleet, and finally plans one explicit per-relay
-    moderation publish through caller-owned buffers plus one typed next-publish step without
+    baseline context above the workflow, can ask the background-runtime plan for one typed merge
+    or publish step without hand-scanning the broader coordinator surface, can ask the consistency
+    report for one typed next divergent-relay step without hand-scanning the divergent slice or
+    re-stitching baseline context above the workflow, chooses which relay contributes each merged
+    checkpoint component explicitly, applies that merged checkpoint across the fleet, can then
+    reconcile one chosen target relay explicitly from the chosen baseline without updating the
+    whole fleet, and finally plans one explicit per-relay moderation publish through caller-owned
+    buffers plus one typed next-publish step and one explicit background relay selection without
     hidden merge or runtime policy
 
 ## Adversarial Examples

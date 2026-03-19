@@ -4,11 +4,11 @@ const noztr_sdk = @import("noztr_sdk");
 
 // Persist one explicit multi-relay fleet into a caller-owned checkpoint store, restore that
 // relay-local state into a fresh fleet, inspect fleet runtime actions plus one typed next
-// runtime step, merge divergent relay-local components by explicit relay selection, run one
-// explicit targeted baseline-to-target reconcile step, then select one typed next moderation publish
-// relay and build one fanout across the reconciled relays without inventing hidden merge or
-// runtime policy.
-test "recipe: group fleet persists restores inspects runtime and one typed next step merges targets reconcile and selects one typed next moderation publish step" {
+// runtime step, inspect one explicit background-runtime step over pending merge and publish work,
+// merge divergent relay-local components by explicit relay selection, run one explicit targeted
+// baseline-to-target reconcile step, then select one typed next moderation publish relay and one
+// explicit background relay without inventing hidden merge or runtime policy.
+test "recipe: group fleet persists restores inspects runtime and background work merges targets reconcile and selects one typed next moderation publish step" {
     var source_users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
     var source_roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
     var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
@@ -262,6 +262,23 @@ test "recipe: group fleet persists restores inspects runtime and one typed next 
     const ready_runtime = try target_fleet.inspectRuntime("wss://relay.one:444", &runtime_storage);
     try std.testing.expectEqual(@as(u8, 0), ready_runtime.reconcile_count);
     try std.testing.expectEqual(@as(u8, 2), ready_runtime.ready_count);
+    var background_storage = noztr_sdk.workflows.GroupFleetBackgroundRuntimeStorage{};
+    const merge_background = try target_fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one:444",
+        .pending_merged_checkpoint = &merged_checkpoint,
+        .storage = &background_storage,
+    });
+    const next_merge_background = merge_background.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one:444", next_merge_background.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", next_merge_background.entry.relay_url.?);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.GroupFleetBackgroundAction.merge_apply,
+        next_merge_background.entry.action,
+    );
+    try std.testing.expectEqualStrings(
+        "wss://relay.one:444",
+        try target_fleet.selectBackgroundRelay(next_merge_background),
+    );
 
     var publish_buffers: [2]noztr_sdk.workflows.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_refs_a: [8][]const u8 = undefined;
@@ -292,4 +309,20 @@ test "recipe: group fleet persists restores inspects runtime and one typed next 
     const next_publish = noztr_sdk.workflows.GroupFleet.nextPublishStep(fanout).?;
     try std.testing.expectEqual(@as(usize, 2), next_publish.fanout_count);
     try std.testing.expectEqualStrings("wss://relay.one", next_publish.event.relay_url);
+    const publish_background = try target_fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one",
+        .publish_events = fanout,
+        .storage = &background_storage,
+    });
+    const next_publish_background = publish_background.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_publish_background.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", next_publish_background.entry.relay_url.?);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.GroupFleetBackgroundAction.publish,
+        next_publish_background.entry.action,
+    );
+    try std.testing.expectEqualStrings(
+        "wss://relay.one",
+        try target_fleet.selectBackgroundRelay(next_publish_background),
+    );
 }
