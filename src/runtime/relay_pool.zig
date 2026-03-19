@@ -84,6 +84,21 @@ pub const RelayPoolSubscriptionStorage = struct {
     entries: [@as(usize, pool_capacity) * @as(usize, subscription_specs_capacity)]RelayPoolSubscriptionEntry = undefined,
 };
 
+pub const RelayPoolSubscriptionPlan = struct {
+    entries: []const RelayPoolSubscriptionEntry = &.{},
+    entry_count: u16 = 0,
+    relay_count: u8 = 0,
+    spec_count: u8 = 0,
+    connect_count: u16 = 0,
+    authenticate_count: u16 = 0,
+    subscribe_count: u16 = 0,
+
+    pub fn entry(self: *const RelayPoolSubscriptionPlan, index: u16) ?RelayPoolSubscriptionEntry {
+        if (index >= self.entry_count) return null;
+        return self.entries[index];
+    }
+};
+
 pub const RelayPoolCheckpointRecord = struct {
     relay_url: [relay_url.relay_url_max_bytes]u8 = [_]u8{0} ** relay_url.relay_url_max_bytes,
     relay_url_len: u16 = 0,
@@ -260,6 +275,56 @@ pub const RelayPool = struct {
         };
     }
 
+    pub fn inspectSubscriptions(
+        self: *const RelayPool,
+        specs: []const RelaySubscriptionSpec,
+        storage: *RelayPoolSubscriptionStorage,
+    ) RelaySubscriptionError!RelayPoolSubscriptionPlan {
+        if (specs.len > subscription_specs_capacity) return error.TooManySubscriptionSpecs;
+
+        var connect_count: u16 = 0;
+        var authenticate_count: u16 = 0;
+        var subscribe_count: u16 = 0;
+        var entry_index: u16 = 0;
+
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const relay_descriptor: RelayDescriptor = .{
+                .relay_index = relay_index,
+                .relay_url = relay.auth_session.relayUrl(),
+            };
+            const action = classifySubscriptionAction(relay.state);
+
+            for (specs, 0..) |spec, spec_index| {
+                _ = spec_index;
+                try validateSubscriptionSpec(&spec);
+                storage.entries[entry_index] = .{
+                    .descriptor = relay_descriptor,
+                    .subscription_id = spec.subscription_id,
+                    .filters = spec.filters,
+                    .action = action,
+                };
+                entry_index += 1;
+                switch (action) {
+                    .connect => connect_count += 1,
+                    .authenticate => authenticate_count += 1,
+                    .subscribe => subscribe_count += 1,
+                }
+            }
+        }
+
+        return .{
+            .entries = storage.entries[0..entry_index],
+            .entry_count = entry_index,
+            .relay_count = self._storage.pool.count,
+            .spec_count = @intCast(specs.len),
+            .connect_count = connect_count,
+            .authenticate_count = authenticate_count,
+            .subscribe_count = subscribe_count,
+        };
+    }
+
     pub fn exportCheckpoints(
         self: *const RelayPool,
         cursors: []const client.EventCursor,
@@ -310,6 +375,22 @@ fn classifyAction(state: session.SessionState) RelayPoolAction {
         .auth_required => .authenticate,
         .connected => .ready,
     };
+}
+
+fn classifySubscriptionAction(state: session.SessionState) RelayPoolSubscriptionAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .subscribe,
+    };
+}
+
+fn validateSubscriptionSpec(spec: *const RelaySubscriptionSpec) RelaySubscriptionError!void {
+    if (spec.subscription_id.len == 0) return error.EmptySubscriptionId;
+    if (spec.subscription_id.len > noztr.limits.subscription_id_bytes_max) {
+        return error.SubscriptionIdTooLong;
+    }
+    if (spec.filters.len == 0) return error.EmptySubscriptionFilters;
 }
 
 test "relay pool storage initializes bounded public runtime state" {
@@ -492,4 +573,50 @@ test "relay pool exposes bounded subscription vocabulary" {
     try std.testing.expectEqualStrings("mailbox", spec.subscription_id);
     try std.testing.expectEqual(@as(usize, 1), spec.filters.len);
     try std.testing.expect(@TypeOf(storage) == RelayPoolSubscriptionStorage);
+}
+
+test "relay pool inspects subscription targets over bounded relay readiness" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    _ = try pool.addRelay("wss://relay.three");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+    try pool.markRelayConnected(second.relay_index);
+
+    const filter = noztr.nip01_filter.Filter{
+        .kinds = [_]u32{1} ++ ([_]u32{0} ** (noztr.limits.filter_kinds_max - 1)),
+        .kinds_count = 1,
+    };
+    const specs = [_]RelaySubscriptionSpec{
+        .{ .subscription_id = "feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var subscription_storage = RelayPoolSubscriptionStorage{};
+    const plan = try pool.inspectSubscriptions(specs[0..], &subscription_storage);
+
+    try std.testing.expectEqual(@as(u8, 3), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.spec_count);
+    try std.testing.expectEqual(@as(u16, 3), plan.entry_count);
+    try std.testing.expectEqual(@as(u16, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u16, 1), plan.subscribe_count);
+    try std.testing.expectEqual(@as(u16, 1), plan.connect_count);
+    try std.testing.expectEqual(RelayPoolSubscriptionAction.authenticate, plan.entry(0).?.action);
+    try std.testing.expectEqualStrings("feed", plan.entry(1).?.subscription_id);
+    try std.testing.expectEqual(RelayPoolSubscriptionAction.subscribe, plan.entry(1).?.action);
+    try std.testing.expectEqualStrings("wss://relay.three", plan.entry(2).?.descriptor.relay_url);
+}
+
+test "relay pool subscription inspection rejects invalid specs" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    _ = try pool.addRelay("wss://relay.one");
+    var subscription_storage = RelayPoolSubscriptionStorage{};
+    const invalid_specs = [_]RelaySubscriptionSpec{
+        .{ .subscription_id = "", .filters = (&[_]noztr.nip01_filter.Filter{.{}})[0..] },
+    };
+    try std.testing.expectError(
+        error.EmptySubscriptionId,
+        pool.inspectSubscriptions(invalid_specs[0..], &subscription_storage),
+    );
 }
