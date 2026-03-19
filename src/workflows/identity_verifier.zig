@@ -854,6 +854,19 @@ pub const IdentityStoredProfileTargetRefreshBatchPlan = struct {
         const entry = self.nextBatchEntry() orelse return null;
         return .{ .entry = entry.* };
     }
+
+    pub fn selectedEntries(
+        self: *const IdentityStoredProfileTargetRefreshBatchPlan,
+    ) []const IdentityStoredProfileTargetRefreshCadenceEntry {
+        return self.entries[0..@as(usize, @intCast(self.selected_count))];
+    }
+
+    pub fn deferredEntries(
+        self: *const IdentityStoredProfileTargetRefreshBatchPlan,
+    ) []const IdentityStoredProfileTargetRefreshCadenceEntry {
+        const start: usize = @intCast(self.selected_count);
+        return self.entries[start..];
+    }
 };
 
 pub const IdentityStoredProfileTargetRefreshBatchStep = struct {
@@ -5271,6 +5284,73 @@ test "identity verifier refresh batch exposes typed next selected step" {
     );
     const step = batch.nextBatchStep().?;
     try std.testing.expectEqualStrings("carol", step.entry.target.identity);
+}
+
+test "identity verifier refresh batch exposes selected and deferred views" {
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const soon_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "dave" },
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries_storage: [3]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 2), batch.selectedEntries().len);
+    try std.testing.expectEqualStrings("dave", batch.selectedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("carol", batch.selectedEntries()[1].target.identity);
+    try std.testing.expectEqual(@as(usize, 1), batch.deferredEntries().len);
+    try std.testing.expectEqualStrings("bob", batch.deferredEntries()[0].target.identity);
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
