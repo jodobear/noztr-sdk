@@ -225,6 +225,12 @@ Current project context for `noztr-sdk`.
     subscribe wiring to product-local bespoke loops
   - `examples/relay_pool_recipe.zig` now teaches one explicit shared subscription-spec plan and
     one typed next subscribe-now step on the same shared runtime floor
+- the next active implementation packet under the shared relay-pool subscription boundary lane is
+  now [docs/plans/five-slice-relay-pool-replay-loop-plan.md](./docs/plans/five-slice-relay-pool-replay-loop-plan.md)
+  - that loop exists to prove one bounded shared replay-composition plan and typed next replay step
+    above the pool/runtime floor plus shared checkpoint/store seams
+  - it is intentionally narrower than full sync ownership, workflow-local replay policy, or
+    product-local background execution
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
