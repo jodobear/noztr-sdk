@@ -60,6 +60,7 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
+- [sdk-relay-pool-runtime-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
 - [sdk-store-query-index-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-store-query-index-baseline-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
@@ -88,6 +89,7 @@ Use `doc_type` plus `status` first:
 - [zig-nostr-ecosystem-readiness-matrix.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-readiness-matrix.md)
 - [zig-nostr-ecosystem-phased-plan.md](/workspace/projects/nzdk/docs/plans/zig-nostr-ecosystem-phased-plan.md)
 - [sdk-runtime-client-store-architecture-decision.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-decision.md)
+- [sdk-relay-pool-runtime-baseline-decision.md](/workspace/projects/nzdk/docs/plans/sdk-relay-pool-runtime-baseline-decision.md)
 - [sdk-store-query-index-baseline-decision.md](/workspace/projects/nzdk/docs/plans/sdk-store-query-index-baseline-decision.md)
 - [sdk-storage-backend-research-plan.md](/workspace/projects/nzdk/docs/plans/sdk-storage-backend-research-plan.md)
 - [sdk-store-archive-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-store-archive-pressure-test-plan.md)

@@ -32,7 +32,7 @@ It answers:
 - Zig-native audit: [implemented-nips-zig-native-audit-2026-03-15.md](./implemented-nips-zig-native-audit-2026-03-15.md)
 - examples teaching posture: [examples-tree-plan.md](./examples-tree-plan.md)
 - active child architecture packet:
-  [sdk-store-query-index-baseline-plan.md](./sdk-store-query-index-baseline-plan.md)
+  [sdk-relay-pool-runtime-baseline-plan.md](./sdk-relay-pool-runtime-baseline-plan.md)
 
 ## Current Execution Posture
 
@@ -112,6 +112,7 @@ Use these only when the active task needs deeper planning context:
 - [zig-nostr-ecosystem-readiness-matrix.md](./zig-nostr-ecosystem-readiness-matrix.md)
 - [zig-nostr-ecosystem-phased-plan.md](./zig-nostr-ecosystem-phased-plan.md)
 - [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
+- [sdk-relay-pool-runtime-baseline-decision.md](./sdk-relay-pool-runtime-baseline-decision.md)
 - [sdk-store-query-index-baseline-decision.md](./sdk-store-query-index-baseline-decision.md)
 - [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)
 

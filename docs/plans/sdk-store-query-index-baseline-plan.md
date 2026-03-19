@@ -1,7 +1,7 @@
 ---
 title: SDK Store Query Index Baseline Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - defining_the_shared_store_query_index_model

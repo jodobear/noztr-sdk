@@ -122,6 +122,8 @@ This lane should produce:
 ## Current Architecture Reference
 
 - [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
+- [sdk-relay-pool-runtime-baseline-plan.md](./sdk-relay-pool-runtime-baseline-plan.md)
+- [sdk-relay-pool-runtime-baseline-decision.md](./sdk-relay-pool-runtime-baseline-decision.md)
 - [sdk-storage-backend-research-plan.md](./sdk-storage-backend-research-plan.md)
 - [sdk-store-query-index-baseline-plan.md](./sdk-store-query-index-baseline-plan.md)
 - [sdk-store-query-index-baseline-decision.md](./sdk-store-query-index-baseline-decision.md)

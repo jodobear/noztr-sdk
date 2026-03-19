@@ -101,21 +101,27 @@ Current project context for `noztr-sdk`.
     - SQLite is the strongest current candidate for that first embedded durable backend
     - relay-grade or product-grade specialized backends should stay adapter-first or product-owned
       until product pressure justifies tighter first-party support
-  - the next architecture child should now define the shared store/query/index baseline against
-    that support posture rather than choosing a backend by intuition
-  - that child packet is now
+  - the store/query/index child is now reference architecture context:
     [docs/plans/sdk-store-query-index-baseline-plan.md](./docs/plans/sdk-store-query-index-baseline-plan.md)
-  - its baseline decision is now
+    and
     [docs/plans/sdk-store-query-index-baseline-decision.md](./docs/plans/sdk-store-query-index-baseline-decision.md)
-  - that decision now makes explicit:
+  - that child now makes explicit:
     - `ClientStore` is aggregate vocabulary, not one mandatory god-interface
     - the shared baseline should split into narrow event-store, query/read, checkpoint/cursor, and
       limited generic value seams
     - workflow-local remembered-state stores should not be generalized into SDK-core prematurely
     - query/result/cursor/index posture must stay backend-agnostic at the public SDK boundary
-    - the first pressure-test should be bounded in-memory reference seams and one real integration
-      slice before any first durable backend lands
-  - that first pressure-test is now landed:
+  - the active child architecture packet is now
+    [docs/plans/sdk-relay-pool-runtime-baseline-plan.md](./docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
+  - its baseline decision is now
+    [docs/plans/sdk-relay-pool-runtime-baseline-decision.md](./docs/plans/sdk-relay-pool-runtime-baseline-decision.md)
+  - that child exists to keep the sequence coherent:
+    - shared relay-pool/runtime vocabulary before another round of workflow-local runtime growth
+    - explicit reuse of the shared store/query/checkpoint seams instead of another isolated pool
+      storage model
+    - one broader runtime layer that can support CLI, signer tooling, and later relay-framework
+      work
+  - the store/query/index child now proves:
     - `src/root.zig` now exports `noztr_sdk.store` as a stable public store/query reference
       namespace
     - `src/store/client_traits.zig` now defines the first shared event/query/checkpoint baseline:
@@ -125,11 +131,8 @@ Current project context for `noztr-sdk`.
       through `MemoryClientStore`
     - `examples/store_query_recipe.zig` now pressure-tests the baseline publicly by persisting
       bounded event records, paging one backend-agnostic query, and restoring one named checkpoint
-    - the next likely store/query child work is:
-      - decide whether the eventual public relay-pool layer should absorb or merely reuse the
-        relay-local checkpoint and relay-local group replay helpers
-      - pressure-test one broader relay-pool/runtime composition slice over the shared store layer
-      - only then the first durable backend implementation against the tested seam
+    - the next architecture move should therefore be shared relay-pool/runtime composition rather
+      than more store-only theory
   - the next pressure-test is now also landed through
     [docs/plans/sdk-store-archive-pressure-test-plan.md](./docs/plans/sdk-store-archive-pressure-test-plan.md):
     - `src/store/archive.zig` now exposes `EventArchive` as one minimal CLI-facing helper above the
