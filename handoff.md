@@ -120,6 +120,9 @@ Current project context for `noztr-sdk`.
   - `MailboxSession.inspectWorkflow(...)` now exposes one explicit caller-owned mailbox workflow
     plan over runtime state plus optional pending delivery work, so callers no longer need to
     hand-compose pending publish-vs-receive posture above the mailbox session
+  - `MailboxWorkflowPlan.nextEntry()` now follows pending delivery order while preserving actual
+    relay readiness preconditions, so callers can select one next mailbox workflow relay without
+    flattening auth/connect/publish differences above the session
   - `MailboxSession` now exposes one outbound `beginDirectMessage(...)` workflow entrypoint in
     addition to relay hydration and unwrap handling
   - `MailboxSession` now also exposes `planDirectMessageRelayFanout(...)` so the sender can build

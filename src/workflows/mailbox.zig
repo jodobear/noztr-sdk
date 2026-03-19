@@ -333,6 +333,62 @@ pub const WorkflowPlan = struct {
     pub fn runtimePlan(self: *const WorkflowPlan) *const RuntimePlan {
         return &self._runtime;
     }
+
+    pub fn nextEntry(self: *const WorkflowPlan) ?WorkflowEntry {
+        if (self._delivery) |delivery| {
+            if (delivery.nextRecipientRelayIndex()) |delivery_index| {
+                if (self.entryForDeliveryIndex(delivery_index)) |selected| return selected;
+            }
+        }
+
+        for ([_]WorkflowAction{ .receive, .authenticate, .connect }) |priority| {
+            if (self.findPriorityEntry(priority)) |selected| return selected;
+        }
+
+        if (self._delivery) |delivery| {
+            if (delivery.nextSenderCopyRelayIndex()) |delivery_index| {
+                if (self.entryForDeliveryIndex(delivery_index)) |selected| {
+                    if (selected.action == .publish_sender_copy) return selected;
+                }
+            }
+        }
+        return null;
+    }
+
+    fn entryForDeliveryIndex(
+        self: *const WorkflowPlan,
+        delivery_index: u8,
+    ) ?WorkflowEntry {
+        const delivery = self._delivery orelse return null;
+        const relay_url_text = delivery.relayUrl(delivery_index) orelse return null;
+        var index: u8 = 0;
+        while (index < self.relay_count) : (index += 1) {
+            const candidate = self.entry(index) orelse continue;
+            if (!relay_url.relayUrlsEquivalent(candidate.relay_url, relay_url_text)) continue;
+            return candidate;
+        }
+        return null;
+    }
+
+    fn findPriorityEntry(
+        self: *const WorkflowPlan,
+        action: WorkflowAction,
+    ) ?WorkflowEntry {
+        var current_match: ?WorkflowEntry = null;
+        var first_match: ?WorkflowEntry = null;
+        var index: u8 = 0;
+        while (index < self.relay_count) : (index += 1) {
+            const candidate = self.entry(index) orelse continue;
+            if (candidate.action != action) continue;
+            if (first_match == null) first_match = candidate;
+            if (candidate.is_current) {
+                current_match = candidate;
+                break;
+            }
+        }
+        if (current_match) |selected| return selected;
+        return first_match;
+    }
 };
 
 pub const RuntimeStorage = struct {
@@ -1942,6 +1998,99 @@ test "mailbox workflow inspection promotes pending direct-message delivery relay
     try std.testing.expectEqual(WorkflowAction.publish_sender_copy, third.action);
     try std.testing.expect(!third.role.recipient);
     try std.testing.expect(third.role.sender_copy);
+}
+
+test "mailbox workflow next entry follows delivery order while preserving relay readiness preconditions" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const sender_private_key = [_]u8{0x11} ** 32;
+    const recipient_private_key = [_]u8{0x33} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
+
+    var session = MailboxSession.init(&sender_private_key);
+    var sender_relay_list_storage: [4096]u8 = undefined;
+    const sender_relay_list_json = try buildRelayListEventJsonThree(
+        sender_relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two/inbox",
+        "wss://relay.three",
+        1_710_000_030,
+        &sender_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+    try session.noteCurrentRelayAuthChallenge("challenge-1");
+
+    var outbound_buffer = OutboundBuffer{};
+    var delivery_storage = DeliveryStorage{};
+    var recipient_relay_list_storage: [4096]u8 = undefined;
+    const recipient_relay_list_json = try buildRelayListEventJsonTwo(
+        recipient_relay_list_storage[0..],
+        "wss://relay.one",
+        "WSS://RELAY.TWO:443/inbox?x=1#f",
+        1_710_000_040,
+        &recipient_private_key,
+    );
+    const delivery = try session.planDirectMessageDelivery(
+        &outbound_buffer,
+        &delivery_storage,
+        recipient_relay_list_json,
+        sender_relay_list_json,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://relay.two/inbox",
+            .content = "hello workflow",
+            .created_at = 1_710_000_100,
+            .wrap_signer_private_key = [_]u8{0x22} ** 32,
+            .seal_nonce = [_]u8{0x44} ** 32,
+            .wrap_nonce = [_]u8{0x55} ** 32,
+        },
+        arena.allocator(),
+    );
+
+    var workflow_storage = WorkflowStorage{};
+    const workflow = try session.inspectWorkflow(.{
+        .pending_delivery = &delivery,
+        .storage = &workflow_storage,
+    });
+    const next = workflow.nextEntry().?;
+    try std.testing.expectEqual(WorkflowAction.authenticate, next.action);
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", next.relay_url);
+    try std.testing.expect(next.role.recipient);
+    try std.testing.expect(next.role.sender_copy);
+}
+
+test "mailbox workflow next entry falls back to current receive when no delivery is pending" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonThree(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        "wss://relay.three",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var workflow_storage = WorkflowStorage{};
+    const workflow = try session.inspectWorkflow(.{
+        .storage = &workflow_storage,
+    });
+    const next = workflow.nextEntry().?;
+    try std.testing.expectEqual(WorkflowAction.receive, next.action);
+    try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
+    try std.testing.expect(next.is_current);
 }
 
 test "mailbox session relay list hydration replaces stale relays" {
