@@ -42,7 +42,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `209/209`
+  - `zig build test --summary all` with `214/214`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `105/105`
 
 ## Read First
@@ -74,8 +74,9 @@ Current project context for `noztr-sdk`.
 - `A-NIP39-001`: `NIP-39` now verifies full identity events, exposes provider-shaped claim
   details, reuses explicit cached verification outcomes, remembers verified identities, and
   supports hydrated stored discovery plus freshness-classified remembered discovery, preferred
-  remembered-profile selection, explicit remembered runtime inspection and next-entry selection,
-  and stale-profile refresh planning, but still lacks broader long-lived store/discovery policy.
+  remembered-profile selection, explicit watched-target latest-freshness discovery, explicit
+  remembered runtime inspection and next-entry selection, and stale-profile refresh planning, but
+  still lacks broader long-lived store/discovery policy.
 
 ## Current Slice Notes
 
@@ -167,6 +168,10 @@ Current project context for `noztr-sdk`.
   - `IdentityVerifier` now also exposes `getPreferredStoredProfile(...)` so callers can select one
     preferred remembered profile under a freshness window with explicit stale-fallback policy
     instead of rebuilding that policy above the store seam
+  - `IdentityVerifier` now also exposes `discoverLatestStoredProfileFreshnessForTargets(...)` so
+    callers can classify the newest remembered profile for one explicit watched identity set in
+    caller order instead of hand-looping one provider identity at a time above the same store
+    seam
   - remembered-profile discovery, freshness, and preferred-selection helpers now return
     `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
     a custom profile store reports matches it cannot hydrate
@@ -192,9 +197,10 @@ Current project context for `noztr-sdk`.
   - `examples/nip39_verification_recipe.zig` now teaches one full identity event verified over the
     public HTTP seam, remembered in a caller-owned profile store, hydrated directly by provider
     identity, classified for freshness both across discovered entries and for the newest match,
-    selected once through explicit remembered-profile policy, inspected once through explicit
-    remembered runtime policy plus one typed next step, planned once for stale refresh plus one
-    typed refresh step, and then replayed from the explicit cache
+    classified once more across one explicit watched identity set, selected once through explicit
+    remembered-profile policy, inspected once through explicit remembered runtime policy plus one
+    typed next step, planned once for stale refresh plus one typed refresh step, and then replayed
+    from the explicit cache
 - `NIP-05` now has a clearer Zig-native surface:
   - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
     caller-owned `Nip05LookupStorage`
@@ -341,10 +347,10 @@ Current project context for `noztr-sdk`.
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
    rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
    or merge-selection work.
-6. Use the new `NIP-39` packet to target broader autonomous discovery, refresh, or longer-lived
-   store policy beyond the now-landed remembered verify/store/discover/select and runtime-policy
-   plus next-step path rather than repeating already-landed provider-detail, cache, or explicit
-   store/discovery work.
+6. Use the active `NIP-39` packet to keep broadening watched-target and longer-lived remembered
+   identity policy above the now-landed remembered verify/store/discover/select, watched-target
+   latest-freshness, and runtime-policy plus next-step path rather than repeating already-landed
+   provider-detail, cache, or explicit single-identity store/discovery work.
 7. The next best broader product lane after that remains a real background-runtime `NIP-29` lane
    or broader `NIP-03` / `NIP-17` workflow policy.
 8. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.

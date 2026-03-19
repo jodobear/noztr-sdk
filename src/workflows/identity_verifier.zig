@@ -364,6 +364,38 @@ pub const IdentityStoredProfileDiscoveryFreshnessRequest = struct {
     storage: IdentityStoredProfileDiscoveryFreshnessStorage,
 };
 
+pub const IdentityStoredProfileTarget = struct {
+    provider: noztr.nip39_external_identities.IdentityProvider,
+    identity: []const u8,
+};
+
+pub const IdentityStoredProfileTargetLatestFreshnessEntry = struct {
+    target: IdentityStoredProfileTarget,
+    latest: ?IdentityLatestStoredProfileFreshness = null,
+};
+
+pub const IdentityStoredProfileTargetLatestFreshnessStorage = struct {
+    matches: []IdentityProfileMatch,
+    entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+    ) IdentityStoredProfileTargetLatestFreshnessStorage {
+        return .{
+            .matches = matches,
+            .entries = entries,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetLatestFreshnessRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    storage: IdentityStoredProfileTargetLatestFreshnessStorage,
+};
+
 pub const IdentityStoredProfileRuntimeAction = enum {
     verify_now,
     refresh_existing,
@@ -955,6 +987,31 @@ pub const IdentityVerifier = struct {
             .freshness = if (age_seconds <= request.max_age_seconds) .fresh else .stale,
             .age_seconds = age_seconds,
         };
+    }
+
+    pub fn discoverLatestStoredProfileFreshnessForTargets(
+        store: IdentityProfileStore,
+        request: IdentityStoredProfileTargetLatestFreshnessRequest,
+    ) IdentityStoredProfileDiscoveryError![]const IdentityStoredProfileTargetLatestFreshnessEntry {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+
+        for (request.targets, 0..) |target, index| {
+            request.storage.entries[index] = .{
+                .target = target,
+                .latest = try getLatestStoredProfileFreshness(
+                    store,
+                    .{
+                        .provider = target.provider,
+                        .identity = target.identity,
+                        .now_unix_seconds = request.now_unix_seconds,
+                        .max_age_seconds = request.max_age_seconds,
+                        .matches = request.storage.matches,
+                    },
+                ),
+            };
+        }
+
+        return request.storage.entries[0..request.targets.len];
     }
 
     pub fn discoverStoredProfileEntriesWithFreshness(
@@ -2648,6 +2705,125 @@ test "identity verifier returns empty freshness discovery for missing stored pro
     try std.testing.expectEqual(@as(usize, 0), entries.len);
 }
 
+test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
+    const alice_pubkey = [_]u8{0xb1} ** 32;
+    const bob_pubkey = [_]u8{0xb2} ** 32;
+    const alice_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice",
+                        .expected_text = "npub-alice",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey, 40, &alice_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &bob_pubkey, 5, &bob_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+        .{ .provider = .github, .identity = "carol" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    const entries = try IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = IdentityStoredProfileTargetLatestFreshnessStorage.init(
+                matches_storage[0..],
+                entries_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 3), entries.len);
+    try std.testing.expectEqualStrings("alice", entries[0].target.identity);
+    try std.testing.expectEqual(
+        IdentityStoredProfileFreshness.fresh,
+        entries[0].latest.?.freshness,
+    );
+    try std.testing.expectEqual(@as(u64, 10), entries[0].latest.?.age_seconds);
+    try std.testing.expectEqualStrings(
+        "gist-alice",
+        entries[0].latest.?.latest.matchedClaim().proofSlice(),
+    );
+
+    try std.testing.expectEqualStrings("bob", entries[1].target.identity);
+    try std.testing.expectEqual(
+        IdentityStoredProfileFreshness.stale,
+        entries[1].latest.?.freshness,
+    );
+    try std.testing.expectEqual(@as(u64, 45), entries[1].latest.?.age_seconds);
+    try std.testing.expectEqualStrings(
+        "gist-bob",
+        entries[1].latest.?.latest.matchedClaim().proofSlice(),
+    );
+
+    try std.testing.expectEqualStrings("carol", entries[2].target.identity);
+    try std.testing.expect(entries[2].latest == null);
+}
+
+test "identity verifier target-set latest freshness preserves caller-owned capacity" {
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var store_records: [1]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var entries_storage: [1]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+            store.asStore(),
+            .{
+                .targets = targets[0..],
+                .now_unix_seconds = 10,
+                .max_age_seconds = 5,
+                .storage = IdentityStoredProfileTargetLatestFreshnessStorage.init(
+                    matches_storage[0..],
+                    entries_storage[0..],
+                ),
+            },
+        ),
+    );
+}
+
 test "identity verifier selects the newest fresh preferred stored profile" {
     const stale_pubkey = [_]u8{0xb1} ** 32;
     const fresh_pubkey = [_]u8{0xb2} ** 32;
@@ -3240,6 +3416,23 @@ test "identity verifier returns typed error for inconsistent remembered profile 
                 .now_unix_seconds = 9,
                 .max_age_seconds = 5,
                 .storage = .init(matches[0..], entries[0..]),
+            },
+        ),
+    );
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+    };
+    var target_entries: [1]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    try std.testing.expectError(
+        error.InconsistentStoreData,
+        IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+            store.asStore(),
+            .{
+                .targets = targets[0..],
+                .now_unix_seconds = 9,
+                .max_age_seconds = 5,
+                .storage = .init(matches[0..], target_entries[0..]),
             },
         ),
     );

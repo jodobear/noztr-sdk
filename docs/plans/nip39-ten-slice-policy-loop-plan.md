@@ -30,17 +30,18 @@ implicit HTTP ownership.
 
 The intended ten slices are:
 
-1. add target-set request/storage types for remembered identity policy
-2. add latest-freshness discovery across a caller-owned remembered target set
-3. add a typed next-entry selector over that target-set latest-freshness view
-4. add a typed next-step wrapper over that same target-set latest-freshness view
-5. add preferred remembered-profile selection across a caller-owned target set
-6. add refresh-candidate planning across a caller-owned target set
-7. add a typed next refresh-candidate entry over that set plan
-8. add a typed next refresh-candidate step over that set plan
-9. add runtime policy across a caller-owned remembered target set
-10. add typed next-entry / next-step driving over that target-set runtime plan and close out the
-    teaching/audit surface
+1. add target-set request/storage types plus latest-freshness discovery across a caller-owned
+   remembered target set
+2. add a typed next-entry selector over that target-set latest-freshness view
+3. add a typed next-step wrapper over that same target-set latest-freshness view
+4. add preferred remembered-profile selection across a caller-owned target set
+5. add refresh-candidate planning across a caller-owned target set
+6. add a typed next refresh-candidate entry over that set plan
+7. add a typed next refresh-candidate step over that set plan
+8. add runtime policy across a caller-owned remembered target set
+9. add typed next-entry driving over that target-set runtime plan
+10. add typed next-step driving over that target-set runtime plan and close out the teaching/audit
+    surface
 
 This loop does not include:
 - hidden background refresh loops
@@ -97,3 +98,13 @@ policy, while keeping capacity and selection caller-owned and deterministic.
 - keep one commit per accepted slice
 - keep `handoff.md`, `docs/index.md`, audits, and `examples/README.md` aligned with the landed
   set-level helpers
+
+## Progress
+
+- slice 1 accepted on 2026-03-19:
+  - `IdentityStoredProfileTarget`
+  - `IdentityStoredProfileTargetLatestFreshnessStorage`
+  - `IdentityStoredProfileTargetLatestFreshnessRequest`
+  - `IdentityStoredProfileTargetLatestFreshnessEntry`
+  - `IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(...)`
+  - compatibility result: `green`

@@ -5,11 +5,12 @@ const common = @import("common.zig");
 
 // Verify all claims from one identity event over the public SDK HTTP seam, remember the verified
 // profile through the explicit store seam, hydrate one stored discovery result directly, classify
-// both discovered entries and the latest remembered profile for freshness, select one preferred
-// remembered profile under an explicit fallback policy, inspect the remembered runtime action and
-// typed next step for that identity, plan one typed refresh step for stale remembered profiles,
-// then replay the same verification from an explicit caller-owned cache.
-test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime and refresh steps, and replays one profile event" {
+// both discovered entries and the latest remembered profile for freshness, classify one explicit
+// watched identity set by latest remembered freshness, select one preferred remembered profile
+// under an explicit fallback policy, inspect the remembered runtime action and typed next step for
+// that identity, plan one typed refresh step for stale remembered profiles, then replay the same
+// verification from an explicit caller-owned cache.
+test "recipe: identity verifier verifies, remembers, discovers, classifies freshness across one identity and one watched target set, selects preferred remembered profile, inspects remembered runtime and refresh steps, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -178,6 +179,73 @@ test "recipe: identity verifier verifies, remembers, discovers, classifies fresh
     );
     try std.testing.expectEqual(@as(u64, 30), discovered_with_freshness[0].age_seconds);
     try std.testing.expectEqualStrings("alice", discovered_with_freshness[0].matchedClaim().identitySlice());
+
+    const bob_pubkey = [_]u8{0x43} ** 32;
+    const bob_summary = noztr_sdk.workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]noztr_sdk.workflows.IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    _ = try noztr_sdk.workflows.IdentityVerifier.rememberProfileSummary(
+        profile_store.asStore(),
+        &bob_pubkey,
+        5,
+        &bob_summary,
+    );
+
+    const watched_targets = [_]noztr_sdk.workflows.IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+        .{ .provider = .github, .identity = "carol" },
+    };
+    var watched_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
+    var watched_entries: [3]noztr_sdk.workflows.IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    const watched_latest = try noztr_sdk.workflows.IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+        profile_store.asStore(),
+        .{
+            .targets = watched_targets[0..],
+            .now_unix_seconds = 31,
+            .max_age_seconds = 20,
+            .storage = noztr_sdk.workflows.IdentityStoredProfileTargetLatestFreshnessStorage.init(
+                watched_matches[0..],
+                watched_entries[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(usize, 3), watched_latest.len);
+    try std.testing.expectEqualStrings("alice", watched_latest[0].target.identity);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.IdentityStoredProfileFreshness.stale,
+        watched_latest[0].latest.?.freshness,
+    );
+    try std.testing.expectEqualStrings(
+        "gist-id",
+        watched_latest[0].latest.?.latest.matchedClaim().proofSlice(),
+    );
+    try std.testing.expectEqualStrings("bob", watched_latest[1].target.identity);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.IdentityStoredProfileFreshness.stale,
+        watched_latest[1].latest.?.freshness,
+    );
+    try std.testing.expectEqualStrings(
+        "gist-bob",
+        watched_latest[1].latest.?.latest.matchedClaim().proofSlice(),
+    );
+    try std.testing.expectEqualStrings("carol", watched_latest[2].target.identity);
+    try std.testing.expect(watched_latest[2].latest == null);
 
     var preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
     const preferred = (try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfile(
