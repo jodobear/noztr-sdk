@@ -51,7 +51,7 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
-- [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
+- [nip39-ten-slice-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-ten-slice-policy-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -108,6 +108,7 @@ Use `doc_type` plus `status` first:
 - [nip39-runtime-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-runtime-policy-plan.md)
 - [nip39-refresh-plan.md](/workspace/projects/nzdk/docs/plans/nip39-refresh-plan.md)
 - [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
+- [nip39-ten-slice-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-ten-slice-policy-loop-plan.md)
 - [nip46-ergonomic-surface-plan.md](/workspace/projects/nzdk/docs/plans/nip46-ergonomic-surface-plan.md)
 - [nip46-method-coverage-plan.md](/workspace/projects/nzdk/docs/plans/nip46-method-coverage-plan.md)
 - [nip46-example-cleanup-plan.md](/workspace/projects/nzdk/docs/plans/nip46-example-cleanup-plan.md)

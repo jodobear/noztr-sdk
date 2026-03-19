@@ -335,7 +335,7 @@ Current project context for `noztr-sdk`.
    [docs/plans/stored-workflow-hardening-plan.md](./docs/plans/stored-workflow-hardening-plan.md).
    Treat it as reference.
 4. The next active packet is
-   [docs/plans/nip39-long-lived-policy-plan.md](./docs/plans/nip39-long-lived-policy-plan.md).
+   [docs/plans/nip39-ten-slice-policy-loop-plan.md](./docs/plans/nip39-ten-slice-policy-loop-plan.md).
 5. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
