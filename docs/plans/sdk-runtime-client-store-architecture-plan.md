@@ -117,3 +117,7 @@ This lane should produce:
 5. Docs and handoff closeout
 - keep this packet as the top-level active lane until a more specific child architecture loop is
   accepted
+
+## Current Architecture Reference
+
+- [sdk-runtime-client-store-architecture-decision.md](./sdk-runtime-client-store-architecture-decision.md)
