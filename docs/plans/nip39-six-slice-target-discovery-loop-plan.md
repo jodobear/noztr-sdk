@@ -106,3 +106,23 @@ This loop does not include:
 - keep one commit per accepted slice
 - keep this loop as the likely next execution packet under the active parent `NIP-39` plan until
   promoted
+
+## Outcome
+
+This loop is complete.
+
+What landed:
+- bounded grouped multi-target remembered discovery vocabulary
+- `IdentityVerifier.discoverStoredProfileEntriesForTargets(...)`
+- `IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(...)`
+- `IdentityVerifier.getLatestStoredProfilesForTargets(...)`
+- `IdentityVerifier.getPreferredStoredProfilesForTargets(...)`
+- recipe, audit, and active-doc closeout for the broader watched-target discovery surface
+
+The loop materially reduced caller stitching above remembered-profile stores, but it did not take
+hidden refresh scheduling, HTTP ownership, or durable watched-target store ownership.
+`A-NIP39-001` and `Z-ABSTRACTION-001` stay open for broader long-lived identity/discovery policy
+above the current caller-owned watched-target inputs.
+
+The active parent packet remains
+[nip39-long-lived-policy-plan.md](./nip39-long-lived-policy-plan.md).

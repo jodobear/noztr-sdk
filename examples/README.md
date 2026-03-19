@@ -79,22 +79,27 @@ network daemons, or hidden runtime loops.
 - `nip39_verification_recipe.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify
-    both discovered stored entries and the latest remembered profile for freshness, classify one
-    explicit watched identity set through one latest-freshness plan plus one typed next step,
-    select one preferred remembered profile across that watched set, select one preferred
-    remembered profile explicitly for one identity, plan refresh across that watched set, inspect
-    runtime policy across that watched set, inspect one typed remembered runtime step explicitly,
-    plan refresh for stale remembered profiles explicitly, and replay the same identity from
-    remembered state
+    both discovered stored entries and the latest remembered profile for freshness, group
+    remembered discovery plus freshness-classified remembered discovery for one explicit watched
+    identity set, classify that watched set through one latest-freshness plan plus one typed next
+    step, select one preferred remembered profile per watched target plus one preferred remembered
+    profile across that watched set, select one preferred remembered profile explicitly for one
+    identity, plan refresh across that watched set, inspect runtime policy across that watched
+    set, inspect one typed remembered runtime step explicitly, plan refresh for stale remembered
+    profiles explicitly, and replay the same identity from remembered state
   - public SDK surface: `IdentityVerifier`, `IdentityProfileVerificationStorage`,
     `IdentityProviderDetails`, `MemoryIdentityVerificationCache`, `MemoryIdentityProfileStore`,
     `IdentityStoredProfileDiscoveryStorage`, `IdentityStoredProfileDiscoveryFreshnessStorage`,
-    `IdentityStoredProfileTarget`, `IdentityStoredProfileTargetLatestFreshnessStorage`,
-    `IdentityPreferredStoredProfileTargetRequest`, `IdentityStoredProfileTargetRefreshStorage`,
+    `IdentityStoredProfileTarget`, `IdentityStoredProfileTargetDiscoveryStorage`,
+    `IdentityStoredProfileTargetDiscoveryFreshnessStorage`,
+    `IdentityStoredProfileTargetLatestFreshnessStorage`,
+    `IdentityPreferredStoredProfileTargetStorage`, `IdentityStoredProfileTargetRefreshStorage`,
     `IdentityStoredProfileTargetRuntimeRequest`, `IdentityStoredProfileTargetRuntimeAction`,
-    `IdentityLatestStoredProfileFreshnessRequest`, `IdentityPreferredStoredProfileRequest`,
-    `IdentityStoredProfileFallbackPolicy`, `IdentityStoredProfileRuntimeStorage`,
-    `IdentityStoredProfileRuntimeAction`, `IdentityStoredProfileRefreshStorage`,
+    `IdentityLatestStoredProfileFreshnessRequest`,
+    `IdentityPreferredStoredProfileTargetSelectionRequest`,
+    `IdentityPreferredStoredProfileRequest`, `IdentityStoredProfileFallbackPolicy`,
+    `IdentityStoredProfileRuntimeStorage`, `IdentityStoredProfileRuntimeAction`,
+    `IdentityStoredProfileRefreshStorage`,
     `IdentityStoredProfileRefreshStep`,
     `transport.HttpClient`
   - kernel fixture help: `noztr.nip39_external_identities`
@@ -102,12 +107,15 @@ network daemons, or hidden runtime loops.
     caller-owned per-claim verification storage, caller-owned cache records, caller-owned profile
     store records, inspects provider-shaped details from the verified claims, then performs one
     explicit remembered discovery lookup, one explicit freshness-classified remembered discovery
-    lookup, one newest-match remembered lookup, one caller-owned watched-target latest-freshness
-    plan plus one typed next watched-target step, one explicit watched-target preferred-selection
-    step, one explicit watched-target stale-refresh plan plus one typed next refresh step, one explicit preferred-profile
-    selection step, one explicit watched-target runtime plan plus one typed next runtime step,
-    one explicit remembered runtime inspection step plus one typed next-step helper, one explicit
-    stale-profile refresh plan plus one typed refresh step, and one explicit freshness check
+    lookup, one newest-match remembered lookup, one grouped watched-target remembered discovery
+    lookup, one grouped watched-target freshness discovery lookup, one caller-owned watched-target
+    latest-freshness plan plus one typed next watched-target step, one explicit watched-target
+    preferred-per-target selection step, one explicit watched-target preferred-selection step, one
+    explicit watched-target stale-refresh plan plus one typed next refresh step, one explicit
+    preferred-profile selection step, one explicit watched-target runtime plan plus one typed next
+    runtime step, one explicit remembered runtime inspection step plus one typed next-step helper,
+    one explicit stale-profile refresh plan plus one typed refresh step, and one explicit
+    freshness check
     without hidden background policy
 - `nip05_resolution_recipe.zig`
   - goal: resolve and verify one `NIP-05` address over the public HTTP seam

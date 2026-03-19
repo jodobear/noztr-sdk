@@ -227,6 +227,12 @@ Observed friction:
 - `NIP-39` now also exposes one explicit watched-target latest-freshness helper above the same
   remembered-profile seams, so callers can drive multi-identity remembered policy from one
   caller-owned target set instead of hand-looping single-identity helpers above the workflow
+- `IdentityVerifier.discoverStoredProfileEntriesForTargets(...)` now also groups hydrated
+  remembered profile matches for one caller-owned watched-target set, so apps do not have to
+  rebuild grouped multi-target discovery above the same store seam
+- `IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(...)` now also groups
+  freshness-classified remembered profile matches for one caller-owned watched-target set, so
+  grouped multi-target age policy no longer has to be rebuilt above the same store seam
 - `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextEntry()` so callers can
   follow the first non-fresh watched identity in caller order without hand-scanning that
   watched-target latest-freshness surface above the workflow
@@ -236,6 +242,10 @@ Observed friction:
 - `IdentityVerifier.getPreferredStoredProfileForTargets(...)` now also selects one preferred
   remembered profile across a caller-owned watched identity set, so callers do not have to
   rebuild that set-level fresh-vs-stale choice above the same watched-target surface
+- `IdentityVerifier.getPreferredStoredProfilesForTargets(...)` now also selects one preferred
+  remembered profile per watched target in caller order, so callers do not have to collapse
+  grouped watched-target discovery back into per-target stale-fallback policy above the same
+  store seam
 - `IdentityVerifier.planStoredProfileRefreshForTargets(...)` now also collects stale watched
   identities newest-first, so callers do not have to rebuild bounded set-level refresh targeting
   above the same watched-target surface

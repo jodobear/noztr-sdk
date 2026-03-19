@@ -43,7 +43,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `238/238`
+  - `zig build test --summary all` with `246/246`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `110/110`
 
 ## Read First
@@ -171,7 +171,7 @@ Current project context for `noztr-sdk`.
     workflow step, runtime inspection plus explicit next-step selection, then one explicit
     file-message send-plus-receive path on the same mailbox surface, rather than pretending the
     sender's current relay is the real delivery target or that mailbox intake is direct-message-only
-- the next `NIP-39` grouped target-discovery loop is now started:
+- the `NIP-39` grouped target-discovery loop is now complete:
   - caller-owned grouped target-discovery, grouped freshness-discovery, latest-per-target, and
     preferred-per-target storage/request types now exist as the stable vocabulary for the broader
     long-lived identity-discovery lane
@@ -184,6 +184,9 @@ Current project context for `noztr-sdk`.
   - `IdentityVerifier.getLatestStoredProfilesForTargets(...)` now selects one newest remembered
     profile per watched target in caller order instead of forcing apps to collapse grouped target
     discovery back down to latest-per-target policy above the SDK
+  - `IdentityVerifier.getPreferredStoredProfilesForTargets(...)` now selects one preferred
+    remembered profile per watched target in caller order instead of forcing apps to restitch
+    per-target stale-fallback policy above the same grouped watched-target discovery surface
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging
@@ -438,10 +441,11 @@ Current project context for `noztr-sdk`.
 9. The `NIP-17` six-slice workflow loop is complete in
    [docs/plans/nip17-six-slice-workflow-loop-plan.md](./docs/plans/nip17-six-slice-workflow-loop-plan.md).
    Treat it as reference.
-10. The next active packet is
+10. The active parent packet is
     [docs/plans/nip39-long-lived-policy-plan.md](./docs/plans/nip39-long-lived-policy-plan.md).
-11. The next coherent execution loop under that active `NIP-39` parent packet is
+11. The `NIP-39` grouped target-discovery loop is
     [docs/plans/nip39-six-slice-target-discovery-loop-plan.md](./docs/plans/nip39-six-slice-target-discovery-loop-plan.md).
+    Treat it as reference.
 12. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 13. Keep `examples/README.md` current whenever the public teaching surface changes.
 14. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

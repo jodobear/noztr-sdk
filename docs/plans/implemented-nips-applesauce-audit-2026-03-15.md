@@ -289,6 +289,12 @@ Observed friction:
 - it now also exposes one explicit watched-target latest-freshness helper so callers can classify
   the newest remembered state for a caller-owned identity set without hand-looping one provider
   identity at a time above the same stored-profile seam
+- `IdentityVerifier.discoverStoredProfileEntriesForTargets(...)` now also groups all remembered
+  matches for a caller-owned watched identity set into target-ordered slices, so apps no longer
+  have to restitch broader multi-identity remembered discovery above the same store seam
+- `IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(...)` now also groups
+  freshness-classified remembered matches for a caller-owned watched identity set, so set-level
+  age classification no longer has to be rebuilt above the same store seam
 - `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextEntry()` so callers can
   follow the first non-fresh watched identity in caller order without hand-scanning that
   latest-freshness view above the workflow
@@ -298,6 +304,10 @@ Observed friction:
 - `IdentityVerifier.getPreferredStoredProfileForTargets(...)` now also selects one preferred
   remembered profile across a caller-owned watched identity set, so callers no longer need to
   rebuild fresh-vs-stale preferred choice entirely above the same watched-target surface
+- `IdentityVerifier.getPreferredStoredProfilesForTargets(...)` now also selects one preferred
+  remembered profile per watched target in caller order, so apps no longer have to collapse
+  grouped watched-target discovery back down into per-target fallback policy above the same store
+  seam
 - `IdentityVerifier.planStoredProfileRefreshForTargets(...)` now also collects stale watched
   identities newest-first, so callers no longer have to rebuild bounded set-level refresh
   targeting above the same watched-target surface

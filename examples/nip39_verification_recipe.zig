@@ -5,14 +5,16 @@ const common = @import("common.zig");
 
 // Verify all claims from one identity event over the public SDK HTTP seam, remember the verified
 // profile through the explicit store seam, hydrate one stored discovery result directly, classify
-// both discovered entries and the latest remembered profile for freshness, inspect one explicit
-// watched identity set through the latest-freshness plan plus one typed next step, select one
-// preferred remembered profile across that watched target set, plan refresh across that watched
-// target set, inspect runtime policy across that watched target set, then select one preferred
-// remembered profile under an explicit fallback policy for one identity, inspect the remembered
-// runtime action and typed next step for that identity, plan one typed refresh step for stale
-// remembered profiles, then replay the same verification from an explicit caller-owned cache.
-test "recipe: identity verifier verifies, remembers, discovers, inspects watched-target latest freshness, selects preferred remembered profile, inspects remembered runtime and refresh steps, and replays one profile event" {
+// both discovered entries and the latest remembered profile for freshness, group remembered
+// discovery plus freshness-classified discovery for one watched identity set, inspect that watched
+// set through the latest-freshness plan plus one typed next step, select one preferred remembered
+// profile per watched target and one preferred remembered profile across that watched target set,
+// plan refresh across that watched target set, inspect runtime policy across that watched target
+// set, then select one preferred remembered profile under an explicit fallback policy for one
+// identity, inspect the remembered runtime action and typed next step for that identity, plan one
+// typed refresh step for stale remembered profiles, then replay the same verification from an
+// explicit caller-owned cache.
+test "recipe: identity verifier verifies, remembers, groups watched-target discovery, selects preferred remembered profiles, inspects remembered runtime and refresh steps, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -213,6 +215,60 @@ test "recipe: identity verifier verifies, remembers, discovers, inspects watched
         .{ .provider = .github, .identity = "bob" },
         .{ .provider = .github, .identity = "carol" },
     };
+    var watched_group_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
+    var watched_group_entries: [2]noztr_sdk.workflows.IdentityStoredProfileDiscoveryEntry = undefined;
+    var watched_group_groups: [3]noztr_sdk.workflows.IdentityStoredProfileTargetDiscoveryGroup = undefined;
+    const watched_groups = try noztr_sdk.workflows.IdentityVerifier.discoverStoredProfileEntriesForTargets(
+        profile_store.asStore(),
+        .{
+            .targets = watched_targets[0..],
+            .storage = noztr_sdk.workflows.IdentityStoredProfileTargetDiscoveryStorage.init(
+                watched_group_matches[0..],
+                watched_group_entries[0..],
+                watched_group_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(usize, 3), watched_groups.len);
+    try std.testing.expectEqualStrings("alice", watched_groups[0].target.identity);
+    try std.testing.expectEqual(@as(usize, 1), watched_groups[0].entries.len);
+    try std.testing.expectEqualStrings("gist-id", watched_groups[0].entries[0].matchedClaim().proofSlice());
+    try std.testing.expectEqualStrings("bob", watched_groups[1].target.identity);
+    try std.testing.expectEqual(@as(usize, 1), watched_groups[1].entries.len);
+    try std.testing.expectEqualStrings("gist-bob", watched_groups[1].entries[0].matchedClaim().proofSlice());
+    try std.testing.expectEqualStrings("carol", watched_groups[2].target.identity);
+    try std.testing.expectEqual(@as(usize, 0), watched_groups[2].entries.len);
+
+    var watched_fresh_group_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
+    var watched_fresh_group_entries: [2]noztr_sdk.workflows.IdentityStoredProfileDiscoveryFreshnessEntry = undefined;
+    var watched_fresh_group_groups: [3]noztr_sdk.workflows.IdentityStoredProfileTargetDiscoveryFreshnessGroup = undefined;
+    const watched_groups_with_freshness =
+        try noztr_sdk.workflows.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
+            profile_store.asStore(),
+            .{
+                .targets = watched_targets[0..],
+                .now_unix_seconds = 31,
+                .max_age_seconds = 20,
+                .storage = noztr_sdk.workflows.IdentityStoredProfileTargetDiscoveryFreshnessStorage.init(
+                    watched_fresh_group_matches[0..],
+                    watched_fresh_group_entries[0..],
+                    watched_fresh_group_groups[0..],
+                ),
+            },
+        );
+    try std.testing.expectEqual(@as(usize, 3), watched_groups_with_freshness.len);
+    try std.testing.expectEqual(@as(usize, 1), watched_groups_with_freshness[0].entries.len);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.IdentityStoredProfileFreshness.stale,
+        watched_groups_with_freshness[0].entries[0].freshness,
+    );
+    try std.testing.expectEqual(@as(usize, 1), watched_groups_with_freshness[1].entries.len);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.IdentityStoredProfileFreshness.stale,
+        watched_groups_with_freshness[1].entries[0].freshness,
+    );
+    try std.testing.expectEqual(@as(usize, 0), watched_groups_with_freshness[2].entries.len);
+
     var watched_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
     var watched_entries: [3]noztr_sdk.workflows.IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
     const watched_latest = try noztr_sdk.workflows.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
@@ -253,6 +309,35 @@ test "recipe: identity verifier verifies, remembers, discovers, inspects watched
     try std.testing.expect(watched_latest.entries[2].latest == null);
     try std.testing.expectEqualStrings("alice", watched_latest.nextEntry().?.target.identity);
     try std.testing.expectEqualStrings("alice", watched_latest.nextStep().?.entry.target.identity);
+    var watched_preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
+    var watched_preferred_entries: [3]noztr_sdk.workflows.IdentityPreferredStoredProfileTargetEntry = undefined;
+    const watched_preferred_per_target =
+        try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfilesForTargets(
+            profile_store.asStore(),
+            .{
+                .targets = watched_targets[0..],
+                .now_unix_seconds = 31,
+                .max_age_seconds = 20,
+                .fallback_policy = .allow_stale_latest,
+                .storage = noztr_sdk.workflows.IdentityPreferredStoredProfileTargetStorage.init(
+                    watched_preferred_matches[0..],
+                    watched_preferred_entries[0..],
+                ),
+            },
+        );
+    try std.testing.expectEqual(@as(usize, 3), watched_preferred_per_target.len);
+    try std.testing.expectEqualStrings("alice", watched_preferred_per_target[0].target.identity);
+    try std.testing.expectEqualStrings(
+        "gist-id",
+        watched_preferred_per_target[0].preferred.?.entry.matchedClaim().proofSlice(),
+    );
+    try std.testing.expectEqualStrings("bob", watched_preferred_per_target[1].target.identity);
+    try std.testing.expectEqualStrings(
+        "gist-bob",
+        watched_preferred_per_target[1].preferred.?.entry.matchedClaim().proofSlice(),
+    );
+    try std.testing.expectEqualStrings("carol", watched_preferred_per_target[2].target.identity);
+    try std.testing.expect(watched_preferred_per_target[2].preferred == null);
     const watched_preferred = (try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfileForTargets(
         profile_store.asStore(),
         .{
