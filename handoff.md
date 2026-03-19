@@ -267,6 +267,11 @@ Current project context for `noztr-sdk`.
     inventing a second tooling-local relay/runtime model
   - `examples/cli_archive_client_recipe.zig` now teaches the first CLI-facing client composition
     path above shared store plus runtime, not CLI command UX
+- the next active packet under the CLI client composition child is now
+  [docs/plans/sdk-cli-client-boundary-checkpoint-plan.md](./docs/plans/sdk-cli-client-boundary-checkpoint-plan.md)
+  - that checkpoint exists to decide whether the SDK should add more CLI-facing client composition
+    before the separate CLI repo starts, or whether the current `CliArchiveClient` is enough as
+    the first reusable SDK floor
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
