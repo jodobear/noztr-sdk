@@ -163,6 +163,15 @@ pub const RelayPoolReplayPlan = struct {
         if (index >= self.entry_count) return null;
         return self.entries[index];
     }
+
+    pub fn nextEntry(self: *const RelayPoolReplayPlan) ?RelayPoolReplayEntry {
+        var index: u16 = 0;
+        while (index < self.entry_count) : (index += 1) {
+            const current = self.entries[index];
+            if (current.action == .replay) return current;
+        }
+        return null;
+    }
 };
 
 pub const RelayPoolCheckpointRecord = struct {
@@ -832,6 +841,61 @@ test "relay pool replay inspection rejects invalid specs" {
         error.UnboundedReplayQuery,
         pool.inspectReplay(memory_store.asClientStore().checkpoint_store.?, invalid_specs[0..], &replay_storage),
     );
+}
+
+test "relay pool replay plan selects the next replay-ready entry" {
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_archive = relay_checkpoint.RelayCheckpointArchive.init(memory_store.asClientStore());
+
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+    try pool.markRelayConnected(second.relay_index);
+    try checkpoint_archive.saveRelayCheckpoint("mailbox", "wss://relay.two", .{ .offset = 11 });
+
+    const specs = [_]RelayReplaySpec{
+        .{
+            .checkpoint_scope = "mailbox",
+            .query = .{ .limit = 16 },
+        },
+    };
+    var replay_storage = RelayPoolReplayStorage{};
+    const plan = try pool.inspectReplay(
+        memory_store.asClientStore().checkpoint_store.?,
+        specs[0..],
+        &replay_storage,
+    );
+    const next_entry = plan.nextEntry().?;
+    try std.testing.expectEqual(second.relay_index, next_entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolReplayAction.replay, next_entry.action);
+    try std.testing.expectEqual(@as(u32, 11), next_entry.query.cursor.?.offset);
+}
+
+test "relay pool replay next-entry is null when no relay is replay-ready" {
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    _ = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+
+    const specs = [_]RelayReplaySpec{
+        .{
+            .checkpoint_scope = "mailbox",
+            .query = .{ .limit = 16 },
+        },
+    };
+    var replay_storage = RelayPoolReplayStorage{};
+    const plan = try pool.inspectReplay(
+        memory_store.asClientStore().checkpoint_store.?,
+        specs[0..],
+        &replay_storage,
+    );
+    try std.testing.expect(plan.nextEntry() == null);
 }
 
 test "relay pool subscription inspection rejects invalid specs" {
