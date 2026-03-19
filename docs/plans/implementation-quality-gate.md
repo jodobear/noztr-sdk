@@ -86,6 +86,13 @@ Interpretation:
 - Stage 5: docs and handoff closeout
   - update the packet, audits, examples catalog, handoff, and startup/discovery docs
   - return the repo to steady-state reading posture
+  - record any important slice mistakes, friction, or escaped assumptions before closing the slice
+  - classify each lesson as:
+    - local to this slice
+    - or general enough to tighten the canonical process
+  - only promote a lesson into canonical process docs if it is recurring, broadly generalizable, or
+    would likely prevent a real future escape; otherwise keep it local to the packet, handoff, or
+    review note
   - if the slice closes a major loop or packet family, restore one explicit next active packet as
     part of steady state instead of leaving the repo between packets
   - cut one git commit for the accepted slice once the slice is back in steady state

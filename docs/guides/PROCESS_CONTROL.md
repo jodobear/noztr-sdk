@@ -125,6 +125,13 @@ When the refinement comes from a real escaped bug class:
   [PROCESS_REFINEMENT_PLAYBOOK.md](./PROCESS_REFINEMENT_PLAYBOOK.md) only if it is worth sharing
   outside this repo
 
+When a slice reveals a mistake or friction point:
+- capture the lesson during closeout
+- decide whether it is local or general
+- do not automatically promote it into the canonical process
+- promote it only if it is recurring, broadly generalizable, or would likely prevent a real future
+  escape
+
 ## High-Impact Audit Rule
 
 For a high-impact hardening, cleanup, or pre-release audit program:

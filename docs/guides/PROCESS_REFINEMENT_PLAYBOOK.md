@@ -275,6 +275,13 @@ It requires making closeout consistency explicit:
 
 This should be part of "done", not a nice-to-have cleanup pass.
 
+One more useful refinement:
+- capture mistakes and friction during closeout
+- but do not automatically turn every local lesson into a permanent process rule
+- promote a lesson into the canonical process only if it is recurring, broadly generalizable, or
+  likely to prevent a real future escape
+- otherwise keep it local to the slice packet, handoff note, or review record
+
 ## Recommended Process Shape
 
 ### A. Doc Roles

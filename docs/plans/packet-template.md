@@ -77,6 +77,8 @@ touches_startup_docs: <yes-or-no>
 - startup/discovery docs to trim back after the slice closes
 - older reference packets that should now point at the new follow-on slice
 - compatibility result classification if the slice reruns local upstream checks
+- slice mistakes or friction to record, plus whether the lesson stays local or should tighten the
+  canonical process
 - planned commit scope and commit subject for the accepted slice
 
 ## Synchronization Hint
