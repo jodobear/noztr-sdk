@@ -7,6 +7,7 @@ const noztr = @import("noztr");
 
 pub const pool_capacity: u8 = internal_pool.pool_capacity;
 pub const subscription_specs_capacity: u8 = 8;
+pub const replay_specs_capacity: u8 = 8;
 
 pub const RelayPoolError =
     noztr.nip42_auth.AuthError ||
@@ -62,6 +63,14 @@ pub const RelaySubscriptionError = error{
     EmptySubscriptionFilters,
 };
 
+pub const RelayReplayError = client.ClientStoreError || error{
+    TooManyReplaySpecs,
+    InvalidCheckpointScope,
+    CheckpointScopeTooLong,
+    InvalidRelayUrl,
+    UnboundedReplayQuery,
+};
+
 pub const RelaySubscriptionSpec = struct {
     subscription_id: []const u8,
     filters: []const noztr.nip01_filter.Filter,
@@ -115,6 +124,43 @@ pub const RelayPoolSubscriptionPlan = struct {
 
 pub const RelayPoolSubscriptionStep = struct {
     entry: RelayPoolSubscriptionEntry,
+};
+
+pub const RelayReplaySpec = struct {
+    checkpoint_scope: []const u8,
+    query: client.ClientQuery,
+};
+
+pub const RelayPoolReplayAction = enum {
+    connect,
+    authenticate,
+    replay,
+};
+
+pub const RelayPoolReplayEntry = struct {
+    descriptor: RelayDescriptor,
+    checkpoint_scope: []const u8,
+    query: client.ClientQuery,
+    action: RelayPoolReplayAction,
+};
+
+pub const RelayPoolReplayStorage = struct {
+    entries: [@as(usize, pool_capacity) * @as(usize, replay_specs_capacity)]RelayPoolReplayEntry = undefined,
+};
+
+pub const RelayPoolReplayPlan = struct {
+    entries: []const RelayPoolReplayEntry = &.{},
+    entry_count: u16 = 0,
+    relay_count: u8 = 0,
+    spec_count: u8 = 0,
+    connect_count: u16 = 0,
+    authenticate_count: u16 = 0,
+    replay_count: u16 = 0,
+
+    pub fn entry(self: *const RelayPoolReplayPlan, index: u16) ?RelayPoolReplayEntry {
+        if (index >= self.entry_count) return null;
+        return self.entries[index];
+    }
 };
 
 pub const RelayPoolCheckpointRecord = struct {
@@ -591,6 +637,22 @@ test "relay pool exposes bounded subscription vocabulary" {
     try std.testing.expectEqualStrings("mailbox", spec.subscription_id);
     try std.testing.expectEqual(@as(usize, 1), spec.filters.len);
     try std.testing.expect(@TypeOf(storage) == RelayPoolSubscriptionStorage);
+}
+
+test "relay pool exposes bounded replay vocabulary" {
+    const replay_spec = RelayReplaySpec{
+        .checkpoint_scope = "relay-pool",
+        .query = .{
+            .limit = 16,
+            .index_selection = .checkpoint_replay,
+        },
+    };
+    const storage = RelayPoolReplayStorage{};
+
+    try std.testing.expectEqualStrings("relay-pool", replay_spec.checkpoint_scope);
+    try std.testing.expectEqual(@as(usize, 16), replay_spec.query.limit);
+    try std.testing.expectEqual(client.IndexSelection.checkpoint_replay, replay_spec.query.index_selection);
+    try std.testing.expect(@TypeOf(storage) == RelayPoolReplayStorage);
 }
 
 test "relay pool inspects subscription targets over bounded relay readiness" {
