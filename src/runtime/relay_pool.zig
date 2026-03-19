@@ -77,6 +77,27 @@ pub const RelayPoolCheckpointSet = struct {
         if (index >= self.relay_count) return null;
         return self.records[index];
     }
+
+    pub fn nextEntry(self: *const RelayPoolCheckpointSet) ?RelayPoolCheckpointRecord {
+        if (self.relay_count == 0) return null;
+        return self.records[0];
+    }
+
+    pub fn nextExportStep(self: *const RelayPoolCheckpointSet) ?RelayPoolCheckpointStep {
+        const record = self.nextEntry() orelse return null;
+        return .{
+            .action = .export_checkpoint,
+            .record = record,
+        };
+    }
+
+    pub fn nextRestoreStep(self: *const RelayPoolCheckpointSet) ?RelayPoolCheckpointStep {
+        const record = self.nextEntry() orelse return null;
+        return .{
+            .action = .restore_checkpoint,
+            .record = record,
+        };
+    }
 };
 
 pub const RelayPoolCheckpointStep = struct {
@@ -403,4 +424,25 @@ test "relay pool restore rejects non-empty pools" {
     var target = RelayPool.init(&target_storage);
     _ = try target.addRelay("wss://relay.other");
     try std.testing.expectError(error.PoolNotEmpty, target.restoreCheckpoints(&checkpoints));
+}
+
+test "relay pool checkpoint set exposes typed export and restore steps" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    _ = try pool.addRelay("wss://relay.one");
+
+    const cursors = [_]client.EventCursor{.{ .offset = 7 }};
+    var checkpoint_storage = RelayPoolCheckpointStorage{};
+    const checkpoints = try pool.exportCheckpoints(cursors[0..], &checkpoint_storage);
+
+    const next_entry = checkpoints.nextEntry().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_entry.relayUrl());
+
+    const export_step = checkpoints.nextExportStep().?;
+    try std.testing.expectEqual(RelayPoolCheckpointAction.export_checkpoint, export_step.action);
+    try std.testing.expectEqualStrings("wss://relay.one", export_step.record.relayUrl());
+
+    const restore_step = checkpoints.nextRestoreStep().?;
+    try std.testing.expectEqual(RelayPoolCheckpointAction.restore_checkpoint, restore_step.action);
+    try std.testing.expectEqualStrings("wss://relay.one", restore_step.record.relayUrl());
 }
