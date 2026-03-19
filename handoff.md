@@ -103,6 +103,13 @@ Current project context for `noztr-sdk`.
       until product pressure justifies tighter first-party support
   - the next architecture child should now define the shared store/query/index baseline against
     that support posture rather than choosing a backend by intuition
+  - that child packet is now
+    [docs/plans/sdk-store-query-index-baseline-plan.md](./docs/plans/sdk-store-query-index-baseline-plan.md)
+  - its current job is to define:
+    - the canonical backend-agnostic store/query/index vocabulary
+    - the required memory/reference store posture
+    - the split between generic SDK seams and product-owned specialized storage
+    - the first follow-on implementation slices needed to pressure-test that baseline
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

@@ -31,6 +31,8 @@ It answers:
 - product-gap audit: [implemented-nips-applesauce-audit-2026-03-15.md](./implemented-nips-applesauce-audit-2026-03-15.md)
 - Zig-native audit: [implemented-nips-zig-native-audit-2026-03-15.md](./implemented-nips-zig-native-audit-2026-03-15.md)
 - examples teaching posture: [examples-tree-plan.md](./examples-tree-plan.md)
+- active child architecture packet:
+  [sdk-store-query-index-baseline-plan.md](./sdk-store-query-index-baseline-plan.md)
 
 ## Current Execution Posture
 

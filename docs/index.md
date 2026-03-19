@@ -60,6 +60,7 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
+- [sdk-store-query-index-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-store-query-index-baseline-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
