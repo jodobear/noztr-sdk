@@ -210,6 +210,8 @@ Observed friction:
   surface
 - `NIP-03` now also exposes one explicit stale-verification refresh-plan helper, so bounded proof
   refresh targeting no longer has to be rebuilt above the same freshness discovery surface
+- `NIP-03` now also exposes one explicit latest-verification freshness helper, so callers do not
+  have to restitch newest-match age policy above the remembered-verification store seam
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextEntry()` so callers can
   follow the selected remembered-verification step directly instead of re-matching the runtime-
   selected entry above the workflow

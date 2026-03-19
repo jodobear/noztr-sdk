@@ -173,9 +173,22 @@ pub const OpenTimestampsLatestStoredVerificationRequest = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
 };
 
+pub const OpenTimestampsLatestStoredVerificationFreshnessRequest = struct {
+    target_event_id: *const [32]u8,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    matches: []OpenTimestampsStoredVerificationMatch,
+};
+
 pub const OpenTimestampsStoredVerificationFreshness = enum {
     fresh,
     stale,
+};
+
+pub const OpenTimestampsLatestStoredVerificationFreshness = struct {
+    latest: OpenTimestampsStoredVerificationDiscoveryEntry,
+    freshness: OpenTimestampsStoredVerificationFreshness,
+    age_seconds: u64,
 };
 
 pub const OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = struct {
@@ -854,6 +867,33 @@ pub const OpenTimestampsVerifier = struct {
             if (match.created_at > latest.created_at) latest = match;
         }
         return verification_store.getVerification(&latest.attestation_event_id);
+    }
+
+    pub fn getLatestStoredVerificationFreshness(
+        verification_store: OpenTimestampsVerificationStore,
+        request: OpenTimestampsLatestStoredVerificationFreshnessRequest,
+    ) OpenTimestampsVerificationStoreError!?OpenTimestampsLatestStoredVerificationFreshness {
+        const matches = try verification_store.findVerifications(request.target_event_id, request.matches);
+        if (matches.len == 0) return null;
+
+        var latest = matches[0];
+        for (matches[1..]) |match| {
+            if (match.created_at > latest.created_at) latest = match;
+        }
+
+        const verification = (try verification_store.getVerification(&latest.attestation_event_id)) orelse return null;
+        const age_seconds = if (request.now_unix_seconds > latest.created_at)
+            request.now_unix_seconds - latest.created_at
+        else
+            0;
+        return .{
+            .latest = .{
+                .match = latest,
+                .verification = verification,
+            },
+            .freshness = if (age_seconds <= request.max_age_seconds) .fresh else .stale,
+            .age_seconds = age_seconds,
+        };
     }
 
     pub fn discoverStoredVerificationEntriesWithFreshness(
@@ -1629,6 +1669,20 @@ test "opentimestamps verifier remembers one verified detached proof result and h
         },
     )).?;
     try std.testing.expectEqualStrings("https://proof.example/hello.ots", latest.proofUrl());
+
+    var latest_freshness_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    const latest_freshness = (try OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
+        verification_store.asStore(),
+        .{
+            .target_event_id = &target_event.id,
+            .now_unix_seconds = 12,
+            .max_age_seconds = 5,
+            .matches = latest_freshness_matches[0..],
+        },
+    )).?;
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationFreshness.stale, latest_freshness.freshness);
+    try std.testing.expectEqual(@as(u64, 9), latest_freshness.age_seconds);
+    try std.testing.expectEqualStrings("https://proof.example/hello.ots", latest_freshness.latest.verification.proofUrl());
 }
 
 test "opentimestamps verifier does not remember non-verified detached proof outcomes" {

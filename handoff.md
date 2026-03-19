@@ -263,6 +263,9 @@ Current project context for `noztr-sdk`.
     remember path for one detached proof document
   - `OpenTimestampsVerifier.getLatestStoredVerification(...)` now recovers the newest remembered
     verification summary for one target event id without inventing hidden runtime policy
+  - `OpenTimestampsVerifier.getLatestStoredVerificationFreshness(...)` now classifies that newest
+    remembered verification as fresh or stale under one explicit freshness window instead of
+    leaving that common latest-match age policy above the store seam
   - `OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(...)` now classifies all
     remembered verification entries for one target event as fresh or stale without inventing
     hidden refresh or Bitcoin policy

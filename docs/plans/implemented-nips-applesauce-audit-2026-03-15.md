@@ -135,6 +135,7 @@ Observed friction:
 - one explicit caller-owned proof-store seam plus cached detached-proof replay
 - one explicit caller-owned remembered-verification store seam plus newest-match lookup by target
   event id
+- one explicit newest-match freshness helper over that remembered verification store seam
 - one explicit freshness-classified remembered-discovery helper over all stored verifications for a
   target event
 - one explicit remembered runtime-policy helper that classifies one target event as `verify_now`,
