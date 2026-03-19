@@ -12,6 +12,14 @@ read_when:
 
 Canonical discovery map for docs in this repo.
 
+This is the internal engineering docs route for contributors and agents.
+
+If you are looking for the public SDK documentation surface instead, start with:
+
+- [README.md](/workspace/projects/nzdk/README.md)
+- [docs/release/README.md](/workspace/projects/nzdk/docs/release/README.md)
+- [examples/README.md](/workspace/projects/nzdk/examples/README.md)
+
 ## Frontmatter Conventions
 
 Active and reference docs use frontmatter with these fields where relevant:

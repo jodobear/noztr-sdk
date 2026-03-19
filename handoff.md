@@ -577,3 +577,6 @@ Current project context for `noztr-sdk`.
     to keep implementation ordered as:
     shared SDK architecture -> CLI -> signer tooling -> relay framework -> performant relay ->
     Blossom -> broader client ecosystem.
+26. Treat [docs/release/README.md](./docs/release/README.md) plus
+    [examples/README.md](./examples/README.md) as the public SDK documentation route, and keep
+    `docs/plans/` / `docs/guides/` / `docs/index.md` as internal engineering docs.

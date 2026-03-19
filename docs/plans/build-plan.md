@@ -24,6 +24,7 @@ It answers:
 ## Current Active Docs
 
 - discovery index: [docs/index.md](../index.md)
+- public docs route: [docs/release/README.md](../release/README.md)
 - current state and next work: [handoff.md](/workspace/projects/nzdk/handoff.md)
 - implementation/review gate: [implementation-quality-gate.md](./implementation-quality-gate.md)
 - audit lane map: [audit-lanes.md](./audit-lanes.md)
@@ -52,6 +53,8 @@ It answers:
   `/workspace/projects/noztr/examples/README.md` first.
 - Workflow packet chains are reference material discoverable through [docs/index.md](../index.md).
   Load only the packet chain for the slice you are actually touching.
+- Public SDK documentation should route through `docs/release/` plus `examples/README.md`, not
+  through internal planning docs by default.
 - Completed loops, superseded packets, and bootstrap context belong in `docs/archive/`, not in the
   active startup path.
 

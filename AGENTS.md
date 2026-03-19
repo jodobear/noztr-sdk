@@ -22,6 +22,11 @@ Zig Nostr SDK built on top of `noztr`.
 - Read `docs/plans/examples-tree-plan.md` when the task touches examples or teaching posture.
 - Read `examples/README.md` when the task touches example discoverability, teaching posture, or
   SDK workflow recipes.
+- Treat `/workspace/projects/nzdk/docs/release/README.md` and
+  `/workspace/projects/nzdk/examples/README.md` as the canonical public-facing documentation
+  route for `noztr-sdk`.
+- Treat `docs/index.md`, `docs/plans/`, `docs/guides/`, and `docs/research/` as the internal
+  engineering docs surface, not the primary public SDK docs route.
 - Use `docs/index.md`, `handoff.md`, and `./agent-brief` to load workflow-specific packet chains
   only for the slice you are actually touching.
 - Read `docs/plans/noztr-feedback-log.md` when SDK work uncovers a likely kernel issue or

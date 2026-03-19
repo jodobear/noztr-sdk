@@ -8,6 +8,15 @@ baseline for SDK work.
 `noztr-sdk` exists to make building Nostr applications, relays, signers, clients, bots, services,
 and CLIs simple, explicit, and straightforward in Zig.
 
+## Public Docs Route
+
+If you are evaluating or consuming `noztr-sdk` publicly, start here:
+
+- `docs/release/README.md`
+- `docs/release/getting-started.md`
+- `docs/release/contract-map.md`
+- `examples/README.md`
+
 The product target is now explicit:
 - `noztr-sdk` should become the Zig SDK analogue to applesauce in real-world usefulness
 - it should be opinionated in the same broad way applesauce is opinionated: clear workflow layers,
@@ -31,7 +40,7 @@ The product target is now explicit:
 - treat `/workspace/projects/noztr/examples` as the kernel recipe reference set
 - grow `noztr-sdk`’s own examples as structured workflow recipes above the kernel boundary
 
-## Planning baseline
+## Internal Planning Baseline
 
 - canonical execution baseline: `docs/plans/build-plan.md`
 - kickoff scope: `docs/plans/sdk-kickoff.md`

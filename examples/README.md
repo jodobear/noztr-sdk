@@ -6,6 +6,15 @@ These examples sit above the kernel recipe set in `/workspace/projects/noztr/exa
 technical and direct, and they intentionally teach the public workflow layer rather than app UI,
 network daemons, or hidden runtime loops.
 
+## Related Public Docs
+
+Use these docs when you need public routing or contract context before opening a file:
+
+- [README.md](/workspace/projects/nzdk/README.md)
+- [docs/release/README.md](/workspace/projects/nzdk/docs/release/README.md)
+- [docs/release/getting-started.md](/workspace/projects/nzdk/docs/release/getting-started.md)
+- [docs/release/contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md)
+
 ## Teaching Posture
 
 - public SDK imports come from `@import("noztr_sdk").workflows`
