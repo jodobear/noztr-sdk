@@ -369,6 +369,117 @@ pub const IdentityStoredProfileTarget = struct {
     identity: []const u8,
 };
 
+pub const IdentityStoredProfileTargetDiscoveryGroup = struct {
+    target: IdentityStoredProfileTarget,
+    entries: []const IdentityStoredProfileDiscoveryEntry,
+};
+
+pub const IdentityStoredProfileTargetDiscoveryStorage = struct {
+    matches: []IdentityProfileMatch,
+    entries: []IdentityStoredProfileDiscoveryEntry,
+    groups: []IdentityStoredProfileTargetDiscoveryGroup,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        entries: []IdentityStoredProfileDiscoveryEntry,
+        groups: []IdentityStoredProfileTargetDiscoveryGroup,
+    ) IdentityStoredProfileTargetDiscoveryStorage {
+        return .{
+            .matches = matches,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetDiscoveryRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    storage: IdentityStoredProfileTargetDiscoveryStorage,
+};
+
+pub const IdentityStoredProfileTargetDiscoveryFreshnessGroup = struct {
+    target: IdentityStoredProfileTarget,
+    entries: []const IdentityStoredProfileDiscoveryFreshnessEntry,
+};
+
+pub const IdentityStoredProfileTargetDiscoveryFreshnessStorage = struct {
+    matches: []IdentityProfileMatch,
+    entries: []IdentityStoredProfileDiscoveryFreshnessEntry,
+    groups: []IdentityStoredProfileTargetDiscoveryFreshnessGroup,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        entries: []IdentityStoredProfileDiscoveryFreshnessEntry,
+        groups: []IdentityStoredProfileTargetDiscoveryFreshnessGroup,
+    ) IdentityStoredProfileTargetDiscoveryFreshnessStorage {
+        return .{
+            .matches = matches,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetDiscoveryFreshnessRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    storage: IdentityStoredProfileTargetDiscoveryFreshnessStorage,
+};
+
+pub const IdentityLatestStoredProfileTargetEntry = struct {
+    target: IdentityStoredProfileTarget,
+    latest: ?IdentityStoredProfileDiscoveryEntry = null,
+};
+
+pub const IdentityLatestStoredProfileTargetStorage = struct {
+    matches: []IdentityProfileMatch,
+    entries: []IdentityLatestStoredProfileTargetEntry,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        entries: []IdentityLatestStoredProfileTargetEntry,
+    ) IdentityLatestStoredProfileTargetStorage {
+        return .{
+            .matches = matches,
+            .entries = entries,
+        };
+    }
+};
+
+pub const IdentityLatestStoredProfileTargetRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    storage: IdentityLatestStoredProfileTargetStorage,
+};
+
+pub const IdentityPreferredStoredProfileTargetEntry = struct {
+    target: IdentityStoredProfileTarget,
+    preferred: ?IdentityPreferredStoredProfile = null,
+};
+
+pub const IdentityPreferredStoredProfileTargetStorage = struct {
+    matches: []IdentityProfileMatch,
+    entries: []IdentityPreferredStoredProfileTargetEntry,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        entries: []IdentityPreferredStoredProfileTargetEntry,
+    ) IdentityPreferredStoredProfileTargetStorage {
+        return .{
+            .matches = matches,
+            .entries = entries,
+        };
+    }
+};
+
+pub const IdentityPreferredStoredProfileTargetSelectionRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityPreferredStoredProfileTargetStorage,
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessEntry = struct {
     target: IdentityStoredProfileTarget,
     latest: ?IdentityLatestStoredProfileFreshness = null,

@@ -144,6 +144,18 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileDiscoveryFreshnessStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileDiscoveryFreshnessRequest) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTarget) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryGroup) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryFreshnessGroup) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryFreshnessStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryFreshnessRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityLatestStoredProfileTargetEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityLatestStoredProfileTargetStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityLatestStoredProfileTargetRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityPreferredStoredProfileTargetEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityPreferredStoredProfileTargetStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityPreferredStoredProfileTargetSelectionRequest) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetLatestFreshnessEntry) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetLatestFreshnessStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetLatestFreshnessRequest) == type);

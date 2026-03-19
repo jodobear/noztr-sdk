@@ -171,6 +171,10 @@ Current project context for `noztr-sdk`.
     workflow step, runtime inspection plus explicit next-step selection, then one explicit
     file-message send-plus-receive path on the same mailbox surface, rather than pretending the
     sender's current relay is the real delivery target or that mailbox intake is direct-message-only
+- the next `NIP-39` grouped target-discovery loop is now started:
+  - caller-owned grouped target-discovery, grouped freshness-discovery, latest-per-target, and
+    preferred-per-target storage/request types now exist as the stable vocabulary for the broader
+    long-lived identity-discovery lane
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging
