@@ -297,10 +297,11 @@ Current project context for `noztr-sdk`.
    [docs/plans/noztr-remediation-sync-plan.md](./docs/plans/noztr-remediation-sync-plan.md) as the
    reference packet when future `noztr` hardening passes land. It is now completed, not the active
    blocker.
-2. The five-slice typed step-view loop in
-   [docs/plans/five-slice-step-view-loop-plan.md](./docs/plans/five-slice-step-view-loop-plan.md)
-   is now complete. The next packet should target a broader open product lane rather than more
-   selector or step-view shaping on the already-landed plans.
+2. The next active packet is
+   [docs/plans/ten-slice-runtime-refresh-loop-plan.md](./docs/plans/ten-slice-runtime-refresh-loop-plan.md).
+   It scopes one bounded follow-on family above the landed step-view surfaces so callers can drive
+   remembered refresh, mailbox runtime, and fleet consistency more directly without crossing into
+   hidden background loops.
 3. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
@@ -310,11 +311,10 @@ Current project context for `noztr-sdk`.
    or longer-lived store policy beyond the now-landed remembered verify/store/discover/select and
    runtime-policy plus next-entry path rather than repeating already-landed provider-detail,
    cache, or explicit store/discovery work.
-5. The best broader product slice after the step-view loop is still a real background-runtime
-   `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
-   `NIP-03` / `NIP-17` workflow policy. The selector loop and the typed step-view loop are both
-   now closed; the next loop should target a real remaining product gap instead of more helper
-   shaping above already-landed plans.
+5. The best broader product slice after this runtime/refresh loop is still a real background-
+   runtime `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
+   `NIP-03` / `NIP-17` workflow policy. This loop should stop at bounded refresh/runtime/
+   consistency driving helpers rather than jumping to hidden background loops.
 6. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 7. Keep `examples/README.md` current whenever the public teaching surface changes.
 8. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
