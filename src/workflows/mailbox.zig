@@ -250,6 +250,25 @@ pub const RuntimeStep = struct {
     entry: RuntimeEntry,
 };
 
+pub const WorkflowAction = enum {
+    connect,
+    authenticate,
+    receive,
+    publish_recipient,
+    publish_sender_copy,
+    idle,
+};
+
+pub const WorkflowEntry = struct {
+    relay_index: u8,
+    relay_url: []const u8,
+    action: WorkflowAction,
+    is_current: bool = false,
+    role: DeliveryRole = .{},
+    wrap_event_id: ?[32]u8 = null,
+    wrap_event_json: ?[]const u8 = null,
+};
+
 pub const RuntimeStorage = struct {
     relay_indexes: [relay_pool.pool_capacity]u8 = [_]u8{0} ** relay_pool.pool_capacity,
     actions: [relay_pool.pool_capacity]RuntimeAction = [_]RuntimeAction{.connect} ** relay_pool.pool_capacity,

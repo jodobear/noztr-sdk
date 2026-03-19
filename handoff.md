@@ -114,6 +114,9 @@ Current project context for `noztr-sdk`.
   - `examples/remote_signer_recipe.zig` now teaches one end-to-end `nip44_encrypt` request on that
     public workflow surface
 - `NIP-17` mailbox flow is broader:
+  - the active `NIP-17` workflow loop is now started, and `MailboxWorkflowAction` plus
+    `MailboxWorkflowEntry` now provide the bounded mailbox workflow vocabulary above the existing
+    runtime and delivery-plan surfaces without taking inspect/selector behavior early
   - `MailboxSession` now exposes one outbound `beginDirectMessage(...)` workflow entrypoint in
     addition to relay hydration and unwrap handling
   - `MailboxSession` now also exposes `planDirectMessageRelayFanout(...)` so the sender can build
