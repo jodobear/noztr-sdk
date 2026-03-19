@@ -255,6 +255,16 @@ Current project context for `noztr-sdk`.
     [docs/plans/sdk-cli-client-composition-plan.md](./docs/plans/sdk-cli-client-composition-plan.md)
     so the architecture lane can pressure-test one real CLI-facing client surface above the shared
     store and runtime floors instead of growing shared `runtime` further by default
+- the next active implementation loop under that CLI-facing child is now
+  [docs/plans/five-slice-cli-archive-client-loop-plan.md](./docs/plans/five-slice-cli-archive-client-loop-plan.md)
+  - that loop is intentionally narrow: one CLI archive client above shared store plus relay-pool
+    runtime, not CLI command UX and not hidden execution
+  - the planned slices are:
+    - client vocabulary and caller-owned storage/config
+    - query/checkpoint composition
+    - shared relay runtime inspection
+    - shared replay inspection
+    - recipe/docs/audit closeout
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
