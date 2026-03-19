@@ -211,6 +211,8 @@ Observed friction:
   fleet
 - `GroupFleetBackgroundRuntimePlan` now also exposes `nextStep()` so callers can package that next
   background relay/action together with baseline context into one typed Zig-facing value
+- `GroupFleet.selectBackgroundRelay(...)` now also turns that typed background step into one
+  validated relay choice without requiring a second layer of manual relay lookup above the fleet
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

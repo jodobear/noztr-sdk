@@ -940,6 +940,15 @@ pub const GroupFleet = struct {
         return self._clients[index];
     }
 
+    pub fn selectBackgroundRelay(
+        self: *GroupFleet,
+        step: GroupFleetBackgroundRuntimeStep,
+    ) GroupFleetError![]const u8 {
+        const relay_url_text = step.entry.relay_url orelse return error.UnknownRelayUrl;
+        const client = try self.clientForRelay(relay_url_text);
+        return client.currentRelayUrl();
+    }
+
     pub fn clientForRelayConst(
         self: *const GroupFleet,
         relay_url_text: []const u8,
@@ -2007,6 +2016,83 @@ test "group fleet background runtime next entry returns null when every relay is
     try std.testing.expectEqual(@as(u8, 2), background.idle_count);
     try std.testing.expect(background.nextEntry() == null);
     try std.testing.expect(background.nextStep() == null);
+}
+
+test "group fleet can select the relay for one typed background runtime step" {
+    storage_count = 0;
+    serialize_buffer_index = 0;
+
+    var baseline = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    baseline.markCurrentRelayConnected();
+    const snapshot_events = try buildSnapshotEvents("pizza-lovers");
+    try baseline.applySnapshotEvents(snapshot_events[0..]);
+
+    var divergent = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = testStorage(),
+    });
+    divergent.markCurrentRelayConnected();
+
+    var extra_member_buffer = group_session.OutboundBuffer{};
+    const extra_member = try divergent.beginMembersSnapshot(
+        .init(7, &test_author_secret, &extra_member_buffer),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xaa} ** 32,
+                    .label = "member-a",
+                },
+                .{
+                    .pubkey = [_]u8{0xbb} ** 32,
+                    .label = "member-b",
+                },
+            },
+        },
+    );
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    _ = try divergent.consumeEventJson(extra_member.event_json, arena.allocator());
+
+    var clients = [_]*group_client.GroupClient{ &baseline, &divergent };
+    var fleet = try GroupFleet.init(clients[0..]);
+    var background_storage = GroupFleetBackgroundRuntimeStorage{};
+    const background = try fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one",
+        .storage = &background_storage,
+    });
+
+    const next_step = background.nextStep().?;
+    try std.testing.expectEqualStrings(
+        "wss://relay.one:444",
+        try fleet.selectBackgroundRelay(next_step),
+    );
+}
+
+test "group fleet background relay selection rejects missing relay targets" {
+    storage_count = 0;
+    var client_a = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    var clients = [_]*group_client.GroupClient{&client_a};
+    var fleet = try GroupFleet.init(clients[0..]);
+
+    try std.testing.expectError(
+        error.UnknownRelayUrl,
+        fleet.selectBackgroundRelay(.{
+            .baseline_relay_url = "wss://relay.one",
+            .entry = .{
+                .relay_url = null,
+                .action = .idle,
+            },
+        }),
+    );
 }
 
 test "group fleet exports and restores a full checkpoint set across relay-local clients" {

@@ -226,6 +226,9 @@ Observed friction:
   fleet
 - `GroupFleetBackgroundRuntimePlan` now also exposes `nextStep()` so callers can package that next
   background relay/action together with baseline context into one typed SDK step
+- `GroupFleet.selectBackgroundRelay(...)` now also validates and normalizes the relay target for
+  one typed background step so callers can act on that broader background plan without restitching
+  relay lookup above the fleet
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping

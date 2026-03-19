@@ -110,3 +110,6 @@ control explicit, deterministic, and caller-owned.
   - `GroupFleetBackgroundRuntimeStep`
   - `GroupFleetBackgroundRuntimePlan.nextStep()`
   - compatibility result: `green`
+- slice 5 accepted on 2026-03-19:
+  - `GroupFleet.selectBackgroundRelay(...)`
+  - compatibility result: `green`
