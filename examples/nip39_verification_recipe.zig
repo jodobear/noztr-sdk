@@ -9,12 +9,12 @@ const common = @import("common.zig");
 // discovery plus freshness-classified discovery for one watched identity set, inspect that watched
 // set through the latest-freshness plan plus one typed next step, select one preferred remembered
 // profile per watched target and one preferred remembered profile across that watched target set,
-// plan refresh across that watched target set, inspect runtime policy across that watched target
-// set, then select one preferred remembered profile under an explicit fallback policy for one
-// identity, inspect the remembered runtime action and typed next step for that identity, plan one
-// typed refresh step for stale remembered profiles, then replay the same verification from an
-// explicit caller-owned cache.
-test "recipe: identity verifier verifies, remembers, groups watched-target discovery, selects preferred remembered profiles, inspects remembered runtime and refresh steps, and replays one profile event" {
+// plan refresh across that watched target set, inspect runtime policy plus grouped target-policy
+// views across that watched target set, then select one preferred remembered profile under an
+// explicit fallback policy for one identity, inspect the remembered runtime action and typed next
+// step for that identity, plan one typed refresh step for stale remembered profiles, then replay
+// the same verification from an explicit caller-owned cache.
+test "recipe: identity verifier verifies, remembers, groups watched-target discovery, inspects target policy, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -408,6 +408,36 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     );
     try std.testing.expectEqualStrings("carol", watched_runtime.nextEntry().?.target.identity);
     try std.testing.expectEqualStrings("carol", watched_runtime.nextStep().entry.?.target.identity);
+    var watched_policy_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
+    var watched_policy_latest_entries: [3]noztr_sdk.workflows.IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var watched_policy_entries: [3]noztr_sdk.workflows.IdentityStoredProfileTargetPolicyEntry = undefined;
+    var watched_policy_groups: [4]noztr_sdk.workflows.IdentityStoredProfileTargetPolicyGroup = undefined;
+    const watched_policy = try noztr_sdk.workflows.IdentityVerifier.inspectStoredProfilePolicyForTargets(
+        profile_store.asStore(),
+        .{
+            .targets = watched_targets[0..],
+            .now_unix_seconds = 31,
+            .max_age_seconds = 20,
+            .fallback_policy = .allow_stale_latest,
+            .storage = noztr_sdk.workflows.IdentityStoredProfileTargetPolicyStorage.init(
+                watched_policy_matches[0..],
+                watched_policy_latest_entries[0..],
+                watched_policy_entries[0..],
+                watched_policy_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), watched_policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), watched_policy.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 2), watched_policy.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 0), watched_policy.refresh_existing_count);
+    try std.testing.expectEqual(@as(u32, 1), watched_policy.missing_count);
+    try std.testing.expectEqualStrings("carol", watched_policy.verifyNowEntries()[0].target.identity);
+    try std.testing.expectEqual(@as(usize, 2), watched_policy.usablePreferredEntries().len);
+    try std.testing.expectEqualStrings("alice", watched_policy.usablePreferredEntries()[0].target.identity);
+    try std.testing.expectEqual(@as(usize, 2), watched_policy.refreshNeededEntries().len);
+    try std.testing.expectEqualStrings("alice", watched_policy.refreshNeededEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", watched_policy.refreshNeededEntries()[1].target.identity);
 
     var preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
     const preferred = (try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfile(

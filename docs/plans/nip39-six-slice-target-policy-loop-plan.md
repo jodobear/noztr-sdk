@@ -108,3 +108,23 @@ This loop does not include:
 - keep one commit per accepted slice
 - keep this loop as the next likely execution packet under the active parent `NIP-39` plan until
   promoted
+
+## Outcome
+
+This loop is complete.
+
+What landed:
+- bounded watched-target policy vocabulary and caller-owned policy storage
+- `IdentityVerifier.inspectStoredProfilePolicyForTargets(...)`
+- `IdentityStoredProfileTargetPolicyPlan.usablePreferredEntries()`
+- `IdentityStoredProfileTargetPolicyPlan.verifyNowEntries()`
+- `IdentityStoredProfileTargetPolicyPlan.refreshNeededEntries()`
+- recipe, audit, and active-doc closeout for the broader watched-target policy surface
+
+The loop materially reduced caller stitching above watched-target discovery and runtime surfaces,
+but it did not take hidden refresh scheduling, HTTP ownership, or daemon/runtime ownership.
+`A-NIP39-001` and `Z-ABSTRACTION-001` stay open for broader autonomous discovery/refresh policy
+above the current caller-owned watched-target inputs.
+
+The active parent packet remains
+[nip39-long-lived-policy-plan.md](./nip39-long-lived-policy-plan.md).

@@ -43,7 +43,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `246/246`
+  - `zig build test --summary all` with `251/251`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `110/110`
 
 ## Read First
@@ -187,6 +187,21 @@ Current project context for `noztr-sdk`.
   - `IdentityVerifier.getPreferredStoredProfilesForTargets(...)` now selects one preferred
     remembered profile per watched target in caller order instead of forcing apps to restitch
     per-target stale-fallback policy above the same grouped watched-target discovery surface
+- the `NIP-39` watched-target policy loop is now complete:
+  - caller-owned watched-target policy storage and grouped policy entry/group vocabulary now exist
+    as the stable surface for longer-lived watched-target identity policy
+  - `IdentityVerifier.inspectStoredProfilePolicyForTargets(...)` now groups one watched identity
+    set into explicit verify-now, usable-preferred, and refresh-needed policy buckets instead of
+    leaving that longer-lived watched-target policy entirely above the SDK
+  - `IdentityStoredProfileTargetPolicyPlan.usablePreferredEntries()` now exposes the watched
+    identities with usable remembered profiles without forcing apps to restitch that grouped view
+    above the policy plan
+  - `IdentityStoredProfileTargetPolicyPlan.verifyNowEntries()` now exposes the watched identities
+    that still require verification now without forcing apps to filter the grouped policy plan
+    themselves
+  - `IdentityStoredProfileTargetPolicyPlan.refreshNeededEntries()` now exposes the watched
+    identities that still need refresh under the chosen fallback policy without forcing apps to
+    rebuild that grouped view above the same policy plan
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging
@@ -446,8 +461,9 @@ Current project context for `noztr-sdk`.
 11. The `NIP-39` grouped target-discovery loop is
     [docs/plans/nip39-six-slice-target-discovery-loop-plan.md](./docs/plans/nip39-six-slice-target-discovery-loop-plan.md).
     Treat it as reference.
-12. The next coherent execution loop under that active `NIP-39` parent packet is
+12. The `NIP-39` watched-target policy loop is
     [docs/plans/nip39-six-slice-target-policy-loop-plan.md](./docs/plans/nip39-six-slice-target-policy-loop-plan.md).
+    Treat it as reference.
 13. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 14. Keep `examples/README.md` current whenever the public teaching surface changes.
 15. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

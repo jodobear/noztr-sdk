@@ -327,6 +327,10 @@ Observed friction:
 - `IdentityStoredProfileTargetRuntimePlan` now also exposes `nextStep()` so callers can consume
   that watched-target runtime choice as one typed SDK value instead of restitching the selected
   target and action above the workflow
+- `IdentityVerifier.inspectStoredProfilePolicyForTargets(...)` now also groups one watched target
+  set into explicit verify-now, usable-preferred, and refresh-needed policy buckets, so apps no
+  longer have to rebuild that longer-lived watched-target policy above the current runtime and
+  discovery surfaces
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow
