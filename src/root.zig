@@ -2,18 +2,28 @@ const std = @import("std");
 
 /// Stable workflow namespace.
 pub const workflows = @import("workflows/mod.zig");
+/// Stable store/query reference namespace.
+pub const store = @import("store/mod.zig");
 /// Explicit HTTP seam for the current HTTP-backed workflow slices.
 pub const transport = @import("transport/mod.zig");
 
-test "root module exposes workflows plus the explicit http seam" {
+test "root module exposes workflows store plus the explicit http seam" {
     try std.testing.expect(!@hasDecl(@This(), "noztr"));
     try std.testing.expect(!@hasDecl(@This(), "client"));
+    try std.testing.expect(@TypeOf(store) == type);
+    try std.testing.expect(@TypeOf(store.ClientStore) == type);
+    try std.testing.expect(@TypeOf(store.ClientEventRecord) == type);
+    try std.testing.expect(@TypeOf(store.ClientCheckpointRecord) == type);
+    try std.testing.expect(@TypeOf(store.ClientQuery) == type);
+    try std.testing.expect(@TypeOf(store.QueryResultPage(store.ClientEventRecord)) == type);
+    try std.testing.expect(@TypeOf(store.EventCursor) == type);
+    try std.testing.expect(@TypeOf(store.IndexSelection) == type);
+    try std.testing.expect(@TypeOf(store.MemoryClientStore) == type);
     try std.testing.expect(@TypeOf(transport) == type);
     try std.testing.expect(@TypeOf(transport.HttpClient) == type);
     try std.testing.expect(@TypeOf(transport.HttpError) == type);
     try std.testing.expect(@TypeOf(transport.HttpRequest) == type);
     try std.testing.expect(!@hasDecl(@This(), "relay"));
-    try std.testing.expect(!@hasDecl(@This(), "store"));
     try std.testing.expect(@TypeOf(workflows) == type);
     try std.testing.expect(!@hasDecl(@This(), "policy"));
     try std.testing.expect(!@hasDecl(@This(), "sync"));
@@ -46,14 +56,14 @@ test "root smoke pins hardened noztr nip46 direct-helper typed errors" {
 }
 
 test "phase3 relay directory fetches nip11 over explicit seams" {
-    const store = @import("store/mod.zig");
+    const sdk_store = @import("store/mod.zig");
     const relay_directory = @import("relay/directory.zig");
     const testing = @import("testing/mod.zig");
     const json =
         \\{"name":"alpha","pubkey":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","supported_nips":[11,42]}
     ;
     var fake_http = testing.FakeHttp.init("https://relay.test", json);
-    var memory_store = store.MemoryStore{};
+    var memory_store = sdk_store.MemoryStore{};
     var directory = relay_directory.RelayDirectory.init(memory_store.asRelayInfoStore());
     var url_buffer: [128]u8 = undefined;
     var response_buffer: [256]u8 = undefined;

@@ -18,6 +18,7 @@ Use these docs when you need public routing or contract context before opening a
 ## Teaching Posture
 
 - public SDK imports come from `@import("noztr_sdk").workflows`
+- shared store/query imports come from `@import("noztr_sdk").store`
 - HTTP-backed workflow recipes also use `@import("noztr_sdk").transport`
 - protocol fixture construction stays on `noztr` kernel helpers
 - examples are compile-verified recipes, not hidden runtimes or framework demos
@@ -37,6 +38,15 @@ Use these docs when you need public routing or contract context before opening a
     responses back in explicitly, caller reuses one request context shape instead of repeating
     `buffer + id + scratch`, and the recipe keeps repetitive response JSON wiring in one small
     helper so the public session flow stays primary
+- `store_query_recipe.zig`
+  - goal: persist bounded event records, query them with one explicit cursor/page surface, and
+    remember one named checkpoint
+  - public SDK surface: `noztr_sdk.store`, `MemoryClientStore`, `ClientQuery`,
+    `EventQueryResultPage`, `EventCursor`, `IndexSelection`
+  - kernel fixture help: `noztr.nip01_event`
+  - control points: caller builds event JSON on the kernel, converts it into bounded store
+    records explicitly, queries through one backend-agnostic selection surface with caller-owned
+    page storage, and persists one named checkpoint without committing to a durable backend yet
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, select one next workflow relay explicitly, unwrap it through a recipient

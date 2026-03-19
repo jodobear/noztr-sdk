@@ -21,6 +21,7 @@ open.
 
 | Job | Primary public symbols | Start here | Example |
 | --- | --- | --- | --- |
+| Bounded event storage, backend-agnostic querying, and named checkpoint persistence | `noztr_sdk.store`, `MemoryClientStore`, `ClientQuery`, `EventQueryResultPage`, `EventCursor`, `IndexSelection` | `noztr_sdk.store` | [store_query_recipe.zig](/workspace/projects/nzdk/examples/store_query_recipe.zig) |
 | Remote signing, request/response orchestration, and relay switching | `RemoteSignerSession`, `RemoteSignerRequestContext`, `RemoteSignerPubkeyTextRequest`, `RemoteSignerTextResponse` | `noztr_sdk.workflows.RemoteSignerSession` | [remote_signer_recipe.zig](/workspace/projects/nzdk/examples/remote_signer_recipe.zig) |
 | Private-message send, receive, delivery planning, and mailbox workflow stepping | `MailboxSession`, `MailboxDeliveryPlan`, `MailboxRuntimePlan`, `MailboxWorkflowPlan`, `MailboxFileMessageRequest` | `noztr_sdk.workflows.MailboxSession` | [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig) |
 | Detached OpenTimestamps proof verification, remembered proof reuse, and grouped remembered-proof policy | `OpenTimestampsVerifier`, `OpenTimestampsProofStore`, `OpenTimestampsVerificationStore`, `OpenTimestampsStoredVerificationRuntimePlan`, `OpenTimestampsStoredVerificationTargetRefreshPlan` | `noztr_sdk.workflows.OpenTimestampsVerifier` | [nip03_verification_recipe.zig](/workspace/projects/nzdk/examples/nip03_verification_recipe.zig) |

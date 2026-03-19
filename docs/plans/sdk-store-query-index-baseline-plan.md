@@ -169,11 +169,19 @@ This child packet should produce:
 
 ## Expected Follow-On Slices
 
-1. store/query/index decision refinement
-2. bounded in-memory reference store baseline
-3. query/result/cursor baseline
-4. checkpoint/index-selection baseline
-5. one first SDK client/workflow integration slice that proves the baseline is usable
+The first pressure-test slice is now landed:
+
+- the store/query/index baseline decision exists
+- a bounded in-memory event/query/checkpoint reference seam exists
+- shared query/result/cursor/index types exist under the public `store` namespace
+- one compile-verified public recipe now exercises event persistence, query paging, and named
+  checkpoints explicitly
+
+Next likely slices:
+
+1. pressure-test one real SDK workflow or first CLI-facing surface against the shared store seams
+2. decide how relay-pool/runtime state should compose with the shared store layer
+3. decide when the first durable backend implementation should land against the now-tested seam
 
 ## Review Lenses To Emphasize
 

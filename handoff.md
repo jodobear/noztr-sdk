@@ -113,8 +113,22 @@ Current project context for `noztr-sdk`.
       limited generic value seams
     - workflow-local remembered-state stores should not be generalized into SDK-core prematurely
     - query/result/cursor/index posture must stay backend-agnostic at the public SDK boundary
-    - the next pressure-test should be bounded in-memory reference seams and one real integration
+    - the first pressure-test should be bounded in-memory reference seams and one real integration
       slice before any first durable backend lands
+  - that first pressure-test is now landed:
+    - `src/root.zig` now exports `noztr_sdk.store` as a stable public store/query reference
+      namespace
+    - `src/store/client_traits.zig` now defines the first shared event/query/checkpoint baseline:
+      `ClientStore`, `ClientEventStore`, `ClientCheckpointStore`, `ClientQuery`,
+      `EventQueryResultPage`, `EventCursor`, and `IndexSelection`
+    - `src/store/client_memory.zig` now provides one bounded in-memory reference implementation
+      through `MemoryClientStore`
+    - `examples/store_query_recipe.zig` now pressure-tests the baseline publicly by persisting
+      bounded event records, paging one backend-agnostic query, and restoring one named checkpoint
+    - the next likely store/query child work is:
+      - one workflow or CLI-facing integration against the shared store seams
+      - relay-pool/runtime composition over the shared store layer
+      - only then the first durable backend implementation against the tested seam
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
