@@ -175,6 +175,9 @@ Current project context for `noztr-sdk`.
   - caller-owned grouped target-discovery, grouped freshness-discovery, latest-per-target, and
     preferred-per-target storage/request types now exist as the stable vocabulary for the broader
     long-lived identity-discovery lane
+  - `IdentityVerifier.discoverStoredProfileEntriesForTargets(...)` now hydrates all remembered
+    profile matches for one watched target set into grouped caller-owned slices in target order
+    instead of leaving broader multi-identity remembered discovery entirely above the SDK
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging

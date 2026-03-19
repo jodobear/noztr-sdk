@@ -1179,6 +1179,40 @@ pub const IdentityVerifier = struct {
         return store.findProfiles(request.provider, request.identity, request.results);
     }
 
+    pub fn discoverStoredProfileEntriesForTargets(
+        store: IdentityProfileStore,
+        request: IdentityStoredProfileTargetDiscoveryRequest,
+    ) IdentityStoredProfileDiscoveryError![]const IdentityStoredProfileTargetDiscoveryGroup {
+        if (request.targets.len > request.storage.groups.len) return error.BufferTooSmall;
+
+        var total_entries: usize = 0;
+        for (request.targets, 0..) |target, index| {
+            const matches = try store.findProfiles(
+                target.provider,
+                target.identity,
+                request.storage.matches,
+            );
+            if (total_entries + matches.len > request.storage.entries.len) return error.BufferTooSmall;
+
+            const start = total_entries;
+            for (matches, 0..) |match, match_index| {
+                request.storage.entries[start + match_index] = try hydrateStoredProfileEntry(
+                    store,
+                    match,
+                    target.provider,
+                    target.identity,
+                );
+            }
+            total_entries += matches.len;
+            request.storage.groups[index] = .{
+                .target = target,
+                .entries = request.storage.entries[start..total_entries],
+            };
+        }
+
+        return request.storage.groups[0..request.targets.len];
+    }
+
     pub fn discoverStoredProfileEntries(
         store: IdentityProfileStore,
         request: IdentityStoredProfileDiscoveryRequest,
@@ -3160,6 +3194,171 @@ test "identity verifier returns empty freshness discovery for missing stored pro
         },
     );
     try std.testing.expectEqual(@as(usize, 0), entries.len);
+}
+
+test "identity verifier discovers remembered profile entries for watched target set in caller order" {
+    const alice_old_pubkey = [_]u8{0xb1} ** 32;
+    const alice_new_pubkey = [_]u8{0xb2} ** 32;
+    const bob_pubkey = [_]u8{0xb3} ** 32;
+    const alice_old_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice-old",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice-old",
+                        .expected_text = "npub-alice-old",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const alice_new_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice-new",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice-new",
+                        .expected_text = "npub-alice-new",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [3]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_old_pubkey, 4, &alice_old_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_new_pubkey, 10, &alice_new_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &bob_pubkey, 7, &bob_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "bob" },
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "carol" },
+    };
+    var matches_storage: [2]IdentityProfileMatch = undefined;
+    var target_entries: [3]IdentityStoredProfileDiscoveryEntry = undefined;
+    var groups_storage: [3]IdentityStoredProfileTargetDiscoveryGroup = undefined;
+    const groups = try IdentityVerifier.discoverStoredProfileEntriesForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .storage = IdentityStoredProfileTargetDiscoveryStorage.init(
+                matches_storage[0..],
+                target_entries[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 3), groups.len);
+    try std.testing.expectEqualStrings("bob", groups[0].target.identity);
+    try std.testing.expectEqual(@as(usize, 1), groups[0].entries.len);
+    try std.testing.expectEqualStrings("gist-bob", groups[0].entries[0].matchedClaim().proofSlice());
+    try std.testing.expectEqualStrings("alice", groups[1].target.identity);
+    try std.testing.expectEqual(@as(usize, 2), groups[1].entries.len);
+    try std.testing.expectEqualStrings("gist-alice-old", groups[1].entries[0].matchedClaim().proofSlice());
+    try std.testing.expectEqualStrings("gist-alice-new", groups[1].entries[1].matchedClaim().proofSlice());
+    try std.testing.expectEqualStrings("carol", groups[2].target.identity);
+    try std.testing.expectEqual(@as(usize, 0), groups[2].entries.len);
+}
+
+test "identity verifier target discovery stays bounded by caller-owned entry storage" {
+    const alice_pubkey = [_]u8{0xb1} ** 32;
+    const bob_pubkey = [_]u8{0xb2} ** 32;
+    const alice_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice",
+                        .expected_text = "npub-alice",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey, 4, &alice_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &bob_pubkey, 5, &bob_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var target_entries: [1]IdentityStoredProfileDiscoveryEntry = undefined;
+    var groups_storage: [2]IdentityStoredProfileTargetDiscoveryGroup = undefined;
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        IdentityVerifier.discoverStoredProfileEntriesForTargets(
+            store.asStore(),
+            .{
+                .targets = targets[0..],
+                .storage = IdentityStoredProfileTargetDiscoveryStorage.init(
+                    matches_storage[0..],
+                    target_entries[0..],
+                    groups_storage[0..],
+                ),
+            },
+        ),
+    );
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
