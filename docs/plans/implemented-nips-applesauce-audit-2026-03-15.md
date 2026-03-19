@@ -100,6 +100,8 @@ Observed friction:
   from a verified kind-10050 relay-list event
 - the sender can now also union verified sender-copy relays into that delivery plan without
   rebuilding the wrap or duplicating equivalent relay URLs
+- `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` so callers can step one next publish
+  relay without hand-scanning the deduplicated relay-role delivery plan
 - the sender can now also author one explicit outbound `NIP-17` file-message wrap and plan relay
   delivery for that same wrap without hand-building the rumor above the SDK
 - the recipient path can now also unwrap and parse `NIP-17` file messages through explicit mailbox

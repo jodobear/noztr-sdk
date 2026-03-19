@@ -30,9 +30,9 @@ network daemons, or hidden runtime loops.
     helper so the public session flow stays primary
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox runtime actions over hydrated
-    recipient relays, select one next relay/action explicitly, unwrap it through a recipient
-    mailbox session, then build one outbound file message once, plan its delivery, and unwrap it
-    through the same mailbox surface
+    recipient relays, select one next delivery relay plus one next runtime relay/action
+    explicitly, unwrap it through a recipient mailbox session, then build one outbound file
+    message once, plan its delivery, and unwrap it through the same mailbox surface
   - public SDK surface: `MailboxSession`, `MailboxDeliveryStorage`, `MailboxDeliveryRole`,
     `MailboxDeliveryPlan`, `MailboxRuntimeAction`, `MailboxRuntimeStorage`,
     `MailboxRuntimePlan`, `MailboxFileDimensions`, `MailboxFileMessageRequest`,
@@ -40,7 +40,8 @@ network daemons, or hidden runtime loops.
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip44`, `noztr.nostr_keys`
   - control points: caller verifies the recipient relay list, optionally verifies sender-copy
     relays, builds one outbound wrap explicitly, receives the deduplicated publish-relay plan with
-    relay-role annotations, inspects hydrated mailbox relays as explicit `connect`,
+    relay-role annotations, can ask the delivery plan for the next recommended relay without
+    hand-scanning role flags, inspects hydrated mailbox relays as explicit `connect`,
     `authenticate`, or `receive` actions, can ask the runtime plan for the next recommended relay
     step explicitly, selects one relay explicitly, feeds wrapped event JSON back into a recipient
     mailbox session, can build and plan one explicit outbound file-message wrap on the same

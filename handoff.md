@@ -107,6 +107,8 @@ Current project context for `noztr-sdk`.
   - `MailboxSession` now also exposes `planFileMessageRelayFanout(...)` and
     `planFileMessageDelivery(...)` so the sender can plan recipient relays and optional sender-copy
     delivery for one built file-message wrap without rebuilding the payload
+  - `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` so callers can select the next
+    publish relay without hand-scanning relay-role delivery plans above the mailbox workflow
   - `MailboxSession` now also exposes `inspectRuntime(...)` so callers can classify all hydrated
     mailbox relays as explicit `connect`, `authenticate`, or `receive` actions on one bounded
     runtime view
@@ -116,10 +118,11 @@ Current project context for `noztr-sdk`.
   - `MailboxSession` now also exposes `selectRelay(...)` so callers can act on that runtime view
     without hand-scanning relay pool state above the mailbox surface
   - `examples/mailbox_recipe.zig` now teaches one explicit send-plus-receive round trip over the
-    recipient relay list plus sender-copy delivery, runtime inspection plus explicit next-step
-    selection, then one explicit file-message send-plus-receive path on the same mailbox surface,
-    rather than pretending the sender's current relay is the real delivery target or that mailbox
-    intake is direct-message-only
+    recipient relay list plus sender-copy delivery, explicit next-relay selection over that
+    delivery plan, runtime inspection plus explicit next-step selection, then one explicit
+    file-message send-plus-receive path on the same mailbox surface, rather than pretending the
+    sender's current relay is the real delivery target or that mailbox intake is direct-message-
+    only
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging

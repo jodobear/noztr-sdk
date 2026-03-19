@@ -162,6 +162,18 @@ pub const DeliveryPlan = struct {
         const delivery_role = self.role(index) orelse return false;
         return delivery_role.sender_copy;
     }
+
+    pub fn nextRelayIndex(self: *const DeliveryPlan) ?u8 {
+        var index: u8 = 0;
+        while (index < self.relay_count) : (index += 1) {
+            if (self.deliversToRecipient(index)) return index;
+        }
+        index = 0;
+        while (index < self.relay_count) : (index += 1) {
+            if (self.deliversSenderCopy(index)) return index;
+        }
+        return null;
+    }
 };
 
 pub const RuntimeAction = enum {
@@ -2054,6 +2066,7 @@ test "mailbox session plans sender copy delivery without duplicating equivalent 
     try std.testing.expectEqualStrings("wss://relay.three", plan.relayUrl(2).?);
     try std.testing.expect(!plan.deliversToRecipient(2));
     try std.testing.expect(plan.deliversSenderCopy(2));
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
 }
 
 test "mailbox session plans file-message delivery without duplicating equivalent relay urls" {
@@ -2105,6 +2118,49 @@ test "mailbox session plans file-message delivery without duplicating equivalent
     try std.testing.expectEqualStrings("wss://relay.three", plan.relayUrl(2).?);
     try std.testing.expect(!plan.deliversToRecipient(2));
     try std.testing.expect(plan.deliversSenderCopy(2));
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+}
+
+test "mailbox delivery next relay prefers recipient targets before sender copy only relays" {
+    var storage = DeliveryStorage{};
+    std.mem.copyForwards(u8, storage.relay_urls[0][0.."wss://sender-copy".len], "wss://sender-copy");
+    storage.relay_url_lens[0] = "wss://sender-copy".len;
+    storage.sender_copy_targets[0] = true;
+    std.mem.copyForwards(u8, storage.relay_urls[1][0.."wss://recipient".len], "wss://recipient");
+    storage.relay_url_lens[1] = "wss://recipient".len;
+    storage.recipient_targets[1] = true;
+    const plan = DeliveryPlan{
+        .relay_count = 2,
+        .wrap_event_id = [_]u8{0} ** 32,
+        .wrap_event_json = "",
+        ._storage = &storage,
+    };
+    try std.testing.expectEqual(@as(?u8, 1), plan.nextRelayIndex());
+}
+
+test "mailbox delivery next relay falls back to sender copy when no recipient relay exists" {
+    var storage = DeliveryStorage{};
+    std.mem.copyForwards(u8, storage.relay_urls[0][0.."wss://sender-copy".len], "wss://sender-copy");
+    storage.relay_url_lens[0] = "wss://sender-copy".len;
+    storage.sender_copy_targets[0] = true;
+    const plan = DeliveryPlan{
+        .relay_count = 1,
+        .wrap_event_id = [_]u8{0} ** 32,
+        .wrap_event_json = "",
+        ._storage = &storage,
+    };
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+}
+
+test "mailbox delivery next relay returns null for an empty delivery plan" {
+    var storage = DeliveryStorage{};
+    const plan = DeliveryPlan{
+        .relay_count = 0,
+        .wrap_event_id = [_]u8{0} ** 32,
+        .wrap_event_json = "",
+        ._storage = &storage,
+    };
+    try std.testing.expect(plan.nextRelayIndex() == null);
 }
 
 test "mailbox session outbound file message rejects malformed metadata with typed errors" {

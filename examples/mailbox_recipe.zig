@@ -3,8 +3,9 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Build one outbound direct message once, inspect mailbox runtime actions, and unwrap it.
-test "recipe: mailbox session inspects runtime, plans sender-copy delivery, and unwraps one direct message" {
+// Build one outbound direct message once, inspect mailbox runtime actions, select the next
+// delivery relay explicitly, and unwrap it.
+test "recipe: mailbox session inspects runtime, selects the next delivery relay, plans sender-copy delivery, and unwraps one direct message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -61,6 +62,9 @@ test "recipe: mailbox session inspects runtime, plans sender-copy delivery, and 
     try std.testing.expectEqualStrings("wss://sender-copy", delivery.relayUrl(3).?);
     try std.testing.expect(!delivery.deliversToRecipient(3));
     try std.testing.expect(delivery.deliversSenderCopy(3));
+    const next_delivery_index = delivery.nextRelayIndex().?;
+    try std.testing.expectEqual(@as(u8, 0), next_delivery_index);
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", delivery.relayUrl(next_delivery_index).?);
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(
@@ -99,8 +103,8 @@ test "recipe: mailbox session inspects runtime, plans sender-copy delivery, and 
     try std.testing.expectEqual(@as(usize, 1), outcome.message.recipients.len);
 }
 
-// Build one outbound file message once, plan recipient delivery, and unwrap it.
-test "recipe: mailbox session plans and unwraps one file message" {
+// Build one outbound file message once, select the next delivery relay explicitly, and unwrap it.
+test "recipe: mailbox session selects the next delivery relay, plans, and unwraps one file message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -145,6 +149,7 @@ test "recipe: mailbox session plans and unwraps one file message" {
     try std.testing.expectEqual(@as(u8, 1), delivery.relay_count);
     try std.testing.expectEqualStrings("wss://relay.one", delivery.relayUrl(0).?);
     try std.testing.expect(delivery.deliversToRecipient(0));
+    try std.testing.expectEqual(@as(?u8, 0), delivery.nextRelayIndex());
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
