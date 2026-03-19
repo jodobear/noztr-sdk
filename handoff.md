@@ -200,8 +200,10 @@ Current project context for `noztr-sdk`.
     multi-relay readiness model
   - `examples/remote_signer_recipe.zig` now teaches connect, `get_public_key`, `nip44_encrypt`,
     then one explicit shared relay-pool inspect/select step on the same signer workflow surface
-  - the next likely child work is another real workflow adaptation over the shared pool floor,
-    not subscription/sync expansion yet
+  - the next active implementation loop under that child is now
+    [docs/plans/five-slice-mailbox-relay-pool-loop-plan.md](./docs/plans/five-slice-mailbox-relay-pool-loop-plan.md)
+  - that loop exists to pressure-test mailbox adaptation over the shared pool floor before broader
+    groups reuse or subscription/sync expansion
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
