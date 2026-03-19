@@ -294,6 +294,7 @@ test "recipe: identity verifier verifies, remembers, discovers, inspects watched
     try std.testing.expectEqual(@as(usize, 2), watched_refresh.entries.len);
     try std.testing.expectEqualStrings("bob", watched_refresh.entries[0].target.identity);
     try std.testing.expectEqualStrings("alice", watched_refresh.entries[1].target.identity);
+    try std.testing.expectEqualStrings("bob", watched_refresh.nextEntry().?.target.identity);
 
     var preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
     const preferred = (try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfile(
