@@ -128,8 +128,9 @@ Observed friction:
 - it now also plans deduplicated recipient relay fanout from a verified kind-10050 relay list
 - it now also plans verified sender-copy delivery over one built wrap with explicit relay-role
   annotation
-- `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` so callers can step the deduplicated
-  delivery plan without re-scanning relay-role flags above the workflow
+- `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` and `nextStep()` so callers can step
+  the deduplicated delivery plan without re-scanning relay-role flags or re-stitching wrap
+  payload context above the workflow
 - it now also authors one explicit outbound file-message wrap and can plan relay delivery for that
   same file-message payload without rebuilding the wrap
 - it now also unwraps and parses `NIP-17` file messages and can classify direct-message vs file-

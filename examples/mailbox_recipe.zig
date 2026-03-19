@@ -4,8 +4,8 @@ const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
 // Build one outbound direct message once, inspect mailbox runtime actions, select the next
-// delivery relay explicitly, and unwrap it.
-test "recipe: mailbox session inspects runtime, selects the next delivery relay, plans sender-copy delivery, and unwraps one direct message" {
+// delivery step explicitly, and unwrap it.
+test "recipe: mailbox session inspects runtime, selects the next delivery step, plans sender-copy delivery, and unwraps one direct message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -62,9 +62,13 @@ test "recipe: mailbox session inspects runtime, selects the next delivery relay,
     try std.testing.expectEqualStrings("wss://sender-copy", delivery.relayUrl(3).?);
     try std.testing.expect(!delivery.deliversToRecipient(3));
     try std.testing.expect(delivery.deliversSenderCopy(3));
-    const next_delivery_index = delivery.nextRelayIndex().?;
-    try std.testing.expectEqual(@as(u8, 0), next_delivery_index);
-    try std.testing.expectEqualStrings("wss://relay.two/inbox", delivery.relayUrl(next_delivery_index).?);
+    const next_delivery = delivery.nextStep().?;
+    try std.testing.expectEqual(@as(u8, 0), next_delivery.relay_index);
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", next_delivery.relay_url);
+    try std.testing.expect(next_delivery.role.recipient);
+    try std.testing.expect(next_delivery.role.sender_copy);
+    try std.testing.expect(std.mem.eql(u8, &next_delivery.wrap_event_id, &delivery.wrap_event_id));
+    try std.testing.expectEqualStrings(delivery.wrap_event_json, next_delivery.wrap_event_json);
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(
@@ -94,7 +98,7 @@ test "recipe: mailbox session inspects runtime, selects the next delivery relay,
 
     var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
     const outcome = try recipient_session.acceptWrappedMessageJson(
-        delivery.wrap_event_json,
+        next_delivery.wrap_event_json,
         recipients[0..],
         arena.allocator(),
     );
@@ -103,8 +107,8 @@ test "recipe: mailbox session inspects runtime, selects the next delivery relay,
     try std.testing.expectEqual(@as(usize, 1), outcome.message.recipients.len);
 }
 
-// Build one outbound file message once, select the next delivery relay explicitly, and unwrap it.
-test "recipe: mailbox session selects the next delivery relay, plans, and unwraps one file message" {
+// Build one outbound file message once, select the next delivery step explicitly, and unwrap it.
+test "recipe: mailbox session selects the next delivery step, plans, and unwraps one file message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -149,7 +153,11 @@ test "recipe: mailbox session selects the next delivery relay, plans, and unwrap
     try std.testing.expectEqual(@as(u8, 1), delivery.relay_count);
     try std.testing.expectEqualStrings("wss://relay.one", delivery.relayUrl(0).?);
     try std.testing.expect(delivery.deliversToRecipient(0));
-    try std.testing.expectEqual(@as(?u8, 0), delivery.nextRelayIndex());
+    const next_delivery = delivery.nextStep().?;
+    try std.testing.expectEqual(@as(u8, 0), next_delivery.relay_index);
+    try std.testing.expectEqualStrings("wss://relay.one", next_delivery.relay_url);
+    try std.testing.expect(next_delivery.role.recipient);
+    try std.testing.expect(!next_delivery.role.sender_copy);
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
@@ -159,7 +167,7 @@ test "recipe: mailbox session selects the next delivery relay, plans, and unwrap
     var thumbs: [1][]const u8 = undefined;
     var fallbacks: [1][]const u8 = undefined;
     const outcome = try recipient_session.acceptWrappedEnvelopeJson(
-        delivery.wrap_event_json,
+        next_delivery.wrap_event_json,
         recipients[0..],
         thumbs[0..],
         fallbacks[0..],

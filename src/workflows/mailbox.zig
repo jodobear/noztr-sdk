@@ -134,6 +134,14 @@ pub const DeliveryRole = struct {
     sender_copy: bool = false,
 };
 
+pub const DeliveryStep = struct {
+    relay_index: u8,
+    relay_url: []const u8,
+    role: DeliveryRole,
+    wrap_event_id: [32]u8,
+    wrap_event_json: []const u8,
+};
+
 pub const DeliveryPlan = struct {
     relay_count: u8,
     wrap_event_id: [32]u8,
@@ -173,6 +181,17 @@ pub const DeliveryPlan = struct {
             if (self.deliversSenderCopy(index)) return index;
         }
         return null;
+    }
+
+    pub fn nextStep(self: *const DeliveryPlan) ?DeliveryStep {
+        const relay_index = self.nextRelayIndex() orelse return null;
+        return .{
+            .relay_index = relay_index,
+            .relay_url = self.relayUrl(relay_index).?,
+            .role = self.role(relay_index).?,
+            .wrap_event_id = self.wrap_event_id,
+            .wrap_event_json = self.wrap_event_json,
+        };
     }
 };
 
@@ -2067,6 +2086,13 @@ test "mailbox session plans sender copy delivery without duplicating equivalent 
     try std.testing.expect(!plan.deliversToRecipient(2));
     try std.testing.expect(plan.deliversSenderCopy(2));
     try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(@as(u8, 0), next_step.relay_index);
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", next_step.relay_url);
+    try std.testing.expect(next_step.role.recipient);
+    try std.testing.expect(next_step.role.sender_copy);
+    try std.testing.expect(std.mem.eql(u8, &next_step.wrap_event_id, &plan.wrap_event_id));
+    try std.testing.expectEqualStrings(plan.wrap_event_json, next_step.wrap_event_json);
 }
 
 test "mailbox session plans file-message delivery without duplicating equivalent relay urls" {
@@ -2119,6 +2145,11 @@ test "mailbox session plans file-message delivery without duplicating equivalent
     try std.testing.expect(!plan.deliversToRecipient(2));
     try std.testing.expect(plan.deliversSenderCopy(2));
     try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(@as(u8, 0), next_step.relay_index);
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", next_step.relay_url);
+    try std.testing.expect(next_step.role.recipient);
+    try std.testing.expect(next_step.role.sender_copy);
 }
 
 test "mailbox delivery next relay prefers recipient targets before sender copy only relays" {
@@ -2136,6 +2167,11 @@ test "mailbox delivery next relay prefers recipient targets before sender copy o
         ._storage = &storage,
     };
     try std.testing.expectEqual(@as(?u8, 1), plan.nextRelayIndex());
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(@as(u8, 1), next_step.relay_index);
+    try std.testing.expectEqualStrings("wss://recipient", next_step.relay_url);
+    try std.testing.expect(next_step.role.recipient);
+    try std.testing.expect(!next_step.role.sender_copy);
 }
 
 test "mailbox delivery next relay falls back to sender copy when no recipient relay exists" {
@@ -2150,6 +2186,11 @@ test "mailbox delivery next relay falls back to sender copy when no recipient re
         ._storage = &storage,
     };
     try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(@as(u8, 0), next_step.relay_index);
+    try std.testing.expectEqualStrings("wss://sender-copy", next_step.relay_url);
+    try std.testing.expect(!next_step.role.recipient);
+    try std.testing.expect(next_step.role.sender_copy);
 }
 
 test "mailbox delivery next relay returns null for an empty delivery plan" {
@@ -2161,6 +2202,7 @@ test "mailbox delivery next relay returns null for an empty delivery plan" {
         ._storage = &storage,
     };
     try std.testing.expect(plan.nextRelayIndex() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
 
 test "mailbox session outbound file message rejects malformed metadata with typed errors" {

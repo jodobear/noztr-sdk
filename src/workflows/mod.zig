@@ -140,6 +140,7 @@ pub const MailboxOutboundBuffer = mailbox.OutboundBuffer;
 pub const MailboxDeliveryStorage = mailbox.DeliveryStorage;
 pub const MailboxDeliveryRole = mailbox.DeliveryRole;
 pub const MailboxDeliveryPlan = mailbox.DeliveryPlan;
+pub const MailboxDeliveryStep = mailbox.DeliveryStep;
 pub const MailboxRuntimeAction = mailbox.RuntimeAction;
 pub const MailboxRuntimeEntry = mailbox.RuntimeEntry;
 pub const MailboxRuntimeStorage = mailbox.RuntimeStorage;
