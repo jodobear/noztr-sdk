@@ -873,6 +873,84 @@ pub const IdentityStoredProfileTargetRefreshBatchStep = struct {
     entry: IdentityStoredProfileTargetRefreshCadenceEntry,
 };
 
+pub const IdentityStoredProfileTargetTurnPolicyAction = enum {
+    verify_now,
+    refresh_selected,
+    use_cached,
+    defer_refresh,
+};
+
+pub const IdentityStoredProfileTargetTurnPolicyEntry = struct {
+    target: IdentityStoredProfileTarget,
+    action: IdentityStoredProfileTargetTurnPolicyAction,
+    latest: ?IdentityLatestStoredProfileFreshness = null,
+};
+
+pub const IdentityStoredProfileTargetTurnPolicyGroup = struct {
+    action: IdentityStoredProfileTargetTurnPolicyAction,
+    entries: []const IdentityStoredProfileTargetTurnPolicyEntry,
+};
+
+pub const IdentityStoredProfileTargetTurnPolicyStorage = struct {
+    matches: []IdentityProfileMatch,
+    latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+    policy_entries: []IdentityStoredProfileTargetPolicyEntry,
+    policy_groups: []IdentityStoredProfileTargetPolicyGroup,
+    cadence_entries: []IdentityStoredProfileTargetRefreshCadenceEntry,
+    cadence_groups: []IdentityStoredProfileTargetRefreshCadenceGroup,
+    entries: []IdentityStoredProfileTargetTurnPolicyEntry,
+    groups: []IdentityStoredProfileTargetTurnPolicyGroup,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+        policy_entries: []IdentityStoredProfileTargetPolicyEntry,
+        policy_groups: []IdentityStoredProfileTargetPolicyGroup,
+        cadence_entries: []IdentityStoredProfileTargetRefreshCadenceEntry,
+        cadence_groups: []IdentityStoredProfileTargetRefreshCadenceGroup,
+        entries: []IdentityStoredProfileTargetTurnPolicyEntry,
+        groups: []IdentityStoredProfileTargetTurnPolicyGroup,
+    ) IdentityStoredProfileTargetTurnPolicyStorage {
+        return .{
+            .matches = matches,
+            .latest_entries = latest_entries,
+            .policy_entries = policy_entries,
+            .policy_groups = policy_groups,
+            .cadence_entries = cadence_entries,
+            .cadence_groups = cadence_groups,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetTurnPolicyRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    max_selected: usize,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredProfileTargetTurnPolicyStorage,
+};
+
+pub const IdentityStoredProfileTargetTurnPolicyPlan = struct {
+    entries: []const IdentityStoredProfileTargetTurnPolicyEntry,
+    groups: []const IdentityStoredProfileTargetTurnPolicyGroup,
+    verify_now_count: u32 = 0,
+    refresh_selected_count: u32 = 0,
+    use_cached_count: u32 = 0,
+    defer_refresh_count: u32 = 0,
+    fresh_count: u32 = 0,
+    stale_count: u32 = 0,
+    missing_count: u32 = 0,
+};
+
+pub const IdentityStoredProfileTargetTurnPolicyStep = struct {
+    action: IdentityStoredProfileTargetTurnPolicyAction,
+    entry: IdentityStoredProfileTargetTurnPolicyEntry,
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
     entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
     fresh_count: u32 = 0,
