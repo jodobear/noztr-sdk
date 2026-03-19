@@ -673,6 +673,14 @@ pub const IdentityStoredProfileTargetPolicyPlan = struct {
     fresh_count: u32 = 0,
     stale_count: u32 = 0,
     missing_count: u32 = 0,
+
+    pub fn usablePreferredEntries(
+        self: *const IdentityStoredProfileTargetPolicyPlan,
+    ) []const IdentityStoredProfileTargetPolicyEntry {
+        const start: usize = @intCast(self.verify_now_count);
+        const end = start + @as(usize, @intCast(self.use_preferred_count + self.use_stale_and_refresh_count));
+        return self.entries[start..end];
+    }
 };
 
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
@@ -4126,6 +4134,72 @@ test "identity verifier target policy inspection stays bounded by caller-owned g
             },
         ),
     );
+}
+
+test "identity verifier target policy exposes usable preferred targets in stable order" {
+    const fresh_pubkey = [_]u8{0xa1} ** 32;
+    const stale_pubkey = [_]u8{0xa2} ** 32;
+    const fresh_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-fresh" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-fresh",
+                    .expected_text = "npub-fresh",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &fresh_pubkey, 45, &fresh_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "alice" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries_storage: [3]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var groups_storage: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                policy_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    const usable = plan.usablePreferredEntries();
+    try std.testing.expectEqual(@as(usize, 2), usable.len);
+    try std.testing.expectEqualStrings("alice", usable[0].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.use_preferred, usable[0].action);
+    try std.testing.expectEqualStrings("bob", usable[1].target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileTargetRuntimeAction.use_stale_and_refresh, usable[1].action);
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
