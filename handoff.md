@@ -111,10 +111,8 @@ Current project context for `noztr-sdk`.
       limited generic value seams
     - workflow-local remembered-state stores should not be generalized into SDK-core prematurely
     - query/result/cursor/index posture must stay backend-agnostic at the public SDK boundary
-  - the active child architecture packet is now
+  - the active child architecture packet is still
     [docs/plans/sdk-relay-pool-runtime-baseline-plan.md](./docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
-  - its baseline decision is now
-    [docs/plans/sdk-relay-pool-runtime-baseline-decision.md](./docs/plans/sdk-relay-pool-runtime-baseline-decision.md)
   - the first bounded implementation loop under that child is now complete in
     [docs/plans/five-slice-relay-pool-loop-plan.md](./docs/plans/five-slice-relay-pool-loop-plan.md)
   - that child still exists to keep the sequence coherent:
@@ -242,12 +240,12 @@ Current project context for `noztr-sdk`.
   - `examples/relay_pool_checkpoint_recipe.zig` now teaches that replay-composition path on top of
     the same shared checkpoint seam instead of pushing replay stitching back into product-local
     code
-- the next active packet under the shared relay-pool subscription boundary lane is now
-  [docs/plans/relay-pool-sync-boundary-checkpoint-plan.md](./docs/plans/relay-pool-sync-boundary-checkpoint-plan.md)
-  - that checkpoint exists because the lane now already proves bounded runtime inspection,
-    checkpoint composition, subscription planning, and replay planning
-  - the next decision is whether shared `runtime` should grow into a broader sync execution
-    surface at all, or stop here and let the next layer become product-facing composition instead
+- the relay-pool sync-boundary checkpoint is now complete:
+  - the shared relay-pool layer should stop at bounded planning surfaces for now
+  - shared `runtime` should not absorb pool-owned subscription execution, replay execution, hidden
+    background sync loops, or product-local scheduling/runtime ownership yet
+  - the next move should be one CLI-facing client composition packet above the shared store and
+    runtime floors instead of growing shared `runtime` further by default
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

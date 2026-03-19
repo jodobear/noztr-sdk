@@ -1,7 +1,7 @@
 ---
 title: Relay Pool Sync Boundary Checkpoint Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - deciding_the_next_shared_relay_pool_child
@@ -73,3 +73,37 @@ This packet should produce:
 1. one explicit keep/stop decision for shared relay-pool growth
 2. one recommended next active child packet
 3. one clear rationale tying that recommendation back to CLI, signer, and relay-framework needs
+
+## Checkpoint Outcome
+
+Keep in shared `runtime`:
+
+- bounded relay membership/runtime inspection
+- bounded checkpoint export/restore composition
+- bounded subscription-spec planning
+- bounded replay planning over checkpoint-scoped `ClientQuery` values
+- typed next-entry and next-step selection over those shared plans
+
+Stop before absorbing into shared `runtime`:
+
+- pool-owned subscription execution
+- pool-owned replay execution or event dispatch
+- hidden background sync loops
+- reconnect/retry ownership beyond explicit planning surfaces
+- workflow-local mailbox/groups receive policy
+- product-local scheduling and operator/runtime ownership
+
+## Decision
+
+The shared relay-pool layer should stop at bounded planning surfaces for now.
+
+Reason:
+
+- CLI v1, signer tooling, and later relay-framework work now have enough shared relay/runtime
+  substrate to build on
+- the next missing proof is no longer "can shared runtime plan one more thing?"
+- it is "can one product-facing client layer compose store plus runtime cleanly without re-
+  inventing multi-relay control?"
+
+So the next active child should be a CLI-facing composition packet, not a broader shared sync
+execution packet.
