@@ -140,6 +140,7 @@ Observed friction:
   event id
 - one explicit newest-match freshness helper over that remembered verification store seam
 - one explicit preferred remembered-verification selection helper with caller-chosen stale fallback
+  and caller-owned freshness storage
 - one explicit freshness-classified remembered-discovery helper over all stored verifications for a
   target event
 - one explicit remembered runtime-policy helper that classifies one target event as `verify_now`,
@@ -150,6 +151,9 @@ Observed friction:
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextStep()` so callers can
   consume the remembered runtime action plus its selected verification as one explicit SDK step
   instead of stitching that view together above the workflow
+- remembered-profile and remembered-verification discovery helpers now classify inconsistent custom
+  store hydration as typed `error.InconsistentStoreData` instead of relying on invariant-only crash
+  paths
 - one explicit stale-verification refresh-plan helper over remembered verification freshness, with
   `nextEntry()` and `nextStep()` above that plan
 - the detached proof path is still caller-directed and local-floor only in

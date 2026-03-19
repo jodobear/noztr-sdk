@@ -67,10 +67,12 @@ network daemons, or hidden runtime loops.
   - control points: caller supplies the target event, attestation event, detached proof URL,
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
     verification store records over the explicit HTTP seam, then performs one explicit
-    latest-verification freshness lookup plus one explicit preferred-verification selection plus
-    one explicit freshness-classified remembered
+    latest-verification freshness lookup plus one explicit preferred-verification selection over
+    caller-owned freshness storage plus one explicit freshness-classified remembered
     discovery lookup plus one typed remembered runtime-step helper plus one explicit stale-proof
-    refresh plan plus one typed refresh step without hidden Bitcoin refresh policy
+    refresh plan plus one typed refresh step without hidden Bitcoin refresh policy, and now gets a
+    typed store inconsistency error instead of an invariant-only crash if a custom remembered-
+    verification store reports matches it cannot hydrate
 - `nip39_verification_recipe.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify

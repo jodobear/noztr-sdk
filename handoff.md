@@ -167,6 +167,9 @@ Current project context for `noztr-sdk`.
   - `IdentityVerifier` now also exposes `getPreferredStoredProfile(...)` so callers can select one
     preferred remembered profile under a freshness window with explicit stale-fallback policy
     instead of rebuilding that policy above the store seam
+  - remembered-profile discovery, freshness, and preferred-selection helpers now return
+    `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
+    a custom profile store reports matches it cannot hydrate
   - `IdentityVerifier` now also exposes `inspectStoredProfileRuntime(...)` so callers can classify
     one remembered identity as `verify_now`, `refresh_existing`, `use_preferred`, or
     `use_stale_and_refresh` on the same caller-owned freshness discovery path instead of
@@ -279,8 +282,9 @@ Current project context for `noztr-sdk`.
     remembered verification as fresh or stale under one explicit freshness window instead of
     leaving that common latest-match age policy above the store seam
   - `OpenTimestampsVerifier.getPreferredStoredVerification(...)` now selects one preferred
-    remembered verification under an explicit stale-fallback policy instead of leaving that choice
-    entirely above the store seam
+    remembered verification under explicit stale-fallback policy and caller-owned freshness
+    storage instead of leaving that choice entirely above the store seam or hiding a fixed local
+    entry cap
   - `OpenTimestampsStoredVerificationRefreshPlan` now also exposes `nextEntry()` and `nextStep()`
     so callers can consume one typed stale-verification refresh target without re-stitching that
     selection above the refresh plan
@@ -300,6 +304,9 @@ Current project context for `noztr-sdk`.
   - `OpenTimestampsVerifier.planStoredVerificationRefresh(...)` now collects only stale remembered
     verification matches newest-first under one explicit freshness window without hiding fetch or
     Bitcoin policy above the stored verification seam
+  - remembered-verification discovery, freshness, and preferred-selection helpers now return
+    `error.InconsistentStoreData` instead of relying on invariant-only `unreachable` behavior when
+    a custom verification store reports matches it cannot hydrate
   - `examples/nip03_verification_recipe.zig` now teaches verify, remember, freshness-classified
     discovery, one typed remembered runtime step, stale refresh planning, and latest remembered
     lookup on the same explicit public surface
@@ -324,26 +331,29 @@ Current project context for `noztr-sdk`.
 2. The ten-slice runtime/refresh loop is complete in
    [docs/plans/ten-slice-runtime-refresh-loop-plan.md](./docs/plans/ten-slice-runtime-refresh-loop-plan.md).
    Treat it as reference, not the next active blocker.
-3. The next active packet should target a broader remaining product gap rather than another
+3. The stored-workflow remediation slice is complete in
+   [docs/plans/stored-workflow-hardening-plan.md](./docs/plans/stored-workflow-hardening-plan.md).
+   Treat it as reference.
+4. The next active packet should target a broader remaining product gap rather than another
    bounded selector/helper loop.
-4. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
+5. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
    rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
    or merge-selection work.
-5. Continue `NIP-39` only if the next slice clearly targets broader autonomous discovery, refresh,
+6. Continue `NIP-39` only if the next slice clearly targets broader autonomous discovery, refresh,
    or longer-lived store policy beyond the now-landed remembered verify/store/discover/select and
    runtime-policy plus next-step path rather than repeating already-landed provider-detail,
    cache, or explicit store/discovery work.
-6. The best broader product slice after this runtime/refresh loop is still a real background-
+7. The best broader product slice after this runtime/refresh loop is still a real background-
    runtime `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
    `NIP-03` / `NIP-17` workflow policy. This loop should stop at bounded refresh/runtime/
    consistency driving helpers rather than jumping to hidden background loops.
-7. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
-8. Keep `examples/README.md` current whenever the public teaching surface changes.
-9. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
-10. Treat `docs/archive/` as historical context only, not startup reading.
-11. Keep `NIP-03` scoped to broader proof workflow work only:
+8. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
+9. Keep `examples/README.md` current whenever the public teaching surface changes.
+10. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
+11. Treat `docs/archive/` as historical context only, not startup reading.
+12. Keep `NIP-03` scoped to broader proof workflow work only:
    `OpenTimestampsVerifier.verifyRemote(...)` and `verifyRemoteCached(...)` already cover the
    explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
    covers remembered runtime inspection plus typed next-step selection; the remaining gap is broader

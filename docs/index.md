@@ -87,6 +87,7 @@ Use `doc_type` plus `status` first:
 - [five-slice-selector-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-selector-loop-plan.md)
 - [five-slice-step-view-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-step-view-loop-plan.md)
 - [ten-slice-runtime-refresh-loop-plan.md](/workspace/projects/nzdk/docs/plans/ten-slice-runtime-refresh-loop-plan.md)
+- [stored-workflow-hardening-plan.md](/workspace/projects/nzdk/docs/plans/stored-workflow-hardening-plan.md)
 - [nip03-remote-proof-plan.md](/workspace/projects/nzdk/docs/plans/nip03-remote-proof-plan.md)
 - [nip03-proof-store-plan.md](/workspace/projects/nzdk/docs/plans/nip03-proof-store-plan.md)
 - [nip03-remembered-verification-plan.md](/workspace/projects/nzdk/docs/plans/nip03-remembered-verification-plan.md)

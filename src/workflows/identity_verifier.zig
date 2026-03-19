@@ -206,6 +206,7 @@ pub const IdentityProfileStoreError = error{
     ProofTooLong,
     TooManyVerifiedClaims,
     StoreFull,
+    InconsistentStoreData,
 };
 
 pub const IdentityStoredClaim = struct {
@@ -728,6 +729,25 @@ pub const IdentityRememberedProfileVerificationError =
 pub const IdentityStoredProfileDiscoveryError = IdentityProfileStoreError || error{BufferTooSmall};
 
 pub const IdentityVerifier = struct {
+    fn hydrateStoredProfileEntry(
+        store: IdentityProfileStore,
+        match: IdentityProfileMatch,
+        provider: noztr.nip39_external_identities.IdentityProvider,
+        identity: []const u8,
+    ) IdentityStoredProfileDiscoveryError!IdentityStoredProfileDiscoveryEntry {
+        const profile = (try store.getProfile(&match.pubkey)) orelse return error.InconsistentStoreData;
+        const matched_claim_index = findMatchedStoredClaimIndex(
+            &profile,
+            provider,
+            identity,
+        ) orelse return error.InconsistentStoreData;
+        return .{
+            .match = match,
+            .profile = profile,
+            .matched_claim_index = matched_claim_index,
+        };
+    }
+
     pub fn verify(
         http_client: transport.HttpClient,
         request: IdentityVerificationRequest,
@@ -884,17 +904,12 @@ pub const IdentityVerifier = struct {
         if (matches.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (matches, 0..) |match, index| {
-            const profile = (try store.getProfile(&match.pubkey)) orelse unreachable;
-            const matched_claim_index = findMatchedStoredClaimIndex(
-                &profile,
+            request.storage.entries[index] = try hydrateStoredProfileEntry(
+                store,
+                match,
                 request.provider,
                 request.identity,
-            ) orelse unreachable;
-            request.storage.entries[index] = .{
-                .match = match,
-                .profile = profile,
-                .matched_claim_index = matched_claim_index,
-            };
+            );
         }
         return request.storage.entries[0..matches.len];
     }
@@ -911,17 +926,12 @@ pub const IdentityVerifier = struct {
             if (match.created_at > latest.created_at) latest = match;
         }
 
-        const profile = (try store.getProfile(&latest.pubkey)) orelse return null;
-        const matched_claim_index = findMatchedStoredClaimIndex(
-            &profile,
+        return try hydrateStoredProfileEntry(
+            store,
+            latest,
             request.provider,
             request.identity,
-        ) orelse return null;
-        return .{
-            .match = latest,
-            .profile = profile,
-            .matched_claim_index = matched_claim_index,
-        };
+        );
     }
 
     pub fn getLatestStoredProfileFreshness(
@@ -959,22 +969,18 @@ pub const IdentityVerifier = struct {
         if (matches.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (matches, 0..) |match, index| {
-            const profile = (try store.getProfile(&match.pubkey)) orelse unreachable;
-            const matched_claim_index = findMatchedStoredClaimIndex(
-                &profile,
+            const entry = try hydrateStoredProfileEntry(
+                store,
+                match,
                 request.provider,
                 request.identity,
-            ) orelse unreachable;
+            );
             const age_seconds = if (request.now_unix_seconds > match.created_at)
                 request.now_unix_seconds - match.created_at
             else
                 0;
             request.storage.entries[index] = .{
-                .entry = .{
-                    .match = match,
-                    .profile = profile,
-                    .matched_claim_index = matched_claim_index,
-                },
+                .entry = entry,
                 .freshness = if (age_seconds <= request.max_age_seconds) .fresh else .stale,
                 .age_seconds = age_seconds,
             };
@@ -992,22 +998,18 @@ pub const IdentityVerifier = struct {
         var latest_stale: ?IdentityPreferredStoredProfile = null;
         var best_fresh: ?IdentityPreferredStoredProfile = null;
         for (matches) |match| {
-            const profile = (try store.getProfile(&match.pubkey)) orelse continue;
-            const matched_claim_index = findMatchedStoredClaimIndex(
-                &profile,
+            const entry = try hydrateStoredProfileEntry(
+                store,
+                match,
                 request.provider,
                 request.identity,
-            ) orelse continue;
+            );
             const age_seconds = if (request.now_unix_seconds > match.created_at)
                 request.now_unix_seconds - match.created_at
             else
                 0;
             const candidate: IdentityPreferredStoredProfile = .{
-                .entry = .{
-                    .match = match,
-                    .profile = profile,
-                    .matched_claim_index = matched_claim_index,
-                },
+                .entry = entry,
                 .freshness = if (age_seconds <= request.max_age_seconds) .fresh else .stale,
                 .age_seconds = age_seconds,
             };
@@ -3181,6 +3183,66 @@ test "identity verifier refresh plan returns empty when remembered profiles are 
     try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.newestEntry() == null);
     try std.testing.expect(plan.nextStep() == null);
+}
+
+test "identity verifier returns typed error for inconsistent remembered profile store" {
+    const InconsistentIdentityStore = struct {
+        fn asStore(self: *@This()) IdentityProfileStore {
+            return .{ .ctx = self, .vtable = &vtable };
+        }
+
+        fn put(
+            _: *anyopaque,
+            _: *const [32]u8,
+            _: u64,
+            _: *const IdentityProfileVerificationSummary,
+        ) IdentityProfileStoreError!IdentityProfileStorePutOutcome {
+            return .stored;
+        }
+
+        fn get(
+            _: *anyopaque,
+            _: *const [32]u8,
+        ) IdentityProfileStoreError!?IdentityProfileRecord {
+            return null;
+        }
+
+        fn find(
+            _: *anyopaque,
+            _: noztr.nip39_external_identities.IdentityProvider,
+            _: []const u8,
+            out: []IdentityProfileMatch,
+        ) IdentityProfileStoreError!usize {
+            out[0] = .{
+                .pubkey = [_]u8{0x92} ** 32,
+                .created_at = 7,
+            };
+            return 1;
+        }
+
+        const vtable = IdentityProfileStoreVTable{
+            .put_profile_summary = put,
+            .get_profile = get,
+            .find_profiles = find,
+        };
+    };
+
+    var store = InconsistentIdentityStore{};
+    var matches: [1]IdentityProfileMatch = undefined;
+    var entries: [1]IdentityStoredProfileDiscoveryFreshnessEntry = undefined;
+    try std.testing.expectError(
+        error.InconsistentStoreData,
+        IdentityVerifier.discoverStoredProfileEntriesWithFreshness(
+            store.asStore(),
+            .{
+                .provider = .github,
+                .identity = "alice",
+                .now_unix_seconds = 9,
+                .max_age_seconds = 5,
+                .storage = .init(matches[0..], entries[0..]),
+            },
+        ),
+    );
 }
 
 const TestHttpResponse = struct {

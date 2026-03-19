@@ -60,6 +60,7 @@ pub const OpenTimestampsVerificationStoreError = error{
     ProofUrlTooLong,
     RelayUrlTooLong,
     StoreFull,
+    InconsistentStoreData,
 };
 
 pub const OpenTimestampsProofRecord = struct {
@@ -228,7 +229,7 @@ pub const OpenTimestampsPreferredStoredVerificationRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
-    matches: []OpenTimestampsStoredVerificationMatch,
+    storage: OpenTimestampsStoredVerificationDiscoveryFreshnessStorage,
     fallback_policy: OpenTimestampsStoredVerificationFallbackPolicy = .allow_stale_latest,
 };
 
@@ -624,6 +625,19 @@ pub const OpenTimestampsRememberedRemoteVerificationOutcome = union(enum) {
 };
 
 pub const OpenTimestampsVerifier = struct {
+    fn hydrateStoredVerificationEntry(
+        verification_store: OpenTimestampsVerificationStore,
+        match: OpenTimestampsStoredVerificationMatch,
+    ) OpenTimestampsStoredVerificationDiscoveryError!OpenTimestampsStoredVerificationDiscoveryEntry {
+        const verification =
+            (try verification_store.getVerification(&match.attestation_event_id)) orelse
+            return error.InconsistentStoreData;
+        return .{
+            .match = match,
+            .verification = verification,
+        };
+    }
+
     pub fn verifyLocal(
         target_event: *const noztr.nip01_event.Event,
         attestation_event: *const noztr.nip01_event.Event,
@@ -877,11 +891,10 @@ pub const OpenTimestampsVerifier = struct {
         if (matches.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (matches, 0..) |match, index| {
-            const verification = (try verification_store.getVerification(&match.attestation_event_id)) orelse unreachable;
-            request.storage.entries[index] = .{
-                .match = match,
-                .verification = verification,
-            };
+            request.storage.entries[index] = try hydrateStoredVerificationEntry(
+                verification_store,
+                match,
+            );
         }
         return request.storage.entries[0..matches.len];
     }
@@ -897,7 +910,8 @@ pub const OpenTimestampsVerifier = struct {
         for (matches[1..]) |match| {
             if (match.created_at > latest.created_at) latest = match;
         }
-        return verification_store.getVerification(&latest.attestation_event_id);
+        return (try verification_store.getVerification(&latest.attestation_event_id)) orelse
+            return error.InconsistentStoreData;
     }
 
     pub fn getLatestStoredVerificationFreshness(
@@ -912,7 +926,9 @@ pub const OpenTimestampsVerifier = struct {
             if (match.created_at > latest.created_at) latest = match;
         }
 
-        const verification = (try verification_store.getVerification(&latest.attestation_event_id)) orelse return null;
+        const verification =
+            (try verification_store.getVerification(&latest.attestation_event_id)) orelse
+            return error.InconsistentStoreData;
         const age_seconds = if (request.now_unix_seconds > latest.created_at)
             request.now_unix_seconds - latest.created_at
         else
@@ -931,19 +947,13 @@ pub const OpenTimestampsVerifier = struct {
         verification_store: OpenTimestampsVerificationStore,
         request: OpenTimestampsPreferredStoredVerificationRequest,
     ) OpenTimestampsStoredVerificationDiscoveryError!?OpenTimestampsPreferredStoredVerification {
-        var freshness_entries: [32]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
-        if (request.matches.len > freshness_entries.len) return error.BufferTooSmall;
-
         const entries = try discoverStoredVerificationEntriesWithFreshness(
             verification_store,
             .{
                 .target_event_id = request.target_event_id,
                 .now_unix_seconds = request.now_unix_seconds,
                 .max_age_seconds = request.max_age_seconds,
-                .storage = .{
-                    .matches = request.matches,
-                    .entries = freshness_entries[0..request.matches.len],
-                },
+                .storage = request.storage,
             },
         );
 
@@ -989,17 +999,16 @@ pub const OpenTimestampsVerifier = struct {
         if (matches.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (matches, 0..) |match, index| {
-            const verification =
-                (try verification_store.getVerification(&match.attestation_event_id)) orelse unreachable;
+            const entry = try hydrateStoredVerificationEntry(
+                verification_store,
+                match,
+            );
             const age_seconds = if (request.now_unix_seconds > match.created_at)
                 request.now_unix_seconds - match.created_at
             else
                 0;
             request.storage.entries[index] = .{
-                .entry = .{
-                    .match = match,
-                    .verification = verification,
-                },
+                .entry = entry,
                 .freshness = if (age_seconds <= request.max_age_seconds) .fresh else .stale,
                 .age_seconds = age_seconds,
             };
@@ -2154,13 +2163,14 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
     );
 
     var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var preferred_entries: [2]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
     const selected = (try OpenTimestampsVerifier.getPreferredStoredVerification(
         verification_store.asStore(),
         .{
             .target_event_id = &target_event.id,
             .now_unix_seconds = 12,
             .max_age_seconds = 5,
-            .matches = preferred_matches[0..],
+            .storage = .init(preferred_matches[0..], preferred_entries[0..]),
             .fallback_policy = .require_fresh,
         },
     )).?;
@@ -2268,13 +2278,14 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
     );
 
     var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var preferred_entries: [2]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
     const selected = (try OpenTimestampsVerifier.getPreferredStoredVerification(
         verification_store.asStore(),
         .{
             .target_event_id = &target_event.id,
             .now_unix_seconds = 20,
             .max_age_seconds = 5,
-            .matches = preferred_matches[0..],
+            .storage = .init(preferred_matches[0..], preferred_entries[0..]),
             .fallback_policy = .allow_stale_latest,
         },
     )).?;
@@ -2348,6 +2359,145 @@ test "opentimestamps verifier runtime policy can require refresh for stale remem
     try std.testing.expectEqual(
         OpenTimestampsStoredVerificationFreshness.stale,
         next_step.entry.?.freshness,
+    );
+}
+
+test "opentimestamps verifier preferred selection uses caller-owned freshness storage" {
+    const target_event = try testTargetEvent(1, "hello");
+    const proof = testLocalProof(target_event.id, bitcoin_attestation_tag, &.{0x2a});
+    var first_proof_base64_storage: [128]u8 = undefined;
+    var second_proof_base64_storage: [128]u8 = undefined;
+    var first_attestation_fixture = try testAttestationEvent(
+        first_proof_base64_storage[0..],
+        &target_event,
+        proof,
+        testLocalProofLen(1),
+    );
+    first_attestation_fixture.event.id = [_]u8{0x81} ** 32;
+    first_attestation_fixture.event.created_at = 2;
+    first_attestation_fixture.fixup();
+    var second_attestation_fixture = try testAttestationEvent(
+        second_proof_base64_storage[0..],
+        &target_event,
+        proof,
+        testLocalProofLen(1),
+    );
+    second_attestation_fixture.event.id = [_]u8{0x82} ** 32;
+    second_attestation_fixture.event.created_at = 9;
+    second_attestation_fixture.fixup();
+
+    var first_decoded_proof: [128]u8 = undefined;
+    var second_decoded_proof: [128]u8 = undefined;
+    const first_verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                first_decoded_proof[0..],
+                &first_attestation_fixture.event,
+            ),
+            .proof = proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = "https://proof.example/old.ots",
+    };
+    const second_verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                second_decoded_proof[0..],
+                &second_attestation_fixture.event,
+            ),
+            .proof = proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = "https://proof.example/new.ots",
+    };
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        &target_event,
+        &first_attestation_fixture.event,
+        &first_verification,
+    );
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        &target_event,
+        &second_attestation_fixture.event,
+        &second_verification,
+    );
+
+    var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var too_small_entries: [1]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        OpenTimestampsVerifier.getPreferredStoredVerification(
+            verification_store.asStore(),
+            .{
+                .target_event_id = &target_event.id,
+                .now_unix_seconds = 12,
+                .max_age_seconds = 5,
+                .storage = .init(preferred_matches[0..], too_small_entries[0..]),
+                .fallback_policy = .require_fresh,
+            },
+        ),
+    );
+}
+
+test "opentimestamps verifier returns typed error for inconsistent remembered verification store" {
+    const InconsistentVerificationStore = struct {
+        fn asStore(self: *@This()) OpenTimestampsVerificationStore {
+            return .{ .ctx = self, .vtable = &vtable };
+        }
+
+        fn put(
+            _: *anyopaque,
+            _: *const noztr.nip01_event.Event,
+            _: *const noztr.nip01_event.Event,
+            _: *const OpenTimestampsRemoteVerification,
+        ) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome {
+            return .stored;
+        }
+
+        fn get(
+            _: *anyopaque,
+            _: *const [32]u8,
+        ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+            return null;
+        }
+
+        fn find(
+            _: *anyopaque,
+            _: *const [32]u8,
+            out: []OpenTimestampsStoredVerificationMatch,
+        ) OpenTimestampsVerificationStoreError!usize {
+            out[0] = .{
+                .attestation_event_id = [_]u8{0x91} ** 32,
+                .created_at = 7,
+            };
+            return 1;
+        }
+
+        const vtable = OpenTimestampsVerificationStoreVTable{
+            .put_remote_verification = put,
+            .get_verification = get,
+            .find_verifications = find,
+        };
+    };
+
+    var store = InconsistentVerificationStore{};
+    const target_event = try testTargetEvent(1, "hello");
+    var matches: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var entries: [1]OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+    try std.testing.expectError(
+        error.InconsistentStoreData,
+        OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
+            store.asStore(),
+            .{
+                .target_event_id = &target_event.id,
+                .now_unix_seconds = 9,
+                .max_age_seconds = 5,
+                .storage = .init(matches[0..], entries[0..]),
+            },
+        ),
     );
 }
 

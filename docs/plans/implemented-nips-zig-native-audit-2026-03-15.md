@@ -222,7 +222,8 @@ Observed friction:
 - `NIP-03` now also exposes one explicit latest-verification freshness helper, so callers do not
   have to restitch newest-match age policy above the remembered-verification store seam
 - `NIP-03` now also exposes one explicit preferred remembered-verification selection helper, so
-  callers do not have to rebuild fresh-vs-stale fallback choice above the same store seam
+  callers do not have to rebuild fresh-vs-stale fallback choice above the same store seam, and it
+  now stays caller-bounded instead of hiding a fixed helper-local `32`-entry cap
 - `OpenTimestampsStoredVerificationRefreshPlan` now also exposes `nextEntry()` and `nextStep()`,
   so callers do not have to re-stitch newest-first stale-verification refresh targeting above the
   same freshness discovery surface
@@ -232,6 +233,9 @@ Observed friction:
 - `OpenTimestampsStoredVerificationRuntimePlan` now also exposes `nextStep()` so callers can
   package the selected remembered-verification action and entry as one explicit step value instead
   of reconstructing that SDK view above the runtime plan
+- remembered-profile and remembered-verification store-backed discovery helpers now return typed
+  `error.InconsistentStoreData` results instead of relying on `unreachable` for inconsistent custom
+  store implementations
 - but several public workflow surfaces still sit halfway between:
   - low-level bounded substrate
   - higher-level SDK workflow
