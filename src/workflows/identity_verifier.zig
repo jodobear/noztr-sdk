@@ -411,6 +411,17 @@ pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
         }
         return null;
     }
+
+    pub fn nextStep(
+        self: *const IdentityStoredProfileTargetLatestFreshnessPlan,
+    ) ?IdentityStoredProfileTargetLatestFreshnessStep {
+        const entry = self.nextEntry() orelse return null;
+        return .{ .entry = entry.* };
+    }
+};
+
+pub const IdentityStoredProfileTargetLatestFreshnessStep = struct {
+    entry: IdentityStoredProfileTargetLatestFreshnessEntry,
 };
 
 pub const IdentityStoredProfileRuntimeAction = enum {
@@ -2931,6 +2942,12 @@ test "identity verifier target-set latest freshness plan selects first non-fresh
     const next = plan.nextEntry().?;
     try std.testing.expectEqualStrings("bob", next.target.identity);
     try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, next.latest.?.freshness);
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqualStrings("bob", next_step.entry.target.identity);
+    try std.testing.expectEqual(
+        IdentityStoredProfileFreshness.stale,
+        next_step.entry.latest.?.freshness,
+    );
 }
 
 test "identity verifier target-set latest freshness plan returns null when all watched targets are fresh" {
@@ -2998,6 +3015,7 @@ test "identity verifier target-set latest freshness plan returns null when all w
     try std.testing.expectEqual(@as(u32, 0), plan.stale_count);
     try std.testing.expectEqual(@as(u32, 0), plan.missing_count);
     try std.testing.expect(plan.nextEntry() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
 
 test "identity verifier selects the newest fresh preferred stored profile" {

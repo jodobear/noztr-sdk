@@ -213,6 +213,9 @@ Observed friction:
 - `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextEntry()` so callers can
   follow the first non-fresh watched identity in caller order without hand-scanning that
   watched-target latest-freshness surface above the workflow
+- `IdentityStoredProfileTargetLatestFreshnessPlan` now also exposes `nextStep()` so callers can
+  consume that watched-target latest-freshness selection as one typed SDK value instead of
+  restitching the selected target above the workflow
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
   selected remembered-profile step directly instead of re-matching the runtime-selected entry
   above the workflow

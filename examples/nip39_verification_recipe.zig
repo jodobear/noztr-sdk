@@ -6,7 +6,7 @@ const common = @import("common.zig");
 // Verify all claims from one identity event over the public SDK HTTP seam, remember the verified
 // profile through the explicit store seam, hydrate one stored discovery result directly, classify
 // both discovered entries and the latest remembered profile for freshness, inspect one explicit
-// watched identity set through the latest-freshness plan plus one next entry, select one
+// watched identity set through the latest-freshness plan plus one typed next step, select one
 // preferred remembered profile under an explicit fallback policy, inspect the remembered runtime
 // action and typed next step for that identity, plan one typed refresh step for stale remembered
 // profiles, then replay the same verification from an explicit caller-owned cache.
@@ -250,6 +250,7 @@ test "recipe: identity verifier verifies, remembers, discovers, inspects watched
     try std.testing.expectEqualStrings("carol", watched_latest.entries[2].target.identity);
     try std.testing.expect(watched_latest.entries[2].latest == null);
     try std.testing.expectEqualStrings("alice", watched_latest.nextEntry().?.target.identity);
+    try std.testing.expectEqualStrings("alice", watched_latest.nextStep().?.entry.target.identity);
 
     var preferred_matches: [2]noztr_sdk.workflows.IdentityProfileMatch = undefined;
     const preferred = (try noztr_sdk.workflows.IdentityVerifier.getPreferredStoredProfile(
