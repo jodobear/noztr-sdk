@@ -61,6 +61,7 @@ Use `doc_type` plus `status` first:
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
 - [sdk-relay-pool-runtime-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
+- [five-slice-relay-pool-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-loop-plan.md)
 - [sdk-store-query-index-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-store-query-index-baseline-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)

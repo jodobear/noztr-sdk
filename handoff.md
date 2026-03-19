@@ -115,6 +115,8 @@ Current project context for `noztr-sdk`.
     [docs/plans/sdk-relay-pool-runtime-baseline-plan.md](./docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
   - its baseline decision is now
     [docs/plans/sdk-relay-pool-runtime-baseline-decision.md](./docs/plans/sdk-relay-pool-runtime-baseline-decision.md)
+  - the active implementation loop under that child is now
+    [docs/plans/five-slice-relay-pool-loop-plan.md](./docs/plans/five-slice-relay-pool-loop-plan.md)
   - that child exists to keep the sequence coherent:
     - shared relay-pool/runtime vocabulary before another round of workflow-local runtime growth
     - explicit reuse of the shared store/query/checkpoint seams instead of another isolated pool
