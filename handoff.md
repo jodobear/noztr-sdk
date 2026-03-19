@@ -111,15 +111,17 @@ Current project context for `noztr-sdk`.
       limited generic value seams
     - workflow-local remembered-state stores should not be generalized into SDK-core prematurely
     - query/result/cursor/index posture must stay backend-agnostic at the public SDK boundary
-  - the relay-pool/runtime child and its follow-on packets are now reference
+  - the relay-pool/runtime child, the CLI client composition child, and their follow-on packets are now reference
     architecture context:
     [docs/plans/sdk-relay-pool-runtime-baseline-plan.md](./docs/plans/sdk-relay-pool-runtime-baseline-plan.md),
     [docs/plans/sdk-relay-pool-runtime-baseline-decision.md](./docs/plans/sdk-relay-pool-runtime-baseline-decision.md),
     [docs/plans/relay-pool-subscription-boundary-plan.md](./docs/plans/relay-pool-subscription-boundary-plan.md),
+    [docs/plans/relay-pool-sync-boundary-checkpoint-plan.md](./docs/plans/relay-pool-sync-boundary-checkpoint-plan.md),
+    [docs/plans/sdk-cli-client-composition-plan.md](./docs/plans/sdk-cli-client-composition-plan.md),
     and
-    [docs/plans/relay-pool-sync-boundary-checkpoint-plan.md](./docs/plans/relay-pool-sync-boundary-checkpoint-plan.md)
+    [docs/plans/sdk-cli-client-boundary-checkpoint-plan.md](./docs/plans/sdk-cli-client-boundary-checkpoint-plan.md)
   - the active child architecture packet is now
-    [docs/plans/sdk-cli-client-composition-plan.md](./docs/plans/sdk-cli-client-composition-plan.md)
+    [docs/plans/zig-cli-tool-kickoff-plan.md](./docs/plans/zig-cli-tool-kickoff-plan.md)
   - the first bounded implementation loop under that child is now complete in
     [docs/plans/five-slice-relay-pool-loop-plan.md](./docs/plans/five-slice-relay-pool-loop-plan.md)
   - that child still exists to keep the sequence coherent:
@@ -276,7 +278,9 @@ Current project context for `noztr-sdk`.
   - `CliArchiveClient` is enough as the first reusable CLI-supporting SDK floor
   - more CLI-specific command, output, and operator UX should move to the separate CLI repo
     instead of continuing to expand `noztr-sdk` by default
-  - the next move should be a CLI kickoff packet that defines CLI v1 scope and repo boundary
+  - the next active packet is now
+    [docs/plans/zig-cli-tool-kickoff-plan.md](./docs/plans/zig-cli-tool-kickoff-plan.md)
+    so the next planning work can define CLI v1 scope, first commands, and repo boundary
     explicitly
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet

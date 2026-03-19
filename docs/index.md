@@ -60,8 +60,7 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
-- [sdk-cli-client-composition-plan.md](/workspace/projects/nzdk/docs/plans/sdk-cli-client-composition-plan.md)
-- [sdk-cli-client-boundary-checkpoint-plan.md](/workspace/projects/nzdk/docs/plans/sdk-cli-client-boundary-checkpoint-plan.md)
+- [zig-cli-tool-kickoff-plan.md](/workspace/projects/nzdk/docs/plans/zig-cli-tool-kickoff-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 

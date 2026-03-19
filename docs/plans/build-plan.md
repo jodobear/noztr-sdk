@@ -32,7 +32,7 @@ It answers:
 - Zig-native audit: [implemented-nips-zig-native-audit-2026-03-15.md](./implemented-nips-zig-native-audit-2026-03-15.md)
 - examples teaching posture: [examples-tree-plan.md](./examples-tree-plan.md)
 - active child architecture packet:
-  [sdk-cli-client-composition-plan.md](./sdk-cli-client-composition-plan.md)
+  [zig-cli-tool-kickoff-plan.md](./zig-cli-tool-kickoff-plan.md)
 
 ## Current Execution Posture
 
