@@ -51,7 +51,7 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
-- [nip29-background-runtime-plan.md](/workspace/projects/nzdk/docs/plans/nip29-background-runtime-plan.md)
+- [nip29-six-slice-background-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip29-six-slice-background-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 

@@ -378,22 +378,25 @@ Current project context for `noztr-sdk`.
    [docs/plans/nip39-ten-slice-policy-loop-plan.md](./docs/plans/nip39-ten-slice-policy-loop-plan.md).
    Treat it as reference.
 5. The next active packet is
-   [docs/plans/nip29-background-runtime-plan.md](./docs/plans/nip29-background-runtime-plan.md).
-6. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
+   [docs/plans/nip29-six-slice-background-loop-plan.md](./docs/plans/nip29-six-slice-background-loop-plan.md).
+6. Treat
+   [docs/plans/nip29-background-runtime-plan.md](./docs/plans/nip29-background-runtime-plan.md)
+   as the broader reference baseline for that active loop.
+7. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
    rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
    or merge-selection work.
-7. The remaining `NIP-39` gap is now autonomous discovery/refresh policy above the current
+8. The remaining `NIP-39` gap is now autonomous discovery/refresh policy above the current
    caller-owned watched-target inputs; do not reopen already-landed watched-target freshness,
    preferred-selection, refresh, or runtime helpers unless a real bug appears.
-8. The next best broader product lane after that remains broader `NIP-03` / `NIP-17` workflow
+9. The next best broader product lane after that remains broader `NIP-03` / `NIP-17` workflow
    policy.
-9. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
-10. Keep `examples/README.md` current whenever the public teaching surface changes.
-11. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
-12. Treat `docs/archive/` as historical context only, not startup reading.
-13. Keep `NIP-03` scoped to broader proof workflow work only:
+10. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
+11. Keep `examples/README.md` current whenever the public teaching surface changes.
+12. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
+13. Treat `docs/archive/` as historical context only, not startup reading.
+14. Keep `NIP-03` scoped to broader proof workflow work only:
    `OpenTimestampsVerifier.verifyRemote(...)` and `verifyRemoteCached(...)` already cover the
    explicit detached-proof HTTP seam plus bounded proof-store reuse, and the current slice now also
    covers remembered runtime inspection plus typed next-step selection; the remaining gap is broader

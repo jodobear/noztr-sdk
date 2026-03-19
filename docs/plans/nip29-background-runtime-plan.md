@@ -1,7 +1,7 @@
 ---
 title: NIP-29 Background Runtime Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [29]
 read_when:
@@ -22,6 +22,9 @@ touches_startup_docs: yes
 ---
 
 # NIP-29 Background Runtime Plan
+
+Status: reference baseline for the active loop in
+[nip29-six-slice-background-loop-plan.md](./nip29-six-slice-background-loop-plan.md).
 
 ## Scope Delta
 
