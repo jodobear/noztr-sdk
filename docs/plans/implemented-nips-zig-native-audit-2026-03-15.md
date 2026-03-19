@@ -203,6 +203,9 @@ Observed friction:
 - `GroupFleetBackgroundAction` and `GroupFleetBackgroundEntry` now also provide one explicit
   Zig-facing coordinator vocabulary above the fleet, instead of leaving the broader background
   phase model implicit in caller code
+- `GroupFleet.inspectBackgroundRuntime(...)` now also exposes one caller-owned background plan
+  over runtime state, divergence, and pending merge/publish inputs, so broader fleet coordination
+  no longer has to begin as hand-stitched caller policy above the existing runtime surfaces
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

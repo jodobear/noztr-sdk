@@ -59,6 +59,59 @@ pub const GroupFleetBackgroundEntry = struct {
     is_baseline: bool = false,
 };
 
+pub const GroupFleetBackgroundRuntimeStorage = struct {
+    runtime: GroupFleetRuntimeStorage = .{},
+    divergences: [relay_pool.pool_capacity]GroupFleetRelayDivergence =
+        [_]GroupFleetRelayDivergence{.{ .relay_url = "" }} ** relay_pool.pool_capacity,
+    actions: [relay_pool.pool_capacity]GroupFleetBackgroundAction =
+        [_]GroupFleetBackgroundAction{.connect} ** relay_pool.pool_capacity,
+
+    pub fn clear(self: *GroupFleetBackgroundRuntimeStorage) void {
+        self.runtime.clear();
+        self.actions = [_]GroupFleetBackgroundAction{.connect} ** relay_pool.pool_capacity;
+    }
+};
+
+pub const GroupFleetBackgroundRuntimeRequest = struct {
+    baseline_relay_url: ?[]const u8 = null,
+    pending_merged_checkpoint: ?*const GroupFleetMergedCheckpoint = null,
+    publish_events: []const group_session.OutboundEvent = &.{},
+    storage: *GroupFleetBackgroundRuntimeStorage,
+};
+
+pub const GroupFleetBackgroundRuntimePlan = struct {
+    baseline_relay_url: []const u8,
+    relay_count: u8,
+    connect_count: u8 = 0,
+    authenticate_count: u8 = 0,
+    reconcile_count: u8 = 0,
+    merge_apply_count: u8 = 0,
+    publish_count: u8 = 0,
+    idle_count: u8 = 0,
+    _fleet: *const GroupFleet,
+    _runtime: GroupFleetRuntimePlan,
+    _consistency: GroupFleetConsistencyReport,
+    _storage: *const GroupFleetBackgroundRuntimeStorage,
+
+    pub fn entry(self: *const GroupFleetBackgroundRuntimePlan, index: u8) ?GroupFleetBackgroundEntry {
+        if (index >= self.relay_count) return null;
+        const runtime_entry = self._runtime.entry(index) orelse return null;
+        return .{
+            .relay_url = runtime_entry.relay_url,
+            .action = self._storage.actions[index],
+            .is_baseline = runtime_entry.is_baseline,
+        };
+    }
+
+    pub fn runtimePlan(self: *const GroupFleetBackgroundRuntimePlan) *const GroupFleetRuntimePlan {
+        return &self._runtime;
+    }
+
+    pub fn consistencyReport(self: *const GroupFleetBackgroundRuntimePlan) *const GroupFleetConsistencyReport {
+        return &self._consistency;
+    }
+};
+
 pub const GroupFleetRuntimeStorage = struct {
     relay_states: [relay_pool.pool_capacity]group_client.GroupRelayState =
         [_]group_client.GroupRelayState{.disconnected} ** relay_pool.pool_capacity,
@@ -728,6 +781,75 @@ pub const GroupFleet = struct {
         };
     }
 
+    pub fn inspectBackgroundRuntime(
+        self: *const GroupFleet,
+        request: GroupFleetBackgroundRuntimeRequest,
+    ) GroupFleetError!GroupFleetBackgroundRuntimePlan {
+        if (self._clients.len == 0) return error.NoClients;
+
+        request.storage.clear();
+        const runtime = try self.inspectRuntime(
+            request.baseline_relay_url,
+            &request.storage.runtime,
+        );
+        const consistency = try self.inspectConsistency(
+            runtime.baseline_relay_url,
+            request.storage.divergences[0 .. self._clients.len - 1],
+        );
+
+        var connect_count: u8 = 0;
+        var authenticate_count: u8 = 0;
+        var reconcile_count: u8 = 0;
+        var merge_apply_count: u8 = 0;
+        var publish_count: u8 = 0;
+        var idle_count: u8 = 0;
+
+        var index: u8 = 0;
+        while (index < runtime.relay_count) : (index += 1) {
+            const runtime_entry = runtime.entry(index) orelse continue;
+            const action: GroupFleetBackgroundAction = switch (runtime_entry.action) {
+                .connect => blk: {
+                    connect_count += 1;
+                    break :blk .connect;
+                },
+                .authenticate => blk: {
+                    authenticate_count += 1;
+                    break :blk .authenticate;
+                },
+                .reconcile => blk: {
+                    reconcile_count += 1;
+                    break :blk .reconcile;
+                },
+                .ready => if (request.pending_merged_checkpoint != null) blk: {
+                    merge_apply_count += 1;
+                    break :blk .merge_apply;
+                } else if (publishEventsContainRelay(request.publish_events, runtime_entry.relay_url)) blk: {
+                    publish_count += 1;
+                    break :blk .publish;
+                } else blk: {
+                    idle_count += 1;
+                    break :blk .idle;
+                },
+            };
+            request.storage.actions[index] = action;
+        }
+
+        return .{
+            .baseline_relay_url = runtime.baseline_relay_url,
+            .relay_count = runtime.relay_count,
+            .connect_count = connect_count,
+            .authenticate_count = authenticate_count,
+            .reconcile_count = reconcile_count,
+            .merge_apply_count = merge_apply_count,
+            .publish_count = publish_count,
+            .idle_count = idle_count,
+            ._fleet = self,
+            ._runtime = runtime,
+            ._consistency = consistency,
+            ._storage = request.storage,
+        };
+    }
+
     pub fn inspectConsistency(
         self: *const GroupFleet,
         baseline_relay_url: ?[]const u8,
@@ -1105,6 +1227,16 @@ pub const GroupFleet = struct {
             }
         }
         return error.UnknownRelayUrl;
+    }
+
+    fn publishEventsContainRelay(
+        events: []const group_session.OutboundEvent,
+        relay_url_text: []const u8,
+    ) bool {
+        for (events) |event| {
+            if (relay_url.relayUrlsEquivalent(event.relay_url, relay_url_text)) return true;
+        }
+        return false;
     }
 
     fn copyMergedCheckpointComponent(
@@ -1578,6 +1710,205 @@ test "group fleet runtime next step prefers the baseline within one action tier 
     runtime = try fleet.inspectRuntime("wss://relay.one", &runtime_storage);
     try std.testing.expect(runtime.nextEntry() == null);
     try std.testing.expect(runtime.nextStep() == null);
+}
+
+test "group fleet background runtime inspection classifies connect authenticate reconcile and idle work" {
+    storage_count = 0;
+    serialize_buffer_index = 0;
+
+    var baseline = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    baseline.markCurrentRelayConnected();
+    const snapshot_events = try buildSnapshotEvents("pizza-lovers");
+    try baseline.applySnapshotEvents(snapshot_events[0..]);
+
+    var auth_required = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = testStorage(),
+    });
+    auth_required.markCurrentRelayConnected();
+    try auth_required.applySnapshotEvents(snapshot_events[0..]);
+    try auth_required.noteCurrentRelayAuthChallenge("challenge-2");
+
+    var disconnected = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:555",
+        .storage = testStorage(),
+    });
+
+    var divergent = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:666",
+        .storage = testStorage(),
+    });
+    divergent.markCurrentRelayConnected();
+
+    var extra_member_buffer = group_session.OutboundBuffer{};
+    const extra_member = try divergent.beginMembersSnapshot(
+        .init(6, &test_author_secret, &extra_member_buffer),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xaa} ** 32,
+                    .label = "member-a",
+                },
+                .{
+                    .pubkey = [_]u8{0xbb} ** 32,
+                    .label = "member-b",
+                },
+            },
+        },
+    );
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    _ = try divergent.consumeEventJson(extra_member.event_json, arena.allocator());
+
+    var clients = [_]*group_client.GroupClient{
+        &baseline,
+        &auth_required,
+        &disconnected,
+        &divergent,
+    };
+    const fleet = try GroupFleet.init(clients[0..]);
+    var background_storage = GroupFleetBackgroundRuntimeStorage{};
+    const background = try fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one",
+        .storage = &background_storage,
+    });
+
+    try std.testing.expectEqualStrings("wss://relay.one", background.baseline_relay_url);
+    try std.testing.expectEqual(@as(u8, 4), background.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), background.connect_count);
+    try std.testing.expectEqual(@as(u8, 1), background.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), background.reconcile_count);
+    try std.testing.expectEqual(@as(u8, 1), background.idle_count);
+    try std.testing.expectEqual(@as(u8, 0), background.merge_apply_count);
+    try std.testing.expectEqual(@as(u8, 0), background.publish_count);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.idle, background.entry(0).?.action);
+    try std.testing.expect(background.entry(0).?.is_baseline);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.authenticate, background.entry(1).?.action);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.connect, background.entry(2).?.action);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.reconcile, background.entry(3).?.action);
+    try std.testing.expectEqual(@as(usize, 2), background.consistencyReport().divergent_relays.len);
+    try std.testing.expectEqual(@as(u8, 1), background.runtimePlan().reconcile_count);
+}
+
+test "group fleet background runtime inspection can prioritize merge apply across ready relays" {
+    storage_count = 0;
+    serialize_buffer_index = 0;
+
+    var client_a = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    client_a.markCurrentRelayConnected();
+
+    var client_b = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = testStorage(),
+    });
+    client_b.markCurrentRelayConnected();
+
+    const snapshot_events = try buildSnapshotEvents("pizza-lovers");
+    try client_a.applySnapshotEvents(snapshot_events[0..]);
+    try client_b.applySnapshotEvents(snapshot_events[0..]);
+
+    var clients = [_]*group_client.GroupClient{ &client_a, &client_b };
+    const fleet = try GroupFleet.init(clients[0..]);
+
+    var merge_storage = GroupFleetMergeStorage{};
+    var merge_context = GroupFleetMergeContext.init(40, &test_author_secret, &merge_storage);
+    const merged = try fleet.buildMergedCheckpoint(
+        &.{ .baseline_relay_url = "wss://relay.one" },
+        &merge_context,
+    );
+
+    var background_storage = GroupFleetBackgroundRuntimeStorage{};
+    const background = try fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one",
+        .pending_merged_checkpoint = &merged,
+        .storage = &background_storage,
+    });
+
+    try std.testing.expectEqual(@as(u8, 0), background.connect_count);
+    try std.testing.expectEqual(@as(u8, 0), background.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 0), background.reconcile_count);
+    try std.testing.expectEqual(@as(u8, 2), background.merge_apply_count);
+    try std.testing.expectEqual(@as(u8, 0), background.publish_count);
+    try std.testing.expectEqual(@as(u8, 0), background.idle_count);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, background.entry(0).?.action);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.merge_apply, background.entry(1).?.action);
+}
+
+test "group fleet background runtime inspection can prioritize publish over idle on ready relays" {
+    storage_count = 0;
+    serialize_buffer_index = 0;
+
+    var client_a = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = testStorage(),
+    });
+    client_a.markCurrentRelayConnected();
+    var client_b = try group_client.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = testStorage(),
+    });
+    client_b.markCurrentRelayConnected();
+
+    const snapshot_events = try buildSnapshotEvents("pizza-lovers");
+    try client_a.applySnapshotEvents(snapshot_events[0..]);
+    try client_b.applySnapshotEvents(snapshot_events[0..]);
+
+    var clients = [_]*group_client.GroupClient{ &client_a, &client_b };
+    const fleet = try GroupFleet.init(clients[0..]);
+
+    var publish_buffers: [2]group_session.OutboundBuffer = .{ .{}, .{} };
+    var previous_refs_a: [8][]const u8 = undefined;
+    var previous_refs_b: [8][]const u8 = undefined;
+    var previous_refs = [_][][]const u8{
+        previous_refs_a[0..],
+        previous_refs_b[0..],
+    };
+    var outbound_events: [2]group_session.OutboundEvent = undefined;
+    var publish_storage = GroupFleetPublishStorage.init(
+        publish_buffers[0..],
+        previous_refs[0..],
+        outbound_events[0..],
+    );
+    var publish_context = GroupFleetPublishContext.init(90, &test_author_secret, &publish_storage);
+    const fanout = try fleet.beginPutUserForAll(
+        &publish_context,
+        &.{
+            .pubkey = [_]u8{0xbb} ** 32,
+            .roles = &.{"moderator"},
+            .reason = "background publish",
+        },
+    );
+
+    var background_storage = GroupFleetBackgroundRuntimeStorage{};
+    const background = try fleet.inspectBackgroundRuntime(.{
+        .baseline_relay_url = "wss://relay.one",
+        .publish_events = fanout[0..1],
+        .storage = &background_storage,
+    });
+
+    try std.testing.expectEqual(@as(u8, 0), background.connect_count);
+    try std.testing.expectEqual(@as(u8, 0), background.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 0), background.reconcile_count);
+    try std.testing.expectEqual(@as(u8, 0), background.merge_apply_count);
+    try std.testing.expectEqual(@as(u8, 1), background.publish_count);
+    try std.testing.expectEqual(@as(u8, 1), background.idle_count);
+    try std.testing.expectEqualStrings("wss://relay.one", background.entry(0).?.relay_url.?);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.publish, background.entry(0).?.action);
+    try std.testing.expectEqual(GroupFleetBackgroundAction.idle, background.entry(1).?.action);
 }
 
 test "group fleet exports and restores a full checkpoint set across relay-local clients" {

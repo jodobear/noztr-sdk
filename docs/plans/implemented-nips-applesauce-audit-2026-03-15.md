@@ -218,6 +218,9 @@ Observed friction:
 - `GroupFleetBackgroundAction` and `GroupFleetBackgroundEntry` now also name the bounded
   coordinator phases and relay target shape that the broader background-runtime loop will drive,
   instead of leaving that vocabulary implicit above the fleet
+- `GroupFleet.inspectBackgroundRuntime(...)` now also exposes one explicit side-effect-free fleet
+  background plan over runtime state, divergence, and pending merge/publish inputs, so callers can
+  inspect broader coordinator posture without inventing that classification above the fleet
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping

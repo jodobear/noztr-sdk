@@ -97,3 +97,9 @@ control explicit, deterministic, and caller-owned.
   - `GroupFleetBackgroundAction`
   - `GroupFleetBackgroundEntry`
   - compatibility result: `green`
+- slice 2 accepted on 2026-03-19:
+  - `GroupFleetBackgroundRuntimeStorage`
+  - `GroupFleetBackgroundRuntimeRequest`
+  - `GroupFleetBackgroundRuntimePlan`
+  - `GroupFleet.inspectBackgroundRuntime(...)`
+  - compatibility result: `green`
