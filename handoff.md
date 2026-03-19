@@ -126,6 +126,9 @@ Current project context for `noztr-sdk`.
   - `MailboxWorkflowPlan.nextStep()` now packages that selected mailbox workflow action plus its
     relay context into one typed SDK step instead of forcing callers to restitch workflow entry
     state above the plan
+  - `MailboxSession.selectWorkflowRelay(...)` now turns that typed mailbox workflow step into one
+    explicit relay selection on the session instead of forcing callers to extract and replay the
+    selected relay index above the workflow
   - `MailboxSession` now exposes one outbound `beginDirectMessage(...)` workflow entrypoint in
     addition to relay hydration and unwrap handling
   - `MailboxSession` now also exposes `planDirectMessageRelayFanout(...)` so the sender can build

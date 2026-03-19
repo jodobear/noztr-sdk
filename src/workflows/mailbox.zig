@@ -681,6 +681,13 @@ pub const MailboxSession = struct {
         return self.currentRelayUrl() orelse unreachable;
     }
 
+    pub fn selectWorkflowRelay(
+        self: *MailboxSession,
+        step: WorkflowStep,
+    ) MailboxError![]const u8 {
+        return self.selectRelay(step.entry.relay_index);
+    }
+
     pub fn acceptWrappedMessageJson(
         self: *MailboxSession,
         wrap_event_json: []const u8,
@@ -2151,6 +2158,35 @@ test "mailbox workflow next step returns null for an empty plan" {
     };
     try std.testing.expect(workflow.nextEntry() == null);
     try std.testing.expect(workflow.nextStep() == null);
+}
+
+test "mailbox workflow relay selection follows the typed workflow step" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
+    var session = MailboxSession.init(&recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonThree(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        "wss://relay.three",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var workflow_storage = WorkflowStorage{};
+    const workflow = try session.inspectWorkflow(.{
+        .storage = &workflow_storage,
+    });
+    const next_step = workflow.nextStep().?;
+    try std.testing.expectEqualStrings("wss://relay.two", try session.selectWorkflowRelay(next_step));
+    try std.testing.expectEqualStrings("wss://relay.two", session.currentRelayUrl().?);
 }
 
 test "mailbox session relay list hydration replaces stale relays" {
