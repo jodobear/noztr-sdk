@@ -1,7 +1,7 @@
 ---
 title: Five Slice CLI Archive Client Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - implementing_the_first_cli_supporting_client_surface
@@ -80,3 +80,10 @@ After this loop, `noztr-sdk` should have one concrete CLI-supporting client surf
 2. the future CLI repo can stay thinner and more product-focused
 3. the next CLI or signer composition loops can build on one reusable client boundary instead of
    ad hoc glue
+
+## Closeout
+
+- landed `noztr_sdk.client` with `CliArchiveClient`, config, and caller-owned storage
+- landed explicit query/checkpoint helpers over the shared store seam
+- landed explicit shared relay runtime inspection and shared replay inspection
+- reconciled the public recipe, release docs, audits, and handoff

@@ -17,6 +17,7 @@ Use these docs when you need public routing or contract context before opening a
 
 ## Teaching Posture
 
+- public client-composition imports come from `@import("noztr_sdk").client`
 - public SDK imports come from `@import("noztr_sdk").workflows`
 - shared store/query imports come from `@import("noztr_sdk").store`
 - shared relay-pool/runtime imports come from `@import("noztr_sdk").runtime`
@@ -59,6 +60,17 @@ Use these docs when you need public routing or contract context before opening a
   - control points: caller still owns store construction, caller still supplies bounded scratch
     for event parsing, and the archive helper proves the shared store seam is usable above raw
     event/checkpoint stores without forcing a durable backend or hidden runtime
+- `cli_archive_client_recipe.zig`
+  - goal: compose one CLI-facing archive client over the shared store and runtime floors: ingest
+    local event JSON, query it through one bounded page, persist named and per-relay checkpoints,
+    inspect shared relay runtime, and derive one bounded replay step
+  - public SDK surface: `noztr_sdk.client`, `CliArchiveClient`, `CliArchiveClientStorage`,
+    `noztr_sdk.store`, `noztr_sdk.runtime`
+  - kernel fixture help: none beyond the shared store/runtime surfaces
+  - control points: the client composes existing seams instead of hiding them, caller still owns
+    client storage and replay specs, relay runtime and replay planning remain explicit and
+    side-effect free, and the recipe proves the future CLI repo can sit above one SDK client
+    surface instead of rebuilding store/runtime glue ad hoc
 - `relay_checkpoint_recipe.zig`
   - goal: persist one named cursor per relay and scope on top of the shared checkpoint seam
   - public SDK surface: `noztr_sdk.store`, `RelayCheckpointArchive`, `MemoryClientStore`

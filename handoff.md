@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `325/325`
+  - `zig build test --summary all` with `330/330`
   - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -255,16 +255,18 @@ Current project context for `noztr-sdk`.
     [docs/plans/sdk-cli-client-composition-plan.md](./docs/plans/sdk-cli-client-composition-plan.md)
     so the architecture lane can pressure-test one real CLI-facing client surface above the shared
     store and runtime floors instead of growing shared `runtime` further by default
-- the next active implementation loop under that CLI-facing child is now
-  [docs/plans/five-slice-cli-archive-client-loop-plan.md](./docs/plans/five-slice-cli-archive-client-loop-plan.md)
-  - that loop is intentionally narrow: one CLI archive client above shared store plus relay-pool
-    runtime, not CLI command UX and not hidden execution
-  - the planned slices are:
-    - client vocabulary and caller-owned storage/config
-    - query/checkpoint composition
-    - shared relay runtime inspection
-    - shared replay inspection
-    - recipe/docs/audit closeout
+- the CLI archive client loop is now complete:
+  - `src/root.zig` now also exports a stable public `noztr_sdk.client` namespace
+  - `src/client/cli_archive_client.zig` now exposes `CliArchiveClient`,
+    `CliArchiveClientConfig`, and `CliArchiveClientStorage`
+  - that client now composes the shared store seam through explicit event ingest, bounded query,
+    named checkpoints, and per-relay checkpoints without forcing the future CLI repo to rebuild
+    store glue above `noztr-sdk`
+  - that same client now also composes the shared relay runtime floor through explicit relay
+    membership helpers, shared runtime inspection, and shared replay inspection instead of
+    inventing a second tooling-local relay/runtime model
+  - `examples/cli_archive_client_recipe.zig` now teaches the first CLI-facing client composition
+    path above shared store plus runtime, not CLI command UX
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

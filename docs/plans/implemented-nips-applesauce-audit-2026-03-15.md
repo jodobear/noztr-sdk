@@ -250,6 +250,9 @@ Observed friction:
 - that same shared runtime layer now also exposes one bounded replay-spec plan and typed next
   replay step over the shared checkpoint seam, so early CLI/signing/runtime work no longer has to
   hand-compose relay-by-relay replay posture above the shared pool floor
+- `src/root.zig` now also exports a stable public `noztr_sdk.client` namespace, and the new
+  `CliArchiveClient` proves there is now at least one tooling-facing SDK client surface above the
+  shared store and runtime floors instead of only lower-level helper seams
 - that new shared pool layer is not yet a fuller groups client by itself, but it is useful
   applesauce-like progress because CLI, signer, and later groups/relay products now have one SDK
   route for multi-relay readiness instead of only workflow-local fleet helpers

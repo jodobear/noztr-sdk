@@ -66,6 +66,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | verify install/import works | [consumer_smoke.zig](/workspace/projects/nzdk/examples/consumer_smoke.zig) | one workflow recipe |
 | build local bounded event/query/checkpoint storage first | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_query_recipe.zig](/workspace/projects/nzdk/examples/store_query_recipe.zig) |
 | build a first CLI-facing archive surface above shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig) |
+| build a first CLI-facing client surface above shared store plus runtime | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [cli_archive_client_recipe.zig](/workspace/projects/nzdk/examples/cli_archive_client_recipe.zig) |
 | persist relay-local runtime cursors over shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_checkpoint_recipe.zig) |
 | restore one relay-local group snapshot over shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_local_group_archive_recipe.zig](/workspace/projects/nzdk/examples/relay_local_group_archive_recipe.zig) |
 | inspect a shared multi-relay runtime floor and derive bounded subscription targets | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_pool_recipe.zig](/workspace/projects/nzdk/examples/relay_pool_recipe.zig) |
@@ -85,6 +86,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first bounded store/query/checkpoint route
 - [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig)
   - first CLI-facing archive route over the shared store seam
+- [cli_archive_client_recipe.zig](/workspace/projects/nzdk/examples/cli_archive_client_recipe.zig)
+  - first CLI-facing client composition route over shared store plus runtime
 - [relay_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_checkpoint_recipe.zig)
   - first relay-local checkpoint route over shared storage
 - [relay_local_group_archive_recipe.zig](/workspace/projects/nzdk/examples/relay_local_group_archive_recipe.zig)

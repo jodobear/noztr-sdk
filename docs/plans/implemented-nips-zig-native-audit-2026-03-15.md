@@ -238,6 +238,9 @@ Observed friction:
 - that same shared runtime layer now also exposes one caller-owned replay-spec plan and one typed
   next replay step over checkpoint-scoped `ClientQuery` values, which is a better Zig-native
   shared floor than pushing early CLI/signer products toward bespoke relay-by-relay replay loops
+- `src/root.zig` now also exports a stable public `noztr_sdk.client` namespace, and the new
+  `CliArchiveClient` shows one clearer Zig-facing client composition layer above the shared store
+  and runtime floors instead of leaving the future CLI repo to compose those seams ad hoc
 - that shared runtime layer is still intentionally narrow, but it is a better Zig-native
   abstraction direction than forcing every future CLI, signer, or groups surface to invent its own
   pool-shaped readiness model

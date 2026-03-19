@@ -37,6 +37,7 @@ current public workflow contract.
 
 The current public workflow floor includes:
 
+- one minimal CLI-facing client composition surface above the shared store and runtime floors
 - shared bounded store/query/checkpoint reference surfaces
 - one minimal CLI-facing archive helper over that shared store seam
 - one relay-local checkpoint helper over that shared checkpoint seam
