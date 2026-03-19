@@ -215,6 +215,9 @@ Observed friction:
 - it now also exposes one explicit targeted baseline-to-target reconcile helper, so callers no
   longer have to choose between hand-rolled checkpoint copy code and all-relays reconciliation
   when one runtime step only needs to converge one divergent relay
+- `GroupFleetBackgroundAction` and `GroupFleetBackgroundEntry` now also name the bounded
+  coordinator phases and relay target shape that the broader background-runtime loop will drive,
+  instead of leaving that vocabulary implicit above the fleet
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping

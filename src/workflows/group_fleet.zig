@@ -25,6 +25,15 @@ pub const GroupFleetRuntimeAction = enum {
     ready,
 };
 
+pub const GroupFleetBackgroundAction = enum {
+    connect,
+    authenticate,
+    reconcile,
+    merge_apply,
+    publish,
+    idle,
+};
+
 pub const GroupFleetRuntimeEntry = struct {
     relay_url: []const u8,
     relay_state: group_client.GroupRelayState,
@@ -42,6 +51,12 @@ pub const GroupFleetRuntimeEntry = struct {
 pub const GroupFleetRuntimeStep = struct {
     baseline_relay_url: []const u8,
     entry: GroupFleetRuntimeEntry,
+};
+
+pub const GroupFleetBackgroundEntry = struct {
+    relay_url: ?[]const u8 = null,
+    action: GroupFleetBackgroundAction,
+    is_baseline: bool = false,
 };
 
 pub const GroupFleetRuntimeStorage = struct {

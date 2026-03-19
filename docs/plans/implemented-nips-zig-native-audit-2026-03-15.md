@@ -200,6 +200,9 @@ Observed friction:
 - `NIP-29` now also has one explicit targeted baseline-to-target reconcile helper, so callers can
   step one divergent relay toward the chosen runtime baseline without falling back to all-relay
   reconcile helpers or hand-rolled checkpoint copy code
+- `GroupFleetBackgroundAction` and `GroupFleetBackgroundEntry` now also provide one explicit
+  Zig-facing coordinator vocabulary above the fleet, instead of leaving the broader background
+  phase model implicit in caller code
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

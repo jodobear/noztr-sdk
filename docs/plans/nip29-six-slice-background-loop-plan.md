@@ -91,3 +91,9 @@ control explicit, deterministic, and caller-owned.
 - keep one commit per accepted slice
 - restore the next active packet when this loop closes
 
+## Progress
+
+- slice 1 accepted on 2026-03-19:
+  - `GroupFleetBackgroundAction`
+  - `GroupFleetBackgroundEntry`
+  - compatibility result: `green`

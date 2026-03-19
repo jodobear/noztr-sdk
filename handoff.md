@@ -82,6 +82,11 @@ Current project context for `noztr-sdk`.
 
 ## Current Slice Notes
 
+- `NIP-29` background-runtime broadening is now active:
+  - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
+    runtime, consistency, reconcile, merge, and publish-plan surfaces
+  - `GroupFleetBackgroundEntry` now provides the stable SDK-facing relay-target shape that later
+    background-runtime slices will drive
 - `A-HTTP-001` and `Z-HTTP-001` are now resolved:
   - `src/root.zig` exports the explicit HTTP seam intentionally through `noztr_sdk.transport`
   - `examples/nip39_verification_recipe.zig` and `examples/nip05_resolution_recipe.zig` now teach
