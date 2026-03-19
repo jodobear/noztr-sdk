@@ -61,7 +61,7 @@ Use `doc_type` plus `status` first:
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
 - [sdk-relay-pool-runtime-baseline-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-pool-runtime-baseline-plan.md)
-- [relay-pool-architecture-checkpoint-plan.md](/workspace/projects/nzdk/docs/plans/relay-pool-architecture-checkpoint-plan.md)
+- [relay-pool-subscription-boundary-plan.md](/workspace/projects/nzdk/docs/plans/relay-pool-subscription-boundary-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -100,6 +100,8 @@ Use `doc_type` plus `status` first:
 - [five-slice-relay-pool-checkpoint-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md)
 - [five-slice-remote-signer-relay-pool-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-remote-signer-relay-pool-loop-plan.md)
 - [five-slice-mailbox-relay-pool-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-mailbox-relay-pool-loop-plan.md)
+- [relay-pool-architecture-checkpoint-plan.md](/workspace/projects/nzdk/docs/plans/relay-pool-architecture-checkpoint-plan.md)
+- [relay-pool-subscription-boundary-plan.md](/workspace/projects/nzdk/docs/plans/relay-pool-subscription-boundary-plan.md)
 - [noztr-remediation-sync-plan.md](/workspace/projects/nzdk/docs/plans/noztr-remediation-sync-plan.md)
 - [http-workflows-public-seam-plan.md](/workspace/projects/nzdk/docs/plans/http-workflows-public-seam-plan.md)
 - [nip17-outbound-mailbox-plan.md](/workspace/projects/nzdk/docs/plans/nip17-outbound-mailbox-plan.md)

@@ -1,7 +1,7 @@
 ---
 title: Relay Pool Architecture Checkpoint Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - deciding_the_next_shared_relay_pool_child
@@ -89,3 +89,28 @@ This checkpoint should produce:
 - Zig-native:
   - are we keeping one bounded shared vocabulary instead of multiplying near-duplicate runtimes?
 
+## Checkpoint Outcome
+
+This checkpoint concludes:
+
+1. the current shared relay-pool/runtime floor is strong enough to stand as the canonical baseline
+   for CLI-facing and signer-facing multi-relay readiness work
+2. the current remote-signer and mailbox adaptations are sufficient proof that the shared pool
+   vocabulary composes across more than one workflow without needing another immediate adapter loop
+3. the next unresolved shared question is the pool-level subscription/sync boundary, not another
+   workflow adaptation
+
+## Keep / Stop
+
+Keep:
+
+- the shared `RelayPool`, `RelayPoolPlan`, and `RelayPoolStep` floor
+- pool checkpoint export/restore composition over the shared checkpoint seam
+- the current remote-signer and mailbox relay-pool adapters as reference-stable pressure tests
+
+Stop by default:
+
+- more workflow-by-workflow relay-pool adaptation loops
+- groups adaptation over the shared pool floor until the pool-level subscription/sync boundary is
+  decided
+- deeper relay-pool helper growth that tries to answer subscription/sync questions implicitly

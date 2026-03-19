@@ -250,6 +250,9 @@ Observed friction:
 - that new shared pool layer is not yet a fuller groups client by itself, but it is useful
   applesauce-like progress because CLI, signer, and later groups/relay products now have one SDK
   route for multi-relay readiness instead of only workflow-local fleet helpers
+- the newer remote-signer and mailbox relay-pool adaptations now show that this shared floor is
+  already strong enough for CLI-facing and signer-facing runtime reuse, so the next shared gap is
+  pool-level subscription/sync posture rather than another immediate workflow adapter
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping

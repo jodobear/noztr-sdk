@@ -207,10 +207,15 @@ Current project context for `noztr-sdk`.
     floor instead of requiring mailbox clients to invent a second multi-relay readiness model
   - `examples/mailbox_recipe.zig` now teaches one shared relay-pool inspect/select step on the
     same mailbox workflow surface without replacing mailbox delivery or workflow planning
+- the relay-pool architecture checkpoint is now complete:
+  - the current shared relay-pool/runtime floor is now considered strong enough for CLI-facing and
+    signer-facing multi-relay readiness work
+  - remote-signer and mailbox are now enough workflow adaptation evidence for this lane; another
+    immediate adaptation loop would be drift, not the highest-value shared next step
   - the next active packet under the shared relay-pool child is now
-    [docs/plans/relay-pool-architecture-checkpoint-plan.md](./docs/plans/relay-pool-architecture-checkpoint-plan.md)
-  - that checkpoint exists to decide the next broader relay-pool child deliberately instead of
-    chaining another workflow adaptation loop by default
+    [docs/plans/relay-pool-subscription-boundary-plan.md](./docs/plans/relay-pool-subscription-boundary-plan.md)
+  - that packet exists to decide what pool-level subscription, replay, and sync posture belongs in
+    the shared runtime layer before groups adaptation or broader relay-framework work continue
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

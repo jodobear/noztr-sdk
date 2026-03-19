@@ -238,6 +238,10 @@ Observed friction:
 - that shared runtime layer is still intentionally narrow, but it is a better Zig-native
   abstraction direction than forcing every future CLI, signer, or groups surface to invent its own
   pool-shaped readiness model
+- the remote-signer and mailbox relay-pool adaptations now also show that the shared `RelayPool`
+  vocabulary is stable enough to stop adding workflow-by-workflow adapters by default; the next
+  shared Zig-native question is pool-level subscription/sync boundary, not more near-duplicate
+  runtime vocabularies
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead
