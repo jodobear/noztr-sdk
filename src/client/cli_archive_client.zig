@@ -133,6 +133,17 @@ pub const CliArchiveClient = struct {
     ) runtime.RelayPoolPlan {
         return self.relay_pool.inspectRuntime(storage);
     }
+
+    pub fn inspectReplay(
+        self: *const CliArchiveClient,
+        specs: []const runtime.RelayReplaySpec,
+        storage: *runtime.RelayPoolReplayStorage,
+    ) CliArchiveClientError!runtime.RelayPoolReplayPlan {
+        const checkpoint_store = self.archive.store.checkpoint_store orelse {
+            return error.MissingCheckpointStore;
+        };
+        return self.relay_pool.inspectReplay(checkpoint_store, specs, storage);
+    }
 };
 
 test "cli archive client exposes caller-owned config and storage" {
@@ -216,4 +227,32 @@ test "cli archive client inspects shared relay runtime over its composed pool" {
     try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
     try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
     try std.testing.expectEqual(runtime.RelayPoolAction.authenticate, plan.nextStep().?.entry.action);
+}
+
+test "cli archive client inspects shared replay posture over relay checkpoints" {
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    var storage = CliArchiveClientStorage{};
+    var client = CliArchiveClient.init(.{}, memory_store.asClientStore(), &storage);
+
+    const first = try client.addRelay("wss://relay.one");
+    const second = try client.addRelay("wss://relay.two");
+    try client.markRelayConnected(first.relay_index);
+    try client.markRelayConnected(second.relay_index);
+    try client.saveRelayCheckpoint("wss://relay.two", .{ .offset = 9 });
+
+    const replay_specs = [_]runtime.RelayReplaySpec{
+        .{
+            .checkpoint_scope = "cli",
+            .query = .{ .limit = 16 },
+        },
+    };
+    var replay_storage = runtime.RelayPoolReplayStorage{};
+    const plan = try client.inspectReplay(replay_specs[0..], &replay_storage);
+    try std.testing.expectEqual(@as(u16, 2), plan.replay_count);
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(first.relay_index, next_step.entry.descriptor.relay_index);
+    try std.testing.expectEqual(runtime.RelayPoolReplayAction.replay, next_step.entry.action);
+    try std.testing.expectEqual(store.IndexSelection.checkpoint_replay, next_step.entry.query.index_selection);
+    try std.testing.expect(next_step.entry.query.cursor == null);
+    try std.testing.expectEqual(@as(u32, 9), plan.entry(1).?.query.cursor.?.offset);
 }
