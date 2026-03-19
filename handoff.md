@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `330/330`
+  - `zig build test --summary all` with `331/331`
   - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -121,7 +121,7 @@ Current project context for `noztr-sdk`.
     and
     [docs/plans/sdk-cli-client-boundary-checkpoint-plan.md](./docs/plans/sdk-cli-client-boundary-checkpoint-plan.md)
   - the active child architecture packet is now
-    [docs/plans/zig-cli-tool-kickoff-plan.md](./docs/plans/zig-cli-tool-kickoff-plan.md)
+    [docs/plans/zig-cli-v1-command-surface-plan.md](./docs/plans/zig-cli-v1-command-surface-plan.md)
   - the first bounded implementation loop under that child is now complete in
     [docs/plans/five-slice-relay-pool-loop-plan.md](./docs/plans/five-slice-relay-pool-loop-plan.md)
   - that child still exists to keep the sequence coherent:
@@ -278,10 +278,33 @@ Current project context for `noztr-sdk`.
   - `CliArchiveClient` is enough as the first reusable CLI-supporting SDK floor
   - more CLI-specific command, output, and operator UX should move to the separate CLI repo
     instead of continuing to expand `noztr-sdk` by default
+  - the Zig CLI kickoff packet is now reference-only and defines:
+    - CLI v1 as a developer/operator tool
+    - initial command families: archive, relay, verify, and narrow signer/debug
+    - the SDK-to-CLI repo boundary explicitly
   - the next active packet is now
-    [docs/plans/zig-cli-tool-kickoff-plan.md](./docs/plans/zig-cli-tool-kickoff-plan.md)
-    so the next planning work can define CLI v1 scope, first commands, and repo boundary
-    explicitly
+    [docs/plans/zig-cli-v1-command-surface-plan.md](./docs/plans/zig-cli-v1-command-surface-plan.md)
+    so the next planning work can define the exact first command groups, subcommands, and SDK
+    surfaces for the separate CLI repo explicitly
+- the Zig CLI v1 command-surface packet is now active:
+  - the separate CLI repo should start with:
+    - `archive ingest`, `archive query`, `archive checkpoint save`, `archive checkpoint show`
+    - `relay add`, `relay list`, `relay runtime`, `relay checkpoint show`, `relay replay plan`
+    - `verify nip05`, `verify nip39`, `verify nip03`
+    - `signer connect`, `signer pubkey`, `signer nip44-encrypt`
+  - the first SDK surfaces to compose are now explicit:
+    - `noztr_sdk.client.CliArchiveClient`
+    - `noztr_sdk.store.EventArchive`
+    - `noztr_sdk.store.RelayCheckpointArchive`
+    - `noztr_sdk.runtime.RelayPool`, `RelayPoolPlan`, and `RelayPoolReplayPlan`
+    - `noztr_sdk.workflows.Nip05Resolver`, `IdentityVerifier`,
+      `OpenTimestampsVerifier`, and `RemoteSignerSession`
+  - the packet also now fixes what stays deferred from CLI v1:
+    - generic publish UX
+    - mailbox/groups suites
+    - live follow/subscription UX
+    - daemon/runtime ownership
+    - broader backend commitments
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

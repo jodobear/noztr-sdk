@@ -60,7 +60,7 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [sdk-runtime-client-store-architecture-plan.md](/workspace/projects/nzdk/docs/plans/sdk-runtime-client-store-architecture-plan.md)
-- [zig-cli-tool-kickoff-plan.md](/workspace/projects/nzdk/docs/plans/zig-cli-tool-kickoff-plan.md)
+- [zig-cli-v1-command-surface-plan.md](/workspace/projects/nzdk/docs/plans/zig-cli-v1-command-surface-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 
@@ -95,6 +95,7 @@ Use `doc_type` plus `status` first:
 - [sdk-store-archive-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-store-archive-pressure-test-plan.md)
 - [sdk-relay-checkpoint-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-relay-checkpoint-pressure-test-plan.md)
 - [sdk-group-replay-pressure-test-plan.md](/workspace/projects/nzdk/docs/plans/sdk-group-replay-pressure-test-plan.md)
+- [zig-cli-tool-kickoff-plan.md](/workspace/projects/nzdk/docs/plans/zig-cli-tool-kickoff-plan.md)
 - [five-slice-relay-pool-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-loop-plan.md)
 - [five-slice-relay-pool-checkpoint-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-relay-pool-checkpoint-loop-plan.md)
 - [five-slice-remote-signer-relay-pool-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-remote-signer-relay-pool-loop-plan.md)
