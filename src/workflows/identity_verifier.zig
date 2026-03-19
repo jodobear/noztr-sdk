@@ -623,6 +623,51 @@ pub const IdentityStoredProfileTargetRuntimeStep = struct {
     entry: ?IdentityStoredProfileTargetLatestFreshnessEntry = null,
 };
 
+pub const IdentityStoredProfileTargetPolicyEntry = struct {
+    target: IdentityStoredProfileTarget,
+    action: IdentityStoredProfileTargetRuntimeAction,
+    latest: ?IdentityLatestStoredProfileFreshness = null,
+};
+
+pub const IdentityStoredProfileTargetPolicyGroup = struct {
+    action: IdentityStoredProfileTargetRuntimeAction,
+    entries: []const IdentityStoredProfileTargetPolicyEntry,
+};
+
+pub const IdentityStoredProfileTargetPolicyStorage = struct {
+    latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+    entries: []IdentityStoredProfileTargetPolicyEntry,
+    groups: []IdentityStoredProfileTargetPolicyGroup,
+
+    pub fn init(
+        latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+        entries: []IdentityStoredProfileTargetPolicyEntry,
+        groups: []IdentityStoredProfileTargetPolicyGroup,
+    ) IdentityStoredProfileTargetPolicyStorage {
+        return .{
+            .latest_entries = latest_entries,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetPolicyRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredProfileTargetPolicyStorage,
+};
+
+pub const IdentityStoredProfileTargetPolicyPlan = struct {
+    entries: []const IdentityStoredProfileTargetPolicyEntry,
+    groups: []const IdentityStoredProfileTargetPolicyGroup,
+    fresh_count: u32 = 0,
+    stale_count: u32 = 0,
+    missing_count: u32 = 0,
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
     entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
     fresh_count: u32 = 0,
