@@ -222,8 +222,9 @@ Current project context for `noztr-sdk`.
     the whole fleet
   - `GroupFleet` now also plans `put-user` and `remove-user` moderation publishes across all
     relays through one explicit caller-owned fleet publish context and per-relay buffers
-  - `GroupFleet.nextPublishEvent(...)` now also selects the next per-relay moderation publish step
-    without hand-scanning the fleet fanout slice
+  - `GroupFleet.nextPublishEvent(...)` and `nextPublishStep(...)` now also select one typed next
+    per-relay moderation publish step without hand-scanning the fleet fanout slice or
+    re-stitching selected event context above the workflow
   - `examples/group_session_recipe.zig` now teaches authored snapshot state plus one outbound
     moderation publish through the higher-level client shape, with checkpoint export/restore in the
     middle
@@ -296,13 +297,13 @@ Current project context for `noztr-sdk`.
    [docs/plans/noztr-remediation-sync-plan.md](./docs/plans/noztr-remediation-sync-plan.md) as the
    reference packet when future `noztr` hardening passes land. It is now completed, not the active
    blocker.
-2. The next active packet is
-   [docs/plans/five-slice-step-view-loop-plan.md](./docs/plans/five-slice-step-view-loop-plan.md).
-   It scopes one bounded follow-on family above the landed selector helpers so apps can drive one
-   explicit next workflow step without reconstructing context from raw plans.
+2. The five-slice typed step-view loop in
+   [docs/plans/five-slice-step-view-loop-plan.md](./docs/plans/five-slice-step-view-loop-plan.md)
+   is now complete. The next packet should target a broader open product lane rather than more
+   selector or step-view shaping on the already-landed plans.
 3. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
-   reconciliation, merge, publish-planning, runtime-inspection, and next-step selector surfaces
+   reconciliation, merge, publish-planning, runtime-inspection, and typed next-step surfaces
    rather than repeating already-landed relay-local authoring, checkpoint, explicit fleet-routing,
    or merge-selection work.
 4. Continue `NIP-39` only if the next slice clearly targets broader autonomous discovery, refresh,
@@ -311,9 +312,9 @@ Current project context for `noztr-sdk`.
    cache, or explicit store/discovery work.
 5. The best broader product slice after the step-view loop is still a real background-runtime
    `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
-   `NIP-03` / `NIP-17` workflow policy. The selector loop closed the bounded refresh, delivery,
-   runtime, and publish-step selectors; this next loop should stop at typed SDK step views above
-   those selectors rather than jumping to hidden loops.
+   `NIP-03` / `NIP-17` workflow policy. The selector loop and the typed step-view loop are both
+   now closed; the next loop should target a real remaining product gap instead of more helper
+   shaping above already-landed plans.
 6. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 7. Keep `examples/README.md` current whenever the public teaching surface changes.
 8. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

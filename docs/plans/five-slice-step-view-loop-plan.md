@@ -1,7 +1,7 @@
 ---
 title: Five-Slice Step-View Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [17, 3, 39, 29]
 read_when:
@@ -129,3 +129,16 @@ can drive directly without crossing into hidden orchestration.
 - the shared pattern is small, teachable, and already reflected in the remaining abstraction gap
 - the loop can improve real app-driving ergonomics without forcing hidden background runtime
   decisions
+
+## Closeout
+
+- status: completed
+- landed slices:
+  - `NIP-39` typed remembered-runtime step
+  - `NIP-03` typed remembered-runtime step
+  - `NIP-17` typed delivery step
+  - `NIP-29` typed fleet-runtime step
+  - `NIP-29` typed fleet-publish step
+- verification:
+  - `/workspace/projects/nzdk`: `zig build test --summary all`
+  - result: `209/209`

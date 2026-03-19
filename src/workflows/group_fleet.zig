@@ -156,6 +156,11 @@ pub const GroupFleetTargetReconcileOutcome = struct {
     target_relay_url: []const u8,
 };
 
+pub const GroupFleetPublishStep = struct {
+    fanout_count: usize,
+    event: group_session.OutboundEvent,
+};
+
 pub const GroupFleetMergeSelection = struct {
     baseline_relay_url: ?[]const u8 = null,
     metadata_relay_url: ?[]const u8 = null,
@@ -1045,6 +1050,16 @@ pub const GroupFleet = struct {
     ) ?*const group_session.OutboundEvent {
         if (events.len == 0) return null;
         return &events[0];
+    }
+
+    pub fn nextPublishStep(
+        events: []const group_session.OutboundEvent,
+    ) ?GroupFleetPublishStep {
+        const event = nextPublishEvent(events) orelse return null;
+        return .{
+            .fanout_count = events.len,
+            .event = event.*,
+        };
     }
 
     fn findRelayIndex(
@@ -2013,6 +2028,11 @@ test "group fleet builds and replays one put-user publish across all relays" {
     try std.testing.expectEqualStrings("wss://relay.one:444", fanout[1].relay_url);
     const next = GroupFleet.nextPublishEvent(fanout).?;
     try std.testing.expectEqualStrings("wss://relay.one", next.relay_url);
+    const next_step = GroupFleet.nextPublishStep(fanout).?;
+    try std.testing.expectEqual(@as(usize, 2), next_step.fanout_count);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.event.relay_url);
+    try std.testing.expect(std.mem.eql(u8, &next_step.event.event_id, &next.event_id));
+    try std.testing.expectEqualStrings(next.event_json, next_step.event.event_json);
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -2104,6 +2124,9 @@ test "group fleet builds and replays one remove-user publish across all relays" 
         "wss://relay.one",
         GroupFleet.nextPublishEvent(fanout).?.relay_url,
     );
+    const next_step = GroupFleet.nextPublishStep(fanout).?;
+    try std.testing.expectEqual(@as(usize, 2), next_step.fanout_count);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.event.relay_url);
     for (fanout) |outbound| {
         _ = try fleet.consumeRelayEventJson(outbound.relay_url, outbound.event_json, arena.allocator());
     }
@@ -2164,6 +2187,7 @@ test "group fleet publish fanout surfaces bounded storage pressure" {
 
 test "group fleet next publish event returns null for an empty fanout" {
     try std.testing.expect(GroupFleet.nextPublishEvent(&.{}) == null);
+    try std.testing.expect(GroupFleet.nextPublishStep(&.{}) == null);
 }
 
 test "group fleet builds and applies a merged checkpoint from explicit component relay selection" {

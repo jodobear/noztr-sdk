@@ -22,6 +22,7 @@ pub const GroupFleetRelayDivergence = group_fleet.GroupFleetRelayDivergence;
 pub const GroupFleetConsistencyReport = group_fleet.GroupFleetConsistencyReport;
 pub const GroupFleetReconcileOutcome = group_fleet.GroupFleetReconcileOutcome;
 pub const GroupFleetTargetReconcileOutcome = group_fleet.GroupFleetTargetReconcileOutcome;
+pub const GroupFleetPublishStep = group_fleet.GroupFleetPublishStep;
 pub const GroupFleetMergeSelection = group_fleet.GroupFleetMergeSelection;
 pub const GroupFleetMergedCheckpoint = group_fleet.GroupFleetMergedCheckpoint;
 pub const GroupFleetMergeApplyOutcome = group_fleet.GroupFleetMergeApplyOutcome;

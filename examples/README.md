@@ -118,7 +118,8 @@ network daemons, or hidden runtime loops.
     `GroupFleetMergedCheckpoint`, `GroupFleetTargetReconcileOutcome`,
     `GroupFleetCheckpointRecord`, `MemoryGroupFleetCheckpointStore`,
     `GroupFleetStorePersistOutcome`, `GroupFleetStoreRestoreOutcome`,
-    `GroupFleetPublishStorage`, `GroupFleetPublishContext`
+    `GroupFleetPublishStorage`, `GroupFleetPublishContext`, `GroupFleetRuntimeStep`,
+    `GroupFleetPublishStep`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller still owns the relay-local clients, chooses relay URLs explicitly,
     persists relay-local checkpoints into a bounded store through the fleet, restores only the
@@ -129,8 +130,8 @@ network daemons, or hidden runtime loops.
     chooses which relay contributes each merged checkpoint component explicitly, applies that
     merged checkpoint across the fleet, can then reconcile one chosen target relay explicitly from
     the chosen baseline without updating the whole fleet, and finally plans one explicit per-relay
-    moderation publish through caller-owned buffers plus one explicit next-publish selector
-    without hidden merge or runtime policy
+    moderation publish through caller-owned buffers plus one typed next-publish step without
+    hidden merge or runtime policy
 
 ## Adversarial Examples
 
