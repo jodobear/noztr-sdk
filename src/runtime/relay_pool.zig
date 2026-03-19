@@ -45,6 +45,14 @@ pub const RelayPoolPlanStorage = struct {
 pub const RelayPoolPlan = struct {
     entries: []const RelayPoolEntry = &.{},
     relay_count: u8 = 0,
+    connect_count: u8 = 0,
+    authenticate_count: u8 = 0,
+    ready_count: u8 = 0,
+
+    pub fn entry(self: *const RelayPoolPlan, index: u8) ?RelayPoolEntry {
+        if (index >= self.relay_count) return null;
+        return self.entries[index];
+    }
 };
 
 pub const RelayPoolStep = struct {
@@ -106,10 +114,50 @@ pub const RelayPool = struct {
         try relay.acceptAuthEvent(auth_event, now_unix_seconds, window_seconds);
     }
 
+    pub fn inspectRuntime(self: *const RelayPool, storage: *RelayPoolPlanStorage) RelayPoolPlan {
+        var connect_count: u8 = 0;
+        var authenticate_count: u8 = 0;
+        var ready_count: u8 = 0;
+
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const action = classifyAction(relay.state);
+            storage.entries[relay_index] = .{
+                .descriptor = .{
+                    .relay_index = relay_index,
+                    .relay_url = relay.auth_session.relayUrl(),
+                },
+                .action = action,
+            };
+            switch (action) {
+                .connect => connect_count += 1,
+                .authenticate => authenticate_count += 1,
+                .ready => ready_count += 1,
+            }
+        }
+
+        return .{
+            .entries = storage.entries[0..self._storage.pool.count],
+            .relay_count = self._storage.pool.count,
+            .connect_count = connect_count,
+            .authenticate_count = authenticate_count,
+            .ready_count = ready_count,
+        };
+    }
+
     fn requireRelay(self: *RelayPool, relay_index: u8) RelayPoolError!*session.RelaySession {
         return self._storage.pool.getRelay(relay_index) orelse error.InvalidRelayIndex;
     }
 };
+
+fn classifyAction(state: session.SessionState) RelayPoolAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .ready,
+    };
+}
 
 test "relay pool storage initializes bounded public runtime state" {
     var storage = RelayPoolStorage{};
@@ -136,4 +184,22 @@ test "relay pool rejects invalid relay index state changes" {
     var storage = RelayPoolStorage{};
     var pool = RelayPool.init(&storage);
     try std.testing.expectError(error.InvalidRelayIndex, pool.markRelayConnected(0));
+}
+
+test "relay pool inspects bounded runtime state by relay" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+
+    var plan_storage = RelayPoolPlanStorage{};
+    const plan = pool.inspectRuntime(&plan_storage);
+    try std.testing.expectEqual(@as(u8, 2), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
+    try std.testing.expectEqual(@as(u8, 0), plan.ready_count);
+    try std.testing.expectEqual(RelayPoolAction.authenticate, plan.entry(first.relay_index).?.action);
+    try std.testing.expectEqual(RelayPoolAction.connect, plan.entry(second.relay_index).?.action);
 }
