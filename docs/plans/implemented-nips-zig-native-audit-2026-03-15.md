@@ -117,7 +117,7 @@ Resolution note:
 - the remaining Zig-native teaching gap is broader workflow completeness, not one recipe being
   mechanically dominated by transcript plumbing
 
-### `Z-WORKFLOWS-001` Medium: `NIP-17` now has sender-copy-aware delivery planning, explicit file-message send and intake, and explicit mailbox runtime inspection, but still stops short of a fuller Zig app workflow
+### `Z-WORKFLOWS-001` Medium: `NIP-17` now has sender-copy-aware delivery planning, explicit mailbox workflow inspection, and explicit file-message send/intake, but still stops short of a fuller Zig app workflow
 
 - status: open
 - applies_to: `NIP-17`
@@ -145,6 +145,10 @@ Observed friction:
   relay pool state above the workflow
 - it now also exposes one explicit next-step selector above that runtime view so callers can follow
   the bounded mailbox action priority without hand-scanning the runtime plan
+- it now also exposes one explicit mailbox workflow plan over pending delivery work plus runtime
+  state, one typed next workflow step, and one explicit workflow-relay selector, so callers no
+  longer need to rebuild delivery-vs-receive posture above the session just to drive one next
+  mailbox action
 - but callers still have to handle broader mailbox sync posture and richer mailbox runtime policy
   above the workflow
 

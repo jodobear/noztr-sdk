@@ -29,14 +29,15 @@ network daemons, or hidden runtime loops.
     `buffer + id + scratch`, and the recipe keeps repetitive response JSON wiring in one small
     helper so the public session flow stays primary
 - `mailbox_recipe.zig`
-  - goal: build one outbound direct message once, inspect mailbox runtime actions over hydrated
-    recipient relays, select one next delivery step plus one next runtime relay/action
-    explicitly, unwrap it through a recipient mailbox session, then build one outbound file
-    message once, plan its delivery, and unwrap it through the same mailbox surface
+  - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
+    delivery work, select one next workflow relay explicitly, unwrap it through a recipient
+    mailbox session, then build one outbound file message once, plan its delivery, and drive that
+    same mailbox workflow surface explicitly
   - public SDK surface: `MailboxSession`, `MailboxDeliveryStorage`, `MailboxDeliveryRole`,
     `MailboxDeliveryPlan`, `MailboxDeliveryStep`, `MailboxRuntimeAction`, `MailboxRuntimeStorage`,
-    `MailboxRuntimePlan`, `MailboxRuntimeStep`, `MailboxFileDimensions`, `MailboxFileMessageRequest`,
-    `MailboxEnvelopeOutcome`, `MailboxFileMessageOutcome`
+    `MailboxRuntimePlan`, `MailboxRuntimeStep`, `MailboxWorkflowAction`, `MailboxWorkflowStorage`,
+    `MailboxWorkflowPlan`, `MailboxWorkflowStep`, `MailboxFileDimensions`,
+    `MailboxFileMessageRequest`, `MailboxEnvelopeOutcome`, `MailboxFileMessageOutcome`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip44`, `noztr.nostr_keys`
   - control points: caller verifies the recipient relay list, optionally verifies sender-copy
     relays, builds one outbound wrap explicitly, receives the deduplicated publish-relay plan with
@@ -44,10 +45,12 @@ network daemons, or hidden runtime loops.
     hand-scanning role flags or re-stitching wrap payload context, can also ask separately for the
     next recipient-targeted step and the next sender-copy-targeted step, inspects hydrated mailbox
     relays as explicit `connect`, `authenticate`, or `receive` actions, can ask the runtime plan
-    for one typed next runtime step explicitly, selects one relay explicitly, feeds wrapped event
-    JSON back into a recipient mailbox session, can build and plan one explicit outbound
-    file-message wrap on the same surface, can classify direct-message vs file-message rumors
-    explicitly, and still owns publication and polling policy
+    for one typed next runtime step explicitly, can also inspect one broader mailbox workflow plan
+    over pending delivery work and select one typed workflow relay without replaying delivery-vs-
+    receive stitching above the session, feeds wrapped event JSON back into a recipient mailbox
+    session, can build and plan one explicit outbound file-message wrap on the same surface, can
+    classify direct-message vs file-message rumors explicitly, and still owns publication and
+    polling policy
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification

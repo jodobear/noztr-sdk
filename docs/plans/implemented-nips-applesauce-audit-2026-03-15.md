@@ -86,7 +86,7 @@ Resolution note:
   [examples/remote_signer_recipe.zig](/workspace/projects/nzdk/examples/remote_signer_recipe.zig)
   now teaches one end-to-end pubkey-plus-text method as part of the public remote-signer flow
 
-### `A-NIP17-001` Medium: `NIP-17` now covers sender-copy-aware delivery planning, file-message send and intake, plus explicit mailbox runtime inspection, but it is still not a complete mailbox workflow for real apps
+### `A-NIP17-001` Medium: `NIP-17` now covers sender-copy-aware delivery planning, explicit mailbox workflow inspection, and file-message send/intake, but it is still not a complete mailbox workflow for real apps
 
 - status: open
 - applies_to: `NIP-17`
@@ -114,6 +114,9 @@ Observed friction:
   `authenticate`, or `receive` actions, select one relay directly on the mailbox workflow surface,
   and ask the runtime plan for one typed next recommended relay/action step instead of
   hand-scanning relay pool state above the SDK
+- callers can now also inspect one broader mailbox workflow plan over runtime state plus pending
+  delivery work, ask it for one typed next workflow relay/action, and select that relay directly
+  on the session without rebuilding delivery-vs-receive posture above the SDK
 - but transport-level polling/subscription orchestration and broader durable mailbox runtime
   ownership remain deferred
 

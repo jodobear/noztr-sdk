@@ -1,7 +1,7 @@
 ---
 title: NIP-39 Long-Lived Policy Plan
 doc_type: packet
-status: reference
+status: active
 owner: noztr-sdk
 nips: [39]
 read_when:
@@ -23,9 +23,10 @@ touches_startup_docs: yes
 
 ## Status
 
-This broader lane is now being executed through
-[nip39-ten-slice-policy-loop-plan.md](./nip39-ten-slice-policy-loop-plan.md).
-Treat this packet as the parent framing doc, not the active execution packet.
+This broader lane is active again after the bounded `NIP-17` mailbox workflow loop closeout.
+Treat the older
+[nip39-ten-slice-policy-loop-plan.md](./nip39-ten-slice-policy-loop-plan.md) as reference
+execution history under this broader parent packet.
 
 ## Scope Delta
 

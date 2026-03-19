@@ -3,9 +3,9 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Build one outbound direct message once, inspect mailbox runtime actions, select the next
-// delivery step explicitly, and unwrap it.
-test "recipe: mailbox session inspects runtime, selects the next delivery step, plans sender-copy delivery, and unwraps one direct message" {
+// Build one outbound direct message once, inspect mailbox workflow actions over pending delivery,
+// select the next workflow relay explicitly, then unwrap it through a recipient mailbox session.
+test "recipe: mailbox session inspects workflow, selects the next workflow relay, plans sender-copy delivery, and unwraps one direct message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -76,6 +76,45 @@ test "recipe: mailbox session inspects runtime, selects the next delivery step, 
     try std.testing.expectEqual(next_delivery.relay_index, next_recipient_delivery.relay_index);
     try std.testing.expectEqual(next_delivery.relay_index, next_sender_copy_delivery.relay_index);
 
+    var sender_workflow_relay_list_storage: [4096]u8 = undefined;
+    const sender_workflow_relay_list_json = try buildRelayListEventJsonFour(
+        sender_workflow_relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two/inbox",
+        "wss://relay.three",
+        "wss://sender-copy",
+        43,
+        &sender_secret,
+    );
+    _ = try sender_session.hydrateRelayListEventJson(
+        sender_workflow_relay_list_json,
+        arena.allocator(),
+    );
+    try sender_session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two/inbox", try sender_session.advanceRelay());
+    try sender_session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.three", try sender_session.advanceRelay());
+    try sender_session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://sender-copy", try sender_session.advanceRelay());
+    try sender_session.markCurrentRelayConnected();
+
+    var sender_workflow_storage = noztr_sdk.workflows.MailboxWorkflowStorage{};
+    const sender_workflow = try sender_session.inspectWorkflow(.{
+        .pending_delivery = &delivery,
+        .storage = &sender_workflow_storage,
+    });
+    try std.testing.expectEqual(@as(u8, 3), sender_workflow.publish_recipient_count);
+    try std.testing.expectEqual(@as(u8, 1), sender_workflow.publish_sender_copy_count);
+    const next_workflow = sender_workflow.nextStep().?;
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.MailboxWorkflowAction.publish_recipient,
+        next_workflow.entry.action,
+    );
+    try std.testing.expectEqualStrings(
+        "wss://relay.two/inbox",
+        try sender_session.selectWorkflowRelay(next_workflow),
+    );
+
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(
         recipient_relay_list_json,
@@ -119,8 +158,9 @@ test "recipe: mailbox session inspects runtime, selects the next delivery step, 
     try std.testing.expectEqual(@as(usize, 1), outcome.message.recipients.len);
 }
 
-// Build one outbound file message once, select the next delivery step explicitly, and unwrap it.
-test "recipe: mailbox session selects the next delivery step, plans, and unwraps one file message" {
+// Build one outbound file message once, inspect mailbox workflow actions over pending delivery,
+// select the next workflow relay explicitly, and unwrap it.
+test "recipe: mailbox session selects the next workflow relay, plans, and unwraps one file message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -175,6 +215,34 @@ test "recipe: mailbox session selects the next delivery step, plans, and unwraps
     try std.testing.expect(next_delivery.role.recipient);
     try std.testing.expect(!next_delivery.role.sender_copy);
     try std.testing.expectEqual(next_delivery.relay_index, next_recipient_delivery.relay_index);
+
+    var sender_workflow_relay_list_storage: [4096]u8 = undefined;
+    const sender_workflow_relay_list_json = try buildRelayListEventJson(
+        sender_workflow_relay_list_storage[0..],
+        "wss://relay.one",
+        44,
+        &sender_secret,
+    );
+    _ = try sender_session.hydrateRelayListEventJson(
+        sender_workflow_relay_list_json,
+        arena.allocator(),
+    );
+    try sender_session.markCurrentRelayConnected();
+
+    var sender_workflow_storage = noztr_sdk.workflows.MailboxWorkflowStorage{};
+    const sender_workflow = try sender_session.inspectWorkflow(.{
+        .pending_delivery = &delivery,
+        .storage = &sender_workflow_storage,
+    });
+    const next_workflow = sender_workflow.nextStep().?;
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.MailboxWorkflowAction.publish_recipient,
+        next_workflow.entry.action,
+    );
+    try std.testing.expectEqualStrings(
+        "wss://relay.one",
+        try sender_session.selectWorkflowRelay(next_workflow),
+    );
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
@@ -299,6 +367,47 @@ fn buildRelayListEventJsonThree(
             relay_one,
             relay_two,
             relay_three,
+            std.fmt.bytesToHex(event.sig, .lower),
+        },
+    ) catch error.BufferTooSmall;
+}
+
+fn buildRelayListEventJsonFour(
+    output: []u8,
+    relay_one: []const u8,
+    relay_two: []const u8,
+    relay_three: []const u8,
+    relay_four: []const u8,
+    created_at: u64,
+    signer_secret_key: *const [32]u8,
+) ![]const u8 {
+    const relay_list_author_pubkey = try common.derivePublicKey(signer_secret_key);
+    const tags = [_]noztr.nip01_event.EventTag{
+        .{ .items = &.{ "relay", relay_one } },
+        .{ .items = &.{ "relay", relay_two } },
+        .{ .items = &.{ "relay", relay_three } },
+        .{ .items = &.{ "relay", relay_four } },
+    };
+    var event = common.simpleEvent(
+        noztr.nip17_private_messages.dm_relays_kind,
+        relay_list_author_pubkey,
+        created_at,
+        "",
+        tags[0..],
+    );
+    try common.signEvent(signer_secret_key, &event);
+    return std.fmt.bufPrint(
+        output,
+        "{{\"id\":\"{s}\",\"pubkey\":\"{s}\",\"created_at\":{d},\"kind\":10050," ++
+            "\"tags\":[[\"relay\",\"{s}\"],[\"relay\",\"{s}\"],[\"relay\",\"{s}\"],[\"relay\",\"{s}\"]],\"content\":\"\",\"sig\":\"{s}\"}}",
+        .{
+            std.fmt.bytesToHex(event.id, .lower),
+            std.fmt.bytesToHex(event.pubkey, .lower),
+            created_at,
+            relay_one,
+            relay_two,
+            relay_three,
+            relay_four,
             std.fmt.bytesToHex(event.sig, .lower),
         },
     ) catch error.BufferTooSmall;

@@ -1,7 +1,7 @@
 ---
 title: NIP-17 Six-Slice Workflow Loop
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 nips: [17]
 read_when:
@@ -96,5 +96,21 @@ This loop does not include:
 - keep one commit per accepted slice
 - promote this packet to active only when the current `NIP-29` lane closes
 
-Status: active after the recent-loops audit closed with no findings on the `NIP-39` watched-target
-and `NIP-29` background-runtime loop families.
+## Outcome
+
+This loop is complete.
+
+What landed:
+- `MailboxWorkflowAction` and `MailboxWorkflowEntry`
+- `MailboxSession.inspectWorkflow(...)`
+- `MailboxWorkflowPlan.nextEntry()`
+- `MailboxWorkflowPlan.nextStep()`
+- `MailboxSession.selectWorkflowRelay(...)`
+- recipe, audit, and active-doc closeout for the broader mailbox workflow surface
+
+The loop materially reduced caller stitching above `MailboxSession`, but it did not take mailbox
+polling, subscription, or durable sync ownership. `A-NIP17-001` and `Z-WORKFLOWS-001` stay open
+for that broader runtime/client posture.
+
+The next active packet is
+[nip39-long-lived-policy-plan.md](./nip39-long-lived-policy-plan.md).

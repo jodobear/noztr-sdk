@@ -21,8 +21,9 @@ Current project context for `noztr-sdk`.
 - The implemented workflow floor is:
   - `NIP-46` remote signer
   - `NIP-17` mailbox session plus sender-copy-aware delivery planning, explicit mailbox runtime
-    inspection and typed next-step selection, explicit typed next delivery-step selection, and file-
-    message send/intake
+    inspection and typed next-step selection, explicit mailbox workflow inspection and typed
+    workflow-step selection, explicit typed next delivery-step selection, and file-message
+    send/intake
   - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
     discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
     typed next-step selection, plus explicit stale-profile refresh planning
@@ -42,8 +43,8 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `231/231`
-  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `108/108`
+  - `zig build test --summary all` with `238/238`
+  - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `110/110`
 
 ## Read First
 
@@ -64,9 +65,9 @@ Current project context for `noztr-sdk`.
   runtime inspection, and fleet moderation fanout over relay-local clients, but it still lacks the
   broader background-runtime posture of a fuller groups client.
 - `A-NIP17-001` and `Z-WORKFLOWS-001`: `NIP-17` now covers sender-copy-aware delivery planning,
-  explicit mailbox runtime inspection and next-step selection, explicit next delivery-relay
-  selection, and file-message send/intake, but it is still not a higher-level mailbox
-  sync/runtime workflow.
+  explicit mailbox runtime inspection and next-step selection, explicit mailbox workflow
+  inspection and typed next-step selection, explicit next delivery-relay selection, and file-
+  message send/intake, but it is still not a higher-level mailbox sync/runtime workflow.
 - `A-NIP03-001`: `NIP-03` now covers detached proof retrieval plus explicit stored-proof reuse and
   freshness-classified remembered verification plus explicit remembered runtime inspection and
   next-entry selection plus stale-verification refresh planning over the explicit HTTP seam, but
@@ -165,11 +166,11 @@ Current project context for `noztr-sdk`.
   - `MailboxSession` now also exposes `selectRelay(...)` so callers can act on that runtime view
     without hand-scanning relay pool state above the mailbox surface
   - `examples/mailbox_recipe.zig` now teaches one explicit send-plus-receive round trip over the
-    recipient relay list plus sender-copy delivery, explicit next-relay selection over that
-    delivery plan, runtime inspection plus explicit next-step selection, then one explicit
+    recipient relay list plus sender-copy delivery, one broader mailbox workflow plan over that
+    pending delivery work, explicit next-relay selection over both the delivery plan and the typed
+    workflow step, runtime inspection plus explicit next-step selection, then one explicit
     file-message send-plus-receive path on the same mailbox surface, rather than pretending the
-    sender's current relay is the real delivery target or that mailbox intake is direct-message-
-    only
+    sender's current relay is the real delivery target or that mailbox intake is direct-message-only
   - the outbound round-trip path now uses `noztr.nip59_wrap.nip59_build_outbound_for_recipient(...)`
     and `noztr.nip01_event.event_serialize_json_object_unsigned(...)` instead of SDK-local
     transcript staging
@@ -421,10 +422,11 @@ Current project context for `noztr-sdk`.
 8. The remaining `NIP-39` gap is now autonomous discovery/refresh policy above the current
    caller-owned watched-target inputs; do not reopen already-landed watched-target freshness,
    preferred-selection, refresh, or runtime helpers unless a real bug appears.
-9. The next active packet is
+9. The `NIP-17` six-slice workflow loop is complete in
    [docs/plans/nip17-six-slice-workflow-loop-plan.md](./docs/plans/nip17-six-slice-workflow-loop-plan.md).
-10. After the recent-loops audit, the next best broader product lane is the bounded `NIP-17`
-    mailbox workflow loop, not a new generic helper lane.
+   Treat it as reference.
+10. The next active packet is
+    [docs/plans/nip39-long-lived-policy-plan.md](./docs/plans/nip39-long-lived-policy-plan.md).
 11. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 12. Keep `examples/README.md` current whenever the public teaching surface changes.
 13. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
