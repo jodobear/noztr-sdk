@@ -340,6 +340,12 @@ pub const OpenTimestampsStoredVerificationRefreshRequest = struct {
 pub const OpenTimestampsStoredVerificationRefreshPlan = struct {
     entries: []const OpenTimestampsStoredVerificationRefreshEntry,
 
+    pub fn nextEntry(
+        self: *const OpenTimestampsStoredVerificationRefreshPlan,
+    ) ?*const OpenTimestampsStoredVerificationRefreshEntry {
+        return self.newestEntry();
+    }
+
     pub fn newestEntry(
         self: *const OpenTimestampsStoredVerificationRefreshPlan,
     ) ?*const OpenTimestampsStoredVerificationRefreshEntry {
@@ -2425,6 +2431,10 @@ test "opentimestamps verifier refresh plan returns stale remembered verification
     try std.testing.expectEqual(@as(u64, 18), plan.entries[1].entry.age_seconds);
     try std.testing.expectEqualStrings(
         "https://proof.example/new.ots",
+        plan.nextEntry().?.entry.entry.verification.proofUrl(),
+    );
+    try std.testing.expectEqualStrings(
+        "https://proof.example/new.ots",
         plan.newestEntry().?.entry.entry.verification.proofUrl(),
     );
 }
@@ -2481,6 +2491,7 @@ test "opentimestamps verifier refresh plan returns empty when remembered verific
         },
     );
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
+    try std.testing.expect(plan.nextEntry() == null);
     try std.testing.expect(plan.newestEntry() == null);
 }
 
