@@ -969,6 +969,14 @@ pub const IdentityStoredProfileTargetTurnPolicyPlan = struct {
         return self.entries[0..@as(usize, @intCast(self.verify_now_count))];
     }
 
+    pub fn refreshSelectedEntries(
+        self: *const IdentityStoredProfileTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        const start: usize = @intCast(self.verify_now_count);
+        const end = start + @as(usize, @intCast(self.refresh_selected_count));
+        return self.entries[start..end];
+    }
+
     pub fn useCachedEntries(
         self: *const IdentityStoredProfileTargetTurnPolicyPlan,
     ) []const IdentityStoredProfileTargetTurnPolicyEntry {
@@ -5546,7 +5554,7 @@ test "identity verifier refresh batch exposes typed next selected step" {
             .now_unix_seconds = 50,
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
-            .max_selected = 1,
+            .max_selected = 2,
             .fallback_policy = .require_fresh,
             .storage = .init(
                 matches_storage[0..],
@@ -5966,7 +5974,7 @@ test "identity verifier turn policy exposes verify-now view" {
             .now_unix_seconds = 50,
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
-            .max_selected = 1,
+            .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
             .storage = .init(
                 matches_storage[0..],
@@ -5984,6 +5992,78 @@ test "identity verifier turn policy exposes verify-now view" {
     try std.testing.expectEqual(@as(usize, 2), plan.verifyNowEntries().len);
     try std.testing.expectEqualStrings("carol", plan.verifyNowEntries()[0].target.identity);
     try std.testing.expectEqualStrings("dave", plan.verifyNowEntries()[1].target.identity);
+}
+
+test "identity verifier turn policy exposes refresh-selected view" {
+    const stable_pubkey = [_]u8{0xa1} ** 32;
+    const stale_pubkey = [_]u8{0xa2} ** 32;
+    const stable_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-stable",
+                    .expected_text = "npub-stable",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "bob" },
+        .{ .provider = .github, .identity = "alice" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries_storage: [3]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var policy_groups_storage: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    var cadence_entries_storage: [3]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    var entries_storage: [3]IdentityStoredProfileTargetTurnPolicyEntry = undefined;
+    var groups_storage: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
+    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                policy_entries_storage[0..],
+                policy_groups_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+                entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 1), plan.refreshSelectedEntries().len);
+    try std.testing.expectEqualStrings("bob", plan.refreshSelectedEntries()[0].target.identity);
 }
 
 test "identity verifier turn policy exposes cached and deferred views" {
