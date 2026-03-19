@@ -41,12 +41,13 @@ network daemons, or hidden runtime loops.
   - control points: caller verifies the recipient relay list, optionally verifies sender-copy
     relays, builds one outbound wrap explicitly, receives the deduplicated publish-relay plan with
     relay-role annotations, can ask the delivery plan for one typed next delivery step without
-    hand-scanning role flags or re-stitching wrap payload context, inspects hydrated mailbox relays
-    as explicit `connect`, `authenticate`, or `receive` actions, can ask the runtime plan for one
-    typed next runtime step explicitly, selects one relay explicitly, feeds wrapped event JSON back
-    into a recipient mailbox session, can build and plan one explicit outbound file-message wrap on
-    the same surface, can classify direct-message vs file-message rumors explicitly, and still owns
-    publication and polling policy
+    hand-scanning role flags or re-stitching wrap payload context, can also ask separately for the
+    next recipient-targeted step and the next sender-copy-targeted step, inspects hydrated mailbox
+    relays as explicit `connect`, `authenticate`, or `receive` actions, can ask the runtime plan
+    for one typed next runtime step explicitly, selects one relay explicitly, feeds wrapped event
+    JSON back into a recipient mailbox session, can build and plan one explicit outbound
+    file-message wrap on the same surface, can classify direct-message vs file-message rumors
+    explicitly, and still owns publication and polling policy
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification

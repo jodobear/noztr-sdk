@@ -131,6 +131,9 @@ Observed friction:
 - `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` and `nextStep()` so callers can step
   the deduplicated delivery plan without re-scanning relay-role flags or re-stitching wrap
   payload context above the workflow
+- `MailboxDeliveryPlan` now also exposes recipient-only and sender-copy-only next-step selectors so
+  callers can follow those two delivery roles directly instead of rebuilding that filtering above
+  the workflow
 - `MailboxRuntimePlan` now also exposes `nextStep()` so callers can package the next recommended
   relay/action into one typed mailbox runtime step instead of re-stitching it above the workflow
 - it now also authors one explicit outbound file-message wrap and can plan relay delivery for that

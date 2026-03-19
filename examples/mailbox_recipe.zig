@@ -62,13 +62,19 @@ test "recipe: mailbox session inspects runtime, selects the next delivery step, 
     try std.testing.expectEqualStrings("wss://sender-copy", delivery.relayUrl(3).?);
     try std.testing.expect(!delivery.deliversToRecipient(3));
     try std.testing.expect(delivery.deliversSenderCopy(3));
+    try std.testing.expectEqual(@as(?u8, 0), delivery.nextRecipientRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 0), delivery.nextSenderCopyRelayIndex());
     const next_delivery = delivery.nextStep().?;
+    const next_recipient_delivery = delivery.nextRecipientStep().?;
+    const next_sender_copy_delivery = delivery.nextSenderCopyStep().?;
     try std.testing.expectEqual(@as(u8, 0), next_delivery.relay_index);
     try std.testing.expectEqualStrings("wss://relay.two/inbox", next_delivery.relay_url);
     try std.testing.expect(next_delivery.role.recipient);
     try std.testing.expect(next_delivery.role.sender_copy);
     try std.testing.expect(std.mem.eql(u8, &next_delivery.wrap_event_id, &delivery.wrap_event_id));
     try std.testing.expectEqualStrings(delivery.wrap_event_json, next_delivery.wrap_event_json);
+    try std.testing.expectEqual(next_delivery.relay_index, next_recipient_delivery.relay_index);
+    try std.testing.expectEqual(next_delivery.relay_index, next_sender_copy_delivery.relay_index);
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(
@@ -159,11 +165,16 @@ test "recipe: mailbox session selects the next delivery step, plans, and unwraps
     try std.testing.expectEqual(@as(u8, 1), delivery.relay_count);
     try std.testing.expectEqualStrings("wss://relay.one", delivery.relayUrl(0).?);
     try std.testing.expect(delivery.deliversToRecipient(0));
+    try std.testing.expectEqual(@as(?u8, 0), delivery.nextRecipientRelayIndex());
+    try std.testing.expect(delivery.nextSenderCopyRelayIndex() == null);
     const next_delivery = delivery.nextStep().?;
+    const next_recipient_delivery = delivery.nextRecipientStep().?;
+    try std.testing.expect(delivery.nextSenderCopyStep() == null);
     try std.testing.expectEqual(@as(u8, 0), next_delivery.relay_index);
     try std.testing.expectEqualStrings("wss://relay.one", next_delivery.relay_url);
     try std.testing.expect(next_delivery.role.recipient);
     try std.testing.expect(!next_delivery.role.sender_copy);
+    try std.testing.expectEqual(next_delivery.relay_index, next_recipient_delivery.relay_index);
 
     var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());

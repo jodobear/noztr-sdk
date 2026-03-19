@@ -183,8 +183,46 @@ pub const DeliveryPlan = struct {
         return null;
     }
 
+    pub fn nextRecipientRelayIndex(self: *const DeliveryPlan) ?u8 {
+        var index: u8 = 0;
+        while (index < self.relay_count) : (index += 1) {
+            if (self.deliversToRecipient(index)) return index;
+        }
+        return null;
+    }
+
+    pub fn nextSenderCopyRelayIndex(self: *const DeliveryPlan) ?u8 {
+        var index: u8 = 0;
+        while (index < self.relay_count) : (index += 1) {
+            if (self.deliversSenderCopy(index)) return index;
+        }
+        return null;
+    }
+
     pub fn nextStep(self: *const DeliveryPlan) ?DeliveryStep {
         const relay_index = self.nextRelayIndex() orelse return null;
+        return .{
+            .relay_index = relay_index,
+            .relay_url = self.relayUrl(relay_index).?,
+            .role = self.role(relay_index).?,
+            .wrap_event_id = self.wrap_event_id,
+            .wrap_event_json = self.wrap_event_json,
+        };
+    }
+
+    pub fn nextRecipientStep(self: *const DeliveryPlan) ?DeliveryStep {
+        const relay_index = self.nextRecipientRelayIndex() orelse return null;
+        return .{
+            .relay_index = relay_index,
+            .relay_url = self.relayUrl(relay_index).?,
+            .role = self.role(relay_index).?,
+            .wrap_event_id = self.wrap_event_id,
+            .wrap_event_json = self.wrap_event_json,
+        };
+    }
+
+    pub fn nextSenderCopyStep(self: *const DeliveryPlan) ?DeliveryStep {
+        const relay_index = self.nextSenderCopyRelayIndex() orelse return null;
         return .{
             .relay_index = relay_index,
             .relay_url = self.relayUrl(relay_index).?,
@@ -2107,13 +2145,19 @@ test "mailbox session plans sender copy delivery without duplicating equivalent 
     try std.testing.expect(!plan.deliversToRecipient(2));
     try std.testing.expect(plan.deliversSenderCopy(2));
     try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextRecipientRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextSenderCopyRelayIndex());
     const next_step = plan.nextStep().?;
+    const next_recipient = plan.nextRecipientStep().?;
+    const next_sender_copy = plan.nextSenderCopyStep().?;
     try std.testing.expectEqual(@as(u8, 0), next_step.relay_index);
     try std.testing.expectEqualStrings("wss://relay.two/inbox", next_step.relay_url);
     try std.testing.expect(next_step.role.recipient);
     try std.testing.expect(next_step.role.sender_copy);
     try std.testing.expect(std.mem.eql(u8, &next_step.wrap_event_id, &plan.wrap_event_id));
     try std.testing.expectEqualStrings(plan.wrap_event_json, next_step.wrap_event_json);
+    try std.testing.expectEqual(next_step.relay_index, next_recipient.relay_index);
+    try std.testing.expectEqual(next_step.relay_index, next_sender_copy.relay_index);
 }
 
 test "mailbox session plans file-message delivery without duplicating equivalent relay urls" {
@@ -2166,11 +2210,17 @@ test "mailbox session plans file-message delivery without duplicating equivalent
     try std.testing.expect(!plan.deliversToRecipient(2));
     try std.testing.expect(plan.deliversSenderCopy(2));
     try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextRecipientRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextSenderCopyRelayIndex());
     const next_step = plan.nextStep().?;
+    const next_recipient = plan.nextRecipientStep().?;
+    const next_sender_copy = plan.nextSenderCopyStep().?;
     try std.testing.expectEqual(@as(u8, 0), next_step.relay_index);
     try std.testing.expectEqualStrings("wss://relay.two/inbox", next_step.relay_url);
     try std.testing.expect(next_step.role.recipient);
     try std.testing.expect(next_step.role.sender_copy);
+    try std.testing.expectEqual(next_step.relay_index, next_recipient.relay_index);
+    try std.testing.expectEqual(next_step.relay_index, next_sender_copy.relay_index);
 }
 
 test "mailbox delivery next relay prefers recipient targets before sender copy only relays" {
@@ -2188,11 +2238,17 @@ test "mailbox delivery next relay prefers recipient targets before sender copy o
         ._storage = &storage,
     };
     try std.testing.expectEqual(@as(?u8, 1), plan.nextRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 1), plan.nextRecipientRelayIndex());
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextSenderCopyRelayIndex());
     const next_step = plan.nextStep().?;
+    const next_recipient = plan.nextRecipientStep().?;
+    const next_sender_copy = plan.nextSenderCopyStep().?;
     try std.testing.expectEqual(@as(u8, 1), next_step.relay_index);
     try std.testing.expectEqualStrings("wss://recipient", next_step.relay_url);
     try std.testing.expect(next_step.role.recipient);
     try std.testing.expect(!next_step.role.sender_copy);
+    try std.testing.expectEqual(@as(u8, 1), next_recipient.relay_index);
+    try std.testing.expectEqual(@as(u8, 0), next_sender_copy.relay_index);
 }
 
 test "mailbox delivery next relay falls back to sender copy when no recipient relay exists" {
@@ -2207,11 +2263,16 @@ test "mailbox delivery next relay falls back to sender copy when no recipient re
         ._storage = &storage,
     };
     try std.testing.expectEqual(@as(?u8, 0), plan.nextRelayIndex());
+    try std.testing.expect(plan.nextRecipientRelayIndex() == null);
+    try std.testing.expectEqual(@as(?u8, 0), plan.nextSenderCopyRelayIndex());
     const next_step = plan.nextStep().?;
+    try std.testing.expect(plan.nextRecipientStep() == null);
+    const next_sender_copy = plan.nextSenderCopyStep().?;
     try std.testing.expectEqual(@as(u8, 0), next_step.relay_index);
     try std.testing.expectEqualStrings("wss://sender-copy", next_step.relay_url);
     try std.testing.expect(!next_step.role.recipient);
     try std.testing.expect(next_step.role.sender_copy);
+    try std.testing.expectEqual(next_step.relay_index, next_sender_copy.relay_index);
 }
 
 test "mailbox delivery next relay returns null for an empty delivery plan" {
@@ -2224,6 +2285,10 @@ test "mailbox delivery next relay returns null for an empty delivery plan" {
     };
     try std.testing.expect(plan.nextRelayIndex() == null);
     try std.testing.expect(plan.nextStep() == null);
+    try std.testing.expect(plan.nextRecipientRelayIndex() == null);
+    try std.testing.expect(plan.nextRecipientStep() == null);
+    try std.testing.expect(plan.nextSenderCopyRelayIndex() == null);
+    try std.testing.expect(plan.nextSenderCopyStep() == null);
 }
 
 test "mailbox session outbound file message rejects malformed metadata with typed errors" {

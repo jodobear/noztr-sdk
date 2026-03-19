@@ -114,6 +114,10 @@ Current project context for `noztr-sdk`.
   - `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` and `nextStep()` so callers can
     select one typed next publish step without hand-scanning relay-role delivery plans or
     re-stitching wrap payload context above the mailbox workflow
+  - `MailboxDeliveryPlan` now also exposes `nextRecipientRelayIndex()`,
+    `nextRecipientStep()`, `nextSenderCopyRelayIndex()`, and `nextSenderCopyStep()` so callers
+    can select one typed recipient-only or sender-copy-only delivery step without rebuilding that
+    filtering logic above the mailbox workflow
   - `MailboxSession` now also exposes `inspectRuntime(...)` so callers can classify all hydrated
     mailbox relays as explicit `connect`, `authenticate`, or `receive` actions on one bounded
     runtime view

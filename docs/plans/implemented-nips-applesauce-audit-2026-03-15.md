@@ -103,6 +103,9 @@ Observed friction:
 - `MailboxDeliveryPlan` now also exposes `nextRelayIndex()` and `nextStep()` so callers can step
   one next publish relay without hand-scanning the deduplicated relay-role delivery plan or
   re-stitching wrap payload context above the workflow
+- `MailboxDeliveryPlan` now also exposes explicit recipient-only and sender-copy-only next-step
+  selectors so callers can follow those two delivery policies separately without rebuilding relay
+  filtering above the workflow
 - the sender can now also author one explicit outbound `NIP-17` file-message wrap and plan relay
   delivery for that same wrap without hand-building the rumor above the SDK
 - the recipient path can now also unwrap and parse `NIP-17` file messages through explicit mailbox
