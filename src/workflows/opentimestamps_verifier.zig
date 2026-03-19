@@ -463,6 +463,20 @@ pub const OpenTimestampsStoredVerificationTargetRefreshRequest = struct {
 
 pub const OpenTimestampsStoredVerificationTargetRefreshPlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetRefreshEntry,
+
+    pub fn nextEntry(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshPlan,
+    ) ?*const OpenTimestampsStoredVerificationTargetRefreshEntry {
+        if (self.entries.len == 0) return null;
+        return &self.entries[0];
+    }
+
+    pub fn nextStep(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshPlan,
+    ) ?OpenTimestampsStoredVerificationTargetRefreshStep {
+        const entry = self.nextEntry() orelse return null;
+        return .{ .entry = entry.* };
+    }
 };
 
 pub const OpenTimestampsStoredVerificationTargetRefreshStep = struct {
@@ -3297,6 +3311,8 @@ test "opentimestamps verifier target-set refresh plan returns stale remembered p
         "https://proof.example/old.ots",
         plan.entries[1].latest.latest.verification.proofUrl(),
     );
+    try std.testing.expectEqualSlices(u8, &second_target.id, &plan.nextEntry().?.target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &second_target.id, &plan.nextStep().?.entry.target.target_event_id);
 }
 
 test "opentimestamps verifier target-set refresh plan returns empty for fresh or missing targets" {
@@ -3361,6 +3377,8 @@ test "opentimestamps verifier target-set refresh plan returns empty for fresh or
     );
 
     try std.testing.expectEqual(@as(usize, 0), plan.entries.len);
+    try std.testing.expect(plan.nextEntry() == null);
+    try std.testing.expect(plan.nextStep() == null);
 }
 
 const ots_header_magic = [_]u8{
