@@ -51,6 +51,7 @@ Use `doc_type` plus `status` first:
 
 ## Active Packet Or Teaching Docs
 
+- [five-slice-step-view-loop-plan.md](/workspace/projects/nzdk/docs/plans/five-slice-step-view-loop-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
 

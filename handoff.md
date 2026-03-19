@@ -288,10 +288,10 @@ Current project context for `noztr-sdk`.
    [docs/plans/noztr-remediation-sync-plan.md](./docs/plans/noztr-remediation-sync-plan.md) as the
    reference packet when future `noztr` hardening passes land. It is now completed, not the active
    blocker.
-2. The five-slice selector loop is now closed in
-   [docs/plans/five-slice-selector-loop-plan.md](./docs/plans/five-slice-selector-loop-plan.md).
-   The next implementation lane should start from a fresh packet, not continue appending to the
-   completed selector loop.
+2. The next active packet is
+   [docs/plans/five-slice-step-view-loop-plan.md](./docs/plans/five-slice-step-view-loop-plan.md).
+   It scopes one bounded follow-on family above the landed selector helpers so apps can drive one
+   explicit next workflow step without reconstructing context from raw plans.
 3. Continue `NIP-29` only if the next slice clearly targets broader background runtime/client
    policy or another gap above the now-landed explicit fleet store, targeted reconcile,
    reconciliation, merge, publish-planning, runtime-inspection, and next-step selector surfaces
@@ -301,10 +301,11 @@ Current project context for `noztr-sdk`.
    or longer-lived store policy beyond the now-landed remembered verify/store/discover/select and
    runtime-policy plus next-entry path rather than repeating already-landed provider-detail,
    cache, or explicit store/discovery work.
-5. The best broader product slice after the selector loop is still a real background-runtime
+5. The best broader product slice after the step-view loop is still a real background-runtime
    `NIP-29` lane, a pivot to `NIP-39` longer-lived identity/discovery policy, or broader
    `NIP-03` / `NIP-17` workflow policy. The selector loop closed the bounded refresh, delivery,
-   runtime, and publish-step helpers.
+   runtime, and publish-step selectors; this next loop should stop at typed SDK step views above
+   those selectors rather than jumping to hidden loops.
 6. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 7. Keep `examples/README.md` current whenever the public teaching surface changes.
 8. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).
