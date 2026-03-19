@@ -242,6 +242,12 @@ Current project context for `noztr-sdk`.
   - `examples/relay_pool_checkpoint_recipe.zig` now teaches that replay-composition path on top of
     the same shared checkpoint seam instead of pushing replay stitching back into product-local
     code
+- the next active packet under the shared relay-pool subscription boundary lane is now
+  [docs/plans/relay-pool-sync-boundary-checkpoint-plan.md](./docs/plans/relay-pool-sync-boundary-checkpoint-plan.md)
+  - that checkpoint exists because the lane now already proves bounded runtime inspection,
+    checkpoint composition, subscription planning, and replay planning
+  - the next decision is whether shared `runtime` should grow into a broader sync execution
+    surface at all, or stop here and let the next layer become product-facing composition instead
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
