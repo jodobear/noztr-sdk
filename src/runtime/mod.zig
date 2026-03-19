@@ -18,6 +18,7 @@ pub const RelayPoolSubscriptionAction = relay_pool.RelayPoolSubscriptionAction;
 pub const RelayPoolSubscriptionEntry = relay_pool.RelayPoolSubscriptionEntry;
 pub const RelayPoolSubscriptionStorage = relay_pool.RelayPoolSubscriptionStorage;
 pub const RelayPoolSubscriptionPlan = relay_pool.RelayPoolSubscriptionPlan;
+pub const RelayPoolSubscriptionStep = relay_pool.RelayPoolSubscriptionStep;
 pub const RelayPool = relay_pool.RelayPool;
 pub const RelayPoolPlan = relay_pool.RelayPoolPlan;
 pub const RelayPoolStep = relay_pool.RelayPoolStep;

@@ -106,6 +106,15 @@ pub const RelayPoolSubscriptionPlan = struct {
         }
         return null;
     }
+
+    pub fn nextStep(self: *const RelayPoolSubscriptionPlan) ?RelayPoolSubscriptionStep {
+        const selected = self.nextEntry() orelse return null;
+        return .{ .entry = selected };
+    }
+};
+
+pub const RelayPoolSubscriptionStep = struct {
+    entry: RelayPoolSubscriptionEntry,
 };
 
 pub const RelayPoolCheckpointRecord = struct {
@@ -672,4 +681,29 @@ test "relay pool subscription plan next-entry is null when no relay is subscribe
     var subscription_storage = RelayPoolSubscriptionStorage{};
     const plan = try pool.inspectSubscriptions(specs[0..], &subscription_storage);
     try std.testing.expect(plan.nextEntry() == null);
+}
+
+test "relay pool subscription plan exposes a typed next subscribe step" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+    try pool.markRelayConnected(second.relay_index);
+
+    const filter = noztr.nip01_filter.Filter{
+        .kinds = [_]u32{1} ++ ([_]u32{0} ** (noztr.limits.filter_kinds_max - 1)),
+        .kinds_count = 1,
+    };
+    const specs = [_]RelaySubscriptionSpec{
+        .{ .subscription_id = "feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var subscription_storage = RelayPoolSubscriptionStorage{};
+    const plan = try pool.inspectSubscriptions(specs[0..], &subscription_storage);
+    const next_step = plan.nextStep().?;
+
+    try std.testing.expectEqual(second.relay_index, next_step.entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolSubscriptionAction.subscribe, next_step.entry.action);
+    try std.testing.expectEqualStrings("feed", next_step.entry.subscription_id);
 }
