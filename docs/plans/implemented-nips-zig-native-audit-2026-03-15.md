@@ -242,6 +242,9 @@ Observed friction:
   vocabulary is stable enough to stop adding workflow-by-workflow adapters by default; the next
   shared Zig-native question is pool-level subscription/sync boundary, not more near-duplicate
   runtime vocabularies
+- that same shared runtime layer now also exposes one caller-owned subscription-spec plan and one
+  typed next subscription step over kernel `Filter` values, which is a better Zig-native shared
+  floor than pushing early CLI/signer products toward bespoke per-relay subscribe loops
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

@@ -68,7 +68,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build a first CLI-facing archive surface above shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [store_archive_recipe.zig](/workspace/projects/nzdk/examples/store_archive_recipe.zig) |
 | persist relay-local runtime cursors over shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_checkpoint_recipe.zig) |
 | restore one relay-local group snapshot over shared storage | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_local_group_archive_recipe.zig](/workspace/projects/nzdk/examples/relay_local_group_archive_recipe.zig) |
-| inspect a shared multi-relay runtime floor | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_pool_recipe.zig](/workspace/projects/nzdk/examples/relay_pool_recipe.zig) |
+| inspect a shared multi-relay runtime floor and derive bounded subscription targets | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_pool_recipe.zig](/workspace/projects/nzdk/examples/relay_pool_recipe.zig) |
 | persist and restore a shared relay-pool checkpoint set | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [relay_pool_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_pool_checkpoint_recipe.zig) |
 | build signer/session flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [remote_signer_recipe.zig](/workspace/projects/nzdk/examples/remote_signer_recipe.zig) |
 | build mailbox/private-message flows | [contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md) | [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig) |
@@ -90,7 +90,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 - [relay_local_group_archive_recipe.zig](/workspace/projects/nzdk/examples/relay_local_group_archive_recipe.zig)
   - first relay-local workflow replay route over shared storage
 - [relay_pool_recipe.zig](/workspace/projects/nzdk/examples/relay_pool_recipe.zig)
-  - first shared relay-pool runtime route
+  - first shared relay-pool runtime plus subscription-spec route
 - [relay_pool_checkpoint_recipe.zig](/workspace/projects/nzdk/examples/relay_pool_checkpoint_recipe.zig)
   - first shared relay-pool checkpoint composition route
 - [mailbox_recipe.zig](/workspace/projects/nzdk/examples/mailbox_recipe.zig)

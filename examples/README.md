@@ -77,13 +77,16 @@ Use these docs when you need public routing or contract context before opening a
     multi-relay archive model, and the restore path makes snapshot ordering explicit instead of
     hiding newest-first query behavior behind implicit reordering
 - `relay_pool_recipe.zig`
-  - goal: inspect one shared multi-relay runtime plan and select one typed next pool step
+  - goal: inspect one shared multi-relay runtime plan, select one typed next pool step, then
+    derive one bounded shared subscription step
   - public SDK surface: `noztr_sdk.runtime`, `RelayPool`, `RelayPoolStorage`,
-    `RelayPoolPlanStorage`, `RelayPoolPlan`, `RelayPoolStep`
-  - kernel fixture help: none beyond the shared session/runtime layer
+    `RelayPoolPlanStorage`, `RelayPoolPlan`, `RelayPoolStep`, `RelaySubscriptionSpec`,
+    `RelayPoolSubscriptionStorage`, `RelayPoolSubscriptionPlan`, `RelayPoolSubscriptionStep`
+  - kernel fixture help: `noztr.nip01_filter`
   - control points: caller still owns bounded pool storage, relay URLs remain explicit, the pool
     surface exposes one shared inspect/plan/step model without mailbox/groups/signer semantics,
-    and the recipe teaches that the shared runtime floor is explicit and side-effect free rather
+    the new subscription surface stays caller-owned and side-effect free instead of smuggling in a
+    hidden sync loop, and the recipe teaches that the shared runtime floor remains explicit rather
     than hidden background coordination
 - `relay_pool_checkpoint_recipe.zig`
   - goal: export one shared relay-pool checkpoint set, persist its per-relay cursors through the

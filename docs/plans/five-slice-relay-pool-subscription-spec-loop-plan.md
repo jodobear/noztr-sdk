@@ -1,7 +1,7 @@
 ---
 title: Five Slice Relay Pool Subscription Spec Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - implementing_the_first_shared_relay_pool_subscription_child
@@ -83,3 +83,14 @@ This loop should prove:
 - the current pool checkpoint model already works for bounded shared composition
 - this loop does not require backend choice, durable sync, or hidden daemon ownership
 
+## Closeout
+
+- landed `RelaySubscriptionSpec`, `RelayPoolSubscriptionAction`,
+  `RelayPoolSubscriptionEntry`, and `RelayPoolSubscriptionStorage` as the bounded shared
+  subscription vocabulary above `RelayPool`
+- landed `RelayPool.inspectSubscriptions(...)` plus `RelayPoolSubscriptionPlan` so callers can
+  combine explicit kernel `Filter` targets with current relay readiness without hidden execution
+- landed `RelayPoolSubscriptionPlan.nextEntry()` and `nextStep()` so callers can follow one typed
+  next subscribe-now action without restitching relay-by-relay selection above the shared floor
+- reconciled the shared relay-pool recipe, release docs, example routing, audit state, and handoff
+  so the new subscription-spec floor is part of the public teaching surface

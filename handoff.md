@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `313/313`
+  - `zig build test --summary all` with `319/319`
   - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -216,10 +216,15 @@ Current project context for `noztr-sdk`.
     [docs/plans/relay-pool-subscription-boundary-plan.md](./docs/plans/relay-pool-subscription-boundary-plan.md)
   - that packet exists to decide what pool-level subscription, replay, and sync posture belongs in
     the shared runtime layer before groups adaptation or broader relay-framework work continue
-- the first implementation loop under that subscription-boundary child is now
-  [docs/plans/five-slice-relay-pool-subscription-spec-loop-plan.md](./docs/plans/five-slice-relay-pool-subscription-spec-loop-plan.md)
-  - it exists to land one bounded shared subscription-spec vocabulary, one caller-owned
-    subscription plan, and one typed next subscription step before any broader sync execution work
+- the relay-pool subscription-spec loop is now complete:
+  - `src/runtime/relay_pool.zig` now exposes `RelaySubscriptionSpec`,
+    `RelayPoolSubscriptionStorage`, `RelayPoolSubscriptionPlan`, and
+    `RelayPoolSubscriptionStep`
+  - `RelayPool.inspectSubscriptions(...)` now combines caller-owned kernel `Filter` targets with
+    current relay readiness into one bounded shared plan instead of leaving early multi-relay
+    subscribe wiring to product-local bespoke loops
+  - `examples/relay_pool_recipe.zig` now teaches one explicit shared subscription-spec plan and
+    one typed next subscribe-now step on the same shared runtime floor
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

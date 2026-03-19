@@ -253,6 +253,9 @@ Observed friction:
 - the newer remote-signer and mailbox relay-pool adaptations now show that this shared floor is
   already strong enough for CLI-facing and signer-facing runtime reuse, so the next shared gap is
   pool-level subscription/sync posture rather than another immediate workflow adapter
+- that shared runtime layer now also exposes one bounded shared subscription-spec floor over
+  caller-owned filter targets and typed next subscription steps, so early CLI/signing/runtime work
+  no longer needs to invent bespoke relay-by-relay subscribe wiring above the shared pool
 - that is materially broader and more app-facing than the earlier session-only shape
 - but the broader client story still stops at explicit relay-local authoring plus caller-owned
   runtime stepping
