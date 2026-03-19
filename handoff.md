@@ -166,6 +166,9 @@ Current project context for `noztr-sdk`.
   - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step that
     remembered runtime policy without hand-matching the selected stored entry above the workflow
     surface
+  - `IdentityStoredProfileRuntimePlan` now also exposes `nextStep()` so callers can package the
+    remembered runtime action plus its selected entry into one explicit SDK step value instead of
+    stitching the selector result back together above the workflow
   - `IdentityVerifier` now also exposes `planStoredProfileRefresh(...)` so callers can collect
     only stale remembered matches newest-first under one explicit freshness window without hiding
     fetch or refresh policy above the stored-profile seam
@@ -176,8 +179,8 @@ Current project context for `noztr-sdk`.
     public HTTP seam, remembered in a caller-owned profile store, hydrated directly by provider
     identity, classified for freshness both across discovered entries and for the newest match,
     selected once through explicit remembered-profile policy, inspected once through explicit
-    remembered runtime policy plus its selected next entry, planned once for stale refresh, and
-    then replayed from the explicit cache
+    remembered runtime policy plus one typed next step, planned once for stale refresh, and then
+    replayed from the explicit cache
 - `NIP-05` now has a clearer Zig-native surface:
   - `Nip05Resolver` now takes `Nip05LookupRequest` and `Nip05VerificationRequest` with
     caller-owned `Nip05LookupStorage`

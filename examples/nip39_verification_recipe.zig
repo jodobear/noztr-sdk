@@ -7,9 +7,9 @@ const common = @import("common.zig");
 // profile through the explicit store seam, hydrate one stored discovery result directly, classify
 // both discovered entries and the latest remembered profile for freshness, select one preferred
 // remembered profile under an explicit fallback policy, inspect the remembered runtime action and
-// next entry for that identity, then replay the same verification from an explicit caller-owned
-// cache.
-test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime and next entry, and replays one profile event" {
+// typed next step for that identity, then replay the same verification from an explicit
+// caller-owned cache.
+test "recipe: identity verifier verifies, remembers, discovers, classifies freshness, selects preferred remembered profile, inspects remembered runtime and typed next step, and replays one profile event" {
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{
             .provider = .github,
@@ -219,14 +219,19 @@ test "recipe: identity verifier verifies, remembers, discovers, classifies fresh
     );
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
-    const next_entry = runtime.nextEntry().?;
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.IdentityStoredProfileRuntimeAction.use_preferred,
+        next_step.action,
+    );
+    const next_entry = next_step.entry.?;
     try std.testing.expectEqualStrings(
         "alice",
         next_entry.matchedClaim().identitySlice(),
     );
-    try std.testing.expectEqual(
-        @intFromPtr(runtime.preferredEntry().?),
-        @intFromPtr(next_entry),
+    try std.testing.expectEqualStrings(
+        runtime.preferredEntry().?.matchedClaim().proofSlice(),
+        next_entry.matchedClaim().proofSlice(),
     );
     try std.testing.expectEqualStrings(
         "alice",

@@ -252,6 +252,9 @@ Observed friction:
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow
+- `IdentityStoredProfileRuntimePlan` now also exposes `nextStep()` so callers can consume the
+  remembered runtime action plus its selected stored profile as one explicit SDK step instead of
+  stitching that view together above the workflow
 - it now also exposes one explicit stale-profile refresh-plan helper over remembered discovery
   freshness so callers do not have to rebuild bounded refresh targeting above the same store seam
 - broader identity-management flows are still deferred in

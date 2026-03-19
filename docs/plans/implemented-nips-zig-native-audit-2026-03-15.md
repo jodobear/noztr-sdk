@@ -198,6 +198,9 @@ Observed friction:
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
   selected remembered-profile step directly instead of re-matching the runtime-selected entry
   above the workflow
+- `IdentityStoredProfileRuntimePlan` now also exposes `nextStep()` so callers can package the
+  selected remembered-profile action and entry as one explicit step value instead of reconstructing
+  that SDK view above the runtime plan
 - `NIP-39` now also exposes one explicit stale-profile refresh-plan helper, so bounded remembered
   refresh targeting no longer has to be rebuilt above the same freshness discovery surface
 - `NIP-03` now also exposes one explicit stale-verification refresh-plan helper, so bounded proof

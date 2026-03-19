@@ -105,6 +105,7 @@ pub const IdentityStoredProfileRuntimeAction = identity_verifier.IdentityStoredP
 pub const IdentityStoredProfileRuntimeStorage = identity_verifier.IdentityStoredProfileRuntimeStorage;
 pub const IdentityStoredProfileRuntimeRequest = identity_verifier.IdentityStoredProfileRuntimeRequest;
 pub const IdentityStoredProfileRuntimePlan = identity_verifier.IdentityStoredProfileRuntimePlan;
+pub const IdentityStoredProfileRuntimeStep = identity_verifier.IdentityStoredProfileRuntimeStep;
 pub const IdentityStoredProfileRefreshEntry = identity_verifier.IdentityStoredProfileRefreshEntry;
 pub const IdentityStoredProfileRefreshStorage = identity_verifier.IdentityStoredProfileRefreshStorage;
 pub const IdentityStoredProfileRefreshRequest = identity_verifier.IdentityStoredProfileRefreshRequest;

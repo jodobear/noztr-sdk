@@ -418,6 +418,18 @@ pub const IdentityStoredProfileRuntimePlan = struct {
             .refresh_existing, .use_preferred, .use_stale_and_refresh => self.preferredEntry(),
         };
     }
+
+    pub fn nextStep(self: *const IdentityStoredProfileRuntimePlan) IdentityStoredProfileRuntimeStep {
+        return .{
+            .action = self.action,
+            .entry = if (self.nextEntry()) |entry| entry.* else null,
+        };
+    }
+};
+
+pub const IdentityStoredProfileRuntimeStep = struct {
+    action: IdentityStoredProfileRuntimeAction,
+    entry: ?IdentityStoredProfileDiscoveryFreshnessEntry = null,
 };
 
 pub const IdentityStoredProfileRefreshEntry = struct {
@@ -2806,6 +2818,9 @@ test "identity verifier runtime policy requests verification when no remembered 
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
     try std.testing.expect(runtime.preferredEntry() == null);
     try std.testing.expect(runtime.nextEntry() == null);
+    const next_step = runtime.nextStep();
+    try std.testing.expectEqual(IdentityStoredProfileRuntimeAction.verify_now, next_step.action);
+    try std.testing.expect(next_step.entry == null);
 }
 
 test "identity verifier runtime policy prefers a fresh remembered profile" {
@@ -2873,8 +2888,14 @@ test "identity verifier runtime policy prefers a fresh remembered profile" {
     try std.testing.expectEqual(@as(u32, 1), runtime.stale_count);
     const preferred = runtime.preferredEntry().?;
     const next = runtime.nextEntry().?;
+    const next_step = runtime.nextStep();
     try std.testing.expectEqual(IdentityStoredProfileFreshness.fresh, preferred.freshness);
     try std.testing.expectEqual(@intFromPtr(preferred), @intFromPtr(next));
+    try std.testing.expectEqual(IdentityStoredProfileRuntimeAction.use_preferred, next_step.action);
+    try std.testing.expectEqual(
+        IdentityStoredProfileFreshness.fresh,
+        next_step.entry.?.freshness,
+    );
     try std.testing.expectEqualSlices(u8, fresh_pubkey[0..], preferred.entry.match.pubkey[0..]);
     try std.testing.expectEqualStrings("gist-fresh", preferred.matchedClaim().proofSlice());
 }
@@ -2948,8 +2969,17 @@ test "identity verifier runtime policy can use stale profile and refresh" {
     try std.testing.expectEqual(@as(u32, 2), runtime.stale_count);
     const preferred = runtime.preferredEntry().?;
     const next = runtime.nextEntry().?;
+    const next_step = runtime.nextStep();
     try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, preferred.freshness);
     try std.testing.expectEqual(@intFromPtr(preferred), @intFromPtr(next));
+    try std.testing.expectEqual(
+        IdentityStoredProfileRuntimeAction.use_stale_and_refresh,
+        next_step.action,
+    );
+    try std.testing.expectEqual(
+        IdentityStoredProfileFreshness.stale,
+        next_step.entry.?.freshness,
+    );
     try std.testing.expectEqualSlices(u8, newer_pubkey[0..], preferred.entry.match.pubkey[0..]);
 }
 
@@ -3002,8 +3032,17 @@ test "identity verifier runtime policy can require refresh for stale remembered 
     try std.testing.expectEqual(@as(u32, 1), runtime.stale_count);
     const preferred = runtime.preferredEntry().?;
     const next = runtime.nextEntry().?;
+    const next_step = runtime.nextStep();
     try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, preferred.freshness);
     try std.testing.expectEqual(@intFromPtr(preferred), @intFromPtr(next));
+    try std.testing.expectEqual(
+        IdentityStoredProfileRuntimeAction.refresh_existing,
+        next_step.action,
+    );
+    try std.testing.expectEqual(
+        IdentityStoredProfileFreshness.stale,
+        next_step.entry.?.freshness,
+    );
     try std.testing.expectEqualStrings("gist-id", preferred.matchedClaim().proofSlice());
 }
 
