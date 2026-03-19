@@ -24,10 +24,10 @@ Current project context for `noztr-sdk`.
     inspection and typed next-step selection, explicit mailbox workflow inspection and typed
     workflow-step selection, explicit typed next delivery-step selection, and file-message
     send/intake
-  - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
-    discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
-    typed next-step selection, explicit watched-target policy and refresh-cadence classification,
-    plus explicit stale-profile refresh planning
+- `NIP-39` identity verification plus remembered stored discovery and freshness-classified
+  discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
+  typed next-step selection, explicit watched-target policy and refresh-cadence classification,
+  refresh-batch selection, plus explicit stale-profile refresh planning
   - `NIP-03` local plus detached-proof, stored-proof, and freshness-classified remembered-
     verification OpenTimestamps workflow plus explicit remembered runtime policy and typed
     next-step selection plus explicit stale-verification refresh planning
@@ -44,7 +44,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `257/257`
+  - `zig build test --summary all` with `262/262`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -225,6 +225,20 @@ Current project context for `noztr-sdk`.
   - outbound file-message authoring now also uses
     `noztr.nip17_private_messages.nip17_build_file_*_tag(...)` for exact-fit canonical kind-15
     metadata tags instead of staging those tag shapes locally
+- the `NIP-39` watched-target refresh-batch loop is now complete:
+  - caller-owned watched-target refresh-batch storage and bounded selected-now vs deferred-later
+    vocabulary now exist as the stable surface for turn-level watched-target refresh selection
+  - `IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(...)` now selects one bounded
+    current-turn refresh batch from watched-target cadence instead of leaving that selection policy
+    above the SDK
+  - `IdentityStoredProfileTargetRefreshBatchPlan.nextBatchEntry()` now exposes the next selected
+    watched identity for this turn without forcing apps to re-scan the same batch split
+  - `IdentityStoredProfileTargetRefreshBatchPlan.nextBatchStep()` now packages that selected
+    watched-target refresh choice as one typed SDK step instead of requiring apps to restitch it
+    above the batch plan
+  - `IdentityStoredProfileTargetRefreshBatchPlan.selectedEntries()` and `deferredEntries()` now
+    expose the selected-now vs deferred-later split explicitly instead of forcing apps to rebuild
+    that grouped batch view above the same cadence surface
 - `NIP-39` now has a clearer Zig-native surface:
   - `IdentityVerifier` now takes `IdentityVerificationRequest` with caller-owned
     `IdentityVerificationStorage` instead of three raw temporary buffers
@@ -484,8 +498,9 @@ Current project context for `noztr-sdk`.
 13. The `NIP-39` watched-target refresh-cadence loop is
     [docs/plans/nip39-six-slice-refresh-cadence-loop-plan.md](./docs/plans/nip39-six-slice-refresh-cadence-loop-plan.md).
     Treat it as reference.
-14. The next coherent execution loop under that active `NIP-39` parent packet is
+14. The `NIP-39` watched-target refresh-batch loop is
     [docs/plans/nip39-six-slice-refresh-batch-loop-plan.md](./docs/plans/nip39-six-slice-refresh-batch-loop-plan.md).
+    Treat it as reference.
 15. Keep protocol parsing, validation, building, signing, and deterministic reduction in `noztr`.
 16. Keep `examples/README.md` current whenever the public teaching surface changes.
 17. Record any new kernel issue in [docs/plans/noztr-feedback-log.md](./docs/plans/noztr-feedback-log.md).

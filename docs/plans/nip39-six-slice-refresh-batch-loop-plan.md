@@ -96,3 +96,23 @@ This loop does not include:
 - keep one commit per accepted slice
 - keep this loop as the next likely execution packet under the active parent `NIP-39` plan until
   promoted
+
+## Outcome
+
+This loop is complete.
+
+It landed:
+- watched-target refresh-batch vocabulary and caller-owned storage
+- `IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(...)`
+- `IdentityStoredProfileTargetRefreshBatchPlan.nextBatchEntry()`
+- `IdentityStoredProfileTargetRefreshBatchPlan.nextBatchStep()`
+- `IdentityStoredProfileTargetRefreshBatchPlan.selectedEntries()` and `deferredEntries()`
+- recipe, audit, and active-doc closeout for the broader watched-target refresh-batch surface
+
+It still leaves the broader `NIP-39` long-lived policy gap open:
+- no hidden autonomous discovery or refresh runtime
+- no durable watched-target scheduler
+- no HTTP ownership or background daemon policy
+
+The active parent remains
+[nip39-long-lived-policy-plan.md](./nip39-long-lived-policy-plan.md).

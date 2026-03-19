@@ -273,6 +273,10 @@ Observed friction:
   caller-owned watched-target set into explicit verify-now, refresh-now, usable-while-refreshing,
   refresh-soon, and stable cadence buckets, so watched-target refresh cadence no longer has to be
   rebuilt above the same remembered-profile seams
+- `IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(...)` now also exposes one explicit
+  caller-owned selected-now vs deferred-later refresh-batch helper over the same watched-target
+  cadence surface, so bounded turn-level refresh selection no longer has to be rebuilt above those
+  remembered-profile seams
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can follow the
   selected remembered-profile step directly instead of re-matching the runtime-selected entry
   above the workflow
