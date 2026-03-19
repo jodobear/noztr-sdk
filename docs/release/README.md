@@ -40,6 +40,7 @@ The current public workflow floor includes:
 - shared bounded store/query/checkpoint reference surfaces
 - one minimal CLI-facing archive helper over that shared store seam
 - one relay-local checkpoint helper over that shared checkpoint seam
+- one relay-local `NIP-29` replay helper over that shared event seam
 - `NIP-46` remote signer workflow
 - `NIP-17` mailbox workflow
 - `NIP-39` identity verification workflow

@@ -5,6 +5,7 @@ comptime {
     _ = @import("store_query_recipe.zig");
     _ = @import("store_archive_recipe.zig");
     _ = @import("relay_checkpoint_recipe.zig");
+    _ = @import("relay_local_group_archive_recipe.zig");
     _ = @import("mailbox_recipe.zig");
     _ = @import("nip39_verification_recipe.zig");
     _ = @import("nip03_verification_recipe.zig");

@@ -217,6 +217,10 @@ Observed friction:
   background relay/action together with baseline context into one typed Zig-facing value
 - `GroupFleet.selectBackgroundRelay(...)` now also turns that typed background step into one
   validated relay choice without requiring a second layer of manual relay lookup above the fleet
+- the shared `store` namespace now also has one relay-local `NIP-29` replay helper above the
+  generic event seam, which is a better Zig-native proof point than raw storage traits alone
+- that helper is still deliberately relay-local, which is the right current boundary because the
+  generic event record does not yet encode source-relay identity
 - `NIP-39` now exposes provider-shaped details plus one explicit cached verification seam instead
   of only raw verification counts
 - `NIP-39` now also exposes one explicit freshness-classified remembered discovery helper instead

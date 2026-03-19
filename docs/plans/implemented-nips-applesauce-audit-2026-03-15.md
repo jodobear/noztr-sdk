@@ -192,6 +192,9 @@ Observed friction:
   the same explicit relay-local publish path
 - it now also exports one explicit single-relay checkpoint and can restore it locally into a fresh
   client without requiring live relay readiness
+- it now also exposes one relay-local `GroupReplayArchive`-style helper over the shared event seam,
+  so one explicit stored snapshot can be restored into a fresh `GroupClient` without first
+  inventing relay-pool runtime ownership or broad product schemas
 - the newer fleet slice now routes authored snapshot intake and checkpoint export/restore by relay
   URL without introducing hidden merge or background runtime policy
 - it now also exports one fleet-wide checkpoint set and can restore it into a fresh fleet without

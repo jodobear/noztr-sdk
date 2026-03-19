@@ -4,6 +4,7 @@ pub const client_traits = @import("client_traits.zig");
 pub const client_memory = @import("client_memory.zig");
 pub const archive = @import("archive.zig");
 pub const relay_checkpoint = @import("relay_checkpoint.zig");
+pub const relay_local_group_archive = @import("relay_local_group_archive.zig");
 
 pub const RelayInfoRecord = traits.RelayInfoRecord;
 pub const RelayInfoStore = traits.RelayInfoStore;
@@ -33,3 +34,5 @@ pub const EventArchive = archive.EventArchive;
 pub const RelayCheckpointArchiveError = relay_checkpoint.RelayCheckpointArchiveError;
 pub const RelayCheckpointArchive = relay_checkpoint.RelayCheckpointArchive;
 pub const checkpoint_name_for_relay = relay_checkpoint.checkpoint_name_for_relay;
+pub const RelayLocalGroupArchiveError = relay_local_group_archive.RelayLocalGroupArchiveError;
+pub const RelayLocalGroupArchive = relay_local_group_archive.RelayLocalGroupArchive;

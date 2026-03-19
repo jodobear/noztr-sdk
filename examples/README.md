@@ -62,6 +62,16 @@ Use these docs when you need public routing or contract context before opening a
   - control points: caller still owns store construction and relay URL choice, and the helper
     proves relay-local runtime state can ride the shared checkpoint seam without exposing backend
     schema or forcing the internal relay pool module into the public surface
+- `relay_local_group_archive_recipe.zig`
+  - goal: archive one relay-local `NIP-29` snapshot through the shared event store seam and
+    restore it into a fresh group client in explicit oldest-to-newest replay order
+  - public SDK surface: `noztr_sdk.store`, `RelayLocalGroupArchive`, `MemoryClientStore`,
+    `GroupClient`
+  - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
+  - control points: caller still owns store construction and group-client storage, the helper
+    keeps replay relay-local instead of pretending the current shared event seam is already a
+    multi-relay archive model, and the restore path makes snapshot ordering explicit instead of
+    hiding newest-first query behavior behind implicit reordering
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, select one next workflow relay explicitly, unwrap it through a recipient

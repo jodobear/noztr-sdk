@@ -180,13 +180,15 @@ The first pressure-test slice is now landed:
   usable above raw event/checkpoint seams without forcing a durable backend or hidden runtime
 - one relay-local checkpoint helper now also proves relay-local runtime cursors can ride the shared
   checkpoint seam without exposing the internal relay pool module publicly
+- one relay-local `NIP-29` replay helper now also proves a real SDK workflow can ride the shared
+  event seam without forcing workflow-local remembered-state stores into the shared core
 
 Next likely slices:
 
-1. pressure-test one real SDK workflow against the shared store seams without prematurely
-   collapsing workflow-local remembered-state stores into the shared layer
-2. decide whether the eventual public relay-pool layer should absorb or merely reuse the current
+1. decide whether the eventual public relay-pool layer should absorb or merely reuse the current
    relay checkpoint helper
+2. decide whether the eventual public relay-pool layer should absorb or merely reuse the current
+   relay-local group replay helper
 3. decide when the first durable backend implementation should land against the now-tested seam
 
 ## Review Lenses To Emphasize

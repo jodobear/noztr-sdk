@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `287/287`
+  - `zig build test --summary all` with `290/290`
   - `/workspace/projects/noztr`: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -126,8 +126,9 @@ Current project context for `noztr-sdk`.
     - `examples/store_query_recipe.zig` now pressure-tests the baseline publicly by persisting
       bounded event records, paging one backend-agnostic query, and restoring one named checkpoint
     - the next likely store/query child work is:
-      - one workflow or CLI-facing integration against the shared store seams
-      - relay-pool/runtime composition over the shared store layer
+      - decide whether the eventual public relay-pool layer should absorb or merely reuse the
+        relay-local checkpoint and relay-local group replay helpers
+      - pressure-test one broader relay-pool/runtime composition slice over the shared store layer
       - only then the first durable backend implementation against the tested seam
   - the next pressure-test is now also landed through
     [docs/plans/sdk-store-archive-pressure-test-plan.md](./docs/plans/sdk-store-archive-pressure-test-plan.md):
@@ -148,6 +149,16 @@ Current project context for `noztr-sdk`.
     - `examples/relay_checkpoint_recipe.zig` now teaches that relay-local checkpoint path
     - this confirms that relay-local runtime progress can compose with the shared checkpoint seam
       before the broader public relay-pool layer exists
+  - the first real workflow pressure-test is now also landed through
+    [docs/plans/sdk-group-replay-pressure-test-plan.md](./docs/plans/sdk-group-replay-pressure-test-plan.md):
+    - `src/store/relay_local_group_archive.zig` now exposes `RelayLocalGroupArchive` above the
+      shared `ClientStore` event seam
+    - the helper archives canonical relay-local `NIP-29` state-event JSON and restores one fresh
+      `GroupClient` snapshot in explicit oldest-to-newest replay order
+    - `examples/relay_local_group_archive_recipe.zig` now teaches that path explicitly
+    - this confirms the shared event seam can support one real SDK workflow without forcing
+      workflow-local remembered-state stores into the shared core, while also making the current
+      relay-local limitation explicit until the broader relay-pool layer hardens
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces
