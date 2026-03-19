@@ -1,7 +1,7 @@
 ---
 title: Five Slice Mailbox Relay Pool Loop Plan
 doc_type: packet
-status: active
+status: reference
 owner: noztr-sdk
 read_when:
   - executing_the_shared_relay_pool_runtime_baseline
@@ -74,3 +74,16 @@ This loop should prove:
   mailbox-specific runtime vocabulary for the same shared concern
 - the shared pool floor scales to another workflow without leaking mailbox delivery policy into
   `runtime`
+
+## Closeout
+
+- landed `MailboxRelayPoolStorage` and `MailboxRelayPoolRuntimeStorage` as the caller-owned
+  mailbox adapter vocabulary over the shared relay-pool floor
+- landed `MailboxSession.exportRelayPool(...)` so mailbox sessions can expose one shared
+  `noztr_sdk.runtime.RelayPool` view without promoting mailbox workflow state into `runtime`
+- landed `MailboxSession.inspectRelayPoolRuntime(...)` so mailbox callers can reuse the shared
+  multi-relay readiness plan instead of rebuilding it above the workflow
+- landed `MailboxSession.selectRelayPoolStep(...)` so one typed shared `RelayPoolStep` can drive
+  mailbox relay selection back onto the session safely
+- reconciled the mailbox recipe, contract map, audit state, and handoff so the public teaching
+  surface now shows the shared relay-pool inspect/select path explicitly

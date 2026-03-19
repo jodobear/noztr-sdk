@@ -153,6 +153,9 @@ Observed friction:
   state, one typed next workflow step, and one explicit workflow-relay selector, so callers no
   longer need to rebuild delivery-vs-receive posture above the session just to drive one next
   mailbox action
+- it now also reuses the shared `noztr_sdk.runtime` floor by exporting one relay-pool view,
+  inspecting one shared relay-pool plan, and routing one typed `RelayPoolStep` back onto the
+  mailbox session instead of freezing mailbox into a second custom multi-relay runtime vocabulary
 - but callers still have to handle broader mailbox sync posture and richer mailbox runtime policy
   above the workflow
 

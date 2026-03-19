@@ -117,6 +117,9 @@ Observed friction:
 - callers can now also inspect one broader mailbox workflow plan over runtime state plus pending
   delivery work, ask it for one typed next workflow relay/action, and select that relay directly
   on the session without rebuilding delivery-vs-receive posture above the SDK
+- callers can now also export one shared relay-pool view from `MailboxSession`, inspect shared
+  relay-pool readiness over caller-owned storage, and route one typed `RelayPoolStep` back onto
+  the mailbox session instead of inventing a second multi-relay readiness layer above the workflow
 - but transport-level polling/subscription orchestration and broader durable mailbox runtime
   ownership remain deferred
 

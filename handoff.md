@@ -45,7 +45,7 @@ Current project context for `noztr-sdk`.
     about than a direct TypeScript port
 - Current local verification is green in `/workspace/projects/nzdk`:
   - `zig build`
-  - `zig build test --summary all` with `308/308`
+  - `zig build test --summary all` with `313/313`
   - last `/workspace/projects/noztr` compatibility lane remained green: `zig build test --summary all --cache-dir /tmp/noztr-sdk-noztr-cache --global-cache-dir /tmp/noztr-sdk-zig-global` with `113/113`, `1222/1222`, and examples
 
 ## Read First
@@ -200,10 +200,13 @@ Current project context for `noztr-sdk`.
     multi-relay readiness model
   - `examples/remote_signer_recipe.zig` now teaches connect, `get_public_key`, `nip44_encrypt`,
     then one explicit shared relay-pool inspect/select step on the same signer workflow surface
-  - the next active implementation loop under that child is now
-    [docs/plans/five-slice-mailbox-relay-pool-loop-plan.md](./docs/plans/five-slice-mailbox-relay-pool-loop-plan.md)
-  - that loop exists to pressure-test mailbox adaptation over the shared pool floor before broader
-    groups reuse or subscription/sync expansion
+- the mailbox relay-pool loop is now complete:
+  - `src/workflows/mailbox.zig` now exposes caller-owned relay-pool export/runtime storage plus
+    `exportRelayPool(...)`, `inspectRelayPoolRuntime(...)`, and `selectRelayPoolStep(...)`
+  - that gives `MailboxSession` one explicit adaptation path over the shared `noztr_sdk.runtime`
+    floor instead of requiring mailbox clients to invent a second multi-relay readiness model
+  - `examples/mailbox_recipe.zig` now teaches one shared relay-pool inspect/select step on the
+    same mailbox workflow surface without replacing mailbox delivery or workflow planning
 - `NIP-29` background-runtime loop is now complete:
   - `GroupFleetBackgroundAction` now names the bounded coordinator phases above the current fleet
     runtime, consistency, reconcile, merge, and publish-plan surfaces

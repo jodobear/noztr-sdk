@@ -4,8 +4,9 @@ const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
 // Build one outbound direct message once, inspect mailbox workflow actions over pending delivery,
-// select the next workflow relay explicitly, then unwrap it through a recipient mailbox session.
-test "recipe: mailbox session inspects workflow, selects the next workflow relay, plans sender-copy delivery, and unwraps one direct message" {
+// inspect one shared relay-pool runtime step explicitly, then unwrap it through a recipient
+// mailbox session.
+test "recipe: mailbox session inspects workflow, inspects shared relay-pool runtime, plans sender-copy delivery, and unwraps one direct message" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -145,6 +146,22 @@ test "recipe: mailbox session inspects workflow, selects the next workflow relay
     try std.testing.expectEqualStrings(
         "WSS://RELAY.TWO:443/inbox?x=1#f",
         next_runtime.entry.relay_url,
+    );
+
+    var relay_pool_runtime = noztr_sdk.workflows.MailboxRelayPoolRuntimeStorage{};
+    const shared_plan = recipient_session.inspectRelayPoolRuntime(&relay_pool_runtime);
+    try std.testing.expectEqual(@as(u8, 1), shared_plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), shared_plan.ready_count);
+    try std.testing.expectEqual(@as(u8, 1), shared_plan.connect_count);
+    const shared_step = shared_plan.nextStep().?;
+    try std.testing.expectEqual(noztr_sdk.runtime.RelayPoolAction.authenticate, shared_step.entry.action);
+    try std.testing.expectEqualStrings(
+        "wss://relay.one",
+        try recipient_session.selectRelayPoolStep(&shared_step),
+    );
+    try std.testing.expectEqualStrings(
+        "WSS://RELAY.TWO:443/inbox?x=1#f",
+        try recipient_session.selectRelay(1),
     );
 
     var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
