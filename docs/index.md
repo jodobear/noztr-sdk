@@ -52,6 +52,7 @@ Use `doc_type` plus `status` first:
 ## Active Packet Or Teaching Docs
 
 - [nip03-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip03-long-lived-policy-plan.md)
+- [nip03-six-slice-target-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip03-six-slice-target-policy-loop-plan.md)
 - [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
 - [examples-tree-plan.md](/workspace/projects/nzdk/docs/plans/examples-tree-plan.md)
 - [examples/README.md](/workspace/projects/nzdk/examples/README.md)
