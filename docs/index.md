@@ -109,6 +109,7 @@ Use `doc_type` plus `status` first:
 - [nip39-runtime-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-runtime-policy-plan.md)
 - [nip39-refresh-plan.md](/workspace/projects/nzdk/docs/plans/nip39-refresh-plan.md)
 - [nip39-long-lived-policy-plan.md](/workspace/projects/nzdk/docs/plans/nip39-long-lived-policy-plan.md)
+- [nip39-six-slice-target-discovery-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-six-slice-target-discovery-loop-plan.md)
 - [nip39-ten-slice-policy-loop-plan.md](/workspace/projects/nzdk/docs/plans/nip39-ten-slice-policy-loop-plan.md)
 - [nip46-ergonomic-surface-plan.md](/workspace/projects/nzdk/docs/plans/nip46-ergonomic-surface-plan.md)
 - [nip46-method-coverage-plan.md](/workspace/projects/nzdk/docs/plans/nip46-method-coverage-plan.md)
