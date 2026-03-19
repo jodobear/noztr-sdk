@@ -281,6 +281,9 @@ Observed friction:
 - `IdentityVerifier.getPreferredStoredProfileForTargets(...)` now also selects one preferred
   remembered profile across a caller-owned watched identity set, so callers no longer need to
   rebuild fresh-vs-stale preferred choice entirely above the same watched-target surface
+- `IdentityVerifier.planStoredProfileRefreshForTargets(...)` now also collects stale watched
+  identities newest-first, so callers no longer have to rebuild bounded set-level refresh
+  targeting above the same watched-target surface
 - `IdentityStoredProfileRuntimePlan` now also exposes `nextEntry()` so callers can step the
   selected remembered profile directly instead of re-matching the runtime-selected entry above the
   workflow

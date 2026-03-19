@@ -122,3 +122,10 @@ policy, while keeping capacity and selection caller-owned and deterministic.
   - `IdentityPreferredStoredProfileTarget`
   - `IdentityVerifier.getPreferredStoredProfileForTargets(...)`
   - compatibility result: `green`
+- slice 5 accepted on 2026-03-19:
+  - `IdentityStoredProfileTargetRefreshEntry`
+  - `IdentityStoredProfileTargetRefreshStorage`
+  - `IdentityStoredProfileTargetRefreshRequest`
+  - `IdentityStoredProfileTargetRefreshPlan`
+  - `IdentityVerifier.planStoredProfileRefreshForTargets(...)`
+  - compatibility result: `green`
