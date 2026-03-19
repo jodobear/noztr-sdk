@@ -840,6 +840,13 @@ pub const IdentityStoredProfileTargetRefreshBatchPlan = struct {
     entries: []const IdentityStoredProfileTargetRefreshCadenceEntry,
     selected_count: u32 = 0,
     deferred_count: u32 = 0,
+
+    pub fn nextBatchEntry(
+        self: *const IdentityStoredProfileTargetRefreshBatchPlan,
+    ) ?*const IdentityStoredProfileTargetRefreshCadenceEntry {
+        if (self.selected_count == 0) return null;
+        return &self.entries[0];
+    }
 };
 
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
@@ -5143,6 +5150,69 @@ test "identity verifier refresh batch selection allows zero selected entries" {
     try std.testing.expectEqual(@as(usize, 1), batch.entries.len);
     try std.testing.expectEqual(@as(u32, 0), batch.selected_count);
     try std.testing.expectEqual(@as(u32, 1), batch.deferred_count);
+}
+
+test "identity verifier refresh batch exposes next selected entry" {
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const soon_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    const targets = [_]IdentityStoredProfileTarget{
+        .{ .provider = .github, .identity = "dave" },
+        .{ .provider = .github, .identity = "carol" },
+        .{ .provider = .github, .identity = "bob" },
+    };
+    var matches_storage: [1]IdentityProfileMatch = undefined;
+    var latest_entries_storage: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries_storage: [3]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+        store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqualStrings("dave", batch.nextBatchEntry().?.target.identity);
 }
 
 test "identity verifier discovers latest remembered freshness for watched target set in caller order" {
