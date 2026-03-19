@@ -35,17 +35,17 @@ network daemons, or hidden runtime loops.
     message once, plan its delivery, and unwrap it through the same mailbox surface
   - public SDK surface: `MailboxSession`, `MailboxDeliveryStorage`, `MailboxDeliveryRole`,
     `MailboxDeliveryPlan`, `MailboxDeliveryStep`, `MailboxRuntimeAction`, `MailboxRuntimeStorage`,
-    `MailboxRuntimePlan`, `MailboxFileDimensions`, `MailboxFileMessageRequest`,
+    `MailboxRuntimePlan`, `MailboxRuntimeStep`, `MailboxFileDimensions`, `MailboxFileMessageRequest`,
     `MailboxEnvelopeOutcome`, `MailboxFileMessageOutcome`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip44`, `noztr.nostr_keys`
   - control points: caller verifies the recipient relay list, optionally verifies sender-copy
     relays, builds one outbound wrap explicitly, receives the deduplicated publish-relay plan with
     relay-role annotations, can ask the delivery plan for one typed next delivery step without
-    hand-scanning role flags or re-stitching wrap payload context, inspects hydrated mailbox relays as explicit `connect`,
-    `authenticate`, or `receive` actions, can ask the runtime plan for the next recommended relay
-    step explicitly, selects one relay explicitly, feeds wrapped event JSON back into a recipient
-    mailbox session, can build and plan one explicit outbound file-message wrap on the same
-    surface, can classify direct-message vs file-message rumors explicitly, and still owns
+    hand-scanning role flags or re-stitching wrap payload context, inspects hydrated mailbox relays
+    as explicit `connect`, `authenticate`, or `receive` actions, can ask the runtime plan for one
+    typed next runtime step explicitly, selects one relay explicitly, feeds wrapped event JSON back
+    into a recipient mailbox session, can build and plan one explicit outbound file-message wrap on
+    the same surface, can classify direct-message vs file-message rumors explicitly, and still owns
     publication and polling policy
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the

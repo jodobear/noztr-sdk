@@ -21,7 +21,7 @@ Current project context for `noztr-sdk`.
 - The implemented workflow floor is:
   - `NIP-46` remote signer
   - `NIP-17` mailbox session plus sender-copy-aware delivery planning, explicit mailbox runtime
-    inspection and next-step selection, explicit typed next delivery-step selection, and file-
+    inspection and typed next-step selection, explicit typed next delivery-step selection, and file-
     message send/intake
   - `NIP-39` identity verification plus remembered stored discovery and freshness-classified
     discovery plus preferred remembered-profile selection, explicit remembered runtime policy and
@@ -120,6 +120,9 @@ Current project context for `noztr-sdk`.
   - `MailboxRuntimePlan` now also exposes `nextEntry()` so callers can select the next actionable
     relay step on that bounded runtime view without hand-scanning the plan above the mailbox
     surface
+  - `MailboxRuntimePlan` now also exposes `nextStep()` so callers can package that next
+    recommended mailbox runtime relay/action into one typed SDK step instead of re-stitching it
+    above the workflow
   - `MailboxSession` now also exposes `selectRelay(...)` so callers can act on that runtime view
     without hand-scanning relay pool state above the mailbox surface
   - `examples/mailbox_recipe.zig` now teaches one explicit send-plus-receive round trip over the

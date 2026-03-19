@@ -92,9 +92,15 @@ test "recipe: mailbox session inspects runtime, selects the next delivery step, 
     try std.testing.expectEqual(noztr_sdk.workflows.MailboxRuntimeAction.authenticate, runtime.entry(0).?.action);
     try std.testing.expectEqual(noztr_sdk.workflows.MailboxRuntimeAction.receive, runtime.entry(1).?.action);
     try std.testing.expect(runtime.entry(1).?.is_current);
-    const next_runtime = runtime.nextEntry().?;
-    try std.testing.expectEqual(noztr_sdk.workflows.MailboxRuntimeAction.receive, next_runtime.action);
-    try std.testing.expectEqualStrings("WSS://RELAY.TWO:443/inbox?x=1#f", next_runtime.relay_url);
+    const next_runtime = runtime.nextStep().?;
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.MailboxRuntimeAction.receive,
+        next_runtime.entry.action,
+    );
+    try std.testing.expectEqualStrings(
+        "WSS://RELAY.TWO:443/inbox?x=1#f",
+        next_runtime.entry.relay_url,
+    );
 
     var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
     const outcome = try recipient_session.acceptWrappedMessageJson(

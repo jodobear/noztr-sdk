@@ -146,6 +146,7 @@ pub const MailboxDeliveryPlan = mailbox.DeliveryPlan;
 pub const MailboxDeliveryStep = mailbox.DeliveryStep;
 pub const MailboxRuntimeAction = mailbox.RuntimeAction;
 pub const MailboxRuntimeEntry = mailbox.RuntimeEntry;
+pub const MailboxRuntimeStep = mailbox.RuntimeStep;
 pub const MailboxRuntimeStorage = mailbox.RuntimeStorage;
 pub const MailboxRuntimePlan = mailbox.RuntimePlan;
 pub const MailboxDirectMessageRequest = mailbox.DirectMessageRequest;

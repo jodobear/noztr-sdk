@@ -103,6 +103,7 @@ test "phase5 exposes the mailbox workflow surface" {
     try std.testing.expect(@TypeOf(workflows.MailboxDeliveryStep) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxRuntimeAction) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxRuntimeEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.MailboxRuntimeStep) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxRuntimeStorage) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxRuntimePlan) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxDirectMessageRequest) == type);

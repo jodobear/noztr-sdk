@@ -109,8 +109,8 @@ Observed friction:
   helpers instead of stopping at direct-message rumors only
 - callers can now also inspect all hydrated mailbox relays as explicit `connect`,
   `authenticate`, or `receive` actions, select one relay directly on the mailbox workflow surface,
-  and ask the runtime plan for one next recommended relay/action step instead of hand-scanning
-  relay pool state above the SDK
+  and ask the runtime plan for one typed next recommended relay/action step instead of
+  hand-scanning relay pool state above the SDK
 - but transport-level polling/subscription orchestration and broader durable mailbox runtime
   ownership remain deferred
 

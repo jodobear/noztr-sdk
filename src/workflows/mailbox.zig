@@ -208,6 +208,10 @@ pub const RuntimeEntry = struct {
     is_current: bool,
 };
 
+pub const RuntimeStep = struct {
+    entry: RuntimeEntry,
+};
+
 pub const RuntimeStorage = struct {
     relay_indexes: [relay_pool.pool_capacity]u8 = [_]u8{0} ** relay_pool.pool_capacity,
     actions: [relay_pool.pool_capacity]RuntimeAction = [_]RuntimeAction{.connect} ** relay_pool.pool_capacity,
@@ -259,6 +263,11 @@ pub const RuntimePlan = struct {
             if (first_match) |runtime_entry| return runtime_entry;
         }
         return null;
+    }
+
+    pub fn nextStep(self: *const RuntimePlan) ?RuntimeStep {
+        const selected_entry = self.nextEntry() orelse return null;
+        return .{ .entry = selected_entry };
     }
 };
 
@@ -1530,9 +1539,13 @@ test "mailbox runtime next step prefers receive then authenticate then connect" 
     var runtime_storage = RuntimeStorage{};
     const runtime = try session.inspectRuntime(&runtime_storage);
     const next = runtime.nextEntry().?;
+    const next_step = runtime.nextStep().?;
     try std.testing.expectEqual(RuntimeAction.receive, next.action);
     try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
     try std.testing.expect(next.is_current);
+    try std.testing.expectEqual(next.action, next_step.entry.action);
+    try std.testing.expectEqualStrings(next.relay_url, next_step.entry.relay_url);
+    try std.testing.expectEqual(next.is_current, next_step.entry.is_current);
 }
 
 test "mailbox runtime next step falls back to authenticate before connect" {
@@ -1557,8 +1570,11 @@ test "mailbox runtime next step falls back to authenticate before connect" {
     var runtime_storage = RuntimeStorage{};
     const auth_runtime = try session.inspectRuntime(&runtime_storage);
     const auth_next = auth_runtime.nextEntry().?;
+    const auth_step = auth_runtime.nextStep().?;
     try std.testing.expectEqual(RuntimeAction.authenticate, auth_next.action);
     try std.testing.expectEqualStrings("wss://relay.one", auth_next.relay_url);
+    try std.testing.expectEqual(auth_next.action, auth_step.entry.action);
+    try std.testing.expectEqualStrings(auth_next.relay_url, auth_step.entry.relay_url);
 }
 
 test "mailbox runtime next step falls back to connect when no relay can receive or authenticate" {
@@ -1582,9 +1598,13 @@ test "mailbox runtime next step falls back to connect when no relay can receive 
     var runtime_storage = RuntimeStorage{};
     const runtime = try session.inspectRuntime(&runtime_storage);
     const next = runtime.nextEntry().?;
+    const next_step = runtime.nextStep().?;
     try std.testing.expectEqual(RuntimeAction.connect, next.action);
     try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
     try std.testing.expect(next.is_current);
+    try std.testing.expectEqual(next.action, next_step.entry.action);
+    try std.testing.expectEqualStrings(next.relay_url, next_step.entry.relay_url);
+    try std.testing.expectEqual(next.is_current, next_step.entry.is_current);
 }
 
 test "mailbox runtime next step returns null for an empty plan" {
@@ -1600,6 +1620,7 @@ test "mailbox runtime next step returns null for an empty plan" {
         ._storage = &runtime_storage,
     };
     try std.testing.expect(runtime.nextEntry() == null);
+    try std.testing.expect(runtime.nextStep() == null);
 }
 
 test "mailbox session relay list hydration replaces stale relays" {
