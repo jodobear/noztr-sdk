@@ -215,6 +215,8 @@ Current project context for `noztr-sdk`.
     relay-local clients without inventing reconciliation policy
   - `GroupFleet` now also inspects relay-local divergence against one chosen baseline and can
     reconcile the fleet from one explicit source relay without inventing hidden merge rules
+  - `GroupFleetConsistencyReport` now also exposes `nextEntry()` so callers can select one next
+    divergent relay entry without hand-scanning the consistency report above the fleet workflow
   - `GroupFleet` now also persists relay-local checkpoints into one explicit caller-owned store
     seam and can restore a fresh fleet from that stored state without inventing hidden durable
     runtime policy

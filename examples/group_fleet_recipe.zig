@@ -241,6 +241,12 @@ test "recipe: group fleet persists restores inspects runtime and one typed next 
         noztr_sdk.workflows.GroupFleetRuntimeAction.reconcile,
         targeted_runtime.entry(0).?.action,
     );
+    var divergences: [2]noztr_sdk.workflows.GroupFleetRelayDivergence = undefined;
+    const consistency = try target_fleet.inspectConsistency("wss://relay.one:444", divergences[0..]);
+    try std.testing.expectEqual(@as(usize, 1), consistency.divergent_relays.len);
+    const next_divergence = consistency.nextEntry().?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_divergence.relay_url);
+    try std.testing.expect(next_divergence.metadata);
 
     const targeted_reconcile = try target_fleet.reconcileRelayFromBaseline(
         "wss://relay.one:444",

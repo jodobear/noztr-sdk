@@ -193,6 +193,8 @@ Observed friction:
 - `GroupFleetRuntimePlan` now also exposes `nextEntry()` and `nextStep()` so callers can follow
   that bounded runtime policy without hand-scanning the fleet plan or re-stitching baseline
   context above the workflow
+- `GroupFleetConsistencyReport` now also exposes `nextEntry()` so callers can follow one divergent
+  relay without hand-scanning the consistency slice above the workflow
 - `NIP-29` now also has one explicit targeted baseline-to-target reconcile helper, so callers can
   step one divergent relay toward the chosen runtime baseline without falling back to all-relay
   reconcile helpers or hand-rolled checkpoint copy code
