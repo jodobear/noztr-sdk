@@ -97,6 +97,15 @@ pub const RelayPoolSubscriptionPlan = struct {
         if (index >= self.entry_count) return null;
         return self.entries[index];
     }
+
+    pub fn nextEntry(self: *const RelayPoolSubscriptionPlan) ?RelayPoolSubscriptionEntry {
+        var index: u16 = 0;
+        while (index < self.entry_count) : (index += 1) {
+            const current = self.entries[index];
+            if (current.action == .subscribe) return current;
+        }
+        return null;
+    }
 };
 
 pub const RelayPoolCheckpointRecord = struct {
@@ -619,4 +628,48 @@ test "relay pool subscription inspection rejects invalid specs" {
         error.EmptySubscriptionId,
         pool.inspectSubscriptions(invalid_specs[0..], &subscription_storage),
     );
+}
+
+test "relay pool subscription plan selects the next subscribe-ready entry" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+    try pool.markRelayConnected(second.relay_index);
+
+    const filter = noztr.nip01_filter.Filter{
+        .kinds = [_]u32{1} ++ ([_]u32{0} ** (noztr.limits.filter_kinds_max - 1)),
+        .kinds_count = 1,
+    };
+    const specs = [_]RelaySubscriptionSpec{
+        .{ .subscription_id = "feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var subscription_storage = RelayPoolSubscriptionStorage{};
+    const plan = try pool.inspectSubscriptions(specs[0..], &subscription_storage);
+    const next_entry = plan.nextEntry().?;
+
+    try std.testing.expectEqual(second.relay_index, next_entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolSubscriptionAction.subscribe, next_entry.action);
+    try std.testing.expectEqualStrings("feed", next_entry.subscription_id);
+}
+
+test "relay pool subscription plan next-entry is null when no relay is subscribe-ready" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+
+    const filter = noztr.nip01_filter.Filter{
+        .kinds = [_]u32{1} ++ ([_]u32{0} ** (noztr.limits.filter_kinds_max - 1)),
+        .kinds_count = 1,
+    };
+    const specs = [_]RelaySubscriptionSpec{
+        .{ .subscription_id = "feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var subscription_storage = RelayPoolSubscriptionStorage{};
+    const plan = try pool.inspectSubscriptions(specs[0..], &subscription_storage);
+    try std.testing.expect(plan.nextEntry() == null);
 }
