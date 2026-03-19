@@ -239,6 +239,15 @@ pub const RemoteSignerSession = struct {
         return self.currentRelayUrl();
     }
 
+    pub fn exportRelayPool(
+        self: *const RemoteSignerSession,
+        storage: *RemoteSignerRelayPoolStorage,
+    ) shared_runtime.RelayPool {
+        storage.* = .{};
+        storage.relay_pool_storage.pool = self._state.pool;
+        return shared_runtime.RelayPool.attach(&storage.relay_pool_storage);
+    }
+
     pub fn beginConnect(
         self: *RemoteSignerSession,
         context: RequestContext,
@@ -725,6 +734,27 @@ test "remote signer exposes caller-owned relay-pool adapter storage" {
     var runtime_storage = RemoteSignerRelayPoolRuntimeStorage{};
     _ = &relay_pool_storage;
     _ = &runtime_storage;
+}
+
+test "remote signer exports the shared relay-pool runtime floor" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const uri_text =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
+    var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
+    session.markCurrentRelayConnected();
+    try session.noteCurrentRelayAuthChallenge("challenge-1");
+
+    var pool_storage = RemoteSignerRelayPoolStorage{};
+    var pool = session.exportRelayPool(&pool_storage);
+    try std.testing.expectEqual(@as(u8, 2), pool.relayCount());
+
+    var plan_storage = shared_runtime.RelayPoolPlanStorage{};
+    const plan = pool.inspectRuntime(&plan_storage);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
 }
 
 test "remote signer session rejects mismatched secret echo" {
