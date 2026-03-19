@@ -805,6 +805,43 @@ pub const IdentityStoredProfileTargetRefreshCadenceStep = struct {
     entry: IdentityStoredProfileTargetRefreshCadenceEntry,
 };
 
+pub const IdentityStoredProfileTargetRefreshBatchStorage = struct {
+    matches: []IdentityProfileMatch,
+    latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+    cadence_entries: []IdentityStoredProfileTargetRefreshCadenceEntry,
+    cadence_groups: []IdentityStoredProfileTargetRefreshCadenceGroup,
+
+    pub fn init(
+        matches: []IdentityProfileMatch,
+        latest_entries: []IdentityStoredProfileTargetLatestFreshnessEntry,
+        cadence_entries: []IdentityStoredProfileTargetRefreshCadenceEntry,
+        cadence_groups: []IdentityStoredProfileTargetRefreshCadenceGroup,
+    ) IdentityStoredProfileTargetRefreshBatchStorage {
+        return .{
+            .matches = matches,
+            .latest_entries = latest_entries,
+            .cadence_entries = cadence_entries,
+            .cadence_groups = cadence_groups,
+        };
+    }
+};
+
+pub const IdentityStoredProfileTargetRefreshBatchRequest = struct {
+    targets: []const IdentityStoredProfileTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    max_selected: usize,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredProfileTargetRefreshBatchStorage,
+};
+
+pub const IdentityStoredProfileTargetRefreshBatchPlan = struct {
+    entries: []const IdentityStoredProfileTargetRefreshCadenceEntry,
+    selected_count: u32 = 0,
+    deferred_count: u32 = 0,
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
     entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
     fresh_count: u32 = 0,
