@@ -23,6 +23,7 @@ pub const relay_replay_turn_client = @import("relay_replay_turn_client.zig");
 pub const relay_response_client = @import("relay_response_client.zig");
 pub const signer_connect_job_client = @import("signer_connect_job_client.zig");
 pub const signer_client = @import("signer_client.zig");
+pub const signer_nip44_encrypt_job_client = @import("signer_nip44_encrypt_job_client.zig");
 pub const signer_pubkey_job_client = @import("signer_pubkey_job_client.zig");
 pub const subscription_job_client = @import("subscription_job_client.zig");
 pub const subscription_turn_client = @import("subscription_turn_client.zig");
@@ -233,6 +234,23 @@ pub const SignerClientConfig = signer_client.SignerClientConfig;
 pub const SignerClientRequestStorage = signer_client.SignerClientRequestStorage;
 pub const SignerClientStorage = signer_client.SignerClientStorage;
 pub const SignerClient = signer_client.SignerClient;
+pub const SignerNip44EncryptJobClientError =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobClientError;
+pub const SignerNip44EncryptJobClientConfig =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobClientConfig;
+pub const SignerNip44EncryptJobClientStorage =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobClientStorage;
+pub const SignerNip44EncryptJobAuthEventStorage =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobAuthEventStorage;
+pub const PreparedSignerNip44EncryptJobAuthEvent =
+    signer_nip44_encrypt_job_client.PreparedSignerNip44EncryptJobAuthEvent;
+pub const SignerNip44EncryptJobRequest =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobRequest;
+pub const SignerNip44EncryptJobReady = signer_nip44_encrypt_job_client.SignerNip44EncryptJobReady;
+pub const SignerNip44EncryptJobResult =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobResult;
+pub const SignerNip44EncryptJobClient =
+    signer_nip44_encrypt_job_client.SignerNip44EncryptJobClient;
 pub const SignerPubkeyJobClientError = signer_pubkey_job_client.SignerPubkeyJobClientError;
 pub const SignerPubkeyJobClientConfig = signer_pubkey_job_client.SignerPubkeyJobClientConfig;
 pub const SignerPubkeyJobClientStorage = signer_pubkey_job_client.SignerPubkeyJobClientStorage;

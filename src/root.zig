@@ -203,6 +203,15 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.SignerClientRequestStorage) == type);
     try std.testing.expect(@TypeOf(client.SignerClientStorage) == type);
     try std.testing.expect(@TypeOf(client.SignerClient) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobClientError) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedSignerNip44EncryptJobAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobRequest) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobReady) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobResult) == type);
+    try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobClient) == type);
     try std.testing.expect(@TypeOf(client.SignerPubkeyJobClientError) == type);
     try std.testing.expect(@TypeOf(client.SignerPubkeyJobClientConfig) == type);
     try std.testing.expect(@TypeOf(client.SignerPubkeyJobClientStorage) == type);
