@@ -103,6 +103,52 @@ pub const RelayPoolPublishStep = struct {
     entry: RelayPoolPublishEntry,
 };
 
+pub const RelayPoolAuthAction = enum {
+    connect,
+    authenticate,
+    ready,
+};
+
+pub const RelayPoolAuthEntry = struct {
+    descriptor: RelayDescriptor,
+    challenge: []const u8,
+    action: RelayPoolAuthAction,
+};
+
+pub const RelayPoolAuthStorage = struct {
+    entries: [pool_capacity]RelayPoolAuthEntry = undefined,
+};
+
+pub const RelayPoolAuthPlan = struct {
+    entries: []const RelayPoolAuthEntry = &.{},
+    relay_count: u8 = 0,
+    connect_count: u8 = 0,
+    authenticate_count: u8 = 0,
+    ready_count: u8 = 0,
+
+    pub fn entry(self: *const RelayPoolAuthPlan, index: u8) ?RelayPoolAuthEntry {
+        if (index >= self.relay_count) return null;
+        return self.entries[index];
+    }
+
+    pub fn nextEntry(self: *const RelayPoolAuthPlan) ?RelayPoolAuthEntry {
+        var index: usize = 0;
+        while (index < self.entries.len) : (index += 1) {
+            if (self.entries[index].action == .authenticate) return self.entries[index];
+        }
+        return null;
+    }
+
+    pub fn nextStep(self: *const RelayPoolAuthPlan) ?RelayPoolAuthStep {
+        const selected = self.nextEntry() orelse return null;
+        return .{ .entry = selected };
+    }
+};
+
+pub const RelayPoolAuthStep = struct {
+    entry: RelayPoolAuthEntry,
+};
+
 pub const RelaySubscriptionError = error{
     TooManySubscriptionSpecs,
     EmptySubscriptionId,
@@ -469,6 +515,43 @@ pub const RelayPool = struct {
         };
     }
 
+    pub fn inspectAuth(
+        self: *const RelayPool,
+        storage: *RelayPoolAuthStorage,
+    ) RelayPoolAuthPlan {
+        var connect_count: u8 = 0;
+        var authenticate_count: u8 = 0;
+        var ready_count: u8 = 0;
+
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const action = classifyAuthAction(relay.state);
+            const challenge = currentChallenge(relay);
+            storage.entries[relay_index] = .{
+                .descriptor = .{
+                    .relay_index = relay_index,
+                    .relay_url = relay.auth_session.relayUrl(),
+                },
+                .challenge = challenge,
+                .action = action,
+            };
+            switch (action) {
+                .connect => connect_count += 1,
+                .authenticate => authenticate_count += 1,
+                .ready => ready_count += 1,
+            }
+        }
+
+        return .{
+            .entries = storage.entries[0..self._storage.pool.count],
+            .relay_count = self._storage.pool.count,
+            .connect_count = connect_count,
+            .authenticate_count = authenticate_count,
+            .ready_count = ready_count,
+        };
+    }
+
     pub fn inspectSubscriptions(
         self: *const RelayPool,
         specs: []const RelaySubscriptionSpec,
@@ -731,6 +814,14 @@ fn classifySubscriptionAction(state: session.SessionState) RelayPoolSubscription
     };
 }
 
+fn classifyAuthAction(state: session.SessionState) RelayPoolAuthAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .ready,
+    };
+}
+
 fn classifyReplayAction(state: session.SessionState) RelayPoolReplayAction {
     return switch (state) {
         .disconnected => .connect,
@@ -753,6 +844,12 @@ fn classifyPublishAction(state: session.SessionState) RelayPoolPublishAction {
         .auth_required => .authenticate,
         .connected => .publish,
     };
+}
+
+fn currentChallenge(relay: *const session.RelaySession) []const u8 {
+    const len = relay.auth_session.state.challenge_len;
+    std.debug.assert(len <= noztr.nip42_auth.challenge_max_bytes);
+    return relay.auth_session.state.challenge[0..len];
 }
 
 fn validateSubscriptionSpec(spec: *const RelaySubscriptionSpec) RelaySubscriptionError!void {
@@ -859,6 +956,32 @@ test "relay pool runtime next-step prefers authenticate before connect" {
     try std.testing.expectEqualStrings("wss://relay.one", next_step.entry.descriptor.relay_url);
 
     _ = second;
+}
+
+test "relay pool inspects explicit auth posture and exposes the active challenge" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+    try pool.markRelayConnected(second.relay_index);
+
+    var auth_storage = RelayPoolAuthStorage{};
+    const plan = pool.inspectAuth(&auth_storage);
+    try std.testing.expectEqual(@as(u8, 2), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 0), plan.connect_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.ready_count);
+    try std.testing.expectEqual(RelayPoolAuthAction.authenticate, plan.entry(first.relay_index).?.action);
+    try std.testing.expectEqualStrings("challenge-1", plan.entry(first.relay_index).?.challenge);
+    try std.testing.expectEqual(RelayPoolAuthAction.ready, plan.entry(second.relay_index).?.action);
+    try std.testing.expectEqualStrings("", plan.entry(second.relay_index).?.challenge);
+
+    const step = plan.nextStep().?;
+    try std.testing.expectEqual(first.relay_index, step.entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolAuthAction.authenticate, step.entry.action);
+    try std.testing.expectEqualStrings("challenge-1", step.entry.challenge);
 }
 
 test "relay pool inspects explicit publish posture over current relay readiness" {

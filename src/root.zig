@@ -31,6 +31,13 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.PublishTarget) == type);
     try std.testing.expect(@TypeOf(client.TargetedPublishEvent) == type);
     try std.testing.expect(@TypeOf(client.PublishClient) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthClientError) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthTarget) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedRelayAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthClient) == type);
     try std.testing.expect(@TypeOf(client.RelayExchangeClientError) == type);
     try std.testing.expect(@TypeOf(client.RelayExchangeClientConfig) == type);
     try std.testing.expect(@TypeOf(client.RelayExchangeClientStorage) == type);
@@ -90,6 +97,11 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(runtime.RelayPoolPublishStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolPublishPlan) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolPublishStep) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolAuthAction) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolAuthEntry) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolAuthStorage) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolAuthPlan) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolAuthStep) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointRecord) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointSet) == type);

@@ -71,6 +71,18 @@ Use these docs when you need public routing or contract context before opening a
     one-shot and caller-driven without hidden transport ownership, and the recipe proves
     `znk`-class tooling can consume one SDK publish surface instead of rebuilding event-plus-relay
     glue ad hoc
+- `relay_auth_client_recipe.zig`
+  - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
+    as one outbound `AUTH` client message, then mark the relay ready only after explicit caller
+    acceptance
+  - public SDK surface: `noztr_sdk.client`, `RelayAuthClient`, `RelayAuthClientStorage`,
+    `RelayAuthTarget`, `RelayAuthEventStorage`, `PreparedRelayAuthEvent`,
+    `noztr_sdk.runtime.RelayPoolAuthPlan`, `noztr_sdk.runtime.RelayPoolAuthStep`
+  - kernel fixture help: `noztr.nip42_auth`, `noztr.nip01_message`
+  - control points: the shared runtime still owns relay auth-required state, the local operator
+    floor still owns signing, the SDK only adds explicit auth target selection and message
+    composition, and downstream tools can now handle one `AUTH` roundtrip without rebuilding
+    challenge-tag authoring ad hoc
 - `relay_exchange_client_recipe.zig`
   - goal: compose one publish exchange, one count exchange, and one subscription exchange on the
     same shared relay floor, then validate the matching relay replies explicitly without hidden
