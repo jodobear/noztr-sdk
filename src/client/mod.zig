@@ -1,6 +1,7 @@
 pub const cli_archive_client = @import("cli_archive_client.zig");
 pub const auth_count_turn_client = @import("auth_count_turn_client.zig");
 pub const auth_publish_turn_client = @import("auth_publish_turn_client.zig");
+pub const auth_replay_turn_client = @import("auth_replay_turn_client.zig");
 pub const auth_subscription_turn_client = @import("auth_subscription_turn_client.zig");
 pub const count_turn_client = @import("count_turn_client.zig");
 pub const local_operator_client = @import("local_operator_client.zig");
@@ -37,6 +38,14 @@ pub const PreparedAuthPublishEvent = auth_publish_turn_client.PreparedAuthPublis
 pub const AuthPublishTurnStep = auth_publish_turn_client.AuthPublishTurnStep;
 pub const AuthPublishTurnResult = auth_publish_turn_client.AuthPublishTurnResult;
 pub const AuthPublishTurnClient = auth_publish_turn_client.AuthPublishTurnClient;
+pub const AuthReplayTurnClientError = auth_replay_turn_client.AuthReplayTurnClientError;
+pub const AuthReplayTurnClientConfig = auth_replay_turn_client.AuthReplayTurnClientConfig;
+pub const AuthReplayTurnClientStorage = auth_replay_turn_client.AuthReplayTurnClientStorage;
+pub const AuthReplayEventStorage = auth_replay_turn_client.AuthReplayEventStorage;
+pub const PreparedAuthReplayEvent = auth_replay_turn_client.PreparedAuthReplayEvent;
+pub const AuthReplayTurnStep = auth_replay_turn_client.AuthReplayTurnStep;
+pub const AuthReplayTurnResult = auth_replay_turn_client.AuthReplayTurnResult;
+pub const AuthReplayTurnClient = auth_replay_turn_client.AuthReplayTurnClient;
 pub const AuthSubscriptionTurnClientError =
     auth_subscription_turn_client.AuthSubscriptionTurnClientError;
 pub const AuthSubscriptionTurnClientConfig =
