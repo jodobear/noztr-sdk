@@ -71,6 +71,16 @@ Use these docs when you need public routing or contract context before opening a
     one-shot and caller-driven without hidden transport ownership, and the recipe proves
     `znk`-class tooling can consume one SDK publish surface instead of rebuilding event-plus-relay
     glue ad hoc
+- `publish_job_client_recipe.zig`
+  - goal: prepare one command-ready publish job that either yields one auth event or one bounded
+    publish request, then close it with one validated publish `OK`
+  - public SDK surface: `noztr_sdk.client`, `PublishJobClient`, `PublishJobClientStorage`,
+    `PublishJobAuthEventStorage`, `PreparedPublishJobAuthEvent`, `PublishJobRequest`,
+    `PublishJobReady`, `PublishJobResult`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`
+  - control points: auth handling still routes through the auth-aware publish turn floor, publish
+    request creation still routes through the bounded publish turn floor, and this layer only
+    exposes command-ready job posture instead of inventing transport or output policy
 - `publish_turn_client_recipe.zig`
   - goal: begin one explicit publish turn from a local draft and close it with one validated
     publish `OK` reply
