@@ -71,6 +71,19 @@ Use these docs when you need public routing or contract context before opening a
     one-shot and caller-driven without hidden transport ownership, and the recipe proves
     `znk`-class tooling can consume one SDK publish surface instead of rebuilding event-plus-relay
     glue ad hoc
+- `relay_exchange_client_recipe.zig`
+  - goal: compose one publish exchange, one count exchange, and one subscription exchange on the
+    same shared relay floor, then validate the matching relay replies explicitly without hidden
+    transport ownership
+  - public SDK surface: `noztr_sdk.client`, `RelayExchangeClient`,
+    `RelayExchangeClientStorage`, `PublishExchangeRequest`, `PublishExchangeOutcome`,
+    `CountExchangeRequest`, `CountExchangeOutcome`, `SubscriptionExchangeRequest`,
+    `SubscriptionExchangeOutcome`, `CloseExchangeRequest`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nostr_keys`
+  - control points: the client composes the already-landed local operator, relay query, and relay
+    response floors instead of replacing them, publish/count/subscription work all stay explicit
+    and one-shot, and downstream tools can now consume a single SDK exchange layer for the most
+    common relay roundtrips
 - `relay_query_client_recipe.zig`
   - goal: inspect explicit shared relay query posture, then compose one outbound `REQ`, one
     outbound `COUNT`, and one outbound `CLOSE` payload for a ready relay without hidden
