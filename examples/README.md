@@ -101,6 +101,16 @@ Use these docs when you need public routing or contract context before opening a
   - control points: relay-targeted `COUNT` preparation still routes through the shared relay query
     and exchange floors, reply validation still routes through the response floor, and this layer
     only closes one bounded count turn without inventing background query ownership
+- `subscription_turn_client_recipe.zig`
+  - goal: begin one explicit subscription turn from caller-owned subscription specs, accept bounded
+    transcript intake, then close it explicitly
+  - public SDK surface: `noztr_sdk.client`, `SubscriptionTurnClient`,
+    `SubscriptionTurnClientStorage`, `SubscriptionTurnState`, `SubscriptionTurnRequest`,
+    `SubscriptionTurnIntake`, `SubscriptionTurnResult`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`
+  - control points: outbound `REQ` and `CLOSE` composition still route through the shared query
+    and exchange floors, transcript validation still routes through the response floor, and this
+    layer only closes one bounded subscription turn without inventing long-lived follow ownership
 - `relay_auth_client_recipe.zig`
   - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
     as one outbound `AUTH` client message, then mark the relay ready only after explicit caller
