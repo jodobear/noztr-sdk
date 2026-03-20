@@ -109,6 +109,18 @@ Use these docs when you need public routing or contract context before opening a
     serialization stays on the kernel, the client only pairs ready relay targets with one-shot
     request payloads, and the recipe proves `znk`-class tooling can build relay query commands on
     SDK surfaces without smuggling in a hidden streaming runtime
+- `relay_replay_client_recipe.zig`
+  - goal: inspect one checkpoint-backed replay step, then compose one explicit replay `REQ`
+    payload for a ready relay without rebuilding checkpoint or query glue in the caller
+  - public SDK surface: `noztr_sdk.client`, `RelayReplayClient`, `RelayReplayClientStorage`,
+    `RelayReplayTarget`, `TargetedReplayRequest`, `noztr_sdk.runtime.RelayReplaySpec`,
+    `noztr_sdk.runtime.RelayPoolReplayPlan`, `noztr_sdk.runtime.RelayPoolReplayStep`,
+    `noztr_sdk.store.ClientCheckpointStore`
+  - kernel fixture help: `noztr.nip01_message`
+  - control points: replay cursor lookup still stays on the shared checkpoint seam, relay
+    readiness still routes through the shared relay-pool layer, the client only maps one
+    checkpoint-backed `ClientQuery` into one outbound `REQ`, and downstream tools can now drive
+    replay requests on SDK surfaces without rebuilding filter serialization ad hoc
 - `relay_response_client_recipe.zig`
   - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
     validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed
