@@ -23,6 +23,7 @@ pub const relay_replay_turn_client = @import("relay_replay_turn_client.zig");
 pub const relay_response_client = @import("relay_response_client.zig");
 pub const signer_connect_job_client = @import("signer_connect_job_client.zig");
 pub const signer_client = @import("signer_client.zig");
+pub const signer_pubkey_job_client = @import("signer_pubkey_job_client.zig");
 pub const subscription_job_client = @import("subscription_job_client.zig");
 pub const subscription_turn_client = @import("subscription_turn_client.zig");
 
@@ -232,6 +233,17 @@ pub const SignerClientConfig = signer_client.SignerClientConfig;
 pub const SignerClientRequestStorage = signer_client.SignerClientRequestStorage;
 pub const SignerClientStorage = signer_client.SignerClientStorage;
 pub const SignerClient = signer_client.SignerClient;
+pub const SignerPubkeyJobClientError = signer_pubkey_job_client.SignerPubkeyJobClientError;
+pub const SignerPubkeyJobClientConfig = signer_pubkey_job_client.SignerPubkeyJobClientConfig;
+pub const SignerPubkeyJobClientStorage = signer_pubkey_job_client.SignerPubkeyJobClientStorage;
+pub const SignerPubkeyJobAuthEventStorage =
+    signer_pubkey_job_client.SignerPubkeyJobAuthEventStorage;
+pub const PreparedSignerPubkeyJobAuthEvent =
+    signer_pubkey_job_client.PreparedSignerPubkeyJobAuthEvent;
+pub const SignerPubkeyJobRequest = signer_pubkey_job_client.SignerPubkeyJobRequest;
+pub const SignerPubkeyJobReady = signer_pubkey_job_client.SignerPubkeyJobReady;
+pub const SignerPubkeyJobResult = signer_pubkey_job_client.SignerPubkeyJobResult;
+pub const SignerPubkeyJobClient = signer_pubkey_job_client.SignerPubkeyJobClient;
 pub const SubscriptionTurnClientError = subscription_turn_client.SubscriptionTurnClientError;
 pub const SubscriptionJobClientError = subscription_job_client.SubscriptionJobClientError;
 pub const SubscriptionJobClientConfig = subscription_job_client.SubscriptionJobClientConfig;

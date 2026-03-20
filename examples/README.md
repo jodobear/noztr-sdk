@@ -59,6 +59,18 @@ Use these docs when you need public routing or contract context before opening a
   - control points: relay auth handling stays explicit and caller-driven, request building still
     routes through the bounded signer client floor, and this layer only exposes command-ready
     connect posture instead of inventing hidden transport or reconnect policy
+- `signer_pubkey_job_client_recipe.zig`
+  - goal: prepare one command-ready signer pubkey job that either yields one relay `AUTH` event
+    or one `get_public_key` request, then close it with one validated public-key response
+  - public SDK surface: `noztr_sdk.client`, `SignerPubkeyJobClient`,
+    `SignerPubkeyJobClientStorage`, `SignerPubkeyJobAuthEventStorage`,
+    `PreparedSignerPubkeyJobAuthEvent`, `SignerPubkeyJobRequest`, `SignerPubkeyJobReady`,
+    `SignerPubkeyJobResult`
+  - kernel fixture help: `noztr.nip46_remote_signing`, `noztr.nip42_auth`
+  - control points: signer-session establishment still stays explicit, relay auth handling stays
+    explicit and caller-driven, request building still routes through the bounded signer client
+    floor, and this layer only exposes command-ready pubkey posture instead of inventing transport
+    or session policy
 - `local_operator_client_recipe.zig`
   - goal: derive one local keypair, roundtrip `NIP-19` entities, sign and inspect one local
     event, and perform one explicit local `NIP-44` encrypt/decrypt roundtrip

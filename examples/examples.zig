@@ -25,6 +25,7 @@ comptime {
     _ = @import("relay_response_client_recipe.zig");
     _ = @import("signer_connect_job_client_recipe.zig");
     _ = @import("signer_client_recipe.zig");
+    _ = @import("signer_pubkey_job_client_recipe.zig");
     _ = @import("store_query_recipe.zig");
     _ = @import("store_archive_recipe.zig");
     _ = @import("cli_archive_client_recipe.zig");
