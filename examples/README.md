@@ -71,6 +71,16 @@ Use these docs when you need public routing or contract context before opening a
     one-shot and caller-driven without hidden transport ownership, and the recipe proves
     `znk`-class tooling can consume one SDK publish surface instead of rebuilding event-plus-relay
     glue ad hoc
+- `publish_turn_client_recipe.zig`
+  - goal: begin one explicit publish turn from a local draft and close it with one validated
+    publish `OK` reply
+  - public SDK surface: `noztr_sdk.client`, `PublishTurnClient`, `PublishTurnClientStorage`,
+    `PublishTurnRequest`, `PublishTurnResult`
+  - kernel fixture help: `noztr.nip01_message`
+  - control points: local draft signing still routes through the local operator floor, relay
+    publish readiness still routes through the shared relay-pool layer, publish `OK` validation
+    still routes through the response floor, and this layer only closes one bounded publish turn
+    without inventing retries or hidden websocket ownership
 - `relay_auth_client_recipe.zig`
   - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
     as one outbound `AUTH` client message, then mark the relay ready only after explicit caller

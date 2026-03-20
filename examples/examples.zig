@@ -4,6 +4,7 @@ comptime {
     _ = @import("remote_signer_recipe.zig");
     _ = @import("local_operator_client_recipe.zig");
     _ = @import("publish_client_recipe.zig");
+    _ = @import("publish_turn_client_recipe.zig");
     _ = @import("relay_auth_client_recipe.zig");
     _ = @import("relay_exchange_client_recipe.zig");
     _ = @import("relay_query_client_recipe.zig");
