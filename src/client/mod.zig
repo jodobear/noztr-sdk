@@ -1,6 +1,7 @@
 pub const cli_archive_client = @import("cli_archive_client.zig");
 pub const auth_count_turn_client = @import("auth_count_turn_client.zig");
 pub const auth_publish_turn_client = @import("auth_publish_turn_client.zig");
+pub const auth_subscription_turn_client = @import("auth_subscription_turn_client.zig");
 pub const count_turn_client = @import("count_turn_client.zig");
 pub const local_operator_client = @import("local_operator_client.zig");
 pub const publish_client = @import("publish_client.zig");
@@ -36,6 +37,19 @@ pub const PreparedAuthPublishEvent = auth_publish_turn_client.PreparedAuthPublis
 pub const AuthPublishTurnStep = auth_publish_turn_client.AuthPublishTurnStep;
 pub const AuthPublishTurnResult = auth_publish_turn_client.AuthPublishTurnResult;
 pub const AuthPublishTurnClient = auth_publish_turn_client.AuthPublishTurnClient;
+pub const AuthSubscriptionTurnClientError =
+    auth_subscription_turn_client.AuthSubscriptionTurnClientError;
+pub const AuthSubscriptionTurnClientConfig =
+    auth_subscription_turn_client.AuthSubscriptionTurnClientConfig;
+pub const AuthSubscriptionTurnClientStorage =
+    auth_subscription_turn_client.AuthSubscriptionTurnClientStorage;
+pub const AuthSubscriptionEventStorage =
+    auth_subscription_turn_client.AuthSubscriptionEventStorage;
+pub const PreparedAuthSubscriptionEvent =
+    auth_subscription_turn_client.PreparedAuthSubscriptionEvent;
+pub const AuthSubscriptionTurnStep = auth_subscription_turn_client.AuthSubscriptionTurnStep;
+pub const AuthSubscriptionTurnResult = auth_subscription_turn_client.AuthSubscriptionTurnResult;
+pub const AuthSubscriptionTurnClient = auth_subscription_turn_client.AuthSubscriptionTurnClient;
 pub const CountTurnClientError = count_turn_client.CountTurnClientError;
 pub const CountTurnClientConfig = count_turn_client.CountTurnClientConfig;
 pub const CountTurnClientStorage = count_turn_client.CountTurnClientStorage;

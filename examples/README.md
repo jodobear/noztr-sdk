@@ -103,6 +103,18 @@ Use these docs when you need public routing or contract context before opening a
     state machine, auth event authoring still routes through the local operator floor, count turn
     closure still routes through the count turn floor, and this layer only adds typed auth-first
     recovery instead of inventing implicit auth retries or background query ownership
+- `auth_subscription_turn_client_recipe.zig`
+  - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
+    bounded subscription turn
+  - public SDK surface: `noztr_sdk.client`, `AuthSubscriptionTurnClient`,
+    `AuthSubscriptionTurnClientStorage`, `AuthSubscriptionEventStorage`,
+    `PreparedAuthSubscriptionEvent`, `AuthSubscriptionTurnStep`, `AuthSubscriptionTurnResult`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
+  - control points: relay auth challenge handling still routes through the shared relay-pool
+    state machine, auth event authoring still routes through the local operator floor,
+    subscription transcript closure still routes through the subscription turn floor, and this
+    layer only adds typed auth-first recovery instead of inventing implicit auth retries or hidden
+    follow ownership
 - `count_turn_client_recipe.zig`
   - goal: begin one explicit count turn from caller-owned count specs and close it with one
     validated `COUNT` reply

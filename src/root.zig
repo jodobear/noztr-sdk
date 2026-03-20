@@ -34,6 +34,14 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.AuthPublishTurnStep) == type);
     try std.testing.expect(@TypeOf(client.AuthPublishTurnResult) == type);
     try std.testing.expect(@TypeOf(client.AuthPublishTurnClient) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionTurnClientError) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionTurnClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionTurnClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedAuthSubscriptionEvent) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionTurnStep) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionTurnResult) == type);
+    try std.testing.expect(@TypeOf(client.AuthSubscriptionTurnClient) == type);
     try std.testing.expect(@TypeOf(client.CountTurnClientError) == type);
     try std.testing.expect(@TypeOf(client.CountTurnClientConfig) == type);
     try std.testing.expect(@TypeOf(client.CountTurnClientStorage) == type);
