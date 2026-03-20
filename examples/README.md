@@ -2,18 +2,23 @@
 
 Structured workflow recipes for `noztr-sdk`.
 
-These examples sit above the kernel recipe set in `/workspace/projects/noztr/examples`. They are
-technical and direct, and they intentionally teach the public workflow layer rather than app UI,
-network daemons, or hidden runtime loops.
+These examples sit above the kernel recipe set in
+[../../noztr-core/examples/README.md](../../noztr-core/examples/README.md). They are technical and
+direct, and they intentionally teach the public workflow layer rather than app UI, network
+daemons, or hidden runtime loops.
+
+This examples catalog is part of the public SDK documentation route.
+Local maintainer docs, when present, live under `.private-docs/`.
 
 ## Related Public Docs
 
 Use these docs when you need public routing or contract context before opening a file:
 
-- [README.md](/workspace/projects/nzdk/README.md)
-- [docs/release/README.md](/workspace/projects/nzdk/docs/release/README.md)
-- [docs/release/getting-started.md](/workspace/projects/nzdk/docs/release/getting-started.md)
-- [docs/release/contract-map.md](/workspace/projects/nzdk/docs/release/contract-map.md)
+- [README.md](../README.md)
+- [CONTRIBUTING.md](../CONTRIBUTING.md)
+- [docs/INDEX.md](../docs/INDEX.md)
+- [docs/getting-started.md](../docs/getting-started.md)
+- [docs/reference/contract-map.md](../docs/reference/contract-map.md)
 
 ## Teaching Posture
 
