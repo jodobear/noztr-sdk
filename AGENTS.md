@@ -64,6 +64,7 @@ This repo intentionally keeps two documentation layers:
   - `README.md`
   - `docs/`
   - `examples/README.md`
+  - `CONTRIBUTING.md`
 - internal local-only docs:
   - `.private-docs/`
 

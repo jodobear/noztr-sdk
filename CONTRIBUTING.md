@@ -19,6 +19,9 @@ Read these first:
 - [docs/reference/contract-map.md](docs/reference/contract-map.md)
 - [examples/README.md](examples/README.md)
 
+If you are working locally with the sibling `../noztr-core` checkout, its `examples/README.md` is
+the kernel recipe reference set below this SDK layer.
+
 If you are working in a local maintainer clone and `.private-docs/AGENTS.md` exists, continue
 there for the maintainer-only workflow. Internal working material lives in local-only
 `.private-docs/`, while `README.md`, `docs/`, and `examples/` are the public surface.

@@ -52,9 +52,6 @@ If you are working in a local maintainer clone, use `.private-docs/` when presen
 - Model SDK ergonomics after real downstream usage, while preserving the `noztr` kernel boundary.
 - Use Zig package/import naming via `noztr_sdk`.
 
-If you are working locally with the sibling `../noztr-core` checkout, its `examples/README.md` is
-the kernel recipe reference set below this SDK layer.
-
 ## Build
 
 ```bash
