@@ -33,6 +33,7 @@ comptime {
     _ = @import("relay_pool_checkpoint_recipe.zig");
     _ = @import("mailbox_recipe.zig");
     _ = @import("nip05_verify_client_recipe.zig");
+    _ = @import("nip39_verify_client_recipe.zig");
     _ = @import("nip39_verification_recipe.zig");
     _ = @import("nip03_verification_recipe.zig");
     _ = @import("nip05_resolution_recipe.zig");

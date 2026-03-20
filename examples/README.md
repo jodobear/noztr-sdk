@@ -428,6 +428,15 @@ Use these docs when you need public routing or contract context before opening a
   - control points: the client only assembles command-ready lookup storage and request posture
     above the existing resolver workflow, transport stays explicit, caller-owned buffers and
     scratch stay explicit, and this layer avoids inventing retry or output policy
+- `nip39_verify_client_recipe.zig`
+  - goal: prepare and run one command-ready remembered `NIP-39` profile verify job over the
+    public HTTP seam with explicit cache and profile-store seams
+  - public SDK surface: `noztr_sdk.client`, `Nip39VerifyClient`, `Nip39VerifyClientStorage`,
+    `Nip39VerifyJob`, `Nip39VerifySummary`, `Nip39VerifyJobResult`
+  - kernel fixture help: `noztr.nip39_external_identities`
+  - control points: the client only assembles profile verification storage and request posture
+    above the existing identity workflow, HTTP/cache/store ownership stays explicit, and this
+    layer avoids inventing autonomous refresh or output policy
 - `nip39_verification_recipe.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify
