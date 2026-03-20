@@ -420,6 +420,15 @@ Use these docs when you need public routing or contract context before opening a
     refresh plan plus one typed refresh step without hidden Bitcoin refresh policy, and now gets a
     typed store inconsistency error instead of an invariant-only crash if a custom remembered-
     verification store reports matches it cannot hydrate
+- `nip03_verify_client_recipe.zig`
+  - goal: prepare and run one command-ready remembered detached-proof `NIP-03` verify job over
+    the explicit HTTP, proof-store, and remembered-verification seams
+  - public SDK surface: `noztr_sdk.client`, `Nip03VerifyClient`, `Nip03VerifyClientStorage`,
+    `Nip03VerifyJob`, `Nip03VerifyCachedResult`, `Nip03VerifyJobResult`
+  - kernel fixture help: `noztr.nostr_keys`, `noztr.nip03_opentimestamps`
+  - control points: the client only assembles remote-proof request posture above the existing
+    OpenTimestamps workflow, HTTP and store ownership stay explicit, and this layer avoids
+    inventing background refresh or output policy
 - `nip05_verify_client_recipe.zig`
   - goal: prepare and run one command-ready `NIP-05` verify job over the public HTTP seam
   - public SDK surface: `noztr_sdk.client`, `Nip05VerifyClient`, `Nip05VerifyClientStorage`,
