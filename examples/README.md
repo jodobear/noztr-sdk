@@ -113,6 +113,16 @@ Use these docs when you need public routing or contract context before opening a
     state machine, auth event authoring still routes through the local operator floor, count turn
     closure still routes through the count turn floor, and this layer only adds typed auth-first
     recovery instead of inventing implicit auth retries or background query ownership
+- `count_job_client_recipe.zig`
+  - goal: prepare one command-ready count job that either yields one auth event or one bounded
+    `COUNT` request, then close it with one validated `COUNT` reply
+  - public SDK surface: `noztr_sdk.client`, `CountJobClient`, `CountJobClientStorage`,
+    `CountJobAuthEventStorage`, `PreparedCountJobAuthEvent`, `CountJobRequest`, `CountJobReady`,
+    `CountJobResult`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
+  - control points: auth handling still routes through the auth-aware count turn floor, count
+    request creation still routes through the bounded count turn floor, and this layer only
+    exposes command-ready job posture instead of inventing transport or output policy
 - `auth_subscription_turn_client_recipe.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded subscription turn
@@ -125,6 +135,17 @@ Use these docs when you need public routing or contract context before opening a
     subscription transcript closure still routes through the subscription turn floor, and this
     layer only adds typed auth-first recovery instead of inventing implicit auth retries or hidden
     follow ownership
+- `subscription_job_client_recipe.zig`
+  - goal: prepare one command-ready bounded subscription job that either yields one auth event or
+    one subscription request, then close it with bounded transcript intake and explicit `CLOSE`
+  - public SDK surface: `noztr_sdk.client`, `SubscriptionJobClient`,
+    `SubscriptionJobClientStorage`, `SubscriptionJobAuthEventStorage`,
+    `PreparedSubscriptionJobAuthEvent`, `SubscriptionJobRequest`, `SubscriptionJobIntake`,
+    `SubscriptionJobReady`, `SubscriptionJobResult`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
+  - control points: auth handling still routes through the auth-aware subscription turn floor,
+    transcript closure still routes through the bounded subscription turn floor, and this layer
+    only exposes command-ready job posture instead of inventing hidden follow ownership
 - `auth_replay_turn_client_recipe.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded replay turn

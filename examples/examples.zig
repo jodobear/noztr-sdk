@@ -10,7 +10,9 @@ comptime {
     _ = @import("auth_publish_turn_client_recipe.zig");
     _ = @import("auth_replay_turn_client_recipe.zig");
     _ = @import("auth_subscription_turn_client_recipe.zig");
+    _ = @import("count_job_client_recipe.zig");
     _ = @import("count_turn_client_recipe.zig");
+    _ = @import("subscription_job_client_recipe.zig");
     _ = @import("subscription_turn_client_recipe.zig");
     _ = @import("relay_auth_client_recipe.zig");
     _ = @import("relay_exchange_client_recipe.zig");
