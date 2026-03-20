@@ -1,4 +1,7 @@
 .zig-cache/
+examples/.zig-cache/
 zig-out/
 node_modules/
 *.log
+.beads/
+.private-docs/
