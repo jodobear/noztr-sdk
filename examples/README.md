@@ -144,6 +144,17 @@ Use these docs when you need public routing or contract context before opening a
     floors, checkpoint persistence still stays on the shared archive seam, this layer only decides
     when one replay transcript is safe to advance, and downstream tools can now save replay cursor
     progress on SDK surfaces without inventing hidden checkpoint policy
+- `relay_replay_turn_client_recipe.zig`
+  - goal: begin one replay turn, accept explicit replay transcript intake, then return one bounded
+    close-plus-checkpoint result and persist it explicitly
+  - public SDK surface: `noztr_sdk.client`, `RelayReplayTurnClient`,
+    `RelayReplayTurnClientStorage`, `ReplayTurnRequest`, `ReplayTurnIntake`, `ReplayTurnResult`,
+    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.store.RelayCheckpointArchive`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`
+  - control points: replay request composition still stays on the replay exchange floor,
+    checkpoint safety still stays on the replay checkpoint-advance floor, this layer only closes
+    one bounded replay turn into one explicit result, and downstream tools can now drive replay
+    turn loops on SDK surfaces without inventing hidden transcript or checkpoint state machines
 - `relay_response_client_recipe.zig`
   - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
     validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed
