@@ -48,6 +48,52 @@ Use these docs when you need public routing or contract context before opening a
     `buffer + id + scratch`, the shared relay-pool runtime stays explicit instead of becoming
     hidden signer policy, and the recipe keeps repetitive response JSON wiring in one small helper
     so the public session flow stays primary
+- `local_operator_client_recipe.zig`
+  - goal: derive one local keypair, roundtrip `NIP-19` entities, sign and inspect one local
+    event, and perform one explicit local `NIP-44` encrypt/decrypt roundtrip
+  - public SDK surface: `noztr_sdk.client`, `LocalOperatorClient`, `LocalKeypair`,
+    `LocalEventDraft`, `LocalEventInspection`
+  - kernel fixture help: `noztr.nostr_keys`, `noztr.nip19_bech32`, `noztr.nip01_event`,
+    `noztr.nip44`
+  - control points: the client composes deterministic kernel helpers instead of re-implementing
+    them, local operator flows stay relay-free and side-effect free, caller-owned buffers and
+    scratch stay explicit, and the recipe proves `znk`-class tooling can stay on SDK surfaces for
+    local key/event/entity work instead of stitching kernel modules together ad hoc
+- `publish_client_recipe.zig`
+  - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
+    runtime, then pair one ready relay with one prepared outbound publish payload
+  - public SDK surface: `noztr_sdk.client`, `PublishClient`, `PublishClientStorage`,
+    `PreparedPublishEvent`, `TargetedPublishEvent`, `noztr_sdk.runtime.RelayPoolPublishPlan`,
+    `noztr_sdk.runtime.RelayPoolPublishStep`
+  - kernel fixture help: `noztr.nip01_event`
+  - control points: the client reuses the local operator floor instead of re-implementing
+    signing, relay readiness still routes through the shared relay-pool layer, publish work stays
+    one-shot and caller-driven without hidden transport ownership, and the recipe proves
+    `znk`-class tooling can consume one SDK publish surface instead of rebuilding event-plus-relay
+    glue ad hoc
+- `relay_query_client_recipe.zig`
+  - goal: inspect explicit shared relay query posture, then compose one outbound `REQ`, one
+    outbound `COUNT`, and one outbound `CLOSE` payload for a ready relay without hidden
+    subscription ownership
+  - public SDK surface: `noztr_sdk.client`, `RelayQueryClient`, `RelayQueryClientStorage`,
+    `RelayQueryTarget`, `TargetedSubscriptionRequest`, `TargetedCountRequest`,
+    `TargetedCloseRequest`, `noztr_sdk.runtime.RelayPoolSubscriptionPlan`,
+    `noztr_sdk.runtime.RelayPoolCountPlan`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`
+  - control points: relay readiness still routes through the shared relay-pool layer, request
+    serialization stays on the kernel, the client only pairs ready relay targets with one-shot
+    request payloads, and the recipe proves `znk`-class tooling can build relay query commands on
+    SDK surfaces without smuggling in a hidden streaming runtime
+- `signer_client_recipe.zig`
+  - goal: use one first signer-tooling client surface to drive explicit `NIP-46` connect,
+    `get_public_key`, one `nip44_encrypt` request, and one shared relay-runtime inspect/select step
+  - public SDK surface: `noztr_sdk.client`, `SignerClient`, `SignerClientStorage`,
+    `noztr_sdk.runtime.RelayPoolStep`
+  - kernel fixture help: `noztr.nip46_remote_signing`
+  - control points: the client composes the existing remote-signer workflow instead of replacing
+    it, caller still owns request storage and transport send/receive, sequential request ids are
+    generated from bounded caller-owned storage instead of hidden global state, and shared relay
+    runtime inspection remains explicit rather than turning into signer-daemon policy
 - `store_query_recipe.zig`
   - goal: persist bounded event records, query them with one explicit cursor/page surface, and
     remember one named checkpoint

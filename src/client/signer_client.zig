@@ -1,0 +1,389 @@
+const std = @import("std");
+const runtime = @import("../runtime/mod.zig");
+const workflows = @import("../workflows/mod.zig");
+
+pub const signer_client_request_id_max_bytes: u8 = 32;
+
+pub const SignerClientError = workflows.RemoteSignerError;
+
+pub const SignerClientConfig = struct {};
+
+pub const SignerClientRequestStorage = struct {
+    buffer: workflows.RemoteSignerRequestBuffer = .{},
+    request_id: [signer_client_request_id_max_bytes]u8 =
+        [_]u8{0} ** signer_client_request_id_max_bytes,
+    request_sequence: u64 = 0,
+
+    /// The returned request context borrows both the generated id and serialized request buffer
+    /// until the next call overwrites this storage.
+    pub fn nextRequestContext(
+        self: *SignerClientRequestStorage,
+        scratch: std.mem.Allocator,
+    ) workflows.RemoteSignerRequestContext {
+        return .init(self.nextRequestId(), &self.buffer, scratch);
+    }
+
+    fn nextRequestId(self: *SignerClientRequestStorage) []const u8 {
+        self.request_sequence += 1;
+        @memset(self.request_id[0..], 0);
+        return std.fmt.bufPrint(
+            self.request_id[0..],
+            "signer-{d}",
+            .{self.request_sequence},
+        ) catch unreachable;
+    }
+};
+
+pub const SignerClientStorage = struct {
+    request: SignerClientRequestStorage = .{},
+    relay_runtime: workflows.RemoteSignerRelayPoolRuntimeStorage = .{},
+};
+
+pub const SignerClient = struct {
+    config: SignerClientConfig,
+    session: workflows.RemoteSignerSession,
+
+    pub fn init(
+        config: SignerClientConfig,
+        session: workflows.RemoteSignerSession,
+    ) SignerClient {
+        return .{
+            .config = config,
+            .session = session,
+        };
+    }
+
+    pub fn initFromBunkerUriText(
+        config: SignerClientConfig,
+        uri_text: []const u8,
+        scratch: std.mem.Allocator,
+    ) SignerClientError!SignerClient {
+        return .{
+            .config = config,
+            .session = try workflows.RemoteSignerSession.initFromBunkerUriText(uri_text, scratch),
+        };
+    }
+
+    pub fn currentRelayUrl(self: *const SignerClient) []const u8 {
+        return self.session.currentRelayUrl();
+    }
+
+    pub fn currentRelayCanSendRequests(self: *const SignerClient) bool {
+        return self.session.currentRelayCanSendRequests();
+    }
+
+    pub fn isConnected(self: *const SignerClient) bool {
+        return self.session.isConnected();
+    }
+
+    pub fn remoteSignerPubkey(self: *const SignerClient) [32]u8 {
+        return self.session.remoteSignerPubkey();
+    }
+
+    pub fn getUserPubkey(self: *const SignerClient) ?[32]u8 {
+        return self.session.getUserPubkey();
+    }
+
+    pub fn lastSignerError(self: *const SignerClient) ?[]const u8 {
+        return self.session.lastSignerError();
+    }
+
+    pub fn markCurrentRelayConnected(self: *SignerClient) void {
+        self.session.markCurrentRelayConnected();
+    }
+
+    pub fn noteCurrentRelayDisconnected(self: *SignerClient) void {
+        self.session.noteCurrentRelayDisconnected();
+    }
+
+    pub fn noteCurrentRelayAuthChallenge(
+        self: *SignerClient,
+        challenge: []const u8,
+    ) SignerClientError!void {
+        try self.session.noteCurrentRelayAuthChallenge(challenge);
+    }
+
+    pub fn acceptCurrentRelayAuthEventJson(
+        self: *SignerClient,
+        auth_event_json: []const u8,
+        now_unix_seconds: u64,
+        window_seconds: u32,
+        scratch: std.mem.Allocator,
+    ) SignerClientError!void {
+        try self.session.acceptCurrentRelayAuthEventJson(
+            auth_event_json,
+            now_unix_seconds,
+            window_seconds,
+            scratch,
+        );
+    }
+
+    pub fn advanceRelay(self: *SignerClient) SignerClientError![]const u8 {
+        return self.session.advanceRelay();
+    }
+
+    pub fn inspectRelayRuntime(
+        self: *const SignerClient,
+        storage: *SignerClientStorage,
+    ) runtime.RelayPoolPlan {
+        return self.session.inspectRelayPoolRuntime(&storage.relay_runtime);
+    }
+
+    pub fn selectRelayRuntimeStep(
+        self: *SignerClient,
+        step: *const runtime.RelayPoolStep,
+    ) SignerClientError![]const u8 {
+        return self.session.selectRelayPoolStep(step);
+    }
+
+    pub fn beginConnect(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        requested_permissions: []const workflows.RemoteSignerPermission,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginConnect(
+            storage.request.nextRequestContext(scratch),
+            requested_permissions,
+        );
+    }
+
+    pub fn beginGetPublicKey(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginGetPublicKey(storage.request.nextRequestContext(scratch));
+    }
+
+    pub fn beginSignEvent(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        unsigned_event_json: []const u8,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginSignEvent(
+            storage.request.nextRequestContext(scratch),
+            unsigned_event_json,
+        );
+    }
+
+    pub fn beginSwitchRelays(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginSwitchRelays(storage.request.nextRequestContext(scratch));
+    }
+
+    pub fn beginNip04Encrypt(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        request: *const workflows.RemoteSignerPubkeyTextRequest,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginNip04Encrypt(
+            storage.request.nextRequestContext(scratch),
+            request,
+        );
+    }
+
+    pub fn beginNip04Decrypt(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        request: *const workflows.RemoteSignerPubkeyTextRequest,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginNip04Decrypt(
+            storage.request.nextRequestContext(scratch),
+            request,
+        );
+    }
+
+    pub fn beginNip44Encrypt(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        request: *const workflows.RemoteSignerPubkeyTextRequest,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginNip44Encrypt(
+            storage.request.nextRequestContext(scratch),
+            request,
+        );
+    }
+
+    pub fn beginNip44Decrypt(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        request: *const workflows.RemoteSignerPubkeyTextRequest,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginNip44Decrypt(
+            storage.request.nextRequestContext(scratch),
+            request,
+        );
+    }
+
+    pub fn beginPing(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+    ) SignerClientError!workflows.RemoteSignerOutboundRequest {
+        return self.session.beginPing(storage.request.nextRequestContext(scratch));
+    }
+
+    pub fn acceptResponseJson(
+        self: *SignerClient,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) SignerClientError!workflows.RemoteSignerResponseOutcome {
+        return self.session.acceptResponseJson(response_json, scratch);
+    }
+};
+
+test "signer client request storage generates sequential bounded request ids" {
+    var storage = SignerClientRequestStorage{};
+    var scratch_bytes: [32]u8 = undefined;
+    var scratch = std.heap.FixedBufferAllocator.init(&scratch_bytes);
+
+    const first = storage.nextRequestContext(scratch.allocator());
+    try std.testing.expectEqualStrings("signer-1", first.id);
+
+    const second = storage.nextRequestContext(scratch.allocator());
+    try std.testing.expectEqualStrings("signer-2", second.id);
+    try std.testing.expectEqual(@as(u64, 2), storage.request_sequence);
+}
+
+test "signer client composes connect get_public_key and nip44 encrypt without caller ids" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const bunker_uri =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&secret=secret";
+    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    client.markCurrentRelayConnected();
+
+    var storage = SignerClientStorage{};
+
+    var connect_scratch_bytes: [1024]u8 = undefined;
+    var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_bytes);
+    const outbound_connect = try client.beginConnect(
+        &storage,
+        connect_scratch.allocator(),
+        &.{.{ .method = .get_public_key }},
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_connect.json, "\"id\":\"signer-1\"") != null,
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_connect.json, "\"method\":\"connect\"") != null,
+    );
+
+    var connect_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var connect_response_scratch_bytes: [2048]u8 = undefined;
+    var connect_response_scratch = std.heap.FixedBufferAllocator.init(&connect_response_scratch_bytes);
+    const connect_outcome = try client.acceptResponseJson(
+        try serializeResponseJson(connect_response_json[0..], .{
+            .id = "signer-1",
+            .result = .{ .value = .{ .text = "secret" } },
+        }),
+        connect_response_scratch.allocator(),
+    );
+    try std.testing.expect(connect_outcome == .connected);
+    try std.testing.expect(client.isConnected());
+
+    var pubkey_scratch_bytes: [1024]u8 = undefined;
+    var pubkey_scratch = std.heap.FixedBufferAllocator.init(&pubkey_scratch_bytes);
+    const outbound_pubkey = try client.beginGetPublicKey(&storage, pubkey_scratch.allocator());
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_pubkey.json, "\"id\":\"signer-2\"") != null,
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_pubkey.json, "\"method\":\"get_public_key\"") != null,
+    );
+
+    const user_pubkey = [_]u8{0x11} ** 32;
+    const user_pubkey_hex = std.fmt.bytesToHex(user_pubkey, .lower);
+    var pubkey_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var pubkey_response_scratch_bytes: [2048]u8 = undefined;
+    var pubkey_response_scratch = std.heap.FixedBufferAllocator.init(&pubkey_response_scratch_bytes);
+    const pubkey_outcome = try client.acceptResponseJson(
+        try textResponse(pubkey_response_json[0..], "signer-2", user_pubkey_hex[0..]),
+        pubkey_response_scratch.allocator(),
+    );
+    try std.testing.expect(pubkey_outcome == .user_pubkey);
+    try std.testing.expect(std.mem.eql(u8, &user_pubkey, &pubkey_outcome.user_pubkey));
+
+    const peer_pubkey = [_]u8{0x22} ** 32;
+    var nip44_scratch_bytes: [1024]u8 = undefined;
+    var nip44_scratch = std.heap.FixedBufferAllocator.init(&nip44_scratch_bytes);
+    const outbound_nip44 = try client.beginNip44Encrypt(
+        &storage,
+        nip44_scratch.allocator(),
+        &.{ .pubkey = peer_pubkey, .text = "hello" },
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_nip44.json, "\"id\":\"signer-3\"") != null,
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_nip44.json, "\"method\":\"nip44_encrypt\"") != null,
+    );
+
+    var nip44_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var nip44_response_scratch_bytes: [2048]u8 = undefined;
+    var nip44_response_scratch = std.heap.FixedBufferAllocator.init(&nip44_response_scratch_bytes);
+    const nip44_outcome = try client.acceptResponseJson(
+        try textResponse(nip44_response_json[0..], "signer-3", "ciphertext"),
+        nip44_response_scratch.allocator(),
+    );
+    try std.testing.expect(nip44_outcome == .text_response);
+    try std.testing.expectEqual(.nip44_encrypt, nip44_outcome.text_response.method);
+    try std.testing.expectEqualStrings("ciphertext", nip44_outcome.text_response.text);
+}
+
+test "signer client keeps relay runtime inspection explicit" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const bunker_uri =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
+    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    client.markCurrentRelayConnected();
+
+    var storage = SignerClientStorage{};
+    const runtime_plan = client.inspectRelayRuntime(&storage);
+    try std.testing.expectEqual(@as(u8, 2), runtime_plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), runtime_plan.ready_count);
+    try std.testing.expectEqual(@as(u8, 1), runtime_plan.connect_count);
+
+    const relay_two_step = runtime.RelayPoolStep{
+        .entry = runtime_plan.entry(1).?,
+    };
+    const selected = try client.selectRelayRuntimeStep(&relay_two_step);
+    try std.testing.expectEqualStrings("wss://relay.two", selected);
+    try std.testing.expectEqualStrings("wss://relay.two", client.currentRelayUrl());
+    try std.testing.expect(!client.isConnected());
+}
+
+fn textResponse(
+    output: []u8,
+    id: []const u8,
+    text: []const u8,
+) workflows.RemoteSignerError![]const u8 {
+    return serializeResponseJson(output, .{
+        .id = id,
+        .result = .{ .value = .{ .text = text } },
+    });
+}
+
+fn serializeResponseJson(
+    output: []u8,
+    response: @import("noztr").nip46_remote_signing.Response,
+) workflows.RemoteSignerError![]const u8 {
+    return @import("noztr").nip46_remote_signing.message_serialize_json(
+        output,
+        .{ .response = response },
+    );
+}

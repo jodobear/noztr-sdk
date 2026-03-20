@@ -74,6 +74,7 @@ The structured SDK examples tree now lives under `examples/`.
 Start here:
 - `examples/consumer_smoke.zig`
 - `examples/remote_signer_recipe.zig`
+- `examples/signer_client_recipe.zig`
 - `examples/mailbox_recipe.zig`
 - `examples/nip03_verification_recipe.zig`
 - `examples/group_session_recipe.zig`

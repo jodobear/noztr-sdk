@@ -2,6 +2,10 @@ comptime {
     _ = @import("consumer_smoke.zig");
     _ = @import("common.zig");
     _ = @import("remote_signer_recipe.zig");
+    _ = @import("local_operator_client_recipe.zig");
+    _ = @import("publish_client_recipe.zig");
+    _ = @import("relay_query_client_recipe.zig");
+    _ = @import("signer_client_recipe.zig");
     _ = @import("store_query_recipe.zig");
     _ = @import("store_archive_recipe.zig");
     _ = @import("cli_archive_client_recipe.zig");

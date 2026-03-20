@@ -8,6 +8,7 @@ const noztr = @import("noztr");
 
 pub const pool_capacity: u8 = internal_pool.pool_capacity;
 pub const subscription_specs_capacity: u8 = 8;
+pub const count_specs_capacity: u8 = 8;
 pub const replay_specs_capacity: u8 = 8;
 
 pub const RelayPoolError =
@@ -57,11 +58,65 @@ pub const RelayPoolCheckpointAction = enum {
     restore_checkpoint,
 };
 
+pub const RelayPoolPublishAction = enum {
+    connect,
+    authenticate,
+    publish,
+};
+
+pub const RelayPoolPublishEntry = struct {
+    descriptor: RelayDescriptor,
+    action: RelayPoolPublishAction,
+};
+
+pub const RelayPoolPublishStorage = struct {
+    entries: [pool_capacity]RelayPoolPublishEntry = undefined,
+};
+
+pub const RelayPoolPublishPlan = struct {
+    entries: []const RelayPoolPublishEntry = &.{},
+    relay_count: u8 = 0,
+    connect_count: u8 = 0,
+    authenticate_count: u8 = 0,
+    publish_count: u8 = 0,
+
+    pub fn entry(self: *const RelayPoolPublishPlan, index: u8) ?RelayPoolPublishEntry {
+        if (index >= self.relay_count) return null;
+        return self.entries[index];
+    }
+
+    pub fn nextEntry(self: *const RelayPoolPublishPlan) ?RelayPoolPublishEntry {
+        var index: usize = 0;
+        while (index < self.entries.len) : (index += 1) {
+            if (self.entries[index].action == .publish) return self.entries[index];
+        }
+        return null;
+    }
+
+    pub fn nextStep(self: *const RelayPoolPublishPlan) ?RelayPoolPublishStep {
+        const selected = self.nextEntry() orelse return null;
+        return .{ .entry = selected };
+    }
+};
+
+pub const RelayPoolPublishStep = struct {
+    entry: RelayPoolPublishEntry,
+};
+
 pub const RelaySubscriptionError = error{
     TooManySubscriptionSpecs,
     EmptySubscriptionId,
     SubscriptionIdTooLong,
     EmptySubscriptionFilters,
+    TooManySubscriptionFilters,
+};
+
+pub const RelayCountError = error{
+    TooManyCountSpecs,
+    EmptySubscriptionId,
+    SubscriptionIdTooLong,
+    EmptyCountFilters,
+    TooManyCountFilters,
 };
 
 pub const RelayReplayError = client.ClientStoreError || error{
@@ -126,6 +181,61 @@ pub const RelayPoolSubscriptionPlan = struct {
 
 pub const RelayPoolSubscriptionStep = struct {
     entry: RelayPoolSubscriptionEntry,
+};
+
+pub const RelayCountSpec = struct {
+    subscription_id: []const u8,
+    filters: []const noztr.nip01_filter.Filter,
+};
+
+pub const RelayPoolCountAction = enum {
+    connect,
+    authenticate,
+    count,
+};
+
+pub const RelayPoolCountEntry = struct {
+    descriptor: RelayDescriptor,
+    subscription_id: []const u8,
+    filters: []const noztr.nip01_filter.Filter,
+    action: RelayPoolCountAction,
+};
+
+pub const RelayPoolCountStorage = struct {
+    entries: [@as(usize, pool_capacity) * @as(usize, count_specs_capacity)]RelayPoolCountEntry = undefined,
+};
+
+pub const RelayPoolCountPlan = struct {
+    entries: []const RelayPoolCountEntry = &.{},
+    entry_count: u16 = 0,
+    relay_count: u8 = 0,
+    spec_count: u8 = 0,
+    connect_count: u16 = 0,
+    authenticate_count: u16 = 0,
+    count_count: u16 = 0,
+
+    pub fn entry(self: *const RelayPoolCountPlan, index: u16) ?RelayPoolCountEntry {
+        if (index >= self.entry_count) return null;
+        return self.entries[index];
+    }
+
+    pub fn nextEntry(self: *const RelayPoolCountPlan) ?RelayPoolCountEntry {
+        var index: u16 = 0;
+        while (index < self.entry_count) : (index += 1) {
+            const current = self.entries[index];
+            if (current.action == .count) return current;
+        }
+        return null;
+    }
+
+    pub fn nextStep(self: *const RelayPoolCountPlan) ?RelayPoolCountStep {
+        const selected = self.nextEntry() orelse return null;
+        return .{ .entry = selected };
+    }
+};
+
+pub const RelayPoolCountStep = struct {
+    entry: RelayPoolCountEntry,
 };
 
 pub const RelayReplaySpec = struct {
@@ -365,6 +475,9 @@ pub const RelayPool = struct {
         storage: *RelayPoolSubscriptionStorage,
     ) RelaySubscriptionError!RelayPoolSubscriptionPlan {
         if (specs.len > subscription_specs_capacity) return error.TooManySubscriptionSpecs;
+        for (specs) |spec| {
+            try validateSubscriptionSpec(&spec);
+        }
 
         var connect_count: u16 = 0;
         var authenticate_count: u16 = 0;
@@ -382,7 +495,6 @@ pub const RelayPool = struct {
 
             for (specs, 0..) |spec, spec_index| {
                 _ = spec_index;
-                try validateSubscriptionSpec(&spec);
                 storage.entries[entry_index] = .{
                     .descriptor = relay_descriptor,
                     .subscription_id = spec.subscription_id,
@@ -473,6 +585,92 @@ pub const RelayPool = struct {
         };
     }
 
+    pub fn inspectCounts(
+        self: *const RelayPool,
+        specs: []const RelayCountSpec,
+        storage: *RelayPoolCountStorage,
+    ) RelayCountError!RelayPoolCountPlan {
+        if (specs.len > count_specs_capacity) return error.TooManyCountSpecs;
+        for (specs) |spec| {
+            try validateCountSpec(&spec);
+        }
+
+        var connect_count: u16 = 0;
+        var authenticate_count: u16 = 0;
+        var count_count: u16 = 0;
+        var entry_index: u16 = 0;
+
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const relay_descriptor: RelayDescriptor = .{
+                .relay_index = relay_index,
+                .relay_url = relay.auth_session.relayUrl(),
+            };
+            const action = classifyCountAction(relay.state);
+
+            for (specs) |spec| {
+                storage.entries[entry_index] = .{
+                    .descriptor = relay_descriptor,
+                    .subscription_id = spec.subscription_id,
+                    .filters = spec.filters,
+                    .action = action,
+                };
+                entry_index += 1;
+                switch (action) {
+                    .connect => connect_count += 1,
+                    .authenticate => authenticate_count += 1,
+                    .count => count_count += 1,
+                }
+            }
+        }
+
+        return .{
+            .entries = storage.entries[0..entry_index],
+            .entry_count = entry_index,
+            .relay_count = self._storage.pool.count,
+            .spec_count = @intCast(specs.len),
+            .connect_count = connect_count,
+            .authenticate_count = authenticate_count,
+            .count_count = count_count,
+        };
+    }
+
+    pub fn inspectPublish(
+        self: *const RelayPool,
+        storage: *RelayPoolPublishStorage,
+    ) RelayPoolPublishPlan {
+        var connect_count: u8 = 0;
+        var authenticate_count: u8 = 0;
+        var publish_count: u8 = 0;
+
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const action = classifyPublishAction(relay.state);
+            storage.entries[relay_index] = .{
+                .descriptor = .{
+                    .relay_index = relay_index,
+                    .relay_url = relay.auth_session.relayUrl(),
+                },
+                .action = action,
+            };
+            switch (action) {
+                .connect => connect_count += 1,
+                .authenticate => authenticate_count += 1,
+                .publish => publish_count += 1,
+            }
+        }
+
+        return .{
+            .entries = storage.entries[0..self._storage.pool.count],
+            .relay_count = self._storage.pool.count,
+            .connect_count = connect_count,
+            .authenticate_count = authenticate_count,
+            .publish_count = publish_count,
+        };
+    }
+
     pub fn exportCheckpoints(
         self: *const RelayPool,
         cursors: []const client.EventCursor,
@@ -541,12 +739,38 @@ fn classifyReplayAction(state: session.SessionState) RelayPoolReplayAction {
     };
 }
 
+fn classifyCountAction(state: session.SessionState) RelayPoolCountAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .count,
+    };
+}
+
+fn classifyPublishAction(state: session.SessionState) RelayPoolPublishAction {
+    return switch (state) {
+        .disconnected => .connect,
+        .auth_required => .authenticate,
+        .connected => .publish,
+    };
+}
+
 fn validateSubscriptionSpec(spec: *const RelaySubscriptionSpec) RelaySubscriptionError!void {
     if (spec.subscription_id.len == 0) return error.EmptySubscriptionId;
     if (spec.subscription_id.len > noztr.limits.subscription_id_bytes_max) {
         return error.SubscriptionIdTooLong;
     }
     if (spec.filters.len == 0) return error.EmptySubscriptionFilters;
+    if (spec.filters.len > noztr.limits.message_filters_max) return error.TooManySubscriptionFilters;
+}
+
+fn validateCountSpec(spec: *const RelayCountSpec) RelayCountError!void {
+    if (spec.subscription_id.len == 0) return error.EmptySubscriptionId;
+    if (spec.subscription_id.len > noztr.limits.subscription_id_bytes_max) {
+        return error.SubscriptionIdTooLong;
+    }
+    if (spec.filters.len == 0) return error.EmptyCountFilters;
+    if (spec.filters.len > noztr.limits.message_filters_max) return error.TooManyCountFilters;
 }
 
 fn validateReplaySpec(spec: *const RelayReplaySpec) RelayReplayError!void {
@@ -635,6 +859,46 @@ test "relay pool runtime next-step prefers authenticate before connect" {
     try std.testing.expectEqualStrings("wss://relay.one", next_step.entry.descriptor.relay_url);
 
     _ = second;
+}
+
+test "relay pool inspects explicit publish posture over current relay readiness" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    const third = try pool.addRelay("wss://relay.three");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.markRelayConnected(second.relay_index);
+    try pool.noteRelayAuthChallenge(second.relay_index, "challenge-1");
+
+    var publish_storage = RelayPoolPublishStorage{};
+    const plan = pool.inspectPublish(&publish_storage);
+    try std.testing.expectEqual(@as(u8, 3), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.publish_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.connect_count);
+    try std.testing.expectEqual(RelayPoolPublishAction.publish, plan.entry(first.relay_index).?.action);
+    try std.testing.expectEqual(
+        RelayPoolPublishAction.authenticate,
+        plan.entry(second.relay_index).?.action,
+    );
+    try std.testing.expectEqual(RelayPoolPublishAction.connect, plan.entry(third.relay_index).?.action);
+}
+
+test "relay pool publish next-step selects the first ready relay only" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(second.relay_index);
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+
+    var publish_storage = RelayPoolPublishStorage{};
+    const plan = pool.inspectPublish(&publish_storage);
+    const step = plan.nextStep().?;
+    try std.testing.expectEqual(second.relay_index, step.entry.descriptor.relay_index);
+    try std.testing.expectEqual(RelayPoolPublishAction.publish, step.entry.action);
 }
 
 test "relay pool runtime next-step is null when all relays are ready" {
@@ -742,6 +1006,17 @@ test "relay pool exposes bounded subscription vocabulary" {
     try std.testing.expect(@TypeOf(storage) == RelayPoolSubscriptionStorage);
 }
 
+test "relay pool exposes bounded count vocabulary" {
+    const filter = noztr.nip01_filter.Filter{};
+    const spec = RelayCountSpec{
+        .subscription_id = "count-feed",
+        .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..],
+    };
+
+    try std.testing.expectEqualStrings("count-feed", spec.subscription_id);
+    try std.testing.expectEqual(@as(usize, 1), spec.filters.len);
+}
+
 test "relay pool exposes bounded replay vocabulary" {
     const replay_spec = RelayReplaySpec{
         .checkpoint_scope = "relay-pool",
@@ -788,6 +1063,29 @@ test "relay pool inspects subscription targets over bounded relay readiness" {
     try std.testing.expectEqualStrings("feed", plan.entry(1).?.subscription_id);
     try std.testing.expectEqual(RelayPoolSubscriptionAction.subscribe, plan.entry(1).?.action);
     try std.testing.expectEqualStrings("wss://relay.three", plan.entry(2).?.descriptor.relay_url);
+}
+
+test "relay pool inspects count targets over bounded relay readiness" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const first = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(first.relay_index);
+    try pool.noteRelayAuthChallenge(first.relay_index, "challenge-1");
+    try pool.markRelayConnected(second.relay_index);
+
+    const filter = noztr.nip01_filter.Filter{};
+    const specs = [_]RelayCountSpec{
+        .{ .subscription_id = "count-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var count_storage = RelayPoolCountStorage{};
+    const plan = try pool.inspectCounts(specs[0..], &count_storage);
+    try std.testing.expectEqual(@as(u8, 2), plan.relay_count);
+    try std.testing.expectEqual(@as(u8, 1), plan.spec_count);
+    try std.testing.expectEqual(@as(u16, 1), plan.count_count);
+    try std.testing.expectEqual(@as(u16, 1), plan.authenticate_count);
+    try std.testing.expectEqualStrings("count-feed", plan.entry(1).?.subscription_id);
+    try std.testing.expectEqual(RelayPoolCountAction.count, plan.entry(1).?.action);
 }
 
 test "relay pool inspects replay targets over bounded relay readiness and stored checkpoints" {
@@ -950,6 +1248,20 @@ test "relay pool subscription inspection rejects invalid specs" {
     );
 }
 
+test "relay pool count inspection rejects invalid specs" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+
+    var count_storage = RelayPoolCountStorage{};
+    const invalid_specs = [_]RelayCountSpec{
+        .{ .subscription_id = "", .filters = (&[_]noztr.nip01_filter.Filter{.{}})[0..] },
+    };
+    try std.testing.expectError(
+        error.EmptySubscriptionId,
+        pool.inspectCounts(invalid_specs[0..], &count_storage),
+    );
+}
+
 test "relay pool subscription plan selects the next subscribe-ready entry" {
     var storage = RelayPoolStorage{};
     var pool = RelayPool.init(&storage);
@@ -992,6 +1304,55 @@ test "relay pool subscription plan next-entry is null when no relay is subscribe
     var subscription_storage = RelayPoolSubscriptionStorage{};
     const plan = try pool.inspectSubscriptions(specs[0..], &subscription_storage);
     try std.testing.expect(plan.nextEntry() == null);
+}
+
+test "relay pool count plan selects the next count-ready entry" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    _ = try pool.addRelay("wss://relay.one");
+    const second = try pool.addRelay("wss://relay.two");
+    try pool.markRelayConnected(second.relay_index);
+
+    const filter = noztr.nip01_filter.Filter{};
+    const specs = [_]RelayCountSpec{
+        .{ .subscription_id = "count-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var count_storage = RelayPoolCountStorage{};
+    const plan = try pool.inspectCounts(specs[0..], &count_storage);
+    const next_entry = plan.nextEntry().?;
+    try std.testing.expectEqual(RelayPoolCountAction.count, next_entry.action);
+    try std.testing.expectEqualStrings("count-feed", next_entry.subscription_id);
+}
+
+test "relay pool count plan next-entry is null when no relay is count-ready" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    _ = try pool.addRelay("wss://relay.one");
+
+    const filter = noztr.nip01_filter.Filter{};
+    const specs = [_]RelayCountSpec{
+        .{ .subscription_id = "count-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var count_storage = RelayPoolCountStorage{};
+    const plan = try pool.inspectCounts(specs[0..], &count_storage);
+    try std.testing.expect(plan.nextEntry() == null);
+}
+
+test "relay pool count plan exposes a typed next count step" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    const relay = try pool.addRelay("wss://relay.one");
+    try pool.markRelayConnected(relay.relay_index);
+
+    const filter = noztr.nip01_filter.Filter{};
+    const specs = [_]RelayCountSpec{
+        .{ .subscription_id = "count-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var count_storage = RelayPoolCountStorage{};
+    const plan = try pool.inspectCounts(specs[0..], &count_storage);
+    const next_step = plan.nextStep().?;
+    try std.testing.expectEqual(RelayPoolCountAction.count, next_step.entry.action);
+    try std.testing.expectEqualStrings("count-feed", next_step.entry.subscription_id);
 }
 
 test "relay pool subscription plan exposes a typed next subscribe step" {
