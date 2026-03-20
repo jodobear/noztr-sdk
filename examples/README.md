@@ -92,6 +92,15 @@ Use these docs when you need public routing or contract context before opening a
     state machine, auth event authoring still routes through the local operator floor, publish turn
     closure still routes through the publish turn floor, and this layer only adds typed auth-first
     recovery instead of inventing implicit auth retries or background relay ownership
+- `count_turn_client_recipe.zig`
+  - goal: begin one explicit count turn from caller-owned count specs and close it with one
+    validated `COUNT` reply
+  - public SDK surface: `noztr_sdk.client`, `CountTurnClient`, `CountTurnClientStorage`,
+    `CountTurnRequest`, `CountTurnResult`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`
+  - control points: relay-targeted `COUNT` preparation still routes through the shared relay query
+    and exchange floors, reply validation still routes through the response floor, and this layer
+    only closes one bounded count turn without inventing background query ownership
 - `relay_auth_client_recipe.zig`
   - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
     as one outbound `AUTH` client message, then mark the relay ready only after explicit caller

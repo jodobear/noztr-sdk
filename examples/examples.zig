@@ -6,6 +6,7 @@ comptime {
     _ = @import("publish_client_recipe.zig");
     _ = @import("publish_turn_client_recipe.zig");
     _ = @import("auth_publish_turn_client_recipe.zig");
+    _ = @import("count_turn_client_recipe.zig");
     _ = @import("relay_auth_client_recipe.zig");
     _ = @import("relay_exchange_client_recipe.zig");
     _ = @import("relay_query_client_recipe.zig");
