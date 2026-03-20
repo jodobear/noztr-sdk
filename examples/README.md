@@ -158,6 +158,16 @@ Use these docs when you need public routing or contract context before opening a
     transcript plus checkpoint closure still route through the replay turn floor, and this layer
     only adds typed auth-first recovery instead of inventing implicit auth retries or hidden sync
     ownership
+- `replay_job_client_recipe.zig`
+  - goal: prepare one command-ready replay job that either yields one auth event or one bounded
+    replay request, then close it with explicit replay transcript and checkpoint posture
+  - public SDK surface: `noztr_sdk.client`, `ReplayJobClient`, `ReplayJobClientStorage`,
+    `ReplayJobAuthEventStorage`, `PreparedReplayJobAuthEvent`, `ReplayJobRequest`,
+    `ReplayJobIntake`, `ReplayJobReady`, `ReplayJobResult`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`, `noztr.nostr_keys`
+  - control points: auth handling still routes through the auth-aware replay turn floor, replay
+    transcript and checkpoint closure still route through the bounded replay turn floor, and this
+    layer only exposes command-ready job posture instead of inventing hidden sync ownership
 - `count_turn_client_recipe.zig`
   - goal: begin one explicit count turn from caller-owned count specs and close it with one
     validated `COUNT` reply

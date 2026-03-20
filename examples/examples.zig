@@ -17,6 +17,7 @@ comptime {
     _ = @import("relay_auth_client_recipe.zig");
     _ = @import("relay_exchange_client_recipe.zig");
     _ = @import("relay_query_client_recipe.zig");
+    _ = @import("replay_job_client_recipe.zig");
     _ = @import("relay_replay_client_recipe.zig");
     _ = @import("replay_checkpoint_advance_client_recipe.zig");
     _ = @import("relay_replay_exchange_client_recipe.zig");
