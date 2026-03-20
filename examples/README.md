@@ -81,6 +81,17 @@ Use these docs when you need public routing or contract context before opening a
     publish readiness still routes through the shared relay-pool layer, publish `OK` validation
     still routes through the response floor, and this layer only closes one bounded publish turn
     without inventing retries or hidden websocket ownership
+- `auth_publish_turn_client_recipe.zig`
+  - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
+    bounded publish turn
+  - public SDK surface: `noztr_sdk.client`, `AuthPublishTurnClient`,
+    `AuthPublishTurnClientStorage`, `AuthPublishEventStorage`, `PreparedAuthPublishEvent`,
+    `AuthPublishTurnStep`, `AuthPublishTurnResult`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`
+  - control points: relay auth challenge handling still routes through the shared relay-pool
+    state machine, auth event authoring still routes through the local operator floor, publish turn
+    closure still routes through the publish turn floor, and this layer only adds typed auth-first
+    recovery instead of inventing implicit auth retries or background relay ownership
 - `relay_auth_client_recipe.zig`
   - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
     as one outbound `AUTH` client message, then mark the relay ready only after explicit caller

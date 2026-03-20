@@ -18,6 +18,14 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.CliArchiveClientConfig) == type);
     try std.testing.expect(@TypeOf(client.CliArchiveClientStorage) == type);
     try std.testing.expect(@TypeOf(client.CliArchiveClient) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishTurnClientError) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishTurnClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishTurnClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedAuthPublishEvent) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishTurnStep) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishTurnResult) == type);
+    try std.testing.expect(@TypeOf(client.AuthPublishTurnClient) == type);
     try std.testing.expect(@TypeOf(client.LocalOperatorClientError) == type);
     try std.testing.expect(@TypeOf(client.LocalOperatorClientConfig) == type);
     try std.testing.expect(@TypeOf(client.LocalKeypair) == type);
