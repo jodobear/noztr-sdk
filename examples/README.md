@@ -48,6 +48,17 @@ Use these docs when you need public routing or contract context before opening a
     `buffer + id + scratch`, the shared relay-pool runtime stays explicit instead of becoming
     hidden signer policy, and the recipe keeps repetitive response JSON wiring in one small helper
     so the public session flow stays primary
+- `signer_connect_job_client_recipe.zig`
+  - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
+    or one `connect` request, then close it with one validated connect response
+  - public SDK surface: `noztr_sdk.client`, `SignerConnectJobClient`,
+    `SignerConnectJobClientStorage`, `SignerConnectJobAuthEventStorage`,
+    `PreparedSignerConnectJobAuthEvent`, `SignerConnectJobRequest`,
+    `SignerConnectJobReady`, `SignerConnectJobResult`
+  - kernel fixture help: `noztr.nip46_remote_signing`, `noztr.nip42_auth`
+  - control points: relay auth handling stays explicit and caller-driven, request building still
+    routes through the bounded signer client floor, and this layer only exposes command-ready
+    connect posture instead of inventing hidden transport or reconnect policy
 - `local_operator_client_recipe.zig`
   - goal: derive one local keypair, roundtrip `NIP-19` entities, sign and inspect one local
     event, and perform one explicit local `NIP-44` encrypt/decrypt roundtrip

@@ -21,6 +21,7 @@ pub const replay_checkpoint_advance_client = @import("replay_checkpoint_advance_
 pub const relay_replay_exchange_client = @import("relay_replay_exchange_client.zig");
 pub const relay_replay_turn_client = @import("relay_replay_turn_client.zig");
 pub const relay_response_client = @import("relay_response_client.zig");
+pub const signer_connect_job_client = @import("signer_connect_job_client.zig");
 pub const signer_client = @import("signer_client.zig");
 pub const subscription_job_client = @import("subscription_job_client.zig");
 pub const subscription_turn_client = @import("subscription_turn_client.zig");
@@ -215,6 +216,17 @@ pub const RelayPublishOkMessage = relay_response_client.RelayPublishOkMessage;
 pub const RelayNoticeMessage = relay_response_client.RelayNoticeMessage;
 pub const RelayAuthChallengeMessage = relay_response_client.RelayAuthChallengeMessage;
 pub const RelayResponseClient = relay_response_client.RelayResponseClient;
+pub const SignerConnectJobClientError = signer_connect_job_client.SignerConnectJobClientError;
+pub const SignerConnectJobClientConfig = signer_connect_job_client.SignerConnectJobClientConfig;
+pub const SignerConnectJobClientStorage = signer_connect_job_client.SignerConnectJobClientStorage;
+pub const SignerConnectJobAuthEventStorage =
+    signer_connect_job_client.SignerConnectJobAuthEventStorage;
+pub const PreparedSignerConnectJobAuthEvent =
+    signer_connect_job_client.PreparedSignerConnectJobAuthEvent;
+pub const SignerConnectJobRequest = signer_connect_job_client.SignerConnectJobRequest;
+pub const SignerConnectJobReady = signer_connect_job_client.SignerConnectJobReady;
+pub const SignerConnectJobResult = signer_connect_job_client.SignerConnectJobResult;
+pub const SignerConnectJobClient = signer_connect_job_client.SignerConnectJobClient;
 pub const SignerClientError = signer_client.SignerClientError;
 pub const SignerClientConfig = signer_client.SignerClientConfig;
 pub const SignerClientRequestStorage = signer_client.SignerClientRequestStorage;
