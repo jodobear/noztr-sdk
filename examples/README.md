@@ -132,6 +132,18 @@ Use these docs when you need public routing or contract context before opening a
     intake still stays on the response floor, this layer only binds the two into one bounded
     exchange, and downstream tools can now drive replay roundtrips on SDK surfaces without
     inventing a hidden streaming runtime
+- `replay_checkpoint_advance_client_recipe.zig`
+  - goal: consume one replay transcript outcome stream, derive one explicit checkpoint-advance
+    candidate only after `EOSE`, then persist one explicit relay checkpoint target
+  - public SDK surface: `noztr_sdk.client`, `ReplayCheckpointAdvanceClient`,
+    `ReplayCheckpointAdvanceState`, `ReplayCheckpointAdvanceCandidate`,
+    `ReplayCheckpointSaveTarget`, `ReplayExchangeRequest`, `ReplayExchangeOutcome`,
+    `noztr_sdk.store.RelayCheckpointArchive`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`
+  - control points: replay transcript intake still stays on the replay exchange and response
+    floors, checkpoint persistence still stays on the shared archive seam, this layer only decides
+    when one replay transcript is safe to advance, and downstream tools can now save replay cursor
+    progress on SDK surfaces without inventing hidden checkpoint policy
 - `relay_response_client_recipe.zig`
   - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
     validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed

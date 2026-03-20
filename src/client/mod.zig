@@ -5,6 +5,7 @@ pub const relay_auth_client = @import("relay_auth_client.zig");
 pub const relay_exchange_client = @import("relay_exchange_client.zig");
 pub const relay_query_client = @import("relay_query_client.zig");
 pub const relay_replay_client = @import("relay_replay_client.zig");
+pub const replay_checkpoint_advance_client = @import("replay_checkpoint_advance_client.zig");
 pub const relay_replay_exchange_client = @import("relay_replay_exchange_client.zig");
 pub const relay_response_client = @import("relay_response_client.zig");
 pub const signer_client = @import("signer_client.zig");
@@ -58,6 +59,18 @@ pub const RelayReplayClientStorage = relay_replay_client.RelayReplayClientStorag
 pub const RelayReplayTarget = relay_replay_client.RelayReplayTarget;
 pub const TargetedReplayRequest = relay_replay_client.TargetedReplayRequest;
 pub const RelayReplayClient = relay_replay_client.RelayReplayClient;
+pub const ReplayCheckpointAdvanceClientError =
+    replay_checkpoint_advance_client.ReplayCheckpointAdvanceClientError;
+pub const ReplayCheckpointAdvanceClientConfig =
+    replay_checkpoint_advance_client.ReplayCheckpointAdvanceClientConfig;
+pub const ReplayCheckpointAdvanceState =
+    replay_checkpoint_advance_client.ReplayCheckpointAdvanceState;
+pub const ReplayCheckpointAdvanceCandidate =
+    replay_checkpoint_advance_client.ReplayCheckpointAdvanceCandidate;
+pub const ReplayCheckpointSaveTarget =
+    replay_checkpoint_advance_client.ReplayCheckpointSaveTarget;
+pub const ReplayCheckpointAdvanceClient =
+    replay_checkpoint_advance_client.ReplayCheckpointAdvanceClient;
 pub const RelayReplayExchangeClientError =
     relay_replay_exchange_client.RelayReplayExchangeClientError;
 pub const RelayReplayExchangeClientConfig =
