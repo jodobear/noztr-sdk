@@ -5,6 +5,7 @@ pub const relay_auth_client = @import("relay_auth_client.zig");
 pub const relay_exchange_client = @import("relay_exchange_client.zig");
 pub const relay_query_client = @import("relay_query_client.zig");
 pub const relay_replay_client = @import("relay_replay_client.zig");
+pub const relay_replay_exchange_client = @import("relay_replay_exchange_client.zig");
 pub const relay_response_client = @import("relay_response_client.zig");
 pub const signer_client = @import("signer_client.zig");
 
@@ -57,6 +58,16 @@ pub const RelayReplayClientStorage = relay_replay_client.RelayReplayClientStorag
 pub const RelayReplayTarget = relay_replay_client.RelayReplayTarget;
 pub const TargetedReplayRequest = relay_replay_client.TargetedReplayRequest;
 pub const RelayReplayClient = relay_replay_client.RelayReplayClient;
+pub const RelayReplayExchangeClientError =
+    relay_replay_exchange_client.RelayReplayExchangeClientError;
+pub const RelayReplayExchangeClientConfig =
+    relay_replay_exchange_client.RelayReplayExchangeClientConfig;
+pub const RelayReplayExchangeClientStorage =
+    relay_replay_exchange_client.RelayReplayExchangeClientStorage;
+pub const ReplayExchangeRequest = relay_replay_exchange_client.ReplayExchangeRequest;
+pub const ReplayExchangeOutcome = relay_replay_exchange_client.ReplayExchangeOutcome;
+pub const ReplayCloseRequest = relay_replay_exchange_client.ReplayCloseRequest;
+pub const RelayReplayExchangeClient = relay_replay_exchange_client.RelayReplayExchangeClient;
 pub const RelayResponseClientError = relay_response_client.RelayResponseClientError;
 pub const RelayResponseClientConfig = relay_response_client.RelayResponseClientConfig;
 pub const RelaySubscriptionTranscriptStorage =

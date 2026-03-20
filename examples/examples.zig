@@ -8,6 +8,7 @@ comptime {
     _ = @import("relay_exchange_client_recipe.zig");
     _ = @import("relay_query_client_recipe.zig");
     _ = @import("relay_replay_client_recipe.zig");
+    _ = @import("relay_replay_exchange_client_recipe.zig");
     _ = @import("relay_response_client_recipe.zig");
     _ = @import("signer_client_recipe.zig");
     _ = @import("store_query_recipe.zig");

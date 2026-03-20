@@ -63,6 +63,13 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.RelayReplayTarget) == type);
     try std.testing.expect(@TypeOf(client.TargetedReplayRequest) == type);
     try std.testing.expect(@TypeOf(client.RelayReplayClient) == type);
+    try std.testing.expect(@TypeOf(client.RelayReplayExchangeClientError) == type);
+    try std.testing.expect(@TypeOf(client.RelayReplayExchangeClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.RelayReplayExchangeClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.ReplayExchangeRequest) == type);
+    try std.testing.expect(@TypeOf(client.ReplayExchangeOutcome) == type);
+    try std.testing.expect(@TypeOf(client.ReplayCloseRequest) == type);
+    try std.testing.expect(@TypeOf(client.RelayReplayExchangeClient) == type);
     try std.testing.expect(@TypeOf(client.RelayResponseClientError) == type);
     try std.testing.expect(@TypeOf(client.RelayResponseClientConfig) == type);
     try std.testing.expect(@TypeOf(client.RelaySubscriptionTranscriptStorage) == type);

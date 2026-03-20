@@ -121,6 +121,17 @@ Use these docs when you need public routing or contract context before opening a
     readiness still routes through the shared relay-pool layer, the client only maps one
     checkpoint-backed `ClientQuery` into one outbound `REQ`, and downstream tools can now drive
     replay requests on SDK surfaces without rebuilding filter serialization ad hoc
+- `relay_replay_exchange_client_recipe.zig`
+  - goal: begin one checkpoint-backed replay request, accept explicit replay transcript intake,
+    then compose one explicit replay `CLOSE` request without hidden sync ownership
+  - public SDK surface: `noztr_sdk.client`, `RelayReplayExchangeClient`,
+    `RelayReplayExchangeClientStorage`, `ReplayExchangeRequest`, `ReplayExchangeOutcome`,
+    `ReplayCloseRequest`, `RelaySubscriptionTranscriptStorage`, `noztr_sdk.runtime.RelayReplaySpec`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`
+  - control points: replay request composition still stays on the replay client floor, transcript
+    intake still stays on the response floor, this layer only binds the two into one bounded
+    exchange, and downstream tools can now drive replay roundtrips on SDK surfaces without
+    inventing a hidden streaming runtime
 - `relay_response_client_recipe.zig`
   - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
     validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed
