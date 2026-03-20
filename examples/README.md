@@ -84,6 +84,18 @@ Use these docs when you need public routing or contract context before opening a
     serialization stays on the kernel, the client only pairs ready relay targets with one-shot
     request payloads, and the recipe proves `znk`-class tooling can build relay query commands on
     SDK surfaces without smuggling in a hidden streaming runtime
+- `relay_response_client_recipe.zig`
+  - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
+    validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed
+    receive-side SDK helpers
+  - public SDK surface: `noztr_sdk.client`, `RelayResponseClient`,
+    `RelaySubscriptionTranscriptStorage`, `RelaySubscriptionMessageOutcome`, `RelayCountMessage`,
+    `RelayPublishOkMessage`, `RelayNoticeMessage`, `RelayAuthChallengeMessage`
+  - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`, `noztr.nip01_event`
+  - control points: relay-message parsing and transcript transitions stay on the kernel, the SDK
+    only adds explicit receive-side validation and typed outcomes, and downstream tools can now
+    stay on SDK surfaces for the first bounded relay-response intake jobs without hiding stream
+    ownership
 - `signer_client_recipe.zig`
   - goal: use one first signer-tooling client surface to drive explicit `NIP-46` connect,
     `get_public_key`, one `nip44_encrypt` request, and one shared relay-runtime inspect/select step

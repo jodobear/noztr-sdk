@@ -2,6 +2,7 @@ pub const cli_archive_client = @import("cli_archive_client.zig");
 pub const local_operator_client = @import("local_operator_client.zig");
 pub const publish_client = @import("publish_client.zig");
 pub const relay_query_client = @import("relay_query_client.zig");
+pub const relay_response_client = @import("relay_response_client.zig");
 pub const signer_client = @import("signer_client.zig");
 
 pub const CliArchiveClientError = cli_archive_client.CliArchiveClientError;
@@ -29,6 +30,19 @@ pub const TargetedSubscriptionRequest = relay_query_client.TargetedSubscriptionR
 pub const TargetedCountRequest = relay_query_client.TargetedCountRequest;
 pub const TargetedCloseRequest = relay_query_client.TargetedCloseRequest;
 pub const RelayQueryClient = relay_query_client.RelayQueryClient;
+pub const RelayResponseClientError = relay_response_client.RelayResponseClientError;
+pub const RelayResponseClientConfig = relay_response_client.RelayResponseClientConfig;
+pub const RelaySubscriptionTranscriptStorage =
+    relay_response_client.RelaySubscriptionTranscriptStorage;
+pub const RelaySubscriptionEventMessage = relay_response_client.RelaySubscriptionEventMessage;
+pub const RelaySubscriptionEoseMessage = relay_response_client.RelaySubscriptionEoseMessage;
+pub const RelaySubscriptionClosedMessage = relay_response_client.RelaySubscriptionClosedMessage;
+pub const RelaySubscriptionMessageOutcome = relay_response_client.RelaySubscriptionMessageOutcome;
+pub const RelayCountMessage = relay_response_client.RelayCountMessage;
+pub const RelayPublishOkMessage = relay_response_client.RelayPublishOkMessage;
+pub const RelayNoticeMessage = relay_response_client.RelayNoticeMessage;
+pub const RelayAuthChallengeMessage = relay_response_client.RelayAuthChallengeMessage;
+pub const RelayResponseClient = relay_response_client.RelayResponseClient;
 pub const SignerClientError = signer_client.SignerClientError;
 pub const SignerClientConfig = signer_client.SignerClientConfig;
 pub const SignerClientRequestStorage = signer_client.SignerClientRequestStorage;

@@ -5,6 +5,7 @@ comptime {
     _ = @import("local_operator_client_recipe.zig");
     _ = @import("publish_client_recipe.zig");
     _ = @import("relay_query_client_recipe.zig");
+    _ = @import("relay_response_client_recipe.zig");
     _ = @import("signer_client_recipe.zig");
     _ = @import("store_query_recipe.zig");
     _ = @import("store_archive_recipe.zig");

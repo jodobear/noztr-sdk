@@ -39,6 +39,18 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.TargetedCountRequest) == type);
     try std.testing.expect(@TypeOf(client.TargetedCloseRequest) == type);
     try std.testing.expect(@TypeOf(client.RelayQueryClient) == type);
+    try std.testing.expect(@TypeOf(client.RelayResponseClientError) == type);
+    try std.testing.expect(@TypeOf(client.RelayResponseClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.RelaySubscriptionTranscriptStorage) == type);
+    try std.testing.expect(@TypeOf(client.RelaySubscriptionEventMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelaySubscriptionEoseMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelaySubscriptionClosedMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelaySubscriptionMessageOutcome) == type);
+    try std.testing.expect(@TypeOf(client.RelayCountMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelayPublishOkMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelayNoticeMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelayAuthChallengeMessage) == type);
+    try std.testing.expect(@TypeOf(client.RelayResponseClient) == type);
     try std.testing.expect(@TypeOf(client.SignerClientError) == type);
     try std.testing.expect(@TypeOf(client.SignerClientConfig) == type);
     try std.testing.expect(@TypeOf(client.SignerClientRequestStorage) == type);
