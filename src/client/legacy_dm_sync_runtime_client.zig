@@ -18,6 +18,7 @@ pub const LegacyDmSyncRuntimeClientError =
     error{
         StaleAuthStep,
         RelayNotReady,
+        RuntimeNotEmpty,
     };
 
 pub const LegacyDmSyncRuntimeClientConfig = struct {
@@ -39,6 +40,21 @@ pub const LegacyDmSyncRuntimePlanStorage = struct {
     auth: runtime.RelayPoolAuthStorage = .{},
     replay: runtime.RelayPoolReplayStorage = .{},
     subscription: runtime.RelayPoolSubscriptionStorage = .{},
+};
+
+pub const LegacyDmSyncRuntimeResumeStorage = struct {
+    relay_members: runtime.RelayPoolMemberStorage = .{},
+};
+
+pub const LegacyDmSyncRuntimeResumeState = struct {
+    relay_count: u8 = 0,
+    replay_phase_complete: bool = false,
+    _storage: *const LegacyDmSyncRuntimeResumeStorage,
+
+    pub fn relayUrl(self: *const LegacyDmSyncRuntimeResumeState, index: u8) ?[]const u8 {
+        if (index >= self.relay_count) return null;
+        return self._storage.relay_members.records[index].relayUrl();
+    }
 };
 
 pub const LegacyDmSyncRuntimeStep = union(enum) {
@@ -126,6 +142,10 @@ pub const LegacyDmSyncRuntimeClient = struct {
         return sync_runtime_support.addRelay(self, relay_url_text);
     }
 
+    pub fn relayCount(self: *const LegacyDmSyncRuntimeClient) u8 {
+        return self.replay_job.replay_turn.replay_turn.replay_exchange.replay.relay_pool.relayCount();
+    }
+
     pub fn markRelayConnected(
         self: *LegacyDmSyncRuntimeClient,
         relay_index: u8,
@@ -150,6 +170,44 @@ pub const LegacyDmSyncRuntimeClient = struct {
 
     pub fn replayPhaseComplete(self: *const LegacyDmSyncRuntimeClient) bool {
         return self.storage.replay_phase_complete;
+    }
+
+    pub fn exportResumeState(
+        self: *const LegacyDmSyncRuntimeClient,
+        storage: *LegacyDmSyncRuntimeResumeStorage,
+    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimeResumeState {
+        const members = self.replay_job.replay_turn.replay_turn.replay_exchange.replay.relay_pool.exportMembers(
+            &storage.relay_members,
+        ) catch unreachable;
+        return .{
+            .relay_count = members.relay_count,
+            .replay_phase_complete = self.storage.replay_phase_complete,
+            ._storage = storage,
+        };
+    }
+
+    pub fn restoreResumeState(
+        self: *LegacyDmSyncRuntimeClient,
+        state: *const LegacyDmSyncRuntimeResumeState,
+    ) LegacyDmSyncRuntimeClientError!void {
+        if (self.relayCount() != 0 or self.storage.replay_phase_complete or self.storage.live_subscription_active) {
+            return error.RuntimeNotEmpty;
+        }
+
+        const members = runtime.RelayPoolMemberSet{
+            .records = state._storage.relay_members.records[0..state.relay_count],
+            .relay_count = state.relay_count,
+        };
+        try restoreReplayTurnMembers(
+            &self.replay_job.replay_turn,
+            &members,
+        );
+        try restoreSubscriptionTurnMembers(
+            &self.subscription_job,
+            &members,
+        );
+        self.storage.replay_phase_complete = state.replay_phase_complete;
+        self.storage.live_subscription_active = false;
     }
 
     pub fn liveSubscriptionActive(self: *const LegacyDmSyncRuntimeClient) bool {
@@ -367,14 +425,119 @@ fn sameSubscriptionRequest(
         std.mem.eql(u8, left.subscription.subscription_id, right.subscription.subscription_id);
 }
 
+fn restoreReplayTurnMembers(
+    replay_turn: *legacy_dm_replay_turn.LegacyDmReplayTurnClient,
+    members: *const runtime.RelayPoolMemberSet,
+) LegacyDmSyncRuntimeClientError!void {
+    replay_turn.replay_turn.replay_exchange.replay.relay_pool.restoreMembers(members) catch |err| {
+        return switch (err) {
+            error.PoolNotEmpty => error.RuntimeNotEmpty,
+            else => unreachable,
+        };
+    };
+}
+
+fn restoreSubscriptionTurnMembers(
+    subscription_turn: *legacy_dm_subscription_job.LegacyDmSubscriptionJobClient,
+    members: *const runtime.RelayPoolMemberSet,
+) LegacyDmSyncRuntimeClientError!void {
+    subscription_turn.subscription_turn.subscription_turn.relay_exchange.relay_pool.restoreMembers(
+        members,
+    ) catch |err| {
+        return switch (err) {
+            error.PoolNotEmpty => error.RuntimeNotEmpty,
+            else => unreachable,
+        };
+    };
+}
+
 test "legacy dm sync runtime client exposes caller-owned config and storage" {
     var storage = LegacyDmSyncRuntimeClientStorage{};
     var client = LegacyDmSyncRuntimeClient.init(.{
         .owner_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
+    try std.testing.expectEqual(@as(u8, 0), client.relayCount());
     try std.testing.expect(!client.replayPhaseComplete());
     try std.testing.expect(!client.liveSubscriptionActive());
+}
+
+test "legacy dm sync runtime client exports durable resume state and restores reconnect posture" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+
+    const owner_secret = [_]u8{0x33} ** 32;
+    var client_storage = LegacyDmSyncRuntimeClientStorage{};
+    var client = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = owner_secret,
+    }, &client_storage);
+    const relay = try client.addRelay("wss://relay.one");
+    try client.markRelayConnected(relay.relay_index);
+    client.markReplayCatchupComplete();
+
+    var resume_storage = LegacyDmSyncRuntimeResumeStorage{};
+    const resume_state = try client.exportResumeState(&resume_storage);
+    try std.testing.expectEqual(@as(u8, 1), resume_state.relay_count);
+    try std.testing.expectEqualStrings("wss://relay.one", resume_state.relayUrl(0).?);
+    try std.testing.expect(resume_state.replay_phase_complete);
+
+    var restored_storage = LegacyDmSyncRuntimeClientStorage{};
+    var restored = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = owner_secret,
+    }, &restored_storage);
+    try restored.restoreResumeState(&resume_state);
+
+    try std.testing.expectEqual(@as(u8, 1), restored.relayCount());
+    try std.testing.expect(restored.replayPhaseComplete());
+    try std.testing.expect(!restored.liveSubscriptionActive());
+
+    const filter = try noztr.nip01_filter.filter_parse_json(
+        "{\"kinds\":[4]}",
+        arena.allocator(),
+    );
+    const subscription_specs = [_]runtime.RelaySubscriptionSpec{
+        .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var runtime_storage = LegacyDmSyncRuntimePlanStorage{};
+    const plan = try restored.inspectRuntime(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &runtime_storage,
+    );
+    try std.testing.expect(plan.nextStep() == .idle);
+
+    var relay_runtime_storage = runtime.RelayPoolPlanStorage{};
+    const relay_runtime = restored.inspectRelayRuntime(&relay_runtime_storage);
+    try std.testing.expectEqual(@as(u8, 1), relay_runtime.relay_count);
+    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
+}
+
+test "legacy dm sync runtime client rejects restoring resume state into a non-empty runtime" {
+    const owner_secret = [_]u8{0x33} ** 32;
+
+    var source_storage = LegacyDmSyncRuntimeClientStorage{};
+    var source = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = owner_secret,
+    }, &source_storage);
+    _ = try source.addRelay("wss://relay.one");
+
+    var resume_storage = LegacyDmSyncRuntimeResumeStorage{};
+    const resume_state = try source.exportResumeState(&resume_storage);
+
+    var target_storage = LegacyDmSyncRuntimeClientStorage{};
+    var target = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = owner_secret,
+    }, &target_storage);
+    _ = try target.addRelay("wss://relay.two");
+
+    try std.testing.expectError(
+        error.RuntimeNotEmpty,
+        target.restoreResumeState(&resume_state),
+    );
 }
 
 test "legacy dm sync runtime client plans authenticate replay subscribe and receive explicitly" {

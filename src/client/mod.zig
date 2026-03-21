@@ -188,6 +188,10 @@ pub const LegacyDmSyncRuntimeClientConfig =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClientConfig;
 pub const LegacyDmSyncRuntimeClientStorage =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClientStorage;
+pub const LegacyDmSyncRuntimeResumeStorage =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeResumeStorage;
+pub const LegacyDmSyncRuntimeResumeState =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeResumeState;
 pub const LegacyDmSyncRuntimePlanStorage =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimePlanStorage;
 pub const LegacyDmSyncRuntimeStep = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeStep;

@@ -4,8 +4,8 @@ const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
 // Step one bounded legacy-DM sync runtime explicitly across authenticate, replay catch-up,
-// subscribe, and live receive posture.
-test "recipe: legacy dm sync runtime client plans replay and live receive explicitly" {
+// durable resume export/restore, explicit reconnect, subscribe, and live receive posture.
+test "recipe: legacy dm sync runtime client exports resume state before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -115,19 +115,33 @@ test "recipe: legacy dm sync runtime client plans replay and live receive explic
     try client.saveReplayTurnResult(checkpoint_archive, &replay_result.replayed);
     client.markReplayCatchupComplete();
 
-    const subscribe_plan = try client.inspectRuntime(
+    var resume_storage = noztr_sdk.client.LegacyDmSyncRuntimeResumeStorage{};
+    const resume_state = try client.exportResumeState(&resume_storage);
+
+    var resumed_storage = noztr_sdk.client.LegacyDmSyncRuntimeClientStorage{};
+    var resumed = noztr_sdk.client.LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = recipient_secret,
+    }, &resumed_storage);
+    try resumed.restoreResumeState(&resume_state);
+
+    var relay_runtime_storage = noztr_sdk.runtime.RelayPoolPlanStorage{};
+    const relay_runtime = resumed.inspectRelayRuntime(&relay_runtime_storage);
+    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
+    try resumed.markRelayConnected(relay_runtime.nextStep().?.entry.descriptor.relay_index);
+
+    const subscribe_plan = try resumed.inspectRuntime(
         checkpoint_store,
-        replay_specs[0..],
+        &.{},
         subscription_specs[0..],
         &runtime_storage,
     );
     try std.testing.expect(subscribe_plan.nextStep() == .subscribe);
 
-    const live_request = try client.beginSubscriptionTurn(
+    const live_request = try resumed.beginSubscriptionTurn(
         request_output[0..],
         subscription_specs[0..],
     );
-    try std.testing.expect(client.liveSubscriptionActive());
+    try std.testing.expect(resumed.liveSubscriptionActive());
 
     const live_event = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
@@ -139,7 +153,7 @@ test "recipe: legacy dm sync runtime client plans replay and live receive explic
         relay_output[0..],
         &.{ .event = .{ .subscription_id = "legacy-live", .event = live_event.event } },
     );
-    const live_intake = try client.acceptSubscriptionMessageJson(
+    const live_intake = try resumed.acceptSubscriptionMessageJson(
         &live_request,
         live_event_json,
         plaintext_output[0..],
@@ -152,14 +166,14 @@ test "recipe: legacy dm sync runtime client plans replay and live receive explic
         relay_output[0..],
         &.{ .eose = .{ .subscription_id = "legacy-live" } },
     );
-    _ = try client.acceptSubscriptionMessageJson(
+    _ = try resumed.acceptSubscriptionMessageJson(
         &live_request,
         live_eose_json,
         plaintext_output[0..],
         arena.allocator(),
     );
-    const live_result = try client.completeSubscriptionTurn(request_output[0..], &live_request);
+    const live_result = try resumed.completeSubscriptionTurn(request_output[0..], &live_request);
     try std.testing.expect(live_result == .subscribed);
     try std.testing.expectEqual(.eose, live_result.subscribed.completion);
-    try std.testing.expect(!client.liveSubscriptionActive());
+    try std.testing.expect(!resumed.liveSubscriptionActive());
 }
