@@ -552,6 +552,11 @@ pub const MailboxSession = struct {
         return current.auth_session.relayUrl();
     }
 
+    pub fn currentRelayIndex(self: *const MailboxSession) ?u8 {
+        if (self._state.pool.count == 0) return null;
+        return self._state.current_relay_index;
+    }
+
     pub fn currentRelayCanReceive(self: *const MailboxSession) bool {
         const current = self.currentRelayConst() orelse return false;
         return current.canSendRequests();
@@ -571,6 +576,34 @@ pub const MailboxSession = struct {
         storage.* = .{};
         storage.relay_pool_storage.pool = self._state.pool;
         return shared_runtime.RelayPool.attach(&storage.relay_pool_storage);
+    }
+
+    pub fn exportRelayPoolMembers(
+        self: *const MailboxSession,
+        storage: *shared_runtime.RelayPoolMemberStorage,
+    ) shared_runtime.RelayPoolMemberSet {
+        var relay_pool_storage = RelayPoolStorage{};
+        var relay_pool_view = self.exportRelayPool(&relay_pool_storage);
+        return relay_pool_view.exportMembers(storage) catch unreachable;
+    }
+
+    pub fn restoreRelayPoolMembers(
+        self: *MailboxSession,
+        members: *const shared_runtime.RelayPoolMemberSet,
+        current_relay_index: u8,
+    ) MailboxError!void {
+        if (members.relay_count > 0 and current_relay_index >= members.relay_count) {
+            return error.InvalidRelayIndex;
+        }
+
+        self._state.pool = relay_pool.Pool.init();
+        var index: u8 = 0;
+        while (index < members.relay_count) : (index += 1) {
+            const record = members.entry(index) orelse unreachable;
+            _ = try self._state.pool.addRelay(record.relayUrl());
+        }
+        self._state.current_relay_index = if (members.relay_count == 0) 0 else current_relay_index;
+        self._state.seen_wrap_count = 0;
     }
 
     pub fn inspectRelayPoolRuntime(

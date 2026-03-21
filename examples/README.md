@@ -618,9 +618,11 @@ Use these docs when you need public routing or contract context before opening a
     policy
 - `mailbox_sync_runtime_client_recipe.zig`
   - goal: plan one bounded mailbox sync runtime explicitly across authenticate, replay catch-up,
-    subscribe, and live receive posture without inventing a daemon
+    durable resume export/restore, explicit reconnect, resubscribe, and live receive posture
+    without inventing a daemon
   - public SDK surface: `noztr_sdk.client`, `MailboxSyncRuntimeClient`,
-    `MailboxSyncRuntimeClientStorage`, `MailboxSyncRuntimePlanStorage`,
+    `MailboxSyncRuntimeClientStorage`, `MailboxSyncRuntimeResumeStorage`,
+    `MailboxSyncRuntimeResumeState`, `MailboxSyncRuntimePlanStorage`,
     `MailboxSyncRuntimePlan`, `MailboxSyncRuntimeStep`,
     `MailboxSyncRuntimeAuthEventStorage`, `PreparedMailboxSyncRuntimeAuthEvent`,
     `MailboxSyncRuntimeReplayRequest`, `MailboxSyncRuntimeReplayIntake`,
@@ -629,8 +631,10 @@ Use these docs when you need public routing or contract context before opening a
     `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: caller still owns the decision to declare replay catch-up complete, replay and
     live transcript work still route through the bounded mailbox replay and subscription floors,
-    auth event creation stays explicit and caller-owned, and this layer only adds typed next-step
-    planning instead of hidden sync policy
+    relay cursors still stay on the shared checkpoint archive seam, restored runtime state still
+    requires explicit reconnect/resubscribe driving, auth event creation stays explicit and caller-
+    owned, and this layer only adds typed next-step plus bounded resume planning instead of hidden
+    sync policy
 - `mailbox_replay_turn_client_recipe.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result

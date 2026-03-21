@@ -4,6 +4,7 @@ const local_operator = @import("local_operator_client.zig");
 const mailbox_replay_job = @import("mailbox_replay_job_client.zig");
 const mailbox_replay_turn = @import("mailbox_replay_turn_client.zig");
 const mailbox_subscription_job = @import("mailbox_subscription_job_client.zig");
+const mailbox_subscription_turn = @import("mailbox_subscription_turn_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
 const sync_runtime_support = @import("sync_runtime_support.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -17,6 +18,7 @@ pub const MailboxSyncRuntimeClientError =
     error{
         StaleAuthStep,
         RelayNotReady,
+        RuntimeNotEmpty,
     };
 
 pub const MailboxSyncRuntimeClientConfig = struct {
@@ -38,6 +40,22 @@ pub const MailboxSyncRuntimePlanStorage = struct {
     auth: runtime.RelayPoolAuthStorage = .{},
     replay: runtime.RelayPoolReplayStorage = .{},
     subscription: runtime.RelayPoolSubscriptionStorage = .{},
+};
+
+pub const MailboxSyncRuntimeResumeStorage = struct {
+    relay_members: runtime.RelayPoolMemberStorage = .{},
+};
+
+pub const MailboxSyncRuntimeResumeState = struct {
+    relay_count: u8 = 0,
+    current_relay_index: u8 = 0,
+    replay_phase_complete: bool = false,
+    _storage: *const MailboxSyncRuntimeResumeStorage,
+
+    pub fn relayUrl(self: *const MailboxSyncRuntimeResumeState, index: u8) ?[]const u8 {
+        if (index >= self.relay_count) return null;
+        return self._storage.relay_members.records[index].relayUrl();
+    }
 };
 
 pub const MailboxSyncRuntimeStep = union(enum) {
@@ -130,6 +148,47 @@ pub const MailboxSyncRuntimeClient = struct {
 
     pub fn replayPhaseComplete(self: *const MailboxSyncRuntimeClient) bool {
         return self.storage.replay_phase_complete;
+    }
+
+    pub fn exportResumeState(
+        self: *const MailboxSyncRuntimeClient,
+        storage: *MailboxSyncRuntimeResumeStorage,
+    ) MailboxSyncRuntimeResumeState {
+        const members = self.replay_job.replay_turn.storage.mailbox.exportRelayPoolMembers(
+            &storage.relay_members,
+        );
+        return .{
+            .relay_count = members.relay_count,
+            .current_relay_index = self.replay_job.replay_turn.storage.mailbox.currentRelayIndex() orelse 0,
+            .replay_phase_complete = self.storage.replay_phase_complete,
+            ._storage = storage,
+        };
+    }
+
+    pub fn restoreResumeState(
+        self: *MailboxSyncRuntimeClient,
+        state: *const MailboxSyncRuntimeResumeState,
+    ) MailboxSyncRuntimeClientError!void {
+        if (self.relayCount() != 0 or self.storage.replay_phase_complete or self.storage.live_subscription_active) {
+            return error.RuntimeNotEmpty;
+        }
+
+        const members = runtime.RelayPoolMemberSet{
+            .records = state._storage.relay_members.records[0..state.relay_count],
+            .relay_count = state.relay_count,
+        };
+        try restoreReplayTurnMembers(
+            &self.replay_job.replay_turn,
+            &members,
+            state.current_relay_index,
+        );
+        try restoreSubscriptionTurnMembers(
+            &self.subscription_job.subscription_turn,
+            &members,
+            state.current_relay_index,
+        );
+        self.storage.replay_phase_complete = state.replay_phase_complete;
+        self.storage.live_subscription_active = false;
     }
 
     pub fn liveSubscriptionActive(self: *const MailboxSyncRuntimeClient) bool {
@@ -403,6 +462,54 @@ fn sameSubscriptionRequest(
         std.mem.eql(u8, left.subscription.subscription_id, right.subscription.subscription_id);
 }
 
+fn restoreReplayTurnMembers(
+    replay_turn: *mailbox_replay_turn.MailboxReplayTurnClient,
+    members: *const runtime.RelayPoolMemberSet,
+    current_relay_index: u8,
+) MailboxSyncRuntimeClientError!void {
+    try replay_turn.storage.mailbox.restoreRelayPoolMembers(members, current_relay_index);
+    replay_turn.replay_turn = runtimeRelayReplayTurnClient(replay_turn);
+
+    var index: u8 = 0;
+    while (index < members.relay_count) : (index += 1) {
+        const record = members.entry(index) orelse unreachable;
+        _ = try replay_turn.replay_turn.addRelay(record.relayUrl());
+    }
+}
+
+fn restoreSubscriptionTurnMembers(
+    subscription_turn: *mailbox_subscription_turn.MailboxSubscriptionTurnClient,
+    members: *const runtime.RelayPoolMemberSet,
+    current_relay_index: u8,
+) MailboxSyncRuntimeClientError!void {
+    try subscription_turn.storage.mailbox.restoreRelayPoolMembers(members, current_relay_index);
+    subscription_turn.subscription_turn = runtimeSubscriptionTurnClient(subscription_turn);
+
+    var index: u8 = 0;
+    while (index < members.relay_count) : (index += 1) {
+        const record = members.entry(index) orelse unreachable;
+        _ = try subscription_turn.subscription_turn.addRelay(record.relayUrl());
+    }
+}
+
+fn runtimeRelayReplayTurnClient(
+    replay_turn: *mailbox_replay_turn.MailboxReplayTurnClient,
+) @TypeOf(replay_turn.replay_turn) {
+    return @TypeOf(replay_turn.replay_turn).init(
+        replay_turn.config.replay_turn,
+        &replay_turn.storage.replay_turn,
+    );
+}
+
+fn runtimeSubscriptionTurnClient(
+    subscription_turn: *mailbox_subscription_turn.MailboxSubscriptionTurnClient,
+) @TypeOf(subscription_turn.subscription_turn) {
+    return @TypeOf(subscription_turn.subscription_turn).init(
+        subscription_turn.config.subscription_turn,
+        &subscription_turn.storage.subscription_turn,
+    );
+}
+
 test "mailbox sync runtime client exposes caller-owned config and storage" {
     var storage = MailboxSyncRuntimeClientStorage{};
     var client = MailboxSyncRuntimeClient.init(.{
@@ -412,6 +519,68 @@ test "mailbox sync runtime client exposes caller-owned config and storage" {
     try std.testing.expectEqual(@as(u8, 0), client.relayCount());
     try std.testing.expect(!client.replayPhaseComplete());
     try std.testing.expect(!client.liveSubscriptionActive());
+}
+
+test "mailbox sync runtime client exports durable resume state and restores subscribe posture" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+
+    const recipient_secret = [_]u8{0x33} ** 32;
+    var client_storage = MailboxSyncRuntimeClientStorage{};
+    var client = MailboxSyncRuntimeClient.init(.{
+        .recipient_private_key = recipient_secret,
+    }, &client_storage);
+
+    var relay_list_storage: [1024]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJson(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        40,
+        &recipient_secret,
+    );
+    _ = try client.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try client.markRelayConnected(0);
+    client.markReplayCatchupComplete();
+
+    var resume_storage = MailboxSyncRuntimeResumeStorage{};
+    const resume_state = client.exportResumeState(&resume_storage);
+    try std.testing.expectEqual(@as(u8, 1), resume_state.relay_count);
+    try std.testing.expectEqualStrings("wss://relay.one", resume_state.relayUrl(0).?);
+    try std.testing.expect(resume_state.replay_phase_complete);
+
+    var restored_storage = MailboxSyncRuntimeClientStorage{};
+    var restored = MailboxSyncRuntimeClient.init(.{
+        .recipient_private_key = recipient_secret,
+    }, &restored_storage);
+    try restored.restoreResumeState(&resume_state);
+
+    try std.testing.expectEqual(@as(u8, 1), restored.relayCount());
+    try std.testing.expect(restored.replayPhaseComplete());
+    try std.testing.expect(!restored.liveSubscriptionActive());
+    try std.testing.expectEqualStrings("wss://relay.one", restored.currentRelayUrl().?);
+
+    const filter = try noztr.nip01_filter.filter_parse_json(
+        "{\"kinds\":[1059]}",
+        arena.allocator(),
+    );
+    const subscription_specs = [_]runtime.RelaySubscriptionSpec{
+        .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+    var runtime_storage = MailboxSyncRuntimePlanStorage{};
+    const plan = try restored.inspectRuntime(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &runtime_storage,
+    );
+    try std.testing.expect(plan.nextStep() == .idle);
+
+    var relay_runtime_storage = runtime.RelayPoolPlanStorage{};
+    const relay_runtime = restored.inspectRelayRuntime(&relay_runtime_storage);
+    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
 }
 
 test "mailbox sync runtime client plans authenticate replay subscribe and receive explicitly" {

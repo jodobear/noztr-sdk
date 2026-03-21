@@ -253,6 +253,10 @@ pub const MailboxSyncRuntimeClientConfig =
     mailbox_sync_runtime_client.MailboxSyncRuntimeClientConfig;
 pub const MailboxSyncRuntimeClientStorage =
     mailbox_sync_runtime_client.MailboxSyncRuntimeClientStorage;
+pub const MailboxSyncRuntimeResumeStorage =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeResumeStorage;
+pub const MailboxSyncRuntimeResumeState =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeResumeState;
 pub const MailboxSyncRuntimePlanStorage =
     mailbox_sync_runtime_client.MailboxSyncRuntimePlanStorage;
 pub const MailboxSyncRuntimeStep = mailbox_sync_runtime_client.MailboxSyncRuntimeStep;

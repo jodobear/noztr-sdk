@@ -3,9 +3,9 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Plan a bounded mailbox sync runtime explicitly: authenticate first, replay historical catch-up,
-// mark catch-up complete, then switch into one live mailbox subscription receive turn.
-test "recipe: mailbox sync runtime client plans replay catch-up then live receive explicitly" {
+// Plan a bounded mailbox sync runtime explicitly, export durable resume state after replay catch-up,
+// restore it into a fresh client, reconnect explicitly, then resume one live mailbox subscription.
+test "recipe: mailbox sync runtime client exports resume state before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -153,7 +153,21 @@ test "recipe: mailbox sync runtime client plans replay catch-up then live receiv
     try client.saveReplayTurnResult(checkpoint_archive, &replay_result.replayed);
     client.markReplayCatchupComplete();
 
-    const live_request = try client.beginSubscriptionTurn(
+    var resume_storage = noztr_sdk.client.MailboxSyncRuntimeResumeStorage{};
+    const resume_state = client.exportResumeState(&resume_storage);
+
+    var resumed_storage = noztr_sdk.client.MailboxSyncRuntimeClientStorage{};
+    var resumed = noztr_sdk.client.MailboxSyncRuntimeClient.init(.{
+        .recipient_private_key = recipient_secret,
+    }, &resumed_storage);
+    try resumed.restoreResumeState(&resume_state);
+
+    var relay_runtime_storage = noztr_sdk.runtime.RelayPoolPlanStorage{};
+    const relay_runtime = resumed.inspectRelayRuntime(&relay_runtime_storage);
+    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
+    try resumed.markRelayConnected(relay_runtime.nextStep().?.entry.descriptor.relay_index);
+
+    const live_request = try resumed.beginSubscriptionTurn(
         request_output[0..],
         subscription_specs[0..],
     );
@@ -165,7 +179,7 @@ test "recipe: mailbox sync runtime client plans replay catch-up then live receiv
         relay_output[0..],
         &.{ .event = .{ .subscription_id = "mailbox-feed", .event = live_wrap_event } },
     );
-    const live_intake = try client.acceptSubscriptionMessageJson(
+    const live_intake = try resumed.acceptSubscriptionMessageJson(
         &live_request,
         live_event_json,
         recipients[0..],

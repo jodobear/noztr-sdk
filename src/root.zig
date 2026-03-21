@@ -118,6 +118,8 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeClientError) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeClientConfig) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeResumeStorage) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeResumeState) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimePlanStorage) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeStep) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimePlan) == type);
@@ -365,6 +367,10 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(runtime.RelayPoolAuthPlan) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolAuthStep) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointError) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolMemberError) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolMemberRecord) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolMemberStorage) == type);
+    try std.testing.expect(@TypeOf(runtime.RelayPoolMemberSet) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointRecord) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointStorage) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolCheckpointSet) == type);

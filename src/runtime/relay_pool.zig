@@ -29,6 +29,10 @@ pub const RelayPoolCheckpointError = RelayPoolError || error{
     PoolNotEmpty,
 };
 
+pub const RelayPoolMemberError = RelayPoolError || error{
+    PoolNotEmpty,
+};
+
 pub const RelayPoolAction = enum {
     connect,
     authenticate,
@@ -352,6 +356,35 @@ pub const RelayPoolCheckpointRecord = struct {
 
 pub const RelayPoolCheckpointStorage = struct {
     records: [pool_capacity]RelayPoolCheckpointRecord = undefined,
+};
+
+pub const RelayPoolMemberRecord = struct {
+    relay_url: [relay_url.relay_url_max_bytes]u8 = [_]u8{0} ** relay_url.relay_url_max_bytes,
+    relay_url_len: u16 = 0,
+
+    pub fn relayUrl(self: *const RelayPoolMemberRecord) []const u8 {
+        std.debug.assert(self.relay_url_len <= relay_url.relay_url_max_bytes);
+        return self.relay_url[0..self.relay_url_len];
+    }
+};
+
+pub const RelayPoolMemberStorage = struct {
+    records: [pool_capacity]RelayPoolMemberRecord = undefined,
+};
+
+pub const RelayPoolMemberSet = struct {
+    records: []const RelayPoolMemberRecord = &.{},
+    relay_count: u8 = 0,
+
+    pub fn entry(self: *const RelayPoolMemberSet, index: u8) ?RelayPoolMemberRecord {
+        if (index >= self.relay_count) return null;
+        return self.records[index];
+    }
+
+    pub fn nextEntry(self: *const RelayPoolMemberSet) ?RelayPoolMemberRecord {
+        if (self.relay_count == 0) return null;
+        return self.records[0];
+    }
 };
 
 pub const RelayPoolCheckpointSet = struct {
@@ -780,6 +813,28 @@ pub const RelayPool = struct {
         };
     }
 
+    pub fn exportMembers(
+        self: *const RelayPool,
+        storage: *RelayPoolMemberStorage,
+    ) RelayPoolMemberError!RelayPoolMemberSet {
+        var relay_index: u8 = 0;
+        while (relay_index < self._storage.pool.count) : (relay_index += 1) {
+            const relay = self._storage.pool.getRelayConst(relay_index) orelse unreachable;
+            const relay_url_text = relay.auth_session.relayUrl();
+            if (relay_url_text.len > relay_url.relay_url_max_bytes) return error.RelayUrlTooLong;
+
+            storage.records[relay_index] = .{
+                .relay_url_len = @intCast(relay_url_text.len),
+            };
+            @memcpy(storage.records[relay_index].relay_url[0..relay_url_text.len], relay_url_text);
+        }
+
+        return .{
+            .records = storage.records[0..self._storage.pool.count],
+            .relay_count = self._storage.pool.count,
+        };
+    }
+
     pub fn restoreCheckpoints(
         self: *RelayPool,
         checkpoints: *const RelayPoolCheckpointSet,
@@ -789,6 +844,19 @@ pub const RelayPool = struct {
         var index: u8 = 0;
         while (index < checkpoints.relay_count) : (index += 1) {
             const record = checkpoints.entry(index) orelse unreachable;
+            _ = try self.addRelay(record.relayUrl());
+        }
+    }
+
+    pub fn restoreMembers(
+        self: *RelayPool,
+        members: *const RelayPoolMemberSet,
+    ) RelayPoolMemberError!void {
+        if (self._storage.pool.count != 0) return error.PoolNotEmpty;
+
+        var index: u8 = 0;
+        while (index < members.relay_count) : (index += 1) {
+            const record = members.entry(index) orelse unreachable;
             _ = try self.addRelay(record.relayUrl());
         }
     }
@@ -1078,6 +1146,36 @@ test "relay pool restores relay membership from exported checkpoints" {
     var plan_storage = RelayPoolPlanStorage{};
     const plan = restored.inspectRuntime(&plan_storage);
     try std.testing.expectEqual(@as(u8, 2), plan.connect_count);
+}
+
+test "relay pool exports bounded relay members in pool order" {
+    var storage = RelayPoolStorage{};
+    var pool = RelayPool.init(&storage);
+    _ = try pool.addRelay("wss://relay.one");
+    _ = try pool.addRelay("wss://relay.two");
+
+    var member_storage = RelayPoolMemberStorage{};
+    const members = try pool.exportMembers(&member_storage);
+    try std.testing.expectEqual(@as(u8, 2), members.relay_count);
+    try std.testing.expectEqualStrings("wss://relay.one", members.entry(0).?.relayUrl());
+    try std.testing.expectEqualStrings("wss://relay.two", members.entry(1).?.relayUrl());
+}
+
+test "relay pool restores relay membership from exported members" {
+    var source_storage = RelayPoolStorage{};
+    var source = RelayPool.init(&source_storage);
+    _ = try source.addRelay("wss://relay.one");
+    _ = try source.addRelay("wss://relay.two");
+
+    var member_storage = RelayPoolMemberStorage{};
+    const members = try source.exportMembers(&member_storage);
+
+    var restored_storage = RelayPoolStorage{};
+    var restored = RelayPool.init(&restored_storage);
+    try restored.restoreMembers(&members);
+    try std.testing.expectEqual(@as(u8, 2), restored.relayCount());
+    try std.testing.expectEqualStrings("wss://relay.one", restored.descriptor(0).?.relay_url);
+    try std.testing.expectEqualStrings("wss://relay.two", restored.descriptor(1).?.relay_url);
 }
 
 test "relay pool restore rejects non-empty pools" {
