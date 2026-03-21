@@ -9,6 +9,7 @@ pub const local_entity_job_client = @import("local_entity_job_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
+pub const mailbox_sync_runtime_client = @import("mailbox_sync_runtime_client.zig");
 pub const mailbox_subscription_job_client = @import("mailbox_subscription_job_client.zig");
 pub const mailbox_subscription_turn_client = @import("mailbox_subscription_turn_client.zig");
 pub const mailbox_replay_job_client = @import("mailbox_replay_job_client.zig");
@@ -143,6 +144,29 @@ pub const MailboxSubscriptionJobResult =
     mailbox_subscription_job_client.MailboxSubscriptionJobResult;
 pub const MailboxSubscriptionJobClient =
     mailbox_subscription_job_client.MailboxSubscriptionJobClient;
+pub const MailboxSyncRuntimeClientError =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeClientError;
+pub const MailboxSyncRuntimeClientConfig =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeClientConfig;
+pub const MailboxSyncRuntimeClientStorage =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeClientStorage;
+pub const MailboxSyncRuntimePlanStorage =
+    mailbox_sync_runtime_client.MailboxSyncRuntimePlanStorage;
+pub const MailboxSyncRuntimeStep = mailbox_sync_runtime_client.MailboxSyncRuntimeStep;
+pub const MailboxSyncRuntimePlan = mailbox_sync_runtime_client.MailboxSyncRuntimePlan;
+pub const MailboxSyncRuntimeAuthEventStorage =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeAuthEventStorage;
+pub const PreparedMailboxSyncRuntimeAuthEvent =
+    mailbox_sync_runtime_client.PreparedMailboxSyncRuntimeAuthEvent;
+pub const MailboxSyncRuntimeReplayRequest =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeReplayRequest;
+pub const MailboxSyncRuntimeReplayIntake =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeReplayIntake;
+pub const MailboxSyncRuntimeSubscriptionRequest =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeSubscriptionRequest;
+pub const MailboxSyncRuntimeSubscriptionIntake =
+    mailbox_sync_runtime_client.MailboxSyncRuntimeSubscriptionIntake;
+pub const MailboxSyncRuntimeClient = mailbox_sync_runtime_client.MailboxSyncRuntimeClient;
 pub const MailboxReplayTurnClientError = mailbox_replay_turn_client.MailboxReplayTurnClientError;
 pub const MailboxReplayTurnClientConfig = mailbox_replay_turn_client.MailboxReplayTurnClientConfig;
 pub const MailboxReplayTurnClientStorage =

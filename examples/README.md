@@ -559,6 +559,21 @@ Use these docs when you need public routing or contract context before opening a
     transcript work still routes through the bounded mailbox subscription turn floor, and this
     layer only exposes command-ready live mailbox posture instead of inventing polling or daemon
     policy
+- `mailbox_sync_runtime_client_recipe.zig`
+  - goal: plan one bounded mailbox sync runtime explicitly across authenticate, replay catch-up,
+    subscribe, and live receive posture without inventing a daemon
+  - public SDK surface: `noztr_sdk.client`, `MailboxSyncRuntimeClient`,
+    `MailboxSyncRuntimeClientStorage`, `MailboxSyncRuntimePlanStorage`,
+    `MailboxSyncRuntimePlan`, `MailboxSyncRuntimeStep`,
+    `MailboxSyncRuntimeAuthEventStorage`, `PreparedMailboxSyncRuntimeAuthEvent`,
+    `MailboxSyncRuntimeReplayRequest`, `MailboxSyncRuntimeReplayIntake`,
+    `MailboxSyncRuntimeSubscriptionRequest`, `MailboxSyncRuntimeSubscriptionIntake`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
+    `noztr.nip01_filter`, `noztr.nip01_message`
+  - control points: caller still owns the decision to declare replay catch-up complete, replay and
+    live transcript work still route through the bounded mailbox replay and subscription floors,
+    auth event creation stays explicit and caller-owned, and this layer only adds typed next-step
+    planning instead of hidden sync policy
 - `mailbox_replay_turn_client_recipe.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result
