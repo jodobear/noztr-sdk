@@ -242,6 +242,12 @@ pub const GroupFleetClientCheckpointStorage =
     group_fleet_client.GroupFleetClientCheckpointStorage;
 pub const GroupFleetClientCheckpointRequest =
     group_fleet_client.GroupFleetClientCheckpointRequest;
+pub const GroupFleetClientMergeSelection =
+    group_fleet_client.GroupFleetClientMergeSelection;
+pub const GroupFleetClientMergeStorage =
+    group_fleet_client.GroupFleetClientMergeStorage;
+pub const GroupFleetClientMergeRequest =
+    group_fleet_client.GroupFleetClientMergeRequest;
 pub const GroupFleetClientStorage = group_fleet_client.GroupFleetClientStorage;
 pub const GroupFleetClient = group_fleet_client.GroupFleetClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;

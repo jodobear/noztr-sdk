@@ -43,6 +43,35 @@ pub const GroupFleetClientCheckpointRequest = struct {
     }
 };
 
+pub const GroupFleetClientMergeSelection = workflows.GroupFleetMergeSelection;
+pub const GroupFleetClientMergeStorage = workflows.GroupFleetMergeStorage;
+
+pub const GroupFleetClientMergeRequest = struct {
+    created_at_base: u64,
+    author_secret_key: [32]u8,
+
+    pub fn init(
+        created_at_base: u64,
+        author_secret_key: *const [32]u8,
+    ) GroupFleetClientMergeRequest {
+        return .{
+            .created_at_base = created_at_base,
+            .author_secret_key = author_secret_key.*,
+        };
+    }
+
+    fn mergeContext(
+        self: *const GroupFleetClientMergeRequest,
+        storage: *GroupFleetClientMergeStorage,
+    ) workflows.GroupFleetMergeContext {
+        return .{
+            .created_at_base = self.created_at_base,
+            .author_secret_key = self.author_secret_key,
+            .storage = storage,
+        };
+    }
+};
+
 pub const GroupFleetClientStorage = struct {
     runtime: workflows.GroupFleetRuntimeStorage = .{},
     background: workflows.GroupFleetBackgroundRuntimeStorage = .{},
@@ -178,6 +207,24 @@ pub const GroupFleetClient = struct {
             &context,
             scratch,
         );
+    }
+
+    pub fn buildMergedCheckpoint(
+        self: *GroupFleetClient,
+        merge_storage: *GroupFleetClientMergeStorage,
+        request: *const GroupFleetClientMergeRequest,
+        selection: *const GroupFleetClientMergeSelection,
+    ) GroupFleetClientError!workflows.GroupFleetMergedCheckpoint {
+        var context = request.mergeContext(merge_storage);
+        return self.fleet.buildMergedCheckpoint(selection, &context);
+    }
+
+    pub fn applyMergedCheckpointToAll(
+        self: *GroupFleetClient,
+        merged_checkpoint: *const workflows.GroupFleetMergedCheckpoint,
+        scratch: std.mem.Allocator,
+    ) GroupFleetClientError!workflows.GroupFleetMergeApplyOutcome {
+        return self.fleet.applyMergedCheckpointToAll(merged_checkpoint, scratch);
     }
 };
 
@@ -739,4 +786,208 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     try std.testing.expectEqual(@as(u8, 1), restored.restored_relays);
     try std.testing.expectEqual(@as(u8, 1), restored.missing_relays);
     try std.testing.expectEqualStrings("Pizza Lovers", target_a.view().metadata.name.?);
+}
+
+test "group fleet client composes merged checkpoint build and apply from explicit relay selection" {
+    var users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_a: [8][]const u8 = undefined;
+    var client_a = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = .init(
+            .init(users_a[0..], roles_a[0..], user_roles_a[0..]),
+            previous_refs_a[0..],
+        ),
+    });
+    client_a.markCurrentRelayConnected();
+
+    var users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_b: [8][]const u8 = undefined;
+    var client_b = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = .init(
+            .init(users_b[0..], roles_b[0..], user_roles_b[0..]),
+            previous_refs_b[0..],
+        ),
+    });
+    client_b.markCurrentRelayConnected();
+
+    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
+    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var groups = GroupFleetClient.init(.{}, fleet);
+
+    const author_secret = [_]u8{0x09} ** 32;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var metadata_buffer_a = workflows.GroupOutboundBuffer{};
+    const metadata_event_a = try client_a.beginMetadataSnapshot(
+        .init(1, &author_secret, &metadata_buffer_a),
+        &.{ .name = "Pizza Lovers" },
+    );
+    _ = try groups.consumeRelayEventJson(
+        "wss://relay.one",
+        metadata_event_a.event_json,
+        arena.allocator(),
+    );
+
+    var members_buffer_a = workflows.GroupOutboundBuffer{};
+    const members_event_a = try client_a.beginMembersSnapshot(
+        .init(2, &author_secret, &members_buffer_a),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xaa} ** 32,
+                    .label = "alpha",
+                },
+            },
+        },
+    );
+    _ = try groups.consumeRelayEventJson(
+        "wss://relay.one",
+        members_event_a.event_json,
+        arena.allocator(),
+    );
+
+    var metadata_buffer_b = workflows.GroupOutboundBuffer{};
+    const metadata_event_b = try client_b.beginMetadataSnapshot(
+        .init(3, &author_secret, &metadata_buffer_b),
+        &.{ .name = "Pizza Lovers Relay Two" },
+    );
+    _ = try groups.consumeRelayEventJson(
+        "wss://relay.one:444",
+        metadata_event_b.event_json,
+        arena.allocator(),
+    );
+
+    var members_buffer_b = workflows.GroupOutboundBuffer{};
+    const members_event_b = try client_b.beginMembersSnapshot(
+        .init(4, &author_secret, &members_buffer_b),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xbb} ** 32,
+                    .label = "beta",
+                },
+                .{
+                    .pubkey = [_]u8{0xcc} ** 32,
+                    .label = "gamma",
+                },
+            },
+        },
+    );
+    _ = try groups.consumeRelayEventJson(
+        "wss://relay.one:444",
+        members_event_b.event_json,
+        arena.allocator(),
+    );
+
+    var merge_storage = GroupFleetClientMergeStorage{};
+    const merge_request = GroupFleetClientMergeRequest.init(20, &author_secret);
+    const merged = try groups.buildMergedCheckpoint(
+        &merge_storage,
+        &merge_request,
+        &.{
+            .baseline_relay_url = "wss://relay.one",
+            .members_relay_url = "wss://relay.one:444",
+        },
+    );
+    try std.testing.expectEqualStrings("wss://relay.one", merged.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", merged.metadata_source_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", merged.admins_source_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", merged.members_source_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one", merged.roles_source_relay_url);
+
+    const applied = try groups.applyMergedCheckpointToAll(&merged, arena.allocator());
+    try std.testing.expectEqual(@as(u8, 2), applied.applied_relays);
+    try std.testing.expectEqualStrings("wss://relay.one:444", applied.members_source_relay_url);
+    try std.testing.expectEqualStrings("Pizza Lovers", client_a.view().metadata.name.?);
+    try std.testing.expectEqualStrings("Pizza Lovers", client_b.view().metadata.name.?);
+    try std.testing.expectEqual(@as(usize, 2), client_a.view().users.len);
+    try std.testing.expectEqual(@as(usize, 2), client_b.view().users.len);
+}
+
+test "group fleet client merge composition falls back to baseline and rejects unknown relay urls" {
+    var users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_a: [8][]const u8 = undefined;
+    var client_a = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = .init(
+            .init(users_a[0..], roles_a[0..], user_roles_a[0..]),
+            previous_refs_a[0..],
+        ),
+    });
+    client_a.markCurrentRelayConnected();
+
+    var users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_b: [8][]const u8 = undefined;
+    var client_b = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = .init(
+            .init(users_b[0..], roles_b[0..], user_roles_b[0..]),
+            previous_refs_b[0..],
+        ),
+    });
+    client_b.markCurrentRelayConnected();
+
+    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
+    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var groups = GroupFleetClient.init(.{}, fleet);
+
+    const author_secret = [_]u8{0x09} ** 32;
+    var metadata_buffer_a = workflows.GroupOutboundBuffer{};
+    const metadata_event_a = try client_a.beginMetadataSnapshot(
+        .init(1, &author_secret, &metadata_buffer_a),
+        &.{ .name = "Pizza Lovers" },
+    );
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    _ = try groups.consumeRelayEventJson(
+        "wss://relay.one",
+        metadata_event_a.event_json,
+        arena.allocator(),
+    );
+    _ = try groups.consumeRelayEventJson(
+        "wss://relay.one:444",
+        metadata_event_a.event_json,
+        arena.allocator(),
+    );
+
+    var merge_storage = GroupFleetClientMergeStorage{};
+    const merge_request = GroupFleetClientMergeRequest.init(40, &author_secret);
+    const merged = try groups.buildMergedCheckpoint(
+        &merge_storage,
+        &merge_request,
+        &.{ .baseline_relay_url = "wss://relay.one:444" },
+    );
+    try std.testing.expectEqualStrings("wss://relay.one:444", merged.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", merged.metadata_source_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", merged.admins_source_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", merged.members_source_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", merged.roles_source_relay_url);
+
+    try std.testing.expectError(
+        error.UnknownRelayUrl,
+        groups.buildMergedCheckpoint(
+            &merge_storage,
+            &merge_request,
+            &.{ .members_relay_url = "wss://relay.unknown" },
+        ),
+    );
 }
