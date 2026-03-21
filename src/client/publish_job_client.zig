@@ -1,6 +1,7 @@
 const std = @import("std");
 const auth_publish_turn = @import("auth_publish_turn_client.zig");
 const local_operator = @import("local_operator_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const publish_turn = @import("publish_turn_client.zig");
 const runtime = @import("../runtime/mod.zig");
 
@@ -63,21 +64,25 @@ pub const PublishJobClient = struct {
         self: *PublishJobClient,
         relay_url_text: []const u8,
     ) PublishJobClientError!runtime.RelayDescriptor {
-        return self.auth_publish_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "auth_publish_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *PublishJobClient,
         relay_index: u8,
     ) PublishJobClientError!void {
-        return self.auth_publish_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "auth_publish_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *PublishJobClient,
         relay_index: u8,
     ) PublishJobClientError!void {
-        return self.auth_publish_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "auth_publish_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -85,14 +90,19 @@ pub const PublishJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) PublishJobClientError!void {
-        return self.auth_publish_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "auth_publish_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const PublishJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.auth_publish_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "auth_publish_turn", storage);
     }
 
     pub fn prepareJob(

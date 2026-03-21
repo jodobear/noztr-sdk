@@ -1,6 +1,7 @@
 const std = @import("std");
 const subscription_turn = @import("subscription_turn_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth = @import("../relay/auth.zig");
 const local_operator = @import("local_operator_client.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -66,21 +67,25 @@ pub const AuthSubscriptionTurnClient = struct {
         self: *AuthSubscriptionTurnClient,
         relay_url_text: []const u8,
     ) AuthSubscriptionTurnClientError!runtime.RelayDescriptor {
-        return self.subscription_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "subscription_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *AuthSubscriptionTurnClient,
         relay_index: u8,
     ) AuthSubscriptionTurnClientError!void {
-        return self.subscription_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *AuthSubscriptionTurnClient,
         relay_index: u8,
     ) AuthSubscriptionTurnClientError!void {
-        return self.subscription_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "subscription_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -88,14 +93,19 @@ pub const AuthSubscriptionTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) AuthSubscriptionTurnClientError!void {
-        return self.subscription_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "subscription_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const AuthSubscriptionTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.subscription_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn inspectAuth(

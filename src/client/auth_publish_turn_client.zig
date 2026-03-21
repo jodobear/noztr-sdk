@@ -1,6 +1,7 @@
 const std = @import("std");
 const publish_turn = @import("publish_turn_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth = @import("../relay/auth.zig");
 const local_operator = @import("local_operator_client.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -67,21 +68,21 @@ pub const AuthPublishTurnClient = struct {
         self: *AuthPublishTurnClient,
         relay_url_text: []const u8,
     ) AuthPublishTurnClientError!runtime.RelayDescriptor {
-        return self.publish_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "publish_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *AuthPublishTurnClient,
         relay_index: u8,
     ) AuthPublishTurnClientError!void {
-        return self.publish_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "publish_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *AuthPublishTurnClient,
         relay_index: u8,
     ) AuthPublishTurnClientError!void {
-        return self.publish_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "publish_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -89,14 +90,19 @@ pub const AuthPublishTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) AuthPublishTurnClientError!void {
-        return self.publish_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "publish_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const AuthPublishTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.publish_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "publish_turn", storage);
     }
 
     pub fn inspectAuth(

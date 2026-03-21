@@ -1,6 +1,7 @@
 const std = @import("std");
 const auth_replay_turn = @import("auth_replay_turn_client.zig");
 const local_operator = @import("local_operator_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const replay_turn = @import("relay_replay_turn_client.zig");
 const store = @import("../store/mod.zig");
@@ -65,21 +66,25 @@ pub const ReplayJobClient = struct {
         self: *ReplayJobClient,
         relay_url_text: []const u8,
     ) ReplayJobClientError!runtime.RelayDescriptor {
-        return self.auth_replay_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "auth_replay_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *ReplayJobClient,
         relay_index: u8,
     ) ReplayJobClientError!void {
-        return self.auth_replay_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "auth_replay_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *ReplayJobClient,
         relay_index: u8,
     ) ReplayJobClientError!void {
-        return self.auth_replay_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "auth_replay_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -87,14 +92,19 @@ pub const ReplayJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) ReplayJobClientError!void {
-        return self.auth_replay_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "auth_replay_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const ReplayJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.auth_replay_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "auth_replay_turn", storage);
     }
 
     pub fn prepareJob(

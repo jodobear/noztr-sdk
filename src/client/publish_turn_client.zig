@@ -1,6 +1,7 @@
 const std = @import("std");
 const local_operator = @import("local_operator_client.zig");
 const relay_response = @import("relay_response_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const noztr = @import("noztr");
 
@@ -71,21 +72,21 @@ pub const PublishTurnClient = struct {
         self: *PublishTurnClient,
         relay_url_text: []const u8,
     ) PublishTurnClientError!runtime.RelayDescriptor {
-        return self.relay_pool.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "relay_pool", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *PublishTurnClient,
         relay_index: u8,
     ) PublishTurnClientError!void {
-        return self.relay_pool.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "relay_pool", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *PublishTurnClient,
         relay_index: u8,
     ) PublishTurnClientError!void {
-        return self.relay_pool.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "relay_pool", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -93,14 +94,19 @@ pub const PublishTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) PublishTurnClientError!void {
-        return self.relay_pool.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "relay_pool",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const PublishTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.relay_pool.inspectRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "relay_pool", storage);
     }
 
     pub fn inspectPublish(

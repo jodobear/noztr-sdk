@@ -1,6 +1,7 @@
 const std = @import("std");
 const auth_subscription_turn = @import("auth_subscription_turn_client.zig");
 const local_operator = @import("local_operator_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const subscription_turn = @import("subscription_turn_client.zig");
 
@@ -64,21 +65,29 @@ pub const SubscriptionJobClient = struct {
         self: *SubscriptionJobClient,
         relay_url_text: []const u8,
     ) SubscriptionJobClientError!runtime.RelayDescriptor {
-        return self.auth_subscription_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "auth_subscription_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *SubscriptionJobClient,
         relay_index: u8,
     ) SubscriptionJobClientError!void {
-        return self.auth_subscription_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(
+            self,
+            "auth_subscription_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayDisconnected(
         self: *SubscriptionJobClient,
         relay_index: u8,
     ) SubscriptionJobClientError!void {
-        return self.auth_subscription_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "auth_subscription_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -86,14 +95,23 @@ pub const SubscriptionJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) SubscriptionJobClientError!void {
-        return self.auth_subscription_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "auth_subscription_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const SubscriptionJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.auth_subscription_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(
+            self,
+            "auth_subscription_turn",
+            storage,
+        );
     }
 
     pub fn prepareJob(
