@@ -486,6 +486,28 @@ Use these docs when you need public routing or contract context before opening a
   - control points: DM event shaping still routes through the legacy DM workflow floor, auth
     event authoring still stays explicit and caller-owned, and this layer only selects one
     `authenticate` or one `publish` step without inventing retry, transport, or polling policy
+- `legacy_dm_replay_turn_client_recipe.zig`
+  - goal: replay one checkpoint-backed legacy kind-`4` transcript explicitly, then decrypt replay
+    events through one bounded intake adapter
+  - public SDK surface: `noztr_sdk.client`, `LegacyDmReplayTurnClient`,
+    `LegacyDmReplayTurnClientStorage`, `LegacyDmReplayTurnRequest`,
+    `LegacyDmReplayTurnIntake`, `LegacyDmReplayTurnResult`, `LegacyDmMessageOutcome`,
+    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.store.RelayCheckpointArchive`
+  - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
+  - control points: replay planning and checkpoint closure still route through the shared relay
+    replay floor, parsed transcript events stay as event objects, and this layer only adds
+    legacy-DM plaintext intake instead of inventing polling or background sync
+- `legacy_dm_subscription_turn_client_recipe.zig`
+  - goal: start one live legacy kind-`4` subscription turn explicitly, then decrypt transcript
+    events through one bounded intake adapter
+  - public SDK surface: `noztr_sdk.client`, `LegacyDmSubscriptionTurnClient`,
+    `LegacyDmSubscriptionTurnClientStorage`, `LegacyDmSubscriptionTurnRequest`,
+    `LegacyDmSubscriptionTurnIntake`, `LegacyDmSubscriptionTurnResult`,
+    `LegacyDmMessageOutcome`, `noztr_sdk.runtime.RelaySubscriptionSpec`
+  - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
+  - control points: live transcript close posture still routes through the shared subscription
+    turn floor, parsed transcript events stay as event objects, and this layer only adds
+    legacy-DM plaintext intake instead of inventing a polling loop
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a

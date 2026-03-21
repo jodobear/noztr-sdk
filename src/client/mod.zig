@@ -7,6 +7,8 @@ pub const count_job_client = @import("count_job_client.zig");
 pub const count_turn_client = @import("count_turn_client.zig");
 pub const local_entity_job_client = @import("local_entity_job_client.zig");
 pub const legacy_dm_publish_job_client = @import("legacy_dm_publish_job_client.zig");
+pub const legacy_dm_replay_turn_client = @import("legacy_dm_replay_turn_client.zig");
+pub const legacy_dm_subscription_turn_client = @import("legacy_dm_subscription_turn_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
@@ -118,6 +120,30 @@ pub const LegacyDmPublishJobRequest =
 pub const LegacyDmPublishJobReady = legacy_dm_publish_job_client.LegacyDmPublishJobReady;
 pub const LegacyDmPublishJobResult = legacy_dm_publish_job_client.LegacyDmPublishJobResult;
 pub const LegacyDmPublishJobClient = legacy_dm_publish_job_client.LegacyDmPublishJobClient;
+pub const LegacyDmReplayTurnClientError =
+    legacy_dm_replay_turn_client.LegacyDmReplayTurnClientError;
+pub const LegacyDmReplayTurnClientConfig =
+    legacy_dm_replay_turn_client.LegacyDmReplayTurnClientConfig;
+pub const LegacyDmReplayTurnClientStorage =
+    legacy_dm_replay_turn_client.LegacyDmReplayTurnClientStorage;
+pub const LegacyDmReplayTurnRequest = legacy_dm_replay_turn_client.LegacyDmReplayTurnRequest;
+pub const LegacyDmReplayTurnIntake = legacy_dm_replay_turn_client.LegacyDmReplayTurnIntake;
+pub const LegacyDmReplayTurnResult = legacy_dm_replay_turn_client.LegacyDmReplayTurnResult;
+pub const LegacyDmReplayTurnClient = legacy_dm_replay_turn_client.LegacyDmReplayTurnClient;
+pub const LegacyDmSubscriptionTurnClientError =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnClientError;
+pub const LegacyDmSubscriptionTurnClientConfig =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnClientConfig;
+pub const LegacyDmSubscriptionTurnClientStorage =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnClientStorage;
+pub const LegacyDmSubscriptionTurnRequest =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnRequest;
+pub const LegacyDmSubscriptionTurnIntake =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnIntake;
+pub const LegacyDmSubscriptionTurnResult =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnResult;
+pub const LegacyDmSubscriptionTurnClient =
+    legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;
 pub const MailboxJobClientConfig = mailbox_job_client.MailboxJobClientConfig;
 pub const MailboxJobClientStorage = mailbox_job_client.MailboxJobClientStorage;

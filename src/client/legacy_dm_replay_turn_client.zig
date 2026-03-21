@@ -1,0 +1,257 @@
+const std = @import("std");
+const local_operator = @import("local_operator_client.zig");
+const relay_replay_turn = @import("relay_replay_turn_client.zig");
+const runtime = @import("../runtime/mod.zig");
+const store = @import("../store/mod.zig");
+const workflows = @import("../workflows/mod.zig");
+
+pub const LegacyDmReplayTurnClientError =
+    relay_replay_turn.RelayReplayTurnClientError ||
+    workflows.LegacyDmError;
+
+pub const LegacyDmReplayTurnClientConfig = struct {
+    owner_private_key: [local_operator.secret_key_bytes]u8,
+    replay_turn: relay_replay_turn.RelayReplayTurnClientConfig = .{},
+};
+
+pub const LegacyDmReplayTurnClientStorage = struct {
+    session: workflows.LegacyDmSession = undefined,
+    replay_turn: relay_replay_turn.RelayReplayTurnClientStorage = .{},
+};
+
+pub const LegacyDmReplayTurnRequest = relay_replay_turn.ReplayTurnRequest;
+pub const LegacyDmReplayTurnResult = relay_replay_turn.ReplayTurnResult;
+
+pub const LegacyDmReplayTurnIntake = struct {
+    replay: relay_replay_turn.ReplayTurnIntake,
+    message: ?workflows.LegacyDmMessageOutcome,
+};
+
+pub const LegacyDmReplayTurnClient = struct {
+    config: LegacyDmReplayTurnClientConfig,
+    storage: *LegacyDmReplayTurnClientStorage,
+    replay_turn: relay_replay_turn.RelayReplayTurnClient,
+
+    pub fn init(
+        config: LegacyDmReplayTurnClientConfig,
+        storage: *LegacyDmReplayTurnClientStorage,
+    ) LegacyDmReplayTurnClient {
+        storage.* = .{
+            .session = workflows.LegacyDmSession.init(&config.owner_private_key),
+        };
+        return .{
+            .config = config,
+            .storage = storage,
+            .replay_turn = relay_replay_turn.RelayReplayTurnClient.attach(
+                config.replay_turn,
+                &storage.replay_turn,
+            ),
+        };
+    }
+
+    pub fn attach(
+        config: LegacyDmReplayTurnClientConfig,
+        storage: *LegacyDmReplayTurnClientStorage,
+    ) LegacyDmReplayTurnClient {
+        return .{
+            .config = config,
+            .storage = storage,
+            .replay_turn = relay_replay_turn.RelayReplayTurnClient.attach(
+                config.replay_turn,
+                &storage.replay_turn,
+            ),
+        };
+    }
+
+    pub fn addRelay(
+        self: *LegacyDmReplayTurnClient,
+        relay_url_text: []const u8,
+    ) LegacyDmReplayTurnClientError!runtime.RelayDescriptor {
+        return self.replay_turn.addRelay(relay_url_text);
+    }
+
+    pub fn markRelayConnected(
+        self: *LegacyDmReplayTurnClient,
+        relay_index: u8,
+    ) LegacyDmReplayTurnClientError!void {
+        return self.replay_turn.markRelayConnected(relay_index);
+    }
+
+    pub fn noteRelayDisconnected(
+        self: *LegacyDmReplayTurnClient,
+        relay_index: u8,
+    ) LegacyDmReplayTurnClientError!void {
+        return self.replay_turn.noteRelayDisconnected(relay_index);
+    }
+
+    pub fn noteRelayAuthChallenge(
+        self: *LegacyDmReplayTurnClient,
+        relay_index: u8,
+        challenge: []const u8,
+    ) LegacyDmReplayTurnClientError!void {
+        return self.replay_turn.noteRelayAuthChallenge(relay_index, challenge);
+    }
+
+    pub fn acceptRelayAuthEvent(
+        self: *LegacyDmReplayTurnClient,
+        relay_index: u8,
+        auth_event: *const @import("noztr").nip01_event.Event,
+        now_unix_seconds: u64,
+        window_seconds: u32,
+    ) LegacyDmReplayTurnClientError!runtime.RelayDescriptor {
+        try self.replay_turn.replay_exchange.replay.relay_pool.acceptRelayAuthEvent(
+            relay_index,
+            auth_event,
+            now_unix_seconds,
+            window_seconds,
+        );
+        return self.replay_turn.replay_exchange.replay.relay_pool.descriptor(relay_index) orelse {
+            return error.InvalidRelayIndex;
+        };
+    }
+
+    pub fn inspectRelayRuntime(
+        self: *const LegacyDmReplayTurnClient,
+        storage: *runtime.RelayPoolPlanStorage,
+    ) runtime.RelayPoolPlan {
+        return self.replay_turn.inspectRelayRuntime(storage);
+    }
+
+    pub fn inspectAuth(
+        self: *const LegacyDmReplayTurnClient,
+        storage: *runtime.RelayPoolAuthStorage,
+    ) runtime.RelayPoolAuthPlan {
+        return self.replay_turn.replay_exchange.replay.relay_pool.inspectAuth(storage);
+    }
+
+    pub fn inspectReplay(
+        self: *const LegacyDmReplayTurnClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        specs: []const runtime.RelayReplaySpec,
+        storage: *runtime.RelayPoolReplayStorage,
+    ) LegacyDmReplayTurnClientError!runtime.RelayPoolReplayPlan {
+        return self.replay_turn.inspectReplay(checkpoint_store, specs, storage);
+    }
+
+    pub fn beginTurn(
+        self: *const LegacyDmReplayTurnClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        output: []u8,
+        subscription_id: []const u8,
+        specs: []const runtime.RelayReplaySpec,
+    ) LegacyDmReplayTurnClientError!LegacyDmReplayTurnRequest {
+        return self.replay_turn.beginTurn(
+            &self.storage.replay_turn,
+            checkpoint_store,
+            output,
+            subscription_id,
+            specs,
+        );
+    }
+
+    pub fn acceptReplayMessageJson(
+        self: *LegacyDmReplayTurnClient,
+        request: *const LegacyDmReplayTurnRequest,
+        relay_message_json: []const u8,
+        plaintext_output: []u8,
+        scratch: std.mem.Allocator,
+    ) LegacyDmReplayTurnClientError!LegacyDmReplayTurnIntake {
+        const replay = try self.replay_turn.acceptReplayMessageJson(
+            &self.storage.replay_turn,
+            request,
+            relay_message_json,
+            scratch,
+        );
+
+        var message: ?workflows.LegacyDmMessageOutcome = null;
+        if (replay.replay.message == .event and
+            replay.replay.message.event.event.kind == @import("noztr").nip04.dm_kind)
+        {
+            message = try self.storage.session.acceptDirectMessageEvent(
+                &replay.replay.message.event.event,
+                plaintext_output,
+            );
+        }
+
+        return .{
+            .replay = replay,
+            .message = message,
+        };
+    }
+
+    pub fn completeTurn(
+        self: *const LegacyDmReplayTurnClient,
+        output: []u8,
+        request: *const LegacyDmReplayTurnRequest,
+    ) LegacyDmReplayTurnClientError!LegacyDmReplayTurnResult {
+        return self.replay_turn.completeTurn(&self.storage.replay_turn, output, request);
+    }
+
+    pub fn saveTurnResult(
+        self: *const LegacyDmReplayTurnClient,
+        archive: store.RelayCheckpointArchive,
+        result: *const LegacyDmReplayTurnResult,
+    ) LegacyDmReplayTurnClientError!void {
+        return self.replay_turn.saveTurnResult(archive, result);
+    }
+};
+
+test "legacy dm replay turn client accepts replay transcript events through dm intake" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+    const checkpoint_archive = store.RelayCheckpointArchive.init(memory_store.asClientStore());
+
+    const sender_secret = [_]u8{0x11} ** 32;
+    const recipient_secret = [_]u8{0x22} ** 32;
+    const recipient_pubkey = try @import("noztr").nostr_keys.nostr_derive_public_key(&recipient_secret);
+
+    var storage = LegacyDmReplayTurnClientStorage{};
+    var client = LegacyDmReplayTurnClient.init(.{
+        .owner_private_key = recipient_secret,
+    }, &storage);
+    const relay = try client.addRelay("wss://relay.one");
+    try client.markRelayConnected(relay.relay_index);
+    try checkpoint_archive.saveRelayCheckpoint("legacy-dm", relay.relay_url, .{ .offset = 7 });
+
+    var outbound = workflows.LegacyDmOutboundStorage{};
+    const sender = workflows.LegacyDmSession.init(&sender_secret);
+    const prepared = try sender.buildDirectMessageEvent(&outbound, &.{
+        .recipient_pubkey = recipient_pubkey,
+        .content = "legacy replay intake",
+        .created_at = 60,
+        .iv = [_]u8{0x55} ** @import("noztr").limits.nip04_iv_bytes,
+    });
+
+    const replay_specs = [_]runtime.RelayReplaySpec{
+        .{
+            .checkpoint_scope = "legacy-dm",
+            .query = .{ .limit = 16 },
+        },
+    };
+    var request_output: [@import("noztr").limits.relay_message_bytes_max]u8 = undefined;
+    const turn_request = try client.beginTurn(
+        checkpoint_store,
+        request_output[0..],
+        "legacy-feed",
+        replay_specs[0..],
+    );
+
+    var relay_output: [@import("noztr").limits.relay_message_bytes_max]u8 = undefined;
+    const event_json = try @import("noztr").nip01_message.relay_message_serialize_json(
+        relay_output[0..],
+        &.{ .event = .{ .subscription_id = "legacy-feed", .event = prepared.event } },
+    );
+    var plaintext_output: [@import("noztr").limits.nip04_plaintext_max_bytes]u8 = undefined;
+    const intake = try client.acceptReplayMessageJson(
+        &turn_request,
+        event_json,
+        plaintext_output[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(intake.replay.replay.message == .event);
+    try std.testing.expect(intake.message != null);
+    try std.testing.expectEqualStrings("legacy replay intake", intake.message.?.plaintext);
+}

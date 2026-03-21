@@ -497,6 +497,23 @@ test "phase4c exposes the legacy dm publish job floor" {
     try std.testing.expect(@TypeOf(client.LegacyDmPublishJobClient) == type);
 }
 
+test "phase4d exposes the legacy dm transcript turn floors" {
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnClientError) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnIntake) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnResult) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayTurnClient) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnClientError) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnIntake) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnResult) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnClient) == type);
+}
+
 test "phase5 exposes the mailbox workflow surface" {
     try std.testing.expect(@TypeOf(workflows.MailboxSession) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxOutboundBuffer) == type);
