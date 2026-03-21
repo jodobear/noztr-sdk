@@ -238,6 +238,10 @@ pub const GroupFleetClientError = group_fleet_client.GroupFleetClientError;
 pub const GroupFleetClientConfig = group_fleet_client.GroupFleetClientConfig;
 pub const GroupFleetClientBackgroundRequest =
     group_fleet_client.GroupFleetClientBackgroundRequest;
+pub const GroupFleetClientCheckpointStorage =
+    group_fleet_client.GroupFleetClientCheckpointStorage;
+pub const GroupFleetClientCheckpointRequest =
+    group_fleet_client.GroupFleetClientCheckpointRequest;
 pub const GroupFleetClientStorage = group_fleet_client.GroupFleetClientStorage;
 pub const GroupFleetClient = group_fleet_client.GroupFleetClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;

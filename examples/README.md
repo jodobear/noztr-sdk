@@ -845,15 +845,19 @@ Use these docs when you need public routing or contract context before opening a
     hidden merge or runtime policy
 - `group_fleet_client_recipe.zig`
   - goal: drive one client-facing multi-relay groups path above `GroupFleet` to inspect runtime,
-    inspect consistency, inspect one explicit background-runtime step, and select the relay for
-    that next step
+    inspect consistency, persist relay-local checkpoints through one explicit store seam, restore
+    a fresh client from that store, reconcile one target relay from the chosen baseline, and
+    inspect one explicit background-runtime step
   - public SDK surface: `noztr_sdk.client`, `GroupFleetClient`, `GroupFleetClientStorage`,
-    `GroupFleetClientBackgroundRequest`, `GroupFleetRuntimePlan`, `GroupFleetConsistencyReport`,
-    `GroupFleetBackgroundRuntimePlan`
+    `GroupFleetClientCheckpointStorage`, `GroupFleetClientBackgroundRequest`,
+    `GroupFleetClientCheckpointRequest`,
+    `GroupFleetRuntimePlan`, `GroupFleetConsistencyReport`, `GroupFleetBackgroundRuntimePlan`,
+    `MemoryGroupFleetCheckpointStore`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller still owns the relay-local `GroupClient` members and the scheduler,
-    while the client layer packages bounded runtime/background/consistency posture into one SDK
-    route without introducing hidden relay or merge ownership
+    while the client layer packages bounded runtime/background/consistency plus checkpoint-store
+    and targeted-reconcile posture into one SDK route without introducing hidden relay or merge
+    ownership
 
 ## Adversarial Examples
 

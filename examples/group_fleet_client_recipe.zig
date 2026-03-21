@@ -3,34 +3,35 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
 // Drive one bounded multi-relay groups client above the existing fleet workflow: inspect runtime,
-// inspect consistency, inspect one explicit background-runtime step, and select the relay for that
-// next step without inventing hidden background ownership.
-test "recipe: group fleet client inspects runtime consistency and one next background relay" {
-    var users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
-    var roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
-    var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+// inspect consistency, inspect one explicit background-runtime step, reconcile one target relay
+// from the chosen baseline, persist relay-local checkpoints through one explicit store seam, and
+// restore a fresh client from that store without inventing hidden background ownership.
+test "recipe: group fleet client inspects runtime reconciles one target relay and restores from store" {
+    var source_users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var source_roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
-    var previous_refs_a: [8][]const u8 = undefined;
+    var source_previous_refs_a: [8][]const u8 = undefined;
     var relay_one = try noztr_sdk.workflows.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
-            .init(users_a[0..], roles_a[0..], user_roles_a[0..]),
-            previous_refs_a[0..],
+            .init(source_users_a[0..], source_roles_a[0..], source_user_roles_a[0..]),
+            source_previous_refs_a[0..],
         ),
     });
 
-    var users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
-    var roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
-    var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+    var source_users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var source_roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var source_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
-    var previous_refs_b: [8][]const u8 = undefined;
+    var source_previous_refs_b: [8][]const u8 = undefined;
     var relay_two = try noztr_sdk.workflows.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
-            .init(users_b[0..], roles_b[0..], user_roles_b[0..]),
-            previous_refs_b[0..],
+            .init(source_users_b[0..], source_roles_b[0..], source_user_roles_b[0..]),
+            source_previous_refs_b[0..],
         ),
     });
     relay_one.markCurrentRelayConnected();
@@ -46,11 +47,6 @@ test "recipe: group fleet client inspects runtime consistency and one next backg
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
     );
-    var changed_metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    const changed = try relay_one.beginMetadataSnapshot(
-        .init(2, &author_secret, &changed_metadata_buffer),
-        &.{ .name = "Pizza Lovers Updated" },
-    );
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -59,33 +55,79 @@ test "recipe: group fleet client inspects runtime consistency and one next backg
         first.event_json,
         arena.allocator(),
     );
-    _ = try groups.consumeRelayEventJson(
-        "wss://relay.one:444",
-        first.event_json,
-        arena.allocator(),
-    );
-    _ = try groups.consumeRelayEventJson(
-        "wss://relay.one",
-        changed.event_json,
-        arena.allocator(),
-    );
 
     var storage = noztr_sdk.client.GroupFleetClientStorage{};
-    const runtime = try groups.inspectRuntime(&storage, "wss://relay.one:444");
+    const runtime = try groups.inspectRuntime(&storage, "wss://relay.one");
     try std.testing.expectEqual(@as(u8, 1), runtime.reconcile_count);
-    const consistency = try groups.inspectConsistency(&storage, "wss://relay.one:444");
+    const consistency = try groups.inspectConsistency(&storage, "wss://relay.one");
     try std.testing.expectEqual(@as(usize, 1), consistency.divergent_relays.len);
 
     const background = try groups.inspectBackgroundRuntime(&storage, .{
-        .baseline_relay_url = "wss://relay.one:444",
+        .baseline_relay_url = "wss://relay.one",
     });
     const next_step = background.nextStep().?;
     try std.testing.expectEqual(
         noztr_sdk.workflows.GroupFleetBackgroundAction.reconcile,
         next_step.entry.action,
     );
-    try std.testing.expectEqualStrings(
+    try std.testing.expectEqualStrings("wss://relay.one:444", try groups.selectBackgroundRelay(next_step));
+
+    var checkpoint_storage = noztr_sdk.client.GroupFleetClientCheckpointStorage{};
+    const checkpoint_request = noztr_sdk.client.GroupFleetClientCheckpointRequest.init(10, &author_secret);
+    const reconciled = try groups.reconcileRelayFromBaseline(
+        &checkpoint_storage,
+        &checkpoint_request,
         "wss://relay.one",
-        try groups.selectBackgroundRelay(next_step),
+        "wss://relay.one:444",
+        arena.allocator(),
     );
+    try std.testing.expectEqualStrings("wss://relay.one", reconciled.baseline_relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", reconciled.target_relay_url);
+    try std.testing.expectEqualStrings("Pizza Lovers", relay_two.view().metadata.name.?);
+
+    var records: [2]noztr_sdk.workflows.GroupFleetCheckpointRecord =
+        [_]noztr_sdk.workflows.GroupFleetCheckpointRecord{.{}, .{}};
+    var memory_store = noztr_sdk.workflows.MemoryGroupFleetCheckpointStore.init(records[0..]);
+    const persisted = try groups.persistCheckpointStore(
+        &checkpoint_storage,
+        &checkpoint_request,
+        memory_store.asStore(),
+    );
+    try std.testing.expectEqual(@as(u8, 2), persisted.stored_relays);
+
+    var restored_users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var restored_roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var restored_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var restored_previous_refs_a: [8][]const u8 = undefined;
+    var restored_one = try noztr_sdk.workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = .init(
+            .init(restored_users_a[0..], restored_roles_a[0..], restored_user_roles_a[0..]),
+            restored_previous_refs_a[0..],
+        ),
+    });
+
+    var restored_users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var restored_roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var restored_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var restored_previous_refs_b: [8][]const u8 = undefined;
+    var restored_two = try noztr_sdk.workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = .init(
+            .init(restored_users_b[0..], restored_roles_b[0..], restored_user_roles_b[0..]),
+            restored_previous_refs_b[0..],
+        ),
+    });
+
+    var restored_members = [_]*noztr_sdk.workflows.GroupClient{ &restored_one, &restored_two };
+    const restored_fleet = try noztr_sdk.workflows.GroupFleet.init(restored_members[0..]);
+    var restored_groups = noztr_sdk.client.GroupFleetClient.init(.{}, restored_fleet);
+    const restored = try restored_groups.restoreCheckpointStore(memory_store.asStore(), arena.allocator());
+    try std.testing.expectEqual(@as(u8, 2), restored.restored_relays);
+    try std.testing.expectEqualStrings("Pizza Lovers", restored_one.view().metadata.name.?);
+    try std.testing.expectEqualStrings("Pizza Lovers", restored_two.view().metadata.name.?);
 }
