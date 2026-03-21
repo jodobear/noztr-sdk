@@ -289,6 +289,18 @@ pub const MailboxDmOrchestrationStep =
     mailbox_sync_runtime_client.MailboxDmOrchestrationStep;
 pub const MailboxDmOrchestrationPlan =
     mailbox_sync_runtime_client.MailboxDmOrchestrationPlan;
+pub const MailboxDmRuntimeCadenceRequest =
+    mailbox_sync_runtime_client.MailboxDmRuntimeCadenceRequest;
+pub const MailboxDmRuntimeCadenceStorage =
+    mailbox_sync_runtime_client.MailboxDmRuntimeCadenceStorage;
+pub const MailboxDmRuntimeCadenceWaitReason =
+    mailbox_sync_runtime_client.MailboxDmRuntimeCadenceWaitReason;
+pub const MailboxDmRuntimeCadenceWait =
+    mailbox_sync_runtime_client.MailboxDmRuntimeCadenceWait;
+pub const MailboxDmRuntimeCadenceStep =
+    mailbox_sync_runtime_client.MailboxDmRuntimeCadenceStep;
+pub const MailboxDmRuntimeCadencePlan =
+    mailbox_sync_runtime_client.MailboxDmRuntimeCadencePlan;
 pub const MailboxSyncRuntimeAuthEventStorage =
     mailbox_sync_runtime_client.MailboxSyncRuntimeAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent =

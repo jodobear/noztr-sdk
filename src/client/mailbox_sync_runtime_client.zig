@@ -69,6 +69,14 @@ pub const MailboxDmOrchestrationStep =
     dm_sync_runtime_support.DmOrchestrationStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
 pub const MailboxDmOrchestrationPlan =
     dm_sync_runtime_support.DmOrchestrationPlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxDmRuntimeCadenceRequest = dm_sync_runtime_support.DmRuntimeCadenceRequest;
+pub const MailboxDmRuntimeCadenceStorage = dm_sync_runtime_support.DmRuntimeCadenceStorage;
+pub const MailboxDmRuntimeCadenceWaitReason = dm_sync_runtime_support.DmRuntimeCadenceWaitReason;
+pub const MailboxDmRuntimeCadenceWait = dm_sync_runtime_support.DmRuntimeCadenceWait;
+pub const MailboxDmRuntimeCadenceStep =
+    dm_sync_runtime_support.DmRuntimeCadenceStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxDmRuntimeCadencePlan =
+    dm_sync_runtime_support.DmRuntimeCadencePlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
 
 pub const MailboxSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
@@ -310,6 +318,27 @@ pub const MailboxSyncRuntimeClient = struct {
         return dm_sync_runtime_support.buildDmOrchestration(
             mailbox_subscription_job.MailboxSubscriptionJobRequest,
             policy_plan,
+        );
+    }
+
+    pub fn inspectDmRuntimeCadence(
+        self: *const MailboxSyncRuntimeClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        replay_specs: []const runtime.RelayReplaySpec,
+        subscription_specs: []const runtime.RelaySubscriptionSpec,
+        request: MailboxDmRuntimeCadenceRequest,
+        storage: *MailboxDmRuntimeCadenceStorage,
+    ) MailboxSyncRuntimeClientError!MailboxDmRuntimeCadencePlan {
+        const orchestration = try self.inspectDmOrchestration(
+            checkpoint_store,
+            replay_specs,
+            subscription_specs,
+            &storage.orchestration,
+        );
+        return dm_sync_runtime_support.buildDmRuntimeCadence(
+            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            orchestration,
+            request,
         );
     }
 
@@ -961,6 +990,70 @@ test "mailbox sync runtime client exposes broader dm orchestration phases" {
     );
     try std.testing.expect(empty.needs_relay_configuration);
     try std.testing.expect(empty.nextStep() == .configure_relays);
+}
+
+test "mailbox sync runtime client cadence can defer reconnect until caller backoff expires" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+
+    const recipient_secret = [_]u8{0x33} ** 32;
+    var client_storage = MailboxSyncRuntimeClientStorage{};
+    var client = MailboxSyncRuntimeClient.init(.{
+        .recipient_private_key = recipient_secret,
+    }, &client_storage);
+
+    var relay_list_json_storage: [1024]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJson(
+        relay_list_json_storage[0..],
+        "wss://relay.one",
+        40,
+        &recipient_secret,
+    );
+    _ = try client.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try client.markRelayConnected(0);
+    client.markReplayCatchupComplete();
+    try client.noteRelayDisconnected(0);
+
+    const filter = try noztr.nip01_filter.filter_parse_json(
+        "{\"kinds\":[1059]}",
+        arena.allocator(),
+    );
+    const subscription_specs = [_]runtime.RelaySubscriptionSpec{
+        .{ .subscription_id = "mailbox-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+
+    var cadence_storage = MailboxDmRuntimeCadenceStorage{};
+    const waiting = try client.inspectDmRuntimeCadence(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        .{
+            .now_unix_seconds = 100,
+            .reconnect_not_before_unix_seconds = 120,
+        },
+        &cadence_storage,
+    );
+    try std.testing.expect(waiting.blocked_by_reconnect_backoff);
+    try std.testing.expect(waiting.nextStep() == .wait);
+    try std.testing.expectEqual(
+        MailboxDmRuntimeCadenceWaitReason.reconnect_backoff,
+        waiting.nextStep().wait.reason,
+    );
+
+    const due = try client.inspectDmRuntimeCadence(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        .{
+            .now_unix_seconds = 120,
+            .reconnect_not_before_unix_seconds = 120,
+        },
+        &cadence_storage,
+    );
+    try std.testing.expect(due.nextStep() == .reconnect);
 }
 
 fn buildRelayListEventJson(

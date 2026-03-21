@@ -5,8 +5,9 @@ const common = @import("common.zig");
 
 // Plan a bounded mailbox sync runtime explicitly, inspect one broader DM orchestration helper
 // above the bounded runtime, export durable resume state after replay catch-up, restore it into a
-// fresh client, reconnect explicitly, then resume one live mailbox subscription.
-test "recipe: mailbox sync runtime client inspects dm orchestration before live resubscribe" {
+// fresh client, inspect one caller-owned reconnect backoff window, reconnect explicitly, then
+// resume one live mailbox subscription.
+test "recipe: mailbox sync runtime client inspects dm cadence before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -173,11 +174,33 @@ test "recipe: mailbox sync runtime client inspects dm orchestration before live 
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
 
-    const reconnect_policy = try resumed.inspectDmOrchestration(
+    var cadence_storage = noztr_sdk.client.MailboxDmRuntimeCadenceStorage{};
+    const reconnect_wait = try resumed.inspectDmRuntimeCadence(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &orchestration_storage,
+        .{
+            .now_unix_seconds = 99,
+            .reconnect_not_before_unix_seconds = 120,
+        },
+        &cadence_storage,
+    );
+    try std.testing.expect(reconnect_wait.blocked_by_reconnect_backoff);
+    try std.testing.expect(reconnect_wait.nextStep() == .wait);
+    try std.testing.expectEqual(
+        noztr_sdk.client.MailboxDmRuntimeCadenceWaitReason.reconnect_backoff,
+        reconnect_wait.nextStep().wait.reason,
+    );
+
+    const reconnect_policy = try resumed.inspectDmRuntimeCadence(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        .{
+            .now_unix_seconds = 120,
+            .reconnect_not_before_unix_seconds = 120,
+        },
+        &cadence_storage,
     );
     try std.testing.expect(reconnect_policy.needs_connect_progress);
     try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
