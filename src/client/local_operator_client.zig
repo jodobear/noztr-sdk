@@ -256,7 +256,13 @@ pub const LocalOperatorClient = struct {
         plaintext: []const u8,
     ) LocalOperatorClientError![]const u8 {
         const conversation_key = try self.deriveConversationKey(secret_key, peer_public_key);
-        return noztr.nip44.nip44_encrypt_to_base64(output, &conversation_key, plaintext);
+        return noztr.nip44.nip44_encrypt_to_base64(
+            output,
+            &conversation_key,
+            plaintext,
+            null,
+            randomNip44Nonce,
+        );
     }
 
     pub fn encryptNip44ToPeerWithNonce(
@@ -297,6 +303,13 @@ fn parseHex32(
     var value: [32]u8 = undefined;
     _ = std.fmt.hexToBytes(value[0..], text) catch return invalid_error;
     return value;
+}
+
+fn randomNip44Nonce(
+    _: ?*anyopaque,
+    out_nonce: *[32]u8,
+) noztr.nip44.Nip44Error!void {
+    std.crypto.random.bytes(out_nonce[0..]);
 }
 
 test "local operator client generates and derives usable key material" {

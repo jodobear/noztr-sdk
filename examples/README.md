@@ -123,6 +123,15 @@ Use these docs when you need public routing or contract context before opening a
     the job layer adds command-ready result posture instead of CLI-owned event wiring, and
     downstream tools can build local inspect/sign commands without stitching event helpers
     together ad hoc
+- `local_nip44_job_client_recipe.zig`
+  - goal: encrypt one plaintext to a peer and decrypt it again through one command-ready SDK job
+    layer
+  - public SDK surface: `noztr_sdk.client`, `LocalNip44JobClient`,
+    `LocalNip44JobClientStorage`, `LocalNip44JobRequest`, `LocalNip44JobResult`
+  - kernel fixture help: `noztr.nip44`
+  - control points: local crypto still routes through the local operator floor, caller-owned
+    output buffers and optional nonce posture stay explicit, and downstream tools can build local
+    crypto commands without stitching `NIP-44` helpers together ad hoc
 - `publish_client_recipe.zig`
   - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
     runtime, then pair one ready relay with one prepared outbound publish payload
