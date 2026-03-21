@@ -45,6 +45,9 @@ pub const GroupFleetClientCheckpointRequest = struct {
 
 pub const GroupFleetClientMergeSelection = workflows.GroupFleetMergeSelection;
 pub const GroupFleetClientMergeStorage = workflows.GroupFleetMergeStorage;
+pub const GroupFleetClientPublishStorage = workflows.GroupFleetPublishStorage;
+pub const GroupFleetClientPutUserDraft = workflows.GroupFleetPutUserDraft;
+pub const GroupFleetClientRemoveUserDraft = workflows.GroupFleetRemoveUserDraft;
 
 pub const GroupFleetClientMergeRequest = struct {
     created_at_base: u64,
@@ -66,6 +69,34 @@ pub const GroupFleetClientMergeRequest = struct {
     ) workflows.GroupFleetMergeContext {
         return .{
             .created_at_base = self.created_at_base,
+            .author_secret_key = self.author_secret_key,
+            .storage = storage,
+        };
+    }
+};
+
+pub const GroupFleetClientPublishRequest = struct {
+    created_at_base: u64,
+    created_at_stride: u32 = 1,
+    author_secret_key: [32]u8,
+
+    pub fn init(
+        created_at_base: u64,
+        author_secret_key: *const [32]u8,
+    ) GroupFleetClientPublishRequest {
+        return .{
+            .created_at_base = created_at_base,
+            .author_secret_key = author_secret_key.*,
+        };
+    }
+
+    fn publishContext(
+        self: *const GroupFleetClientPublishRequest,
+        storage: *GroupFleetClientPublishStorage,
+    ) workflows.GroupFleetPublishContext {
+        return .{
+            .created_at_base = self.created_at_base,
+            .created_at_stride = self.created_at_stride,
             .author_secret_key = self.author_secret_key,
             .storage = storage,
         };
@@ -225,6 +256,42 @@ pub const GroupFleetClient = struct {
         scratch: std.mem.Allocator,
     ) GroupFleetClientError!workflows.GroupFleetMergeApplyOutcome {
         return self.fleet.applyMergedCheckpointToAll(merged_checkpoint, scratch);
+    }
+
+    pub fn beginPutUserForAll(
+        self: *const GroupFleetClient,
+        publish_storage: *GroupFleetClientPublishStorage,
+        request: *const GroupFleetClientPublishRequest,
+        draft: *const GroupFleetClientPutUserDraft,
+    ) GroupFleetClientError![]const workflows.GroupOutboundEvent {
+        var context = request.publishContext(publish_storage);
+        return self.fleet.beginPutUserForAll(&context, draft);
+    }
+
+    pub fn beginRemoveUserForAll(
+        self: *const GroupFleetClient,
+        publish_storage: *GroupFleetClientPublishStorage,
+        request: *const GroupFleetClientPublishRequest,
+        draft: *const GroupFleetClientRemoveUserDraft,
+    ) GroupFleetClientError![]const workflows.GroupOutboundEvent {
+        var context = request.publishContext(publish_storage);
+        return self.fleet.beginRemoveUserForAll(&context, draft);
+    }
+
+    pub fn nextPublishEvent(
+        self: *const GroupFleetClient,
+        events: []const workflows.GroupOutboundEvent,
+    ) ?*const workflows.GroupOutboundEvent {
+        _ = self;
+        return workflows.GroupFleet.nextPublishEvent(events);
+    }
+
+    pub fn nextPublishStep(
+        self: *const GroupFleetClient,
+        events: []const workflows.GroupOutboundEvent,
+    ) ?workflows.GroupFleetPublishStep {
+        _ = self;
+        return workflows.GroupFleet.nextPublishStep(events);
     }
 };
 
@@ -988,6 +1055,252 @@ test "group fleet client merge composition falls back to baseline and rejects un
             &merge_storage,
             &merge_request,
             &.{ .members_relay_url = "wss://relay.unknown" },
+        ),
+    );
+}
+
+test "group fleet client composes one put-user publish fanout and next-step selection" {
+    var users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_a: [8][]const u8 = undefined;
+    var client_a = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = .init(
+            .init(users_a[0..], roles_a[0..], user_roles_a[0..]),
+            previous_refs_a[0..],
+        ),
+    });
+    client_a.markCurrentRelayConnected();
+
+    var users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_b: [8][]const u8 = undefined;
+    var client_b = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = .init(
+            .init(users_b[0..], roles_b[0..], user_roles_b[0..]),
+            previous_refs_b[0..],
+        ),
+    });
+    client_b.markCurrentRelayConnected();
+
+    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
+    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var groups = GroupFleetClient.init(.{}, fleet);
+
+    const author_secret = [_]u8{0x09} ** 32;
+    var metadata_buffer = workflows.GroupOutboundBuffer{};
+    var roles_buffer = workflows.GroupOutboundBuffer{};
+    var members_buffer = workflows.GroupOutboundBuffer{};
+    const metadata = try client_a.beginMetadataSnapshot(
+        .init(1, &author_secret, &metadata_buffer),
+        &.{ .name = "Pizza Lovers" },
+    );
+    const roles = try client_a.beginRolesSnapshot(
+        .init(2, &author_secret, &roles_buffer),
+        &.{
+            .roles = &.{
+                .{
+                    .name = "moderator",
+                    .description = "Can moderate",
+                },
+            },
+        },
+    );
+    const members = try client_a.beginMembersSnapshot(
+        .init(3, &author_secret, &members_buffer),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xaa} ** 32,
+                    .label = "alpha",
+                },
+            },
+        },
+    );
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    _ = try groups.consumeRelayEventJsons(
+        "wss://relay.one",
+        &.{ metadata.event_json, roles.event_json, members.event_json },
+        arena.allocator(),
+    );
+    _ = try groups.consumeRelayEventJsons(
+        "wss://relay.one:444",
+        &.{ metadata.event_json, roles.event_json, members.event_json },
+        arena.allocator(),
+    );
+
+    var publish_buffers: [2]workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var previous_ref_buf_a: [8][]const u8 = undefined;
+    var previous_ref_buf_b: [8][]const u8 = undefined;
+    var previous_refs = [_][][]const u8{ previous_ref_buf_a[0..], previous_ref_buf_b[0..] };
+    var outbound_events: [2]workflows.GroupOutboundEvent = undefined;
+    var publish_storage = GroupFleetClientPublishStorage.init(
+        publish_buffers[0..],
+        previous_refs[0..],
+        outbound_events[0..],
+    );
+    const publish_request = GroupFleetClientPublishRequest.init(50, &author_secret);
+
+    const fanout = try groups.beginPutUserForAll(
+        &publish_storage,
+        &publish_request,
+        &.{
+            .pubkey = [_]u8{0xbb} ** 32,
+            .roles = &.{"moderator"},
+            .reason = "fleet moderation",
+        },
+    );
+    try std.testing.expectEqual(@as(usize, 2), fanout.len);
+    try std.testing.expectEqualStrings("wss://relay.one", fanout[0].relay_url);
+    try std.testing.expectEqualStrings("wss://relay.one:444", fanout[1].relay_url);
+    const next = groups.nextPublishEvent(fanout).?;
+    try std.testing.expectEqualStrings("wss://relay.one", next.relay_url);
+    const next_step = groups.nextPublishStep(fanout).?;
+    try std.testing.expectEqual(@as(usize, 2), next_step.fanout_count);
+    try std.testing.expectEqualStrings("wss://relay.one", next_step.event.relay_url);
+    try std.testing.expect(std.mem.eql(u8, &next_step.event.event_id, &next.event_id));
+
+    for (fanout) |outbound| {
+        _ = try groups.consumeRelayEventJson(outbound.relay_url, outbound.event_json, arena.allocator());
+    }
+    try std.testing.expectEqual(@as(usize, 2), client_a.view().users.len);
+    try std.testing.expectEqual(@as(usize, 2), client_b.view().users.len);
+}
+
+test "group fleet client publish composition surfaces background publish and buffer pressure" {
+    var users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_a: [8][]const u8 = undefined;
+    var client_a = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = .init(
+            .init(users_a[0..], roles_a[0..], user_roles_a[0..]),
+            previous_refs_a[0..],
+        ),
+    });
+    client_a.markCurrentRelayConnected();
+
+    var users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_b: [8][]const u8 = undefined;
+    var client_b = try workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = .init(
+            .init(users_b[0..], roles_b[0..], user_roles_b[0..]),
+            previous_refs_b[0..],
+        ),
+    });
+    client_b.markCurrentRelayConnected();
+
+    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
+    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var groups = GroupFleetClient.init(.{}, fleet);
+
+    const author_secret = [_]u8{0x09} ** 32;
+    var metadata_buffer = workflows.GroupOutboundBuffer{};
+    var roles_buffer = workflows.GroupOutboundBuffer{};
+    var members_buffer = workflows.GroupOutboundBuffer{};
+    const metadata = try client_a.beginMetadataSnapshot(
+        .init(1, &author_secret, &metadata_buffer),
+        &.{ .name = "Pizza Lovers" },
+    );
+    const roles = try client_a.beginRolesSnapshot(
+        .init(2, &author_secret, &roles_buffer),
+        &.{
+            .roles = &.{
+                .{
+                    .name = "moderator",
+                    .description = "Can moderate",
+                },
+            },
+        },
+    );
+    const members = try client_a.beginMembersSnapshot(
+        .init(3, &author_secret, &members_buffer),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xaa} ** 32,
+                    .label = "alpha",
+                },
+            },
+        },
+    );
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    _ = try groups.consumeRelayEventJsons(
+        "wss://relay.one",
+        &.{ metadata.event_json, roles.event_json, members.event_json },
+        arena.allocator(),
+    );
+    _ = try groups.consumeRelayEventJsons(
+        "wss://relay.one:444",
+        &.{ metadata.event_json, roles.event_json, members.event_json },
+        arena.allocator(),
+    );
+
+    var publish_buffers: [2]workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var previous_ref_buf_a: [8][]const u8 = undefined;
+    var previous_ref_buf_b: [8][]const u8 = undefined;
+    var previous_refs = [_][][]const u8{ previous_ref_buf_a[0..], previous_ref_buf_b[0..] };
+    var outbound_events: [2]workflows.GroupOutboundEvent = undefined;
+    var publish_storage = GroupFleetClientPublishStorage.init(
+        publish_buffers[0..],
+        previous_refs[0..],
+        outbound_events[0..],
+    );
+    const publish_request = GroupFleetClientPublishRequest.init(90, &author_secret);
+    const fanout = try groups.beginPutUserForAll(
+        &publish_storage,
+        &publish_request,
+        &.{
+            .pubkey = [_]u8{0xbb} ** 32,
+            .roles = &.{"moderator"},
+            .reason = "background publish",
+        },
+    );
+
+    var storage = GroupFleetClientStorage{};
+    const background = try groups.inspectBackgroundRuntime(&storage, .{
+        .publish_events = fanout[0..1],
+    });
+    try std.testing.expectEqual(@as(u8, 1), background.publish_count);
+    const next_step = background.nextStep().?;
+    try std.testing.expectEqual(workflows.GroupFleetBackgroundAction.publish, next_step.entry.action);
+    try std.testing.expectEqualStrings("wss://relay.one", try groups.selectBackgroundRelay(next_step));
+
+    var small_buffers: [1]workflows.GroupOutboundBuffer = .{.{}};
+    var small_previous_refs_a: [8][]const u8 = undefined;
+    var small_previous_refs = [_][][]const u8{small_previous_refs_a[0..]};
+    var small_events: [1]workflows.GroupOutboundEvent = undefined;
+    var small_publish_storage = GroupFleetClientPublishStorage.init(
+        small_buffers[0..],
+        small_previous_refs[0..],
+        small_events[0..],
+    );
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        groups.beginPutUserForAll(
+            &small_publish_storage,
+            &publish_request,
+            &.{
+                .pubkey = [_]u8{0xcc} ** 32,
+                .roles = &.{"moderator"},
+            },
         ),
     );
 }

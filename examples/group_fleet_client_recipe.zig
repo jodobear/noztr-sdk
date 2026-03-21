@@ -267,3 +267,120 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
     try std.testing.expectEqual(@as(usize, 2), relay_one.view().users.len);
     try std.testing.expectEqual(@as(usize, 2), relay_two.view().users.len);
 }
+
+// Drive one bounded publish-focused groups client path above the existing fleet workflow: build
+// one explicit publish fanout, surface one publish next-step through background inspection, and
+// keep relay sends explicit and caller-owned.
+test "recipe: group fleet client builds one publish fanout and surfaces the next publish step" {
+    var users_a: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_a: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_a: [8][]const u8 = undefined;
+    var relay_one = try noztr_sdk.workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one",
+        .storage = .init(
+            .init(users_a[0..], roles_a[0..], user_roles_a[0..]),
+            previous_refs_a[0..],
+        ),
+    });
+
+    var users_b: [2]noztr.nip29_relay_groups.GroupStateUser = undefined;
+    var roles_b: [1]noztr.nip29_relay_groups.GroupRole = undefined;
+    var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
+        undefined;
+    var previous_refs_b: [8][]const u8 = undefined;
+    var relay_two = try noztr_sdk.workflows.GroupClient.init(.{
+        .reference_text = "relay.one'pizza-lovers",
+        .relay_url = "wss://relay.one:444",
+        .storage = .init(
+            .init(users_b[0..], roles_b[0..], user_roles_b[0..]),
+            previous_refs_b[0..],
+        ),
+    });
+    relay_one.markCurrentRelayConnected();
+    relay_two.markCurrentRelayConnected();
+
+    var fleet_members = [_]*noztr_sdk.workflows.GroupClient{ &relay_one, &relay_two };
+    const fleet = try noztr_sdk.workflows.GroupFleet.init(fleet_members[0..]);
+    var groups = noztr_sdk.client.GroupFleetClient.init(.{}, fleet);
+
+    const author_secret = [_]u8{0x09} ** 32;
+    var metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var roles_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var members_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    const metadata = try relay_one.beginMetadataSnapshot(
+        .init(1, &author_secret, &metadata_buffer),
+        &.{ .name = "Pizza Lovers" },
+    );
+    const roles = try relay_one.beginRolesSnapshot(
+        .init(2, &author_secret, &roles_buffer),
+        &.{
+            .roles = &.{
+                .{
+                    .name = "moderator",
+                    .description = "Can moderate",
+                },
+            },
+        },
+    );
+    const members = try relay_one.beginMembersSnapshot(
+        .init(3, &author_secret, &members_buffer),
+        &.{
+            .members = &.{
+                .{
+                    .pubkey = [_]u8{0xaa} ** 32,
+                    .label = "alpha",
+                },
+            },
+        },
+    );
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    _ = try groups.consumeRelayEventJsons(
+        "wss://relay.one",
+        &.{ metadata.event_json, roles.event_json, members.event_json },
+        arena.allocator(),
+    );
+    _ = try groups.consumeRelayEventJsons(
+        "wss://relay.one:444",
+        &.{ metadata.event_json, roles.event_json, members.event_json },
+        arena.allocator(),
+    );
+
+    var publish_buffers: [2]noztr_sdk.workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var previous_ref_buf_a: [8][]const u8 = undefined;
+    var previous_ref_buf_b: [8][]const u8 = undefined;
+    var previous_refs = [_][][]const u8{ previous_ref_buf_a[0..], previous_ref_buf_b[0..] };
+    var outbound_events: [2]noztr_sdk.workflows.GroupOutboundEvent = undefined;
+    var publish_storage = noztr_sdk.client.GroupFleetClientPublishStorage.init(
+        publish_buffers[0..],
+        previous_refs[0..],
+        outbound_events[0..],
+    );
+    const publish_request = noztr_sdk.client.GroupFleetClientPublishRequest.init(90, &author_secret);
+    const fanout = try groups.beginPutUserForAll(
+        &publish_storage,
+        &publish_request,
+        &.{
+            .pubkey = [_]u8{0xbb} ** 32,
+            .roles = &.{"moderator"},
+            .reason = "background publish",
+        },
+    );
+    const next_publish = groups.nextPublishEvent(fanout).?;
+    try std.testing.expectEqualStrings("wss://relay.one", next_publish.relay_url);
+
+    var storage = noztr_sdk.client.GroupFleetClientStorage{};
+    const background = try groups.inspectBackgroundRuntime(&storage, .{
+        .publish_events = fanout[0..1],
+    });
+    const next_step = background.nextStep().?;
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.GroupFleetBackgroundAction.publish,
+        next_step.entry.action,
+    );
+    try std.testing.expectEqualStrings("wss://relay.one", try groups.selectBackgroundRelay(next_step));
+}

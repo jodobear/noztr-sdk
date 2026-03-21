@@ -593,6 +593,10 @@ test "phase4e exposes the legacy dm replay live runtime floors" {
     try std.testing.expect(@TypeOf(client.GroupFleetClientMergeSelection) == type);
     try std.testing.expect(@TypeOf(client.GroupFleetClientMergeStorage) == type);
     try std.testing.expect(@TypeOf(client.GroupFleetClientMergeRequest) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientPublishStorage) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientPutUserDraft) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientRemoveUserDraft) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientPublishRequest) == type);
     try std.testing.expect(@TypeOf(client.GroupFleetClientStorage) == type);
     try std.testing.expect(@TypeOf(client.GroupFleetClient) == type);
 }

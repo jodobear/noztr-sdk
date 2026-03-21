@@ -248,6 +248,14 @@ pub const GroupFleetClientMergeStorage =
     group_fleet_client.GroupFleetClientMergeStorage;
 pub const GroupFleetClientMergeRequest =
     group_fleet_client.GroupFleetClientMergeRequest;
+pub const GroupFleetClientPublishStorage =
+    group_fleet_client.GroupFleetClientPublishStorage;
+pub const GroupFleetClientPutUserDraft =
+    group_fleet_client.GroupFleetClientPutUserDraft;
+pub const GroupFleetClientRemoveUserDraft =
+    group_fleet_client.GroupFleetClientRemoveUserDraft;
+pub const GroupFleetClientPublishRequest =
+    group_fleet_client.GroupFleetClientPublishRequest;
 pub const GroupFleetClientStorage = group_fleet_client.GroupFleetClientStorage;
 pub const GroupFleetClient = group_fleet_client.GroupFleetClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;
