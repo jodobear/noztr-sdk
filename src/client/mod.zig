@@ -9,6 +9,7 @@ pub const local_entity_job_client = @import("local_entity_job_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
+pub const mailbox_subscription_turn_client = @import("mailbox_subscription_turn_client.zig");
 pub const mailbox_replay_job_client = @import("mailbox_replay_job_client.zig");
 pub const mailbox_replay_turn_client = @import("mailbox_replay_turn_client.zig");
 pub const local_nip44_job_client = @import("local_nip44_job_client.zig");
@@ -107,6 +108,20 @@ pub const PreparedMailboxJobAuthEvent = mailbox_job_client.PreparedMailboxJobAut
 pub const MailboxJobReady = mailbox_job_client.MailboxJobReady;
 pub const MailboxJobResult = mailbox_job_client.MailboxJobResult;
 pub const MailboxJobClient = mailbox_job_client.MailboxJobClient;
+pub const MailboxSubscriptionTurnClientError =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnClientError;
+pub const MailboxSubscriptionTurnClientConfig =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnClientConfig;
+pub const MailboxSubscriptionTurnClientStorage =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnClientStorage;
+pub const MailboxSubscriptionTurnRequest =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnRequest;
+pub const MailboxSubscriptionTurnIntake =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnIntake;
+pub const MailboxSubscriptionTurnResult =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnResult;
+pub const MailboxSubscriptionTurnClient =
+    mailbox_subscription_turn_client.MailboxSubscriptionTurnClient;
 pub const MailboxReplayTurnClientError = mailbox_replay_turn_client.MailboxReplayTurnClientError;
 pub const MailboxReplayTurnClientConfig = mailbox_replay_turn_client.MailboxReplayTurnClientConfig;
 pub const MailboxReplayTurnClientStorage =

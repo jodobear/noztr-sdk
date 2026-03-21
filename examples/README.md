@@ -531,6 +531,20 @@ Use these docs when you need public routing or contract context before opening a
     session floor, receive work still routes through the bounded receive-turn floor, and this
     layer only exposes command-ready mailbox posture instead of inventing transport, polling, or
     UI policy
+- `mailbox_subscription_turn_client_recipe.zig`
+  - goal: start one live mailbox subscription turn explicitly, classify wrapped transcript events
+    through mailbox intake, then close the live turn explicitly
+  - public SDK surface: `noztr_sdk.client`, `MailboxSubscriptionTurnClient`,
+    `MailboxSubscriptionTurnClientStorage`, `MailboxSubscriptionTurnRequest`,
+    `MailboxSubscriptionTurnIntake`, `MailboxSubscriptionTurnResult`,
+    `noztr_sdk.runtime.RelaySubscriptionSpec`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip01_filter`,
+    `noztr.nip01_message`
+  - control points: live subscription request/close still route through the shared subscription
+    turn floor, wrapped transcript events stay as parsed event objects instead of being
+    reserialized back into JSON, mailbox unwrap still routes through the mailbox workflow floor,
+    and this layer only closes one bounded live mailbox transcript turn without inventing polling
+    or hidden follow ownership
 - `mailbox_replay_turn_client_recipe.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result

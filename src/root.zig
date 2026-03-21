@@ -97,6 +97,13 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.MailboxJobReady) == type);
     try std.testing.expect(@TypeOf(client.MailboxJobResult) == type);
     try std.testing.expect(@TypeOf(client.MailboxJobClient) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnClientError) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnRequest) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnIntake) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnResult) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnClient) == type);
     try std.testing.expect(@TypeOf(client.MailboxReplayTurnClientError) == type);
     try std.testing.expect(@TypeOf(client.MailboxReplayTurnClientConfig) == type);
     try std.testing.expect(@TypeOf(client.MailboxReplayTurnClientStorage) == type);
