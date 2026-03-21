@@ -180,6 +180,7 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.Nip39VerifyJob) == type);
     try std.testing.expect(@TypeOf(client.Nip39VerifySummary) == type);
     try std.testing.expect(@TypeOf(client.Nip39VerifyJobResult) == type);
+    try std.testing.expect(@TypeOf(client.Nip39StoredProfilePlanning) == type);
     try std.testing.expect(@TypeOf(client.Nip39VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.PublishJobClientError) == type);
     try std.testing.expect(@TypeOf(client.PublishJobClientConfig) == type);

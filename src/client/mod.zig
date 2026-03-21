@@ -368,6 +368,7 @@ pub const Nip39VerifyClientStorage = nip39_verify_client.Nip39VerifyClientStorag
 pub const Nip39VerifyJob = nip39_verify_client.Nip39VerifyJob;
 pub const Nip39VerifySummary = nip39_verify_client.Nip39VerifySummary;
 pub const Nip39VerifyJobResult = nip39_verify_client.Nip39VerifyJobResult;
+pub const Nip39StoredProfilePlanning = nip39_verify_client.Nip39StoredProfilePlanning;
 pub const Nip39VerifyClient = nip39_verify_client.Nip39VerifyClient;
 pub const PublishJobClientError = publish_job_client.PublishJobClientError;
 pub const PublishJobClientConfig = publish_job_client.PublishJobClientConfig;
