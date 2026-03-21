@@ -94,6 +94,16 @@ Use these docs when you need public routing or contract context before opening a
     them, local operator flows stay relay-free and side-effect free, caller-owned buffers and
     scratch stay explicit, and the recipe proves `znk`-class tooling can stay on SDK surfaces for
     local key/event/entity work instead of stitching kernel modules together ad hoc
+- `local_key_job_client_recipe.zig`
+  - goal: derive one deterministic public key and generate one fresh keypair through one
+    command-ready SDK job layer
+  - public SDK surface: `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`,
+    `LocalKeyJobRequest`, `LocalKeyJobResult`
+  - kernel fixture help: `noztr.nostr_keys`
+  - control points: key generation and pubkey derivation still route through the local operator
+    floor, the job layer adds command-ready result posture instead of secret-store policy, and
+    downstream tools can build local key commands without stitching deterministic key helpers
+    together ad hoc
 - `publish_client_recipe.zig`
   - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
     runtime, then pair one ready relay with one prepared outbound publish payload
