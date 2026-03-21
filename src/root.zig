@@ -265,6 +265,10 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.SubscriptionTurnResult) == type);
     try std.testing.expect(@TypeOf(client.SubscriptionTurnClient) == type);
     try std.testing.expect(@TypeOf(store) == type);
+    try std.testing.expect(@TypeOf(store.RelayInfoRecord) == type);
+    try std.testing.expect(@TypeOf(store.RelayInfoResultPage) == type);
+    try std.testing.expect(@TypeOf(store.RelayInfoStore) == type);
+    try std.testing.expect(@TypeOf(store.MemoryRelayInfoStore) == type);
     try std.testing.expect(@TypeOf(store.ClientStore) == type);
     try std.testing.expect(@TypeOf(store.ClientEventRecord) == type);
     try std.testing.expect(@TypeOf(store.ClientCheckpointRecord) == type);
@@ -274,6 +278,7 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(store.IndexSelection) == type);
     try std.testing.expect(@TypeOf(store.MemoryClientStore) == type);
     try std.testing.expect(@TypeOf(store.EventArchive) == type);
+    try std.testing.expect(@TypeOf(store.RelayRegistryArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayCheckpointArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayLocalGroupArchive) == type);
     try std.testing.expect(@TypeOf(runtime) == type);

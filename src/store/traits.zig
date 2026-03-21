@@ -40,6 +40,34 @@ pub const RelayInfoRecord = struct {
     }
 };
 
+pub const RelayInfoResultPage = struct {
+    items: []RelayInfoRecord,
+    count: usize = 0,
+    truncated: bool = false,
+
+    pub fn init(storage: []RelayInfoRecord) RelayInfoResultPage {
+        return .{ .items = storage };
+    }
+
+    pub fn reset(self: *RelayInfoResultPage) void {
+        self.count = 0;
+        self.truncated = false;
+    }
+
+    pub fn slice(self: *const RelayInfoResultPage) []const RelayInfoRecord {
+        std.debug.assert(self.count <= self.items.len);
+        return self.items[0..self.count];
+    }
+};
+
+pub fn relay_info_record_from_url(relay_url_text: []const u8) StoreError!RelayInfoRecord {
+    var record = RelayInfoRecord{};
+    if (relay_url_text.len > relay_url_max_bytes) return error.RelayUrlTooLong;
+    try relay_url.relayUrlValidate(relay_url_text);
+    try copy_bounded(record.relay_url[0..], &record.relay_url_len, relay_url_text);
+    return record;
+}
+
 pub fn relay_info_record_from_document(
     relay_url_text: []const u8,
     doc: *const noztr.nip11.RelayInformationDocument,
@@ -83,6 +111,7 @@ pub const RelayInfoStoreVTable = struct {
     put_relay_info: *const fn (ctx: *anyopaque, record: *const RelayInfoRecord) StoreError!void,
     get_relay_info:
         *const fn (ctx: *anyopaque, relay_url: []const u8) StoreError!?RelayInfoRecord,
+    list_relay_info: *const fn (ctx: *anyopaque, page: *RelayInfoResultPage) StoreError!void,
 };
 
 pub const RelayInfoStore = struct {
@@ -101,4 +130,20 @@ pub const RelayInfoStore = struct {
         std.debug.assert(@intFromPtr(self.ctx) != 0);
         return self.vtable.get_relay_info(self.ctx, relay_url_text);
     }
+
+    pub fn listRelayInfo(
+        self: RelayInfoStore,
+        page: *RelayInfoResultPage,
+    ) StoreError!void {
+        std.debug.assert(@intFromPtr(self.ctx) != 0);
+        return self.vtable.list_relay_info(self.ctx, page);
+    }
 };
+
+test "relay info record from url keeps bounded relay identity without metadata" {
+    const record = try relay_info_record_from_url("wss://relay.test");
+    try std.testing.expectEqualStrings("wss://relay.test", record.relayUrl());
+    try std.testing.expectEqual(@as(u8, 0), record.name_len);
+    try std.testing.expect(!record.has_pubkey);
+    try std.testing.expectEqual(@as(u16, 0), record.supported_nips_count);
+}

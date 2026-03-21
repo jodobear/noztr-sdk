@@ -383,6 +383,15 @@ Use these docs when you need public routing or contract context before opening a
   - control points: caller still owns store construction, caller still supplies bounded scratch
     for event parsing, and the archive helper proves the shared store seam is usable above raw
     event/checkpoint stores without forcing a durable backend or hidden runtime
+- `relay_registry_archive_recipe.zig`
+  - goal: remember one explicit relay set in bounded local storage and list it back in stable
+    order
+  - public SDK surface: `noztr_sdk.store`, `RelayRegistryArchive`, `RelayInfoStore`,
+    `RelayInfoRecord`, `RelayInfoResultPage`, `MemoryRelayInfoStore`
+  - kernel fixture help: relay URL validation still routes through the SDK's relay URL seam
+  - control points: caller still owns store construction, relay membership state stays explicit
+    and side-effect free, and the helper proves `znk`-class tooling can remember a relay set on
+    SDK seams without rebuilding ad hoc local registry logic
 - `cli_archive_client_recipe.zig`
   - goal: compose one CLI-facing archive client over the shared store and runtime floors: ingest
     local event JSON, query it through one bounded page, persist named and per-relay checkpoints,

@@ -43,6 +43,22 @@ pub const MemoryStore = struct {
         if (existing) |index| return self.records[index];
         return null;
     }
+
+    pub fn listRelayInfo(
+        self: *MemoryStore,
+        page: *traits.RelayInfoResultPage,
+    ) traits.StoreError!void {
+        std.debug.assert(@intFromPtr(self) != 0);
+        page.reset();
+
+        const count = @min(page.items.len, self.count);
+        var index: usize = 0;
+        while (index < count) : (index += 1) {
+            page.items[index] = self.records[index];
+        }
+        page.count = count;
+        page.truncated = self.count > count;
+    }
 };
 
 fn put_relay_info(ctx: *anyopaque, record: *const traits.RelayInfoRecord) traits.StoreError!void {
@@ -58,9 +74,18 @@ fn get_relay_info(
     return self.getRelayInfo(relay_url_text);
 }
 
+fn list_relay_info(
+    ctx: *anyopaque,
+    page: *traits.RelayInfoResultPage,
+) traits.StoreError!void {
+    const self: *MemoryStore = @ptrCast(@alignCast(ctx));
+    return self.listRelayInfo(page);
+}
+
 const relay_info_store_vtable = traits.RelayInfoStoreVTable{
     .put_relay_info = put_relay_info,
     .get_relay_info = get_relay_info,
+    .list_relay_info = list_relay_info,
 };
 
 fn find_record_index(self: *const MemoryStore, relay_url_text: []const u8) ?u8 {
@@ -118,4 +143,18 @@ test "memory store rejects invalid relay urls for put and get" {
 
     try std.testing.expectError(error.InvalidRelayUrl, store.putRelayInfo(&record));
     try std.testing.expectError(error.InvalidRelayUrl, store.getRelayInfo("https://relay.test"));
+}
+
+test "memory store lists bounded relay records in stable insertion order" {
+    var store = MemoryStore{};
+    try store.putRelayInfo(&try traits.relay_info_record_from_url("wss://relay.one"));
+    try store.putRelayInfo(&try traits.relay_info_record_from_url("wss://relay.two"));
+
+    var page_storage: [1]traits.RelayInfoRecord = undefined;
+    var page = traits.RelayInfoResultPage.init(page_storage[0..]);
+    try store.listRelayInfo(&page);
+
+    try std.testing.expectEqual(@as(usize, 1), page.count);
+    try std.testing.expect(page.truncated);
+    try std.testing.expectEqualStrings("wss://relay.one", page.slice()[0].relayUrl());
 }
