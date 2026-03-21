@@ -4,9 +4,9 @@ const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
 // Step one bounded legacy-DM sync runtime explicitly, inspect one broader DM orchestration helper
-// above that runtime, then drive durable resume export/restore, explicit reconnect, subscribe, and
-// live receive posture.
-test "recipe: legacy dm sync runtime client inspects dm orchestration before live resubscribe" {
+// above that runtime plus one caller-owned replay-refresh cadence helper, then drive durable
+// resume export/restore, explicit reconnect, subscribe, and live receive posture.
+test "recipe: legacy dm sync runtime client inspects dm cadence before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -136,6 +136,31 @@ test "recipe: legacy dm sync runtime client inspects dm orchestration before liv
     try std.testing.expect(reconnect_policy.needs_connect_progress);
     try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
     try resumed.markRelayConnected(reconnect_policy.nextStep().reconnect.entry.descriptor.relay_index);
+
+    var cadence_storage = noztr_sdk.client.LegacyDmRuntimeCadenceStorage{};
+    const refresh_policy = try resumed.inspectDmRuntimeCadence(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        .{
+            .now_unix_seconds = 120,
+            .replay_refresh_not_before_unix_seconds = 110,
+        },
+        &cadence_storage,
+    );
+    try std.testing.expect(refresh_policy.replay_refresh_due);
+    try std.testing.expect(refresh_policy.nextStep() == .reopen_replay_catchup);
+    resumed.resetReplayCatchup();
+
+    const replay_resume_policy = try resumed.inspectDmOrchestration(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &orchestration_storage,
+    );
+    try std.testing.expect(replay_resume_policy.needs_replay_catchup);
+    try std.testing.expect(replay_resume_policy.nextStep() == .replay_resume);
+    resumed.markReplayCatchupComplete();
 
     const subscribe_policy = try resumed.inspectDmOrchestration(
         checkpoint_store,

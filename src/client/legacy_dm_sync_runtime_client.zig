@@ -68,6 +68,14 @@ pub const LegacyDmOrchestrationStep =
     dm_sync_runtime_support.DmOrchestrationStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
 pub const LegacyDmOrchestrationPlan =
     dm_sync_runtime_support.DmOrchestrationPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmRuntimeCadenceRequest = dm_sync_runtime_support.DmRuntimeCadenceRequest;
+pub const LegacyDmRuntimeCadenceStorage = dm_sync_runtime_support.DmRuntimeCadenceStorage;
+pub const LegacyDmRuntimeCadenceWaitReason = dm_sync_runtime_support.DmRuntimeCadenceWaitReason;
+pub const LegacyDmRuntimeCadenceWait = dm_sync_runtime_support.DmRuntimeCadenceWait;
+pub const LegacyDmRuntimeCadenceStep =
+    dm_sync_runtime_support.DmRuntimeCadenceStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmRuntimeCadencePlan =
+    dm_sync_runtime_support.DmRuntimeCadencePlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
 
 pub const LegacyDmSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedLegacyDmSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
@@ -281,6 +289,27 @@ pub const LegacyDmSyncRuntimeClient = struct {
         return dm_sync_runtime_support.buildDmOrchestration(
             legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
             policy_plan,
+        );
+    }
+
+    pub fn inspectDmRuntimeCadence(
+        self: *const LegacyDmSyncRuntimeClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        replay_specs: []const runtime.RelayReplaySpec,
+        subscription_specs: []const runtime.RelaySubscriptionSpec,
+        request: LegacyDmRuntimeCadenceRequest,
+        storage: *LegacyDmRuntimeCadenceStorage,
+    ) LegacyDmSyncRuntimeClientError!LegacyDmRuntimeCadencePlan {
+        const orchestration = try self.inspectDmOrchestration(
+            checkpoint_store,
+            replay_specs,
+            subscription_specs,
+            &storage.orchestration,
+        );
+        return dm_sync_runtime_support.buildDmRuntimeCadence(
+            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            orchestration,
+            request,
         );
     }
 
@@ -814,6 +843,61 @@ test "legacy dm sync runtime client exposes broader dm orchestration phases" {
     );
     try std.testing.expect(empty.needs_relay_configuration);
     try std.testing.expect(empty.nextStep() == .configure_relays);
+}
+
+test "legacy dm sync runtime client cadence can reopen replay catchup before live resubscribe" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+
+    const owner_secret = [_]u8{0x33} ** 32;
+    var client_storage = LegacyDmSyncRuntimeClientStorage{};
+    var client = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = owner_secret,
+    }, &client_storage);
+    const relay = try client.addRelay("wss://relay.one");
+    try client.markRelayConnected(relay.relay_index);
+    client.markReplayCatchupComplete();
+
+    const filter = try noztr.nip01_filter.filter_parse_json(
+        "{\"kinds\":[4]}",
+        arena.allocator(),
+    );
+    const replay_specs = [_]runtime.RelayReplaySpec{
+        .{
+            .checkpoint_scope = "legacy-dm",
+            .query = .{ .limit = 8 },
+        },
+    };
+    const subscription_specs = [_]runtime.RelaySubscriptionSpec{
+        .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+
+    var cadence_storage = LegacyDmRuntimeCadenceStorage{};
+    const cadence = try client.inspectDmRuntimeCadence(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        .{
+            .now_unix_seconds = 90,
+            .replay_refresh_not_before_unix_seconds = 80,
+        },
+        &cadence_storage,
+    );
+    try std.testing.expect(cadence.replay_refresh_due);
+    try std.testing.expect(cadence.nextStep() == .reopen_replay_catchup);
+
+    client.resetReplayCatchup();
+    var orchestration_storage = LegacyDmOrchestrationStorage{};
+    const orchestration = try client.inspectDmOrchestration(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &orchestration_storage,
+    );
+    try std.testing.expect(orchestration.nextStep() == .replay_resume);
 }
 
 test "legacy dm sync runtime client long-lived policy falls back to reconnect after disconnect" {

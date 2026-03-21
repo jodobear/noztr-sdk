@@ -510,8 +510,9 @@ Use these docs when you need public routing or contract context before opening a
     legacy-DM plaintext intake instead of inventing a polling loop
 - `legacy_dm_sync_runtime_client_recipe.zig`
   - goal: step one bounded legacy-DM sync runtime explicitly, inspect one broader DM
-    orchestration helper above that runtime, then drive durable resume export/restore, explicit
-    reconnect, subscribe, and live receive posture
+    orchestration helper above that runtime plus one caller-owned replay-refresh cadence helper,
+    then drive durable resume export/restore, explicit reconnect, subscribe, and live receive
+    posture
   - public SDK surface: `noztr_sdk.client`, `LegacyDmReplayJobClient`,
     `LegacyDmSubscriptionJobClient`, `LegacyDmSyncRuntimeClient`,
     `LegacyDmSyncRuntimeClientStorage`, `LegacyDmSyncRuntimeResumeStorage`,
@@ -520,6 +521,9 @@ Use these docs when you need public routing or contract context before opening a
     `LegacyDmLongLivedDmPolicyStorage`, `LegacyDmLongLivedDmPolicyPlan`,
     `LegacyDmLongLivedDmPolicyStep`, `LegacyDmOrchestrationStorage`,
     `LegacyDmOrchestrationPlan`, `LegacyDmOrchestrationStep`,
+    `LegacyDmRuntimeCadenceRequest`, `LegacyDmRuntimeCadenceStorage`,
+    `LegacyDmRuntimeCadenceWaitReason`, `LegacyDmRuntimeCadencePlan`,
+    `LegacyDmRuntimeCadenceStep`,
     `LegacyDmSyncRuntimeAuthEventStorage`, `PreparedLegacyDmSyncRuntimeAuthEvent`,
     `LegacyDmSyncRuntimeReplayRequest`, `LegacyDmSyncRuntimeSubscriptionRequest`,
     `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
@@ -528,8 +532,8 @@ Use these docs when you need public routing or contract context before opening a
   - control points: replay and live turns still route through the bounded legacy-DM turn floors,
     auth event authoring stays explicit and caller-owned, replay catch-up completion is caller-set
     instead of hidden, restored runtime still requires explicit reconnect before resumed replay or
-    live subscribe work, and the broader orchestration helper only classifies reusable next-phase
-    DM posture instead of taking hidden cadence or daemon ownership
+    live subscribe work, and the broader orchestration plus cadence helpers only classify reusable
+    next-phase DM posture instead of taking hidden cadence or daemon ownership
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a

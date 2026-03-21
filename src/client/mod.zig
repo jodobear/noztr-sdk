@@ -208,6 +208,18 @@ pub const LegacyDmOrchestrationStep =
     legacy_dm_sync_runtime_client.LegacyDmOrchestrationStep;
 pub const LegacyDmOrchestrationPlan =
     legacy_dm_sync_runtime_client.LegacyDmOrchestrationPlan;
+pub const LegacyDmRuntimeCadenceRequest =
+    legacy_dm_sync_runtime_client.LegacyDmRuntimeCadenceRequest;
+pub const LegacyDmRuntimeCadenceStorage =
+    legacy_dm_sync_runtime_client.LegacyDmRuntimeCadenceStorage;
+pub const LegacyDmRuntimeCadenceWaitReason =
+    legacy_dm_sync_runtime_client.LegacyDmRuntimeCadenceWaitReason;
+pub const LegacyDmRuntimeCadenceWait =
+    legacy_dm_sync_runtime_client.LegacyDmRuntimeCadenceWait;
+pub const LegacyDmRuntimeCadenceStep =
+    legacy_dm_sync_runtime_client.LegacyDmRuntimeCadenceStep;
+pub const LegacyDmRuntimeCadencePlan =
+    legacy_dm_sync_runtime_client.LegacyDmRuntimeCadencePlan;
 pub const LegacyDmSyncRuntimeAuthEventStorage =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeAuthEventStorage;
 pub const PreparedLegacyDmSyncRuntimeAuthEvent =

@@ -572,6 +572,12 @@ test "phase4e exposes the legacy dm replay live runtime floors" {
     try std.testing.expect(@TypeOf(client.LegacyDmOrchestrationStorage) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmOrchestrationStep) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmOrchestrationPlan) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmRuntimeCadenceRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmRuntimeCadenceStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmRuntimeCadenceWaitReason) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmRuntimeCadenceWait) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmRuntimeCadenceStep) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmRuntimeCadencePlan) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeAuthEventStorage) == type);
     try std.testing.expect(@TypeOf(client.PreparedLegacyDmSyncRuntimeAuthEvent) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeReplayRequest) == type);
