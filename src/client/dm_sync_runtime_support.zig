@@ -16,6 +16,28 @@ pub const DmOrchestrationStorage = struct {
     policy: LongLivedDmPolicyStorage = .{},
 };
 
+pub const DmRuntimeCadenceRequest = struct {
+    now_unix_seconds: u64,
+    reconnect_not_before_unix_seconds: ?u64 = null,
+    subscribe_resume_not_before_unix_seconds: ?u64 = null,
+    replay_refresh_not_before_unix_seconds: ?u64 = null,
+};
+
+pub const DmRuntimeCadenceStorage = struct {
+    orchestration: DmOrchestrationStorage = .{},
+};
+
+pub const DmRuntimeCadenceWaitReason = enum {
+    reconnect_backoff,
+    subscribe_resume_backoff,
+    replay_refresh_not_due_yet,
+};
+
+pub const DmRuntimeCadenceWait = struct {
+    reason: DmRuntimeCadenceWaitReason,
+    due_at_unix_seconds: u64,
+};
+
 pub fn SyncRuntimeStep(comptime ReceiveRequest: type) type {
     return union(enum) {
         authenticate: runtime.RelayPoolAuthStep,
@@ -104,6 +126,51 @@ pub fn DmOrchestrationPlan(comptime ReceiveRequest: type) type {
         needs_replay_catchup: bool = false,
         needs_live_subscription: bool = false,
         can_receive_live: bool = false,
+        next_step: Step = .idle,
+
+        pub fn nextStep(self: *const @This()) Step {
+            return self.next_step;
+        }
+    };
+}
+
+pub fn DmRuntimeCadenceStep(comptime ReceiveRequest: type) type {
+    return union(enum) {
+        wait: DmRuntimeCadenceWait,
+        reopen_replay_catchup,
+        configure_relays,
+        reconnect: runtime.RelayPoolStep,
+        authenticate: runtime.RelayPoolAuthStep,
+        replay_resume: runtime.RelayPoolReplayStep,
+        subscribe_resume: runtime.RelayPoolSubscriptionStep,
+        receive: ReceiveRequest,
+        idle,
+    };
+}
+
+pub fn DmRuntimeCadencePlan(comptime ReceiveRequest: type) type {
+    return struct {
+        const Step = DmRuntimeCadenceStep(ReceiveRequest);
+
+        relay_count: u8 = 0,
+        reconnect_count: u8 = 0,
+        authenticate_count: u8 = 0,
+        replay_resume_count: u16 = 0,
+        subscribe_resume_count: u16 = 0,
+        receive_count: u8 = 0,
+        replay_phase_complete: bool = false,
+        live_subscription_active: bool = false,
+        needs_relay_configuration: bool = false,
+        needs_connect_progress: bool = false,
+        needs_auth_progress: bool = false,
+        needs_replay_catchup: bool = false,
+        needs_live_subscription: bool = false,
+        can_receive_live: bool = false,
+        blocked_by_reconnect_backoff: bool = false,
+        blocked_by_subscribe_backoff: bool = false,
+        waiting_for_replay_refresh: bool = false,
+        replay_refresh_due: bool = false,
+        next_due_at_unix_seconds: ?u64 = null,
         next_step: Step = .idle,
 
         pub fn nextStep(self: *const @This()) Step {
@@ -231,6 +298,120 @@ pub fn buildDmOrchestration(
         .idle => plan.next_step = .idle,
     }
     return plan;
+}
+
+pub fn buildDmRuntimeCadence(
+    comptime ReceiveRequest: type,
+    orchestration_plan: DmOrchestrationPlan(ReceiveRequest),
+    request: DmRuntimeCadenceRequest,
+) DmRuntimeCadencePlan(ReceiveRequest) {
+    var plan: DmRuntimeCadencePlan(ReceiveRequest) = .{
+        .relay_count = orchestration_plan.relay_count,
+        .reconnect_count = orchestration_plan.reconnect_count,
+        .authenticate_count = orchestration_plan.authenticate_count,
+        .replay_resume_count = orchestration_plan.replay_resume_count,
+        .subscribe_resume_count = orchestration_plan.subscribe_resume_count,
+        .receive_count = orchestration_plan.receive_count,
+        .replay_phase_complete = orchestration_plan.replay_phase_complete,
+        .live_subscription_active = orchestration_plan.live_subscription_active,
+        .needs_relay_configuration = orchestration_plan.needs_relay_configuration,
+        .needs_connect_progress = orchestration_plan.needs_connect_progress,
+        .needs_auth_progress = orchestration_plan.needs_auth_progress,
+        .needs_replay_catchup = orchestration_plan.needs_replay_catchup,
+        .needs_live_subscription = orchestration_plan.needs_live_subscription,
+        .can_receive_live = orchestration_plan.can_receive_live,
+    };
+
+    const replay_refresh_due = blk: {
+        const not_before = request.replay_refresh_not_before_unix_seconds orelse break :blk false;
+        break :blk orchestration_plan.replay_phase_complete and
+            !orchestration_plan.live_subscription_active and
+            request.now_unix_seconds >= not_before;
+    };
+    plan.replay_refresh_due = replay_refresh_due;
+
+    switch (orchestration_plan.nextStep()) {
+        .configure_relays => {
+            plan.next_step = .configure_relays;
+            return plan;
+        },
+        .authenticate => |step| {
+            plan.next_step = .{ .authenticate = step };
+            return plan;
+        },
+        .replay_resume => |step| {
+            plan.next_step = .{ .replay_resume = step };
+            return plan;
+        },
+        .receive => |request_step| {
+            plan.next_step = .{ .receive = request_step };
+            return plan;
+        },
+        .reconnect => |step| {
+            if (waitFor(
+                request.now_unix_seconds,
+                request.reconnect_not_before_unix_seconds,
+                .reconnect_backoff,
+            )) |wait| {
+                plan.blocked_by_reconnect_backoff = true;
+                plan.next_due_at_unix_seconds = wait.due_at_unix_seconds;
+                plan.next_step = .{ .wait = wait };
+                return plan;
+            }
+            plan.next_step = .{ .reconnect = step };
+            return plan;
+        },
+        .subscribe_resume => |step| {
+            if (replay_refresh_due) {
+                plan.next_step = .reopen_replay_catchup;
+                return plan;
+            }
+            if (waitFor(
+                request.now_unix_seconds,
+                request.subscribe_resume_not_before_unix_seconds,
+                .subscribe_resume_backoff,
+            )) |wait| {
+                plan.blocked_by_subscribe_backoff = true;
+                plan.next_due_at_unix_seconds = wait.due_at_unix_seconds;
+                plan.next_step = .{ .wait = wait };
+                return plan;
+            }
+            plan.next_step = .{ .subscribe_resume = step };
+            return plan;
+        },
+        .idle => {
+            if (request.replay_refresh_not_before_unix_seconds) |not_before| {
+                if (request.now_unix_seconds < not_before) {
+                    plan.waiting_for_replay_refresh = true;
+                    plan.next_due_at_unix_seconds = not_before;
+                    plan.next_step = .{ .wait = .{
+                        .reason = .replay_refresh_not_due_yet,
+                        .due_at_unix_seconds = not_before,
+                    } };
+                    return plan;
+                }
+                if (replay_refresh_due) {
+                    plan.next_step = .reopen_replay_catchup;
+                    return plan;
+                }
+            }
+            plan.next_step = .idle;
+            return plan;
+        },
+    }
+}
+
+fn waitFor(
+    now_unix_seconds: u64,
+    not_before_unix_seconds: ?u64,
+    reason: DmRuntimeCadenceWaitReason,
+) ?DmRuntimeCadenceWait {
+    const due_at = not_before_unix_seconds orelse return null;
+    if (now_unix_seconds >= due_at) return null;
+    return .{
+        .reason = reason,
+        .due_at_unix_seconds = due_at,
+    };
 }
 
 test "shared dm sync runtime helper prioritizes auth then receive then replay then subscribe" {
@@ -436,4 +617,80 @@ test "shared dm orchestration helper carries broader phase obligations" {
     try std.testing.expect(plan.needs_replay_catchup);
     try std.testing.expect(plan.needs_live_subscription);
     try std.testing.expect(plan.nextStep() == .reconnect);
+}
+
+test "shared dm runtime cadence helper defers reconnect until caller backoff elapses" {
+    const ReceiveRequest = struct { token: u8 };
+    const reconnect_entry = runtime.RelayPoolEntry{
+        .descriptor = .{ .relay_index = 0, .relay_url = "wss://relay.one" },
+        .action = .connect,
+    };
+    const orchestration = DmOrchestrationPlan(ReceiveRequest){
+        .relay_count = 1,
+        .reconnect_count = 1,
+        .needs_connect_progress = true,
+        .next_step = .{ .reconnect = .{ .entry = reconnect_entry } },
+    };
+
+    const waiting = buildDmRuntimeCadence(ReceiveRequest, orchestration, .{
+        .now_unix_seconds = 50,
+        .reconnect_not_before_unix_seconds = 60,
+    });
+    try std.testing.expect(waiting.blocked_by_reconnect_backoff);
+    try std.testing.expectEqual(@as(?u64, 60), waiting.next_due_at_unix_seconds);
+    try std.testing.expect(waiting.nextStep() == .wait);
+    try std.testing.expectEqual(
+        DmRuntimeCadenceWaitReason.reconnect_backoff,
+        waiting.nextStep().wait.reason,
+    );
+
+    const due = buildDmRuntimeCadence(ReceiveRequest, orchestration, .{
+        .now_unix_seconds = 60,
+        .reconnect_not_before_unix_seconds = 60,
+    });
+    try std.testing.expect(due.nextStep() == .reconnect);
+}
+
+test "shared dm runtime cadence helper reopens replay catchup before subscribe when refresh is due" {
+    const ReceiveRequest = struct { token: u8 };
+    const subscribe_entry = runtime.RelayPoolSubscriptionEntry{
+        .descriptor = .{ .relay_index = 0, .relay_url = "wss://relay.one" },
+        .subscription_id = "dm-live",
+        .filters = &.{},
+        .action = .subscribe,
+    };
+    const orchestration = DmOrchestrationPlan(ReceiveRequest){
+        .relay_count = 1,
+        .subscribe_resume_count = 1,
+        .replay_phase_complete = true,
+        .needs_live_subscription = true,
+        .next_step = .{ .subscribe_resume = .{ .entry = subscribe_entry } },
+    };
+
+    const plan = buildDmRuntimeCadence(ReceiveRequest, orchestration, .{
+        .now_unix_seconds = 90,
+        .replay_refresh_not_before_unix_seconds = 80,
+    });
+    try std.testing.expect(plan.replay_refresh_due);
+    try std.testing.expect(plan.nextStep() == .reopen_replay_catchup);
+}
+
+test "shared dm runtime cadence helper waits for replay refresh while otherwise idle" {
+    const ReceiveRequest = struct { token: u8 };
+    const plan = buildDmRuntimeCadence(ReceiveRequest, .{
+        .relay_count = 1,
+        .replay_phase_complete = true,
+        .next_step = .idle,
+    }, .{
+        .now_unix_seconds = 70,
+        .replay_refresh_not_before_unix_seconds = 100,
+    });
+
+    try std.testing.expect(plan.waiting_for_replay_refresh);
+    try std.testing.expectEqual(@as(?u64, 100), plan.next_due_at_unix_seconds);
+    try std.testing.expect(plan.nextStep() == .wait);
+    try std.testing.expectEqual(
+        DmRuntimeCadenceWaitReason.replay_refresh_not_due_yet,
+        plan.nextStep().wait.reason,
+    );
 }
