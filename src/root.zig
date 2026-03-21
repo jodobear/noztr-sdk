@@ -514,6 +514,42 @@ test "phase4d exposes the legacy dm transcript turn floors" {
     try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionTurnClient) == type);
 }
 
+test "phase4e exposes the legacy dm replay live runtime floors" {
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobClientError) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedLegacyDmReplayJobAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobIntake) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobReady) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobResult) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmReplayJobClient) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobClientError) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedLegacyDmSubscriptionJobAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobIntake) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobReady) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobResult) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSubscriptionJobClient) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeClientError) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimePlanStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimePlan) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeStep) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedLegacyDmSyncRuntimeAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeReplayRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeReplayIntake) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeSubscriptionRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeSubscriptionIntake) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeClient) == type);
+}
+
 test "phase5 exposes the mailbox workflow surface" {
     try std.testing.expect(@TypeOf(workflows.MailboxSession) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxOutboundBuffer) == type);

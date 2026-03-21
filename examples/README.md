@@ -508,6 +508,22 @@ Use these docs when you need public routing or contract context before opening a
   - control points: live transcript close posture still routes through the shared subscription
     turn floor, parsed transcript events stay as event objects, and this layer only adds
     legacy-DM plaintext intake instead of inventing a polling loop
+- `legacy_dm_sync_runtime_client_recipe.zig`
+  - goal: step one bounded legacy-DM sync runtime explicitly across authenticate, replay catch-up,
+    subscribe, and live receive posture
+  - public SDK surface: `noztr_sdk.client`, `LegacyDmReplayJobClient`,
+    `LegacyDmSubscriptionJobClient`, `LegacyDmSyncRuntimeClient`,
+    `LegacyDmSyncRuntimeClientStorage`, `LegacyDmSyncRuntimePlanStorage`,
+    `LegacyDmSyncRuntimePlan`, `LegacyDmSyncRuntimeStep`,
+    `LegacyDmSyncRuntimeAuthEventStorage`, `PreparedLegacyDmSyncRuntimeAuthEvent`,
+    `LegacyDmSyncRuntimeReplayRequest`, `LegacyDmSyncRuntimeSubscriptionRequest`,
+    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
+    `noztr_sdk.store.RelayCheckpointArchive`
+  - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
+  - control points: replay and live turns still route through the bounded legacy-DM turn floors,
+    auth event authoring stays explicit and caller-owned, replay catch-up completion is caller-set
+    instead of hidden, and this layer only exposes one typed next-step planner rather than a
+    daemon or polling loop
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a

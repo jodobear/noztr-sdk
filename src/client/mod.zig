@@ -7,8 +7,11 @@ pub const count_job_client = @import("count_job_client.zig");
 pub const count_turn_client = @import("count_turn_client.zig");
 pub const local_entity_job_client = @import("local_entity_job_client.zig");
 pub const legacy_dm_publish_job_client = @import("legacy_dm_publish_job_client.zig");
+pub const legacy_dm_replay_job_client = @import("legacy_dm_replay_job_client.zig");
 pub const legacy_dm_replay_turn_client = @import("legacy_dm_replay_turn_client.zig");
+pub const legacy_dm_subscription_job_client = @import("legacy_dm_subscription_job_client.zig");
 pub const legacy_dm_subscription_turn_client = @import("legacy_dm_subscription_turn_client.zig");
+pub const legacy_dm_sync_runtime_client = @import("legacy_dm_sync_runtime_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
@@ -130,6 +133,21 @@ pub const LegacyDmReplayTurnRequest = legacy_dm_replay_turn_client.LegacyDmRepla
 pub const LegacyDmReplayTurnIntake = legacy_dm_replay_turn_client.LegacyDmReplayTurnIntake;
 pub const LegacyDmReplayTurnResult = legacy_dm_replay_turn_client.LegacyDmReplayTurnResult;
 pub const LegacyDmReplayTurnClient = legacy_dm_replay_turn_client.LegacyDmReplayTurnClient;
+pub const LegacyDmReplayJobClientError =
+    legacy_dm_replay_job_client.LegacyDmReplayJobClientError;
+pub const LegacyDmReplayJobClientConfig =
+    legacy_dm_replay_job_client.LegacyDmReplayJobClientConfig;
+pub const LegacyDmReplayJobClientStorage =
+    legacy_dm_replay_job_client.LegacyDmReplayJobClientStorage;
+pub const LegacyDmReplayJobAuthEventStorage =
+    legacy_dm_replay_job_client.LegacyDmReplayJobAuthEventStorage;
+pub const PreparedLegacyDmReplayJobAuthEvent =
+    legacy_dm_replay_job_client.PreparedLegacyDmReplayJobAuthEvent;
+pub const LegacyDmReplayJobRequest = legacy_dm_replay_job_client.LegacyDmReplayJobRequest;
+pub const LegacyDmReplayJobIntake = legacy_dm_replay_job_client.LegacyDmReplayJobIntake;
+pub const LegacyDmReplayJobReady = legacy_dm_replay_job_client.LegacyDmReplayJobReady;
+pub const LegacyDmReplayJobResult = legacy_dm_replay_job_client.LegacyDmReplayJobResult;
+pub const LegacyDmReplayJobClient = legacy_dm_replay_job_client.LegacyDmReplayJobClient;
 pub const LegacyDmSubscriptionTurnClientError =
     legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnClientError;
 pub const LegacyDmSubscriptionTurnClientConfig =
@@ -144,6 +162,49 @@ pub const LegacyDmSubscriptionTurnResult =
     legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnResult;
 pub const LegacyDmSubscriptionTurnClient =
     legacy_dm_subscription_turn_client.LegacyDmSubscriptionTurnClient;
+pub const LegacyDmSubscriptionJobClientError =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobClientError;
+pub const LegacyDmSubscriptionJobClientConfig =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobClientConfig;
+pub const LegacyDmSubscriptionJobClientStorage =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobClientStorage;
+pub const LegacyDmSubscriptionJobAuthEventStorage =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobAuthEventStorage;
+pub const PreparedLegacyDmSubscriptionJobAuthEvent =
+    legacy_dm_subscription_job_client.PreparedLegacyDmSubscriptionJobAuthEvent;
+pub const LegacyDmSubscriptionJobRequest =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobRequest;
+pub const LegacyDmSubscriptionJobIntake =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobIntake;
+pub const LegacyDmSubscriptionJobReady =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobReady;
+pub const LegacyDmSubscriptionJobResult =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobResult;
+pub const LegacyDmSubscriptionJobClient =
+    legacy_dm_subscription_job_client.LegacyDmSubscriptionJobClient;
+pub const LegacyDmSyncRuntimeClientError =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClientError;
+pub const LegacyDmSyncRuntimeClientConfig =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClientConfig;
+pub const LegacyDmSyncRuntimeClientStorage =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClientStorage;
+pub const LegacyDmSyncRuntimePlanStorage =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimePlanStorage;
+pub const LegacyDmSyncRuntimeStep = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeStep;
+pub const LegacyDmSyncRuntimePlan = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimePlan;
+pub const LegacyDmSyncRuntimeAuthEventStorage =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeAuthEventStorage;
+pub const PreparedLegacyDmSyncRuntimeAuthEvent =
+    legacy_dm_sync_runtime_client.PreparedLegacyDmSyncRuntimeAuthEvent;
+pub const LegacyDmSyncRuntimeReplayRequest =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeReplayRequest;
+pub const LegacyDmSyncRuntimeReplayIntake =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeReplayIntake;
+pub const LegacyDmSyncRuntimeSubscriptionRequest =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeSubscriptionRequest;
+pub const LegacyDmSyncRuntimeSubscriptionIntake =
+    legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeSubscriptionIntake;
+pub const LegacyDmSyncRuntimeClient = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;
 pub const MailboxJobClientConfig = mailbox_job_client.MailboxJobClientConfig;
 pub const MailboxJobClientStorage = mailbox_job_client.MailboxJobClientStorage;
