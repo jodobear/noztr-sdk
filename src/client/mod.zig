@@ -9,6 +9,7 @@ pub const local_entity_job_client = @import("local_entity_job_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
+pub const mailbox_replay_job_client = @import("mailbox_replay_job_client.zig");
 pub const mailbox_replay_turn_client = @import("mailbox_replay_turn_client.zig");
 pub const local_nip44_job_client = @import("local_nip44_job_client.zig");
 pub const local_operator_client = @import("local_operator_client.zig");
@@ -114,6 +115,19 @@ pub const MailboxReplayTurnRequest = mailbox_replay_turn_client.MailboxReplayTur
 pub const MailboxReplayTurnIntake = mailbox_replay_turn_client.MailboxReplayTurnIntake;
 pub const MailboxReplayTurnResult = mailbox_replay_turn_client.MailboxReplayTurnResult;
 pub const MailboxReplayTurnClient = mailbox_replay_turn_client.MailboxReplayTurnClient;
+pub const MailboxReplayJobClientError = mailbox_replay_job_client.MailboxReplayJobClientError;
+pub const MailboxReplayJobClientConfig = mailbox_replay_job_client.MailboxReplayJobClientConfig;
+pub const MailboxReplayJobClientStorage =
+    mailbox_replay_job_client.MailboxReplayJobClientStorage;
+pub const MailboxReplayJobAuthEventStorage =
+    mailbox_replay_job_client.MailboxReplayJobAuthEventStorage;
+pub const PreparedMailboxReplayJobAuthEvent =
+    mailbox_replay_job_client.PreparedMailboxReplayJobAuthEvent;
+pub const MailboxReplayJobRequest = mailbox_replay_job_client.MailboxReplayJobRequest;
+pub const MailboxReplayJobIntake = mailbox_replay_job_client.MailboxReplayJobIntake;
+pub const MailboxReplayJobReady = mailbox_replay_job_client.MailboxReplayJobReady;
+pub const MailboxReplayJobResult = mailbox_replay_job_client.MailboxReplayJobResult;
+pub const MailboxReplayJobClient = mailbox_replay_job_client.MailboxReplayJobClient;
 pub const LocalEntityJobClientError = local_entity_job_client.LocalEntityJobClientError;
 pub const LocalEntityJobClientConfig = local_entity_job_client.LocalEntityJobClientConfig;
 pub const LocalEntityJobClientStorage = local_entity_job_client.LocalEntityJobClientStorage;

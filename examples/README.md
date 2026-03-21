@@ -543,6 +543,18 @@ Use these docs when you need public routing or contract context before opening a
     wrapped transcript events stay as parsed event objects instead of being reserialized back into
     JSON, mailbox unwrap still routes through the mailbox workflow floor, and this layer only
     closes one bounded mailbox replay turn without inventing polling or hidden sync policy
+- `mailbox_replay_job_client_recipe.zig`
+  - goal: prepare mailbox replay work that either yields one auth event or one bounded mailbox
+    replay request, then close that replay with explicit mailbox intake and checkpoint posture
+  - public SDK surface: `noztr_sdk.client`, `MailboxReplayJobClient`,
+    `MailboxReplayJobClientStorage`, `MailboxReplayJobAuthEventStorage`,
+    `PreparedMailboxReplayJobAuthEvent`, `MailboxReplayJobRequest`,
+    `MailboxReplayJobIntake`, `MailboxReplayJobReady`, `MailboxReplayJobResult`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`, `noztr.nip01_message`
+  - control points: auth handling still routes through shared relay auth state, replay request and
+    checkpoint closure still route through the bounded mailbox replay turn floor, wrapped replay
+    events still flow straight into mailbox intake as parsed event objects, and this layer only
+    exposes command-ready mailbox replay posture instead of inventing polling or daemon policy
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
