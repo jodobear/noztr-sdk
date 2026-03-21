@@ -196,6 +196,12 @@ pub const LegacyDmSyncRuntimePlanStorage =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimePlanStorage;
 pub const LegacyDmSyncRuntimeStep = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeStep;
 pub const LegacyDmSyncRuntimePlan = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimePlan;
+pub const LegacyDmLongLivedDmPolicyStorage =
+    legacy_dm_sync_runtime_client.LegacyDmLongLivedDmPolicyStorage;
+pub const LegacyDmLongLivedDmPolicyStep =
+    legacy_dm_sync_runtime_client.LegacyDmLongLivedDmPolicyStep;
+pub const LegacyDmLongLivedDmPolicyPlan =
+    legacy_dm_sync_runtime_client.LegacyDmLongLivedDmPolicyPlan;
 pub const LegacyDmSyncRuntimeAuthEventStorage =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeAuthEventStorage;
 pub const PreparedLegacyDmSyncRuntimeAuthEvent =

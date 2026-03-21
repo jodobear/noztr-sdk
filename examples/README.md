@@ -509,13 +509,16 @@ Use these docs when you need public routing or contract context before opening a
     turn floor, parsed transcript events stay as event objects, and this layer only adds
     legacy-DM plaintext intake instead of inventing a polling loop
 - `legacy_dm_sync_runtime_client_recipe.zig`
-  - goal: step one bounded legacy-DM sync runtime explicitly across authenticate, replay catch-up,
-    durable resume export/restore, explicit reconnect, subscribe, and live receive posture
+  - goal: step one bounded legacy-DM sync runtime explicitly, inspect one longer-lived legacy-DM
+    policy above that runtime, then drive durable resume export/restore, explicit reconnect,
+    subscribe, and live receive posture
   - public SDK surface: `noztr_sdk.client`, `LegacyDmReplayJobClient`,
     `LegacyDmSubscriptionJobClient`, `LegacyDmSyncRuntimeClient`,
     `LegacyDmSyncRuntimeClientStorage`, `LegacyDmSyncRuntimeResumeStorage`,
     `LegacyDmSyncRuntimeResumeState`, `LegacyDmSyncRuntimePlanStorage`,
     `LegacyDmSyncRuntimePlan`, `LegacyDmSyncRuntimeStep`,
+    `LegacyDmLongLivedDmPolicyStorage`, `LegacyDmLongLivedDmPolicyPlan`,
+    `LegacyDmLongLivedDmPolicyStep`,
     `LegacyDmSyncRuntimeAuthEventStorage`, `PreparedLegacyDmSyncRuntimeAuthEvent`,
     `LegacyDmSyncRuntimeReplayRequest`, `LegacyDmSyncRuntimeSubscriptionRequest`,
     `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
@@ -524,8 +527,8 @@ Use these docs when you need public routing or contract context before opening a
   - control points: replay and live turns still route through the bounded legacy-DM turn floors,
     auth event authoring stays explicit and caller-owned, replay catch-up completion is caller-set
     instead of hidden, restored runtime still requires explicit reconnect before resumed replay or
-    live subscribe work, and this layer only exposes one typed next-step planner rather than a
-    daemon or polling loop
+    live subscribe work, and the newer policy helper only classifies one next legacy-DM sync
+    posture instead of taking hidden cadence or daemon ownership
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a

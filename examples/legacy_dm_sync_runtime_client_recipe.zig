@@ -3,9 +3,10 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Step one bounded legacy-DM sync runtime explicitly across authenticate, replay catch-up,
-// durable resume export/restore, explicit reconnect, subscribe, and live receive posture.
-test "recipe: legacy dm sync runtime client exports resume state before live resubscribe" {
+// Step one bounded legacy-DM sync runtime explicitly, inspect one longer-lived legacy-DM policy
+// above that runtime, then drive durable resume export/restore, explicit reconnect, subscribe, and
+// live receive posture.
+test "recipe: legacy dm sync runtime client inspects long-lived policy before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -40,14 +41,14 @@ test "recipe: legacy dm sync runtime client exports resume state before live res
         .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var runtime_storage = noztr_sdk.client.LegacyDmSyncRuntimePlanStorage{};
-    const first_plan = try client.inspectRuntime(
+    var policy_storage = noztr_sdk.client.LegacyDmLongLivedDmPolicyStorage{};
+    const first_policy = try client.inspectLongLivedDmPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &runtime_storage,
+        &policy_storage,
     );
-    try std.testing.expect(first_plan.nextStep() == .authenticate);
+    try std.testing.expect(first_policy.nextStep() == .authenticate);
 
     var auth_storage = noztr_sdk.client.LegacyDmSyncRuntimeAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
@@ -56,7 +57,7 @@ test "recipe: legacy dm sync runtime client exports resume state before live res
         &auth_storage,
         auth_event_json_output[0..],
         auth_message_output[0..],
-        &first_plan.nextStep().authenticate,
+        &first_policy.nextStep().authenticate,
         70,
     );
     _ = try client.acceptPreparedAuthEvent(&prepared_auth, 71, 60);
@@ -70,13 +71,13 @@ test "recipe: legacy dm sync runtime client exports resume state before live res
         .iv = [_]u8{0x55} ** noztr.limits.nip04_iv_bytes,
     });
 
-    const replay_plan = try client.inspectRuntime(
+    const replay_policy = try client.inspectLongLivedDmPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &runtime_storage,
+        &policy_storage,
     );
-    try std.testing.expect(replay_plan.nextStep() == .replay);
+    try std.testing.expect(replay_policy.nextStep() == .replay_resume);
 
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const replay_request = try client.beginReplayTurn(
@@ -124,24 +125,36 @@ test "recipe: legacy dm sync runtime client exports resume state before live res
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
 
-    var relay_runtime_storage = noztr_sdk.runtime.RelayPoolPlanStorage{};
-    const relay_runtime = resumed.inspectRelayRuntime(&relay_runtime_storage);
-    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
-    try resumed.markRelayConnected(relay_runtime.nextStep().?.entry.descriptor.relay_index);
-
-    const subscribe_plan = try resumed.inspectRuntime(
+    const reconnect_policy = try resumed.inspectLongLivedDmPolicy(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &runtime_storage,
+        &policy_storage,
     );
-    try std.testing.expect(subscribe_plan.nextStep() == .subscribe);
+    try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
+    try resumed.markRelayConnected(reconnect_policy.nextStep().reconnect.entry.descriptor.relay_index);
+
+    const subscribe_policy = try resumed.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(subscribe_policy.nextStep() == .subscribe_resume);
 
     const live_request = try resumed.beginSubscriptionTurn(
         request_output[0..],
         subscription_specs[0..],
     );
     try std.testing.expect(resumed.liveSubscriptionActive());
+
+    const receive_policy = try resumed.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(receive_policy.nextStep() == .receive);
 
     const live_event = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
