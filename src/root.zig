@@ -1,4 +1,5 @@
 const std = @import("std");
+const internal_runtime = @import("internal/runtime/mod.zig");
 
 /// Stable workflow namespace.
 pub const workflows = @import("workflows/mod.zig");
@@ -393,6 +394,9 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(runtime.RelayPoolPlan) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolStep) == type);
     try std.testing.expect(@TypeOf(transport) == type);
+    try std.testing.expect(@TypeOf(internal_runtime.RelayIoConnection) == type);
+    try std.testing.expect(@TypeOf(internal_runtime.Clock) == type);
+    try std.testing.expect(@TypeOf(internal_runtime.TaskDriver) == type);
     try std.testing.expect(@TypeOf(transport.HttpClient) == type);
     try std.testing.expect(@TypeOf(transport.HttpError) == type);
     try std.testing.expect(@TypeOf(transport.HttpRequest) == type);
