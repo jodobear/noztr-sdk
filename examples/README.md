@@ -104,6 +104,15 @@ Use these docs when you need public routing or contract context before opening a
     floor, the job layer adds command-ready result posture instead of secret-store policy, and
     downstream tools can build local key commands without stitching deterministic key helpers
     together ad hoc
+- `local_entity_job_client_recipe.zig`
+  - goal: encode one `npub`, encode one `nsec`, and decode one representative `NIP-19` entity
+    through one command-ready SDK job layer
+  - public SDK surface: `noztr_sdk.client`, `LocalEntityJobClient`,
+    `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult`
+  - kernel fixture help: `noztr.nip19_bech32`
+  - control points: entity encode-decode still routes through the local operator floor, the job
+    layer adds command-ready result posture instead of CLI-owned bech32 wiring, and downstream
+    tools can build local entity commands without stitching `NIP-19` helpers together ad hoc
 - `publish_client_recipe.zig`
   - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
     runtime, then pair one ready relay with one prepared outbound publish payload

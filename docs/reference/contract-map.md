@@ -21,6 +21,7 @@ open.
 
 | Job | Primary public symbols | Start here | Example |
 | --- | --- | --- | --- |
+| Command-ready local `NIP-19` entity encode-decode over the local operator floor | `noztr_sdk.client`, `LocalEntityJobClient`, `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult` | `noztr_sdk.client.LocalEntityJobClient` | [local_entity_job_client_recipe.zig](../../examples/local_entity_job_client_recipe.zig) |
 | Command-ready local key generation and public-key derivation over the local operator floor | `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`, `LocalKeyJobRequest`, `LocalKeyJobResult` | `noztr_sdk.client.LocalKeyJobClient` | [local_key_job_client_recipe.zig](../../examples/local_key_job_client_recipe.zig) |
 | Local operator tooling for keys, `NIP-19` entities, local event signing/inspection, and local `NIP-44` crypto | `noztr_sdk.client`, `LocalOperatorClient`, `LocalKeypair`, `LocalEventDraft`, `LocalEventInspection` | `noztr_sdk.client.LocalOperatorClient` | [local_operator_client_recipe.zig](../../examples/local_operator_client_recipe.zig) |
 | One-shot publish composition over local operator tooling plus shared relay runtime | `noztr_sdk.client`, `PublishClient`, `PublishClientStorage`, `PreparedPublishEvent`, `TargetedPublishEvent`, `noztr_sdk.runtime`, `RelayPoolPublishPlan`, `RelayPoolPublishStep` | `noztr_sdk.client.PublishClient` | [publish_client_recipe.zig](../../examples/publish_client_recipe.zig) |
