@@ -1,8 +1,8 @@
 const std = @import("std");
 const subscription_turn = @import("subscription_turn_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
+const relay_auth_support = @import("relay_auth_support.zig");
 const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
-const relay_auth = @import("../relay/auth.zig");
 const local_operator = @import("local_operator_client.zig");
 const runtime = @import("../runtime/mod.zig");
 const noztr = @import("noztr");
@@ -152,26 +152,22 @@ pub const AuthSubscriptionTurnClient = struct {
         created_at: u64,
     ) AuthSubscriptionTurnClientError!PreparedAuthSubscriptionEvent {
         const target = try self.selectAuthTarget(step);
-        fillAuthEventStorage(auth_storage, target.relay.relay_url, target.challenge);
-
-        const draft = local_operator.LocalEventDraft{
-            .kind = noztr.nip42_auth.auth_event_kind,
-            .created_at = created_at,
-            .content = "",
-            .tags = auth_storage.tags[0..],
-        };
-        var event = try self.subscription_turn.relay_exchange.local_operator.signDraft(secret_key, &draft);
-        const event_json = try self.subscription_turn.relay_exchange.local_operator.serializeEventJson(
+        const payload = try relay_auth_support.buildSignedAuthPayload(
+            &self.subscription_turn.relay_exchange.local_operator,
+            auth_storage,
             event_json_output,
-            &event,
+            auth_message_output,
+            secret_key,
+            created_at,
+            target.relay.relay_url,
+            target.challenge,
         );
-        const auth_message_json = try serializeAuthClientMessage(auth_message_output, &event);
         return .{
             .relay = target.relay,
             .challenge = auth_storage.challengeText(),
-            .event = event,
-            .event_json = event_json,
-            .auth_message_json = auth_message_json,
+            .event = payload.event,
+            .event_json = payload.event_json,
+            .auth_message_json = payload.auth_message_json,
         };
     }
 
@@ -233,28 +229,13 @@ pub const AuthSubscriptionTurnClient = struct {
         self: *const AuthSubscriptionTurnClient,
         step: *const runtime.RelayPoolAuthStep,
     ) AuthSubscriptionTurnClientError!relay_auth_client.RelayAuthTarget {
-        const live_descriptor = self.subscription_turn.relay_exchange.relay_pool.descriptor(
-            step.entry.descriptor.relay_index,
-        ) orelse {
-            return error.StaleAuthStep;
-        };
-        if (!std.mem.eql(u8, live_descriptor.relay_url, step.entry.descriptor.relay_url)) {
-            return error.StaleAuthStep;
-        }
-
         var auth_storage = runtime.RelayPoolAuthStorage{};
         const plan = self.inspectAuth(&auth_storage);
-        const current = plan.entry(step.entry.descriptor.relay_index) orelse return error.StaleAuthStep;
-        if (!std.mem.eql(u8, current.descriptor.relay_url, step.entry.descriptor.relay_url)) {
-            return error.StaleAuthStep;
-        }
-        if (current.action != .authenticate) return error.RelayNotReady;
-        if (!std.mem.eql(u8, current.challenge, step.entry.challenge)) return error.StaleAuthStep;
-
-        return .{
-            .relay = current.descriptor,
-            .challenge = current.challenge,
-        };
+        return relay_auth_support.selectAuthTarget(
+            &self.subscription_turn.relay_exchange.relay_pool,
+            plan,
+            step,
+        );
     }
 
     fn requireCurrentAuth(
@@ -264,41 +245,9 @@ pub const AuthSubscriptionTurnClient = struct {
     ) AuthSubscriptionTurnClientError!void {
         var auth_storage = runtime.RelayPoolAuthStorage{};
         const plan = self.inspectAuth(&auth_storage);
-        const current = plan.entry(descriptor.relay_index) orelse return error.StaleAuthStep;
-        if (!std.mem.eql(u8, current.descriptor.relay_url, descriptor.relay_url)) {
-            return error.StaleAuthStep;
-        }
-        if (current.action != .authenticate) return error.RelayNotReady;
-        if (!std.mem.eql(u8, current.challenge, challenge)) return error.StaleAuthStep;
+        return relay_auth_support.requireCurrentAuth(plan, descriptor, challenge);
     }
 };
-
-fn fillAuthEventStorage(
-    storage: *AuthSubscriptionEventStorage,
-    relay_url_text: []const u8,
-    challenge: []const u8,
-) void {
-    std.debug.assert(relay_url_text.len <= relay_auth.relay_url_max_bytes);
-    std.debug.assert(challenge.len <= noztr.nip42_auth.challenge_max_bytes);
-
-    storage.* = .{};
-    storage.relay_url_len = @intCast(relay_url_text.len);
-    storage.challenge_len = @intCast(challenge.len);
-    @memcpy(storage.relay_url[0..relay_url_text.len], relay_url_text);
-    @memcpy(storage.challenge[0..challenge.len], challenge);
-    storage.relay_items = .{ "relay", storage.relayUrl() };
-    storage.challenge_items = .{ "challenge", storage.challengeText() };
-    storage.tags[0] = .{ .items = storage.relay_items[0..] };
-    storage.tags[1] = .{ .items = storage.challenge_items[0..] };
-}
-
-fn serializeAuthClientMessage(
-    output: []u8,
-    event: *const noztr.nip01_event.Event,
-) AuthSubscriptionTurnClientError![]const u8 {
-    const message = noztr.nip01_message.ClientMessage{ .auth = .{ .event = event.* } };
-    return noztr.nip01_message.client_message_serialize_json(output, &message);
-}
 
 test "auth subscription turn client exposes caller-owned config and storage" {
     var storage = AuthSubscriptionTurnClientStorage{};

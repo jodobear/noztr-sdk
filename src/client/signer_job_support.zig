@@ -2,6 +2,7 @@ const std = @import("std");
 const local_operator = @import("local_operator_client.zig");
 const relay_auth = @import("../relay/auth.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
+const relay_auth_support = @import("relay_auth_support.zig");
 const noztr = @import("noztr");
 
 pub const SignerJobAuthError =
@@ -73,23 +74,22 @@ pub fn prepareAuthEvent(
     created_at: u64,
 ) SignerJobAuthError!PreparedSignerJobAuthEvent {
     if (!state.active) return error.MissingAuthChallenge;
-    fillAuthEventStorage(auth_storage, state.relayUrl(), state.challengeText());
-
-    const draft = local_operator.LocalEventDraft{
-        .kind = noztr.nip42_auth.auth_event_kind,
-        .created_at = created_at,
-        .content = "",
-        .tags = auth_storage.tags[0..],
-    };
-    var event = try local.signDraft(secret_key, &draft);
-    const event_json = try local.serializeEventJson(event_json_output, &event);
-    const auth_message_json = try serializeAuthClientMessage(auth_message_output, &event);
+    const payload = try relay_auth_support.buildSignedAuthPayload(
+        local,
+        auth_storage,
+        event_json_output,
+        auth_message_output,
+        secret_key,
+        created_at,
+        state.relayUrl(),
+        state.challengeText(),
+    );
     return .{
         .relay_url = state.relayUrl(),
         .challenge = state.challengeText(),
-        .event = event,
-        .event_json = event_json,
-        .auth_message_json = auth_message_json,
+        .event = payload.event,
+        .event_json = payload.event_json,
+        .auth_message_json = payload.auth_message_json,
     };
 }
 
@@ -101,35 +101,6 @@ pub fn requireCurrentAuthState(
     if (!state.active) return error.MissingAuthChallenge;
     if (!std.mem.eql(u8, state.relayUrl(), relay_url_text)) return error.StaleAuthState;
     if (!std.mem.eql(u8, state.challengeText(), challenge_text)) return error.StaleAuthState;
-}
-
-fn fillAuthEventStorage(
-    storage: *SignerJobAuthEventStorage,
-    relay_url_text: []const u8,
-    challenge_text: []const u8,
-) void {
-    std.debug.assert(relay_url_text.len <= relay_auth.relay_url_max_bytes);
-    std.debug.assert(challenge_text.len <= noztr.nip42_auth.challenge_max_bytes);
-
-    storage.* = .{};
-    @memcpy(storage.relay_url[0..relay_url_text.len], relay_url_text);
-    storage.relay_url_len = @intCast(relay_url_text.len);
-    @memcpy(storage.challenge[0..challenge_text.len], challenge_text);
-    storage.challenge_len = @intCast(challenge_text.len);
-    storage.relay_items = .{ "relay", storage.relayUrl() };
-    storage.challenge_items = .{ "challenge", storage.challengeText() };
-    storage.tags = .{
-        .{ .items = storage.relay_items[0..] },
-        .{ .items = storage.challenge_items[0..] },
-    };
-}
-
-fn serializeAuthClientMessage(
-    output: []u8,
-    event: *const noztr.nip01_event.Event,
-) noztr.nip01_message.MessageEncodeError![]const u8 {
-    const message = noztr.nip01_message.ClientMessage{ .auth = .{ .event = event.* } };
-    return noztr.nip01_message.client_message_serialize_json(output, &message);
 }
 
 test "signer job auth state remembers and clears one relay challenge" {

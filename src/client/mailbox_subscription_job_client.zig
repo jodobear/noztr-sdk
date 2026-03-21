@@ -4,7 +4,7 @@ const local_operator = @import("local_operator_client.zig");
 const mailbox_subscription_turn = @import("mailbox_subscription_turn_client.zig");
 const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
-const relay_url = @import("../relay/url.zig");
+const relay_auth_support = @import("relay_auth_support.zig");
 const runtime = @import("../runtime/mod.zig");
 
 pub const MailboxSubscriptionJobClientError =
@@ -229,23 +229,22 @@ pub const MailboxSubscriptionJobClient = struct {
         created_at: u64,
     ) MailboxSubscriptionJobClientError!PreparedMailboxSubscriptionJobAuthEvent {
         const target = try self.selectAuthTarget(step);
-        fillAuthEventStorage(auth_storage, target.relay.relay_url, target.challenge);
-
-        const draft = local_operator.LocalEventDraft{
-            .kind = noztr.nip42_auth.auth_event_kind,
-            .created_at = created_at,
-            .content = "",
-            .tags = auth_storage.tags[0..],
-        };
-        var event = try self.local_operator.signDraft(&self.config.recipient_private_key, &draft);
-        const event_json = try self.local_operator.serializeEventJson(event_json_output, &event);
-        const auth_message_json = try serializeAuthClientMessage(auth_message_output, &event);
+        const payload = try relay_auth_support.buildSignedAuthPayload(
+            &self.local_operator,
+            auth_storage,
+            event_json_output,
+            auth_message_output,
+            &self.config.recipient_private_key,
+            created_at,
+            target.relay.relay_url,
+            target.challenge,
+        );
         return .{
             .relay = target.relay,
             .challenge = auth_storage.challengeText(),
-            .event = event,
-            .event_json = event_json,
-            .auth_message_json = auth_message_json,
+            .event = payload.event,
+            .event_json = payload.event_json,
+            .auth_message_json = payload.auth_message_json,
         };
     }
 
@@ -253,26 +252,13 @@ pub const MailboxSubscriptionJobClient = struct {
         self: *const MailboxSubscriptionJobClient,
         step: *const runtime.RelayPoolAuthStep,
     ) MailboxSubscriptionJobClientError!relay_auth_client.RelayAuthTarget {
-        const live_descriptor = self.subscription_turn.subscription_turn.relay_exchange.relay_pool.descriptor(
-            step.entry.descriptor.relay_index,
-        ) orelse return error.StaleAuthStep;
-        if (!std.mem.eql(u8, live_descriptor.relay_url, step.entry.descriptor.relay_url)) {
-            return error.StaleAuthStep;
-        }
-
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const plan = self.subscription_turn.inspectAuth(&auth_storage_buf);
-        const current = plan.entry(step.entry.descriptor.relay_index) orelse return error.StaleAuthStep;
-        if (!std.mem.eql(u8, current.descriptor.relay_url, step.entry.descriptor.relay_url)) {
-            return error.StaleAuthStep;
-        }
-        if (current.action != .authenticate) return error.RelayNotReady;
-        if (!std.mem.eql(u8, current.challenge, step.entry.challenge)) return error.StaleAuthStep;
-
-        return .{
-            .relay = current.descriptor,
-            .challenge = current.challenge,
-        };
+        return relay_auth_support.selectAuthTarget(
+            &self.subscription_turn.subscription_turn.relay_exchange.relay_pool,
+            plan,
+            step,
+        );
     }
 };
 
@@ -285,33 +271,6 @@ fn configWithSubscriptionTurn(
         .subscription_turn = config.subscription_turn.subscription_turn,
     };
     return updated;
-}
-
-fn fillAuthEventStorage(
-    storage: *MailboxSubscriptionJobAuthEventStorage,
-    relay_url_text: []const u8,
-    challenge: []const u8,
-) void {
-    std.debug.assert(relay_url_text.len <= relay_url.relay_url_max_bytes);
-    std.debug.assert(challenge.len <= noztr.nip42_auth.challenge_max_bytes);
-
-    storage.* = .{};
-    storage.relay_url_len = @intCast(relay_url_text.len);
-    storage.challenge_len = @intCast(challenge.len);
-    @memcpy(storage.relay_url[0..relay_url_text.len], relay_url_text);
-    @memcpy(storage.challenge[0..challenge.len], challenge);
-    storage.relay_items = .{ "relay", storage.relayUrl() };
-    storage.challenge_items = .{ "challenge", storage.challengeText() };
-    storage.tags[0] = .{ .items = storage.relay_items[0..] };
-    storage.tags[1] = .{ .items = storage.challenge_items[0..] };
-}
-
-fn serializeAuthClientMessage(
-    output: []u8,
-    event: *const noztr.nip01_event.Event,
-) MailboxSubscriptionJobClientError![]const u8 {
-    const message = noztr.nip01_message.ClientMessage{ .auth = .{ .event = event.* } };
-    return noztr.nip01_message.client_message_serialize_json(output, &message);
 }
 
 test "mailbox subscription job client exposes caller-owned config and storage" {
