@@ -485,6 +485,18 @@ test "phase4b exposes the legacy dm workflow surface" {
     try std.testing.expect(@TypeOf(workflows.LegacyDmMessageOutcome) == type);
 }
 
+test "phase4c exposes the legacy dm publish job floor" {
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobClientError) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedLegacyDmPublishJobAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobRequest) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobReady) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobResult) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmPublishJobClient) == type);
+}
+
 test "phase5 exposes the mailbox workflow surface" {
     try std.testing.expect(@TypeOf(workflows.MailboxSession) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxOutboundBuffer) == type);

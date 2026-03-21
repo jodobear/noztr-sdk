@@ -476,6 +476,16 @@ Use these docs when you need public routing or contract context before opening a
   - control points: strict legacy payload and kind-`4` validation still route through
     `noztr-core`, reply and relay-hint tag shaping stay explicit in the SDK workflow floor, and
     outbound serialization plus inbound plaintext recovery remain fully caller-owned
+- `legacy_dm_publish_job_client_recipe.zig`
+  - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
+  - public SDK surface: `noztr_sdk.client`, `LegacyDmPublishJobClient`,
+    `LegacyDmPublishJobClientStorage`, `LegacyDmPublishJobAuthEventStorage`,
+    `PreparedLegacyDmPublishJobAuthEvent`, `LegacyDmPublishJobRequest`,
+    `LegacyDmPublishJobReady`, `LegacyDmPublishJobResult`
+  - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
+  - control points: DM event shaping still routes through the legacy DM workflow floor, auth
+    event authoring still stays explicit and caller-owned, and this layer only selects one
+    `authenticate` or one `publish` step without inventing retry, transport, or polling policy
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a

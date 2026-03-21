@@ -6,6 +6,7 @@ pub const auth_subscription_turn_client = @import("auth_subscription_turn_client
 pub const count_job_client = @import("count_job_client.zig");
 pub const count_turn_client = @import("count_turn_client.zig");
 pub const local_entity_job_client = @import("local_entity_job_client.zig");
+pub const legacy_dm_publish_job_client = @import("legacy_dm_publish_job_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
@@ -102,6 +103,21 @@ pub const LocalKeyJobClientStorage = local_key_job_client.LocalKeyJobClientStora
 pub const LocalKeyJobRequest = local_key_job_client.LocalKeyJobRequest;
 pub const LocalKeyJobResult = local_key_job_client.LocalKeyJobResult;
 pub const LocalKeyJobClient = local_key_job_client.LocalKeyJobClient;
+pub const LegacyDmPublishJobClientError =
+    legacy_dm_publish_job_client.LegacyDmPublishJobClientError;
+pub const LegacyDmPublishJobClientConfig =
+    legacy_dm_publish_job_client.LegacyDmPublishJobClientConfig;
+pub const LegacyDmPublishJobClientStorage =
+    legacy_dm_publish_job_client.LegacyDmPublishJobClientStorage;
+pub const LegacyDmPublishJobAuthEventStorage =
+    legacy_dm_publish_job_client.LegacyDmPublishJobAuthEventStorage;
+pub const PreparedLegacyDmPublishJobAuthEvent =
+    legacy_dm_publish_job_client.PreparedLegacyDmPublishJobAuthEvent;
+pub const LegacyDmPublishJobRequest =
+    legacy_dm_publish_job_client.LegacyDmPublishJobRequest;
+pub const LegacyDmPublishJobReady = legacy_dm_publish_job_client.LegacyDmPublishJobReady;
+pub const LegacyDmPublishJobResult = legacy_dm_publish_job_client.LegacyDmPublishJobResult;
+pub const LegacyDmPublishJobClient = legacy_dm_publish_job_client.LegacyDmPublishJobClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;
 pub const MailboxJobClientConfig = mailbox_job_client.MailboxJobClientConfig;
 pub const MailboxJobClientStorage = mailbox_job_client.MailboxJobClientStorage;
