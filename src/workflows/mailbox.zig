@@ -557,6 +557,13 @@ pub const MailboxSession = struct {
         return current.canSendRequests();
     }
 
+    pub fn currentRelayAuthChallenge(self: *const MailboxSession) ?[]const u8 {
+        const current = self.currentRelayConst() orelse return null;
+        if (current.state != .auth_required) return null;
+        if (current.auth_session.state.challenge_len == 0) return null;
+        return current.auth_session.state.challenge[0..current.auth_session.state.challenge_len];
+    }
+
     pub fn exportRelayPool(
         self: *const MailboxSession,
         storage: *RelayPoolStorage,
@@ -744,9 +751,18 @@ pub const MailboxSession = struct {
         window_seconds: u32,
         scratch: std.mem.Allocator,
     ) MailboxError!void {
-        const current = self.currentRelay() orelse return error.NoRelays;
         const auth_event = try noztr.nip01_event.event_parse_json(auth_event_json, scratch);
-        try current.acceptAuthEvent(&auth_event, now_unix_seconds, window_seconds);
+        try self.acceptCurrentRelayAuthEvent(&auth_event, now_unix_seconds, window_seconds);
+    }
+
+    pub fn acceptCurrentRelayAuthEvent(
+        self: *MailboxSession,
+        auth_event: *const noztr.nip01_event.Event,
+        now_unix_seconds: u64,
+        window_seconds: u32,
+    ) MailboxError!void {
+        const current = self.currentRelay() orelse return error.NoRelays;
+        try current.acceptAuthEvent(auth_event, now_unix_seconds, window_seconds);
     }
 
     pub fn advanceRelay(self: *MailboxSession) MailboxError![]const u8 {

@@ -512,6 +512,17 @@ Use these docs when you need public routing or contract context before opening a
     explicit instead of hidden behind a send loop, receive work still routes through the bounded
     receive-turn floor, and this layer only exposes one typed sync step at a time instead of
     inventing a daemon or background mailbox scheduler
+- `mailbox_job_client_recipe.zig`
+  - goal: drive mailbox auth, publish, and receive work through one command-ready job surface
+  - public SDK surface: `noztr_sdk.client`, `MailboxJobClient`, `MailboxJobClientStorage`,
+    `MailboxJobAuthEventStorage`, `PreparedMailboxJobAuthEvent`, `MailboxJobReady`,
+    `MailboxJobResult`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`
+  - control points: mailbox relay state still lives in the mailbox workflow floor, auth event
+    creation stays explicit and caller-owned, delivery planning still routes through the mailbox
+    session floor, receive work still routes through the bounded receive-turn floor, and this
+    layer only exposes command-ready mailbox posture instead of inventing transport, polling, or
+    UI policy
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
