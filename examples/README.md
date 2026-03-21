@@ -493,6 +493,15 @@ Use these docs when you need public routing or contract context before opening a
     can build and plan one explicit outbound file-message wrap on the same surface, can classify
     direct-message vs file-message rumors explicitly, and still owns publication and polling
     policy
+- `mailbox_receive_turn_recipe.zig`
+  - goal: select one ready mailbox relay explicitly, then accept one wrapped envelope through one
+    bounded receive-turn floor
+  - public SDK surface: `MailboxSession`, `MailboxReceiveTurnStorage`,
+    `MailboxReceiveTurnRequest`, `MailboxReceiveTurnResult`, `MailboxEnvelopeOutcome`
+  - kernel fixture help: `noztr.nip17_private_messages`
+  - control points: ready-relay selection still routes through mailbox runtime inspection, intake
+    still routes through the mailbox unwrap floor, and this layer only closes one receive turn
+    without inventing polling, sync policy, or hidden relay rotation
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification

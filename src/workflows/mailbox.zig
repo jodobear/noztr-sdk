@@ -40,6 +40,9 @@ pub const MailboxError =
         SenderRelayListAuthorMismatch,
         DuplicateWrap,
         SeenWrapTableFull,
+        NoReceiveRelay,
+        StaleReceiveTurn,
+        InvalidReceiveTurnRelay,
     };
 
 /// Parsed mailbox intake result.
@@ -464,6 +467,42 @@ pub const RuntimePlan = struct {
         const selected_entry = self.nextEntry() orelse return null;
         return .{ .entry = selected_entry };
     }
+
+    pub fn nextReceiveEntry(self: *const RuntimePlan) ?RuntimeEntry {
+        var current_match: ?RuntimeEntry = null;
+        var first_match: ?RuntimeEntry = null;
+        var index: u8 = 0;
+        while (index < self.relay_count) : (index += 1) {
+            const candidate = self.entry(index) orelse continue;
+            if (candidate.action != .receive) continue;
+            if (first_match == null) first_match = candidate;
+            if (candidate.is_current) {
+                current_match = candidate;
+                break;
+            }
+        }
+        if (current_match) |selected| return selected;
+        return first_match;
+    }
+
+    pub fn nextReceiveStep(self: *const RuntimePlan) ?RuntimeStep {
+        const selected_entry = self.nextReceiveEntry() orelse return null;
+        return .{ .entry = selected_entry };
+    }
+};
+
+pub const ReceiveTurnStorage = struct {
+    runtime: RuntimeStorage = .{},
+};
+
+pub const ReceiveTurnRequest = struct {
+    relay_index: u8,
+    relay_url: []const u8,
+};
+
+pub const ReceiveTurnResult = struct {
+    request: ReceiveTurnRequest,
+    envelope: MailboxEnvelopeOutcome,
 };
 
 pub const MailboxSession = struct {
@@ -731,6 +770,41 @@ pub const MailboxSession = struct {
         step: WorkflowStep,
     ) MailboxError![]const u8 {
         return self.selectRelay(step.entry.relay_index);
+    }
+
+    pub fn beginReceiveTurn(
+        self: *MailboxSession,
+        storage: *ReceiveTurnStorage,
+    ) MailboxError!ReceiveTurnRequest {
+        const runtime = try self.inspectRuntime(&storage.runtime);
+        const entry = runtime.nextReceiveEntry() orelse return error.NoReceiveRelay;
+        const relay_url_text = try self.selectRelay(entry.relay_index);
+        return .{
+            .relay_index = entry.relay_index,
+            .relay_url = relay_url_text,
+        };
+    }
+
+    pub fn acceptReceiveEnvelopeJson(
+        self: *MailboxSession,
+        request: *const ReceiveTurnRequest,
+        wrap_event_json: []const u8,
+        recipients_out: []noztr.nip17_private_messages.DmRecipient,
+        thumbs_out: [][]const u8,
+        fallbacks_out: [][]const u8,
+        scratch: std.mem.Allocator,
+    ) MailboxError!ReceiveTurnResult {
+        try self.requireCurrentReceiveTurn(request);
+        return .{
+            .request = request.*,
+            .envelope = try self.acceptWrappedEnvelopeJson(
+                wrap_event_json,
+                recipients_out,
+                thumbs_out,
+                fallbacks_out,
+                scratch,
+            ),
+        };
     }
 
     pub fn acceptWrappedMessageJson(
@@ -1368,6 +1442,18 @@ pub const MailboxSession = struct {
         };
     }
 
+    fn requireCurrentReceiveTurn(
+        self: *const MailboxSession,
+        request: *const ReceiveTurnRequest,
+    ) MailboxError!void {
+        const current = self.currentRelayConst() orelse return error.NoRelays;
+        if (self._state.current_relay_index != request.relay_index) return error.StaleReceiveTurn;
+        if (!std.mem.eql(u8, current.auth_session.relayUrl(), request.relay_url)) {
+            return error.StaleReceiveTurn;
+        }
+        if (!current.canSendRequests()) return error.InvalidReceiveTurnRelay;
+    }
+
     fn requireCurrentRelayReady(self: *MailboxSession) MailboxError!void {
         const current = self.currentRelay() orelse return error.NoRelays;
         if (current.canSendRequests()) return;
@@ -1947,6 +2033,88 @@ test "mailbox runtime next step returns null for an empty plan" {
     };
     try std.testing.expect(runtime.nextEntry() == null);
     try std.testing.expect(runtime.nextStep() == null);
+    try std.testing.expect(runtime.nextReceiveEntry() == null);
+    try std.testing.expect(runtime.nextReceiveStep() == null);
+}
+
+test "mailbox receive turn selects one ready relay and accepts one wrapped envelope" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var session = MailboxSession.init(&test_wrap_recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonTwo(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var receive_storage = ReceiveTurnStorage{};
+    const request = try session.beginReceiveTurn(&receive_storage);
+    try std.testing.expectEqual(@as(u8, 1), request.relay_index);
+    try std.testing.expectEqualStrings("wss://relay.two", request.relay_url);
+
+    var wrap_json_storage: [8192]u8 = undefined;
+    const wrap_event_json = try buildValidWrappedMessageJson(wrap_json_storage[0..]);
+    var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
+    var thumbs: [1][]const u8 = undefined;
+    var fallbacks: [1][]const u8 = undefined;
+    const result = try session.acceptReceiveEnvelopeJson(
+        &request,
+        wrap_event_json,
+        recipients[0..],
+        thumbs[0..0],
+        fallbacks[0..0],
+        arena.allocator(),
+    );
+    try std.testing.expect(result.envelope == .direct_message);
+    try std.testing.expectEqualStrings("wrapped hello", result.envelope.direct_message.message.content);
+}
+
+test "mailbox receive turn rejects stale relay selection explicitly" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var session = MailboxSession.init(&test_wrap_recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonTwo(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
+    try session.markCurrentRelayConnected();
+
+    var receive_storage = ReceiveTurnStorage{};
+    const request = try session.beginReceiveTurn(&receive_storage);
+    try std.testing.expectEqualStrings("wss://relay.one", try session.selectRelay(0));
+
+    var wrap_json_storage: [8192]u8 = undefined;
+    const wrap_event_json = try buildValidWrappedMessageJson(wrap_json_storage[0..]);
+    var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
+    var thumbs: [1][]const u8 = undefined;
+    var fallbacks: [1][]const u8 = undefined;
+    try std.testing.expectError(
+        error.StaleReceiveTurn,
+        session.acceptReceiveEnvelopeJson(
+            &request,
+            wrap_event_json,
+            recipients[0..],
+            thumbs[0..0],
+            fallbacks[0..0],
+            arena.allocator(),
+        ),
+    );
 }
 
 test "mailbox workflow inspection keeps only the current connected relay on receive and leaves others idle" {
