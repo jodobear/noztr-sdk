@@ -274,3 +274,155 @@ test "legacy dm session accepts event json intake explicitly" {
     );
     try std.testing.expectEqualStrings("json intake", outcome.plaintext);
 }
+
+test "legacy dm session accepts standard reply e-tag variants through parse and decrypt" {
+    const sender_secret = [_]u8{0x71} ** 32;
+    const recipient_secret = [_]u8{0x82} ** 32;
+    const author_pubkey = [_]u8{0xaa} ** 32;
+    const reply_event_id = [_]u8{0x99} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
+
+    const sender = LegacyDmSession.init(&sender_secret);
+    const recipient = LegacyDmSession.init(&recipient_secret);
+    const relay_hint = "wss://thread.example";
+    const variants = [_]ReplyTagVariant{
+        .event_only,
+        .event_and_reply,
+        .event_and_relay,
+        .event_relay_and_reply,
+        .event_relay_reply_and_author,
+    };
+
+    for (variants, 0..) |variant, index| {
+        var fixture = ReplyTagVariantFixture{};
+        const event = try buildSignedLegacyDmEventWithReplyVariant(
+            &fixture,
+            &sender,
+            &sender_secret,
+            &recipient_pubkey,
+            &reply_event_id,
+            &author_pubkey,
+            relay_hint,
+            variant,
+            @as(u64, 50) + index,
+        );
+
+        var plaintext: [noztr.limits.nip04_plaintext_max_bytes]u8 = undefined;
+        const outcome = try recipient.acceptDirectMessageEvent(event, plaintext[0..]);
+        try std.testing.expectEqualStrings("reply variant intake", outcome.plaintext);
+        try std.testing.expect(outcome.message.reply_to != null);
+        try std.testing.expect(std.mem.eql(
+            u8,
+            &reply_event_id,
+            &outcome.message.reply_to.?.event_id,
+        ));
+
+        switch (variant) {
+            .event_only, .event_and_reply => {
+                try std.testing.expect(outcome.message.reply_to.?.relay_hint == null);
+            },
+            .event_and_relay, .event_relay_and_reply, .event_relay_reply_and_author => {
+                try std.testing.expectEqualStrings(
+                    relay_hint,
+                    outcome.message.reply_to.?.relay_hint.?,
+                );
+            },
+        }
+    }
+}
+
+const ReplyTagVariant = enum {
+    event_only,
+    event_and_reply,
+    event_and_relay,
+    event_relay_and_reply,
+    event_relay_reply_and_author,
+};
+
+const ReplyTagVariantFixture = struct {
+    outbound: LegacyDmOutboundStorage = .{},
+    recipient_hex: [noztr.limits.pubkey_hex_length]u8 =
+        [_]u8{0} ** noztr.limits.pubkey_hex_length,
+    reply_event_hex: [noztr.limits.pubkey_hex_length]u8 =
+        [_]u8{0} ** noztr.limits.pubkey_hex_length,
+    author_pubkey_hex: [noztr.limits.pubkey_hex_length]u8 =
+        [_]u8{0} ** noztr.limits.pubkey_hex_length,
+    relay_hint_storage: [noztr.limits.tag_item_bytes_max]u8 =
+        [_]u8{0} ** noztr.limits.tag_item_bytes_max,
+    recipient_items: [2][]const u8 = undefined,
+    reply_items: [5][]const u8 = undefined,
+    tags: [2]noztr.nip01_event.EventTag = undefined,
+    event: noztr.nip01_event.Event = undefined,
+};
+
+fn buildSignedLegacyDmEventWithReplyVariant(
+    fixture: *ReplyTagVariantFixture,
+    sender: *const LegacyDmSession,
+    sender_secret: *const [32]u8,
+    recipient_pubkey: *const [32]u8,
+    reply_event_id: *const [32]u8,
+    author_pubkey: *const [32]u8,
+    relay_hint: []const u8,
+    variant: ReplyTagVariant,
+    created_at: u64,
+) !*const noztr.nip01_event.Event {
+    fixture.* = .{};
+
+    const prepared = try sender.buildDirectMessageEvent(&fixture.outbound, &.{
+        .recipient_pubkey = recipient_pubkey.*,
+        .content = "reply variant intake",
+        .created_at = created_at,
+        .iv = [_]u8{0x33} ** noztr.limits.nip04_iv_bytes,
+    });
+
+    const recipient_hex = std.fmt.bytesToHex(recipient_pubkey.*, .lower);
+    @memcpy(fixture.recipient_hex[0..], recipient_hex[0..]);
+    fixture.recipient_items = .{ "p", fixture.recipient_hex[0..] };
+    fixture.tags[0] = .{ .items = fixture.recipient_items[0..] };
+
+    const reply_event_hex = std.fmt.bytesToHex(reply_event_id.*, .lower);
+    @memcpy(fixture.reply_event_hex[0..], reply_event_hex[0..]);
+    const author_pubkey_hex = std.fmt.bytesToHex(author_pubkey.*, .lower);
+    @memcpy(fixture.author_pubkey_hex[0..], author_pubkey_hex[0..]);
+    @memcpy(fixture.relay_hint_storage[0..relay_hint.len], relay_hint);
+
+    fixture.reply_items[0] = "e";
+    fixture.reply_items[1] = fixture.reply_event_hex[0..];
+    var item_count: usize = 2;
+
+    switch (variant) {
+        .event_only => {},
+        .event_and_reply => {
+            fixture.reply_items[item_count] = "reply";
+            item_count += 1;
+        },
+        .event_and_relay => {
+            fixture.reply_items[item_count] = fixture.relay_hint_storage[0..relay_hint.len];
+            item_count += 1;
+        },
+        .event_relay_and_reply => {
+            fixture.reply_items[item_count] = fixture.relay_hint_storage[0..relay_hint.len];
+            fixture.reply_items[item_count + 1] = "reply";
+            item_count += 2;
+        },
+        .event_relay_reply_and_author => {
+            fixture.reply_items[item_count] = fixture.relay_hint_storage[0..relay_hint.len];
+            fixture.reply_items[item_count + 1] = "reply";
+            fixture.reply_items[item_count + 2] = fixture.author_pubkey_hex[0..];
+            item_count += 3;
+        },
+    }
+
+    fixture.tags[1] = .{ .items = fixture.reply_items[0..item_count] };
+    fixture.event = .{
+        .id = [_]u8{0} ** 32,
+        .pubkey = try sender.ownerPublicKey(),
+        .sig = [_]u8{0} ** 64,
+        .kind = noztr.nip04.dm_kind,
+        .created_at = created_at,
+        .tags = fixture.tags[0..],
+        .content = prepared.event.content,
+    };
+    try noztr.nostr_keys.nostr_sign_event(sender_secret, &fixture.event);
+    return &fixture.event;
+}
