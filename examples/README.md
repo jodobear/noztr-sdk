@@ -509,16 +509,17 @@ Use these docs when you need public routing or contract context before opening a
     turn floor, parsed transcript events stay as event objects, and this layer only adds
     legacy-DM plaintext intake instead of inventing a polling loop
 - `legacy_dm_sync_runtime_client_recipe.zig`
-  - goal: step one bounded legacy-DM sync runtime explicitly, inspect one longer-lived legacy-DM
-    policy above that runtime, then drive durable resume export/restore, explicit reconnect,
-    subscribe, and live receive posture
+  - goal: step one bounded legacy-DM sync runtime explicitly, inspect one broader DM
+    orchestration helper above that runtime, then drive durable resume export/restore, explicit
+    reconnect, subscribe, and live receive posture
   - public SDK surface: `noztr_sdk.client`, `LegacyDmReplayJobClient`,
     `LegacyDmSubscriptionJobClient`, `LegacyDmSyncRuntimeClient`,
     `LegacyDmSyncRuntimeClientStorage`, `LegacyDmSyncRuntimeResumeStorage`,
     `LegacyDmSyncRuntimeResumeState`, `LegacyDmSyncRuntimePlanStorage`,
     `LegacyDmSyncRuntimePlan`, `LegacyDmSyncRuntimeStep`,
     `LegacyDmLongLivedDmPolicyStorage`, `LegacyDmLongLivedDmPolicyPlan`,
-    `LegacyDmLongLivedDmPolicyStep`,
+    `LegacyDmLongLivedDmPolicyStep`, `LegacyDmOrchestrationStorage`,
+    `LegacyDmOrchestrationPlan`, `LegacyDmOrchestrationStep`,
     `LegacyDmSyncRuntimeAuthEventStorage`, `PreparedLegacyDmSyncRuntimeAuthEvent`,
     `LegacyDmSyncRuntimeReplayRequest`, `LegacyDmSyncRuntimeSubscriptionRequest`,
     `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
@@ -527,8 +528,8 @@ Use these docs when you need public routing or contract context before opening a
   - control points: replay and live turns still route through the bounded legacy-DM turn floors,
     auth event authoring stays explicit and caller-owned, replay catch-up completion is caller-set
     instead of hidden, restored runtime still requires explicit reconnect before resumed replay or
-    live subscribe work, and the newer policy helper only classifies one next legacy-DM sync
-    posture instead of taking hidden cadence or daemon ownership
+    live subscribe work, and the broader orchestration helper only classifies reusable next-phase
+    DM posture instead of taking hidden cadence or daemon ownership
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a
@@ -622,15 +623,16 @@ Use these docs when you need public routing or contract context before opening a
     layer only exposes command-ready live mailbox posture instead of inventing polling or daemon
     policy
 - `mailbox_sync_runtime_client_recipe.zig`
-  - goal: plan one bounded mailbox sync runtime explicitly, inspect one longer-lived mailbox DM
-    policy above that runtime, then drive durable resume export/restore, explicit reconnect,
+  - goal: plan one bounded mailbox sync runtime explicitly, inspect one broader DM orchestration
+    helper above that runtime, then drive durable resume export/restore, explicit reconnect,
     resubscribe, and live receive posture without inventing a daemon
   - public SDK surface: `noztr_sdk.client`, `MailboxSyncRuntimeClient`,
     `MailboxSyncRuntimeClientStorage`, `MailboxSyncRuntimeResumeStorage`,
     `MailboxSyncRuntimeResumeState`, `MailboxSyncRuntimePlanStorage`,
     `MailboxSyncRuntimePlan`, `MailboxSyncRuntimeStep`,
     `MailboxLongLivedDmPolicyStorage`, `MailboxLongLivedDmPolicyPlan`,
-    `MailboxLongLivedDmPolicyStep`,
+    `MailboxLongLivedDmPolicyStep`, `MailboxDmOrchestrationStorage`,
+    `MailboxDmOrchestrationPlan`, `MailboxDmOrchestrationStep`,
     `MailboxSyncRuntimeAuthEventStorage`, `PreparedMailboxSyncRuntimeAuthEvent`,
     `MailboxSyncRuntimeReplayRequest`, `MailboxSyncRuntimeReplayIntake`,
     `MailboxSyncRuntimeSubscriptionRequest`, `MailboxSyncRuntimeSubscriptionIntake`
@@ -640,8 +642,8 @@ Use these docs when you need public routing or contract context before opening a
     live transcript work still route through the bounded mailbox replay and subscription floors,
     relay cursors still stay on the shared checkpoint archive seam, restored runtime state still
     requires explicit reconnect/resubscribe driving, auth event creation stays explicit and caller-
-    owned, and the newer policy helper only classifies one next mailbox sync posture instead of
-    taking hidden cadence or daemon ownership
+    owned, and the broader orchestration helper only classifies reusable next-phase DM posture
+    instead of taking hidden cadence or daemon ownership
 - `mailbox_replay_turn_client_recipe.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result

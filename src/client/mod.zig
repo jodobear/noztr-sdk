@@ -202,6 +202,12 @@ pub const LegacyDmLongLivedDmPolicyStep =
     legacy_dm_sync_runtime_client.LegacyDmLongLivedDmPolicyStep;
 pub const LegacyDmLongLivedDmPolicyPlan =
     legacy_dm_sync_runtime_client.LegacyDmLongLivedDmPolicyPlan;
+pub const LegacyDmOrchestrationStorage =
+    legacy_dm_sync_runtime_client.LegacyDmOrchestrationStorage;
+pub const LegacyDmOrchestrationStep =
+    legacy_dm_sync_runtime_client.LegacyDmOrchestrationStep;
+pub const LegacyDmOrchestrationPlan =
+    legacy_dm_sync_runtime_client.LegacyDmOrchestrationPlan;
 pub const LegacyDmSyncRuntimeAuthEventStorage =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeAuthEventStorage;
 pub const PreparedLegacyDmSyncRuntimeAuthEvent =
@@ -277,6 +283,12 @@ pub const MailboxLongLivedDmPolicyStep =
     mailbox_sync_runtime_client.MailboxLongLivedDmPolicyStep;
 pub const MailboxLongLivedDmPolicyPlan =
     mailbox_sync_runtime_client.MailboxLongLivedDmPolicyPlan;
+pub const MailboxDmOrchestrationStorage =
+    mailbox_sync_runtime_client.MailboxDmOrchestrationStorage;
+pub const MailboxDmOrchestrationStep =
+    mailbox_sync_runtime_client.MailboxDmOrchestrationStep;
+pub const MailboxDmOrchestrationPlan =
+    mailbox_sync_runtime_client.MailboxDmOrchestrationPlan;
 pub const MailboxSyncRuntimeAuthEventStorage =
     mailbox_sync_runtime_client.MailboxSyncRuntimeAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent =

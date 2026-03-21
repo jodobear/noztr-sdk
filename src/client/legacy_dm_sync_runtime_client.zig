@@ -63,6 +63,11 @@ pub const LegacyDmLongLivedDmPolicyStep =
     dm_sync_runtime_support.LongLivedDmPolicyStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
 pub const LegacyDmLongLivedDmPolicyPlan =
     dm_sync_runtime_support.LongLivedDmPolicyPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmOrchestrationStorage = dm_sync_runtime_support.DmOrchestrationStorage;
+pub const LegacyDmOrchestrationStep =
+    dm_sync_runtime_support.DmOrchestrationStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmOrchestrationPlan =
+    dm_sync_runtime_support.DmOrchestrationPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
 
 pub const LegacyDmSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedLegacyDmSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
@@ -257,6 +262,25 @@ pub const LegacyDmSyncRuntimeClient = struct {
             relay_runtime,
             runtime_plan,
             self.storage.live_subscription_active,
+        );
+    }
+
+    pub fn inspectDmOrchestration(
+        self: *const LegacyDmSyncRuntimeClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        replay_specs: []const runtime.RelayReplaySpec,
+        subscription_specs: []const runtime.RelaySubscriptionSpec,
+        storage: *LegacyDmOrchestrationStorage,
+    ) LegacyDmSyncRuntimeClientError!LegacyDmOrchestrationPlan {
+        const policy_plan = try self.inspectLongLivedDmPolicy(
+            checkpoint_store,
+            replay_specs,
+            subscription_specs,
+            &storage.policy,
+        );
+        return dm_sync_runtime_support.buildDmOrchestration(
+            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            policy_plan,
         );
     }
 
@@ -770,6 +794,26 @@ test "legacy dm sync runtime client returns idle when catchup is complete and no
         &runtime_storage,
     );
     try std.testing.expect(plan.nextStep() == .idle);
+}
+
+test "legacy dm sync runtime client exposes broader dm orchestration phases" {
+    var client_storage = LegacyDmSyncRuntimeClientStorage{};
+    var client = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = [_]u8{0x33} ** 32,
+    }, &client_storage);
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+    var orchestration_storage = LegacyDmOrchestrationStorage{};
+
+    const empty = try client.inspectDmOrchestration(
+        checkpoint_store,
+        &.{},
+        &.{},
+        &orchestration_storage,
+    );
+    try std.testing.expect(empty.needs_relay_configuration);
+    try std.testing.expect(empty.nextStep() == .configure_relays);
 }
 
 test "legacy dm sync runtime client long-lived policy falls back to reconnect after disconnect" {

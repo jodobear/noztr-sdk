@@ -126,6 +126,9 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.MailboxLongLivedDmPolicyStorage) == type);
     try std.testing.expect(@TypeOf(client.MailboxLongLivedDmPolicyStep) == type);
     try std.testing.expect(@TypeOf(client.MailboxLongLivedDmPolicyPlan) == type);
+    try std.testing.expect(@TypeOf(client.MailboxDmOrchestrationStorage) == type);
+    try std.testing.expect(@TypeOf(client.MailboxDmOrchestrationStep) == type);
+    try std.testing.expect(@TypeOf(client.MailboxDmOrchestrationPlan) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeAuthEventStorage) == type);
     try std.testing.expect(@TypeOf(client.PreparedMailboxSyncRuntimeAuthEvent) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeReplayRequest) == type);
@@ -559,6 +562,9 @@ test "phase4e exposes the legacy dm replay live runtime floors" {
     try std.testing.expect(@TypeOf(client.LegacyDmLongLivedDmPolicyStorage) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmLongLivedDmPolicyStep) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmLongLivedDmPolicyPlan) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmOrchestrationStorage) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmOrchestrationStep) == type);
+    try std.testing.expect(@TypeOf(client.LegacyDmOrchestrationPlan) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeAuthEventStorage) == type);
     try std.testing.expect(@TypeOf(client.PreparedLegacyDmSyncRuntimeAuthEvent) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeReplayRequest) == type);

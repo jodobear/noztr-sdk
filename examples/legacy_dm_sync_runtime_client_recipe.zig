@@ -3,10 +3,10 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Step one bounded legacy-DM sync runtime explicitly, inspect one longer-lived legacy-DM policy
+// Step one bounded legacy-DM sync runtime explicitly, inspect one broader DM orchestration helper
 // above that runtime, then drive durable resume export/restore, explicit reconnect, subscribe, and
 // live receive posture.
-test "recipe: legacy dm sync runtime client inspects long-lived policy before live resubscribe" {
+test "recipe: legacy dm sync runtime client inspects dm orchestration before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -41,13 +41,14 @@ test "recipe: legacy dm sync runtime client inspects long-lived policy before li
         .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var policy_storage = noztr_sdk.client.LegacyDmLongLivedDmPolicyStorage{};
-    const first_policy = try client.inspectLongLivedDmPolicy(
+    var orchestration_storage = noztr_sdk.client.LegacyDmOrchestrationStorage{};
+    const first_policy = try client.inspectDmOrchestration(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(first_policy.needs_auth_progress);
     try std.testing.expect(first_policy.nextStep() == .authenticate);
 
     var auth_storage = noztr_sdk.client.LegacyDmSyncRuntimeAuthEventStorage{};
@@ -71,12 +72,13 @@ test "recipe: legacy dm sync runtime client inspects long-lived policy before li
         .iv = [_]u8{0x55} ** noztr.limits.nip04_iv_bytes,
     });
 
-    const replay_policy = try client.inspectLongLivedDmPolicy(
+    const replay_policy = try client.inspectDmOrchestration(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(replay_policy.needs_replay_catchup);
     try std.testing.expect(replay_policy.nextStep() == .replay_resume);
 
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
@@ -125,21 +127,23 @@ test "recipe: legacy dm sync runtime client inspects long-lived policy before li
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
 
-    const reconnect_policy = try resumed.inspectLongLivedDmPolicy(
+    const reconnect_policy = try resumed.inspectDmOrchestration(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(reconnect_policy.needs_connect_progress);
     try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
     try resumed.markRelayConnected(reconnect_policy.nextStep().reconnect.entry.descriptor.relay_index);
 
-    const subscribe_policy = try resumed.inspectLongLivedDmPolicy(
+    const subscribe_policy = try resumed.inspectDmOrchestration(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(subscribe_policy.needs_live_subscription);
     try std.testing.expect(subscribe_policy.nextStep() == .subscribe_resume);
 
     const live_request = try resumed.beginSubscriptionTurn(
@@ -148,12 +152,13 @@ test "recipe: legacy dm sync runtime client inspects long-lived policy before li
     );
     try std.testing.expect(resumed.liveSubscriptionActive());
 
-    const receive_policy = try resumed.inspectLongLivedDmPolicy(
+    const receive_policy = try resumed.inspectDmOrchestration(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(receive_policy.can_receive_live);
     try std.testing.expect(receive_policy.nextStep() == .receive);
 
     const live_event = try sender.buildDirectMessageEvent(&outbound, &.{

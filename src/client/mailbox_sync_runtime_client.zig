@@ -64,6 +64,11 @@ pub const MailboxLongLivedDmPolicyStep =
     dm_sync_runtime_support.LongLivedDmPolicyStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
 pub const MailboxLongLivedDmPolicyPlan =
     dm_sync_runtime_support.LongLivedDmPolicyPlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxDmOrchestrationStorage = dm_sync_runtime_support.DmOrchestrationStorage;
+pub const MailboxDmOrchestrationStep =
+    dm_sync_runtime_support.DmOrchestrationStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxDmOrchestrationPlan =
+    dm_sync_runtime_support.DmOrchestrationPlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
 
 pub const MailboxSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
@@ -286,6 +291,25 @@ pub const MailboxSyncRuntimeClient = struct {
             relay_runtime,
             runtime_plan,
             self.storage.live_subscription_active,
+        );
+    }
+
+    pub fn inspectDmOrchestration(
+        self: *const MailboxSyncRuntimeClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        replay_specs: []const runtime.RelayReplaySpec,
+        subscription_specs: []const runtime.RelaySubscriptionSpec,
+        storage: *MailboxDmOrchestrationStorage,
+    ) MailboxSyncRuntimeClientError!MailboxDmOrchestrationPlan {
+        const policy_plan = try self.inspectLongLivedDmPolicy(
+            checkpoint_store,
+            replay_specs,
+            subscription_specs,
+            &storage.policy,
+        );
+        return dm_sync_runtime_support.buildDmOrchestration(
+            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            policy_plan,
         );
     }
 
@@ -917,6 +941,26 @@ test "mailbox sync runtime client returns idle when catchup is complete and no l
         &runtime_storage,
     );
     try std.testing.expect(plan.nextStep() == .idle);
+}
+
+test "mailbox sync runtime client exposes broader dm orchestration phases" {
+    var client_storage = MailboxSyncRuntimeClientStorage{};
+    var client = MailboxSyncRuntimeClient.init(.{
+        .recipient_private_key = [_]u8{0x33} ** 32,
+    }, &client_storage);
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+    var orchestration_storage = MailboxDmOrchestrationStorage{};
+
+    const empty = try client.inspectDmOrchestration(
+        checkpoint_store,
+        &.{},
+        &.{},
+        &orchestration_storage,
+    );
+    try std.testing.expect(empty.needs_relay_configuration);
+    try std.testing.expect(empty.nextStep() == .configure_relays);
 }
 
 fn buildRelayListEventJson(

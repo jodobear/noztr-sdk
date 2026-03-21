@@ -3,10 +3,10 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Plan a bounded mailbox sync runtime explicitly, inspect one longer-lived mailbox policy above the
-// bounded runtime, export durable resume state after replay catch-up, restore it into a fresh
-// client, reconnect explicitly, then resume one live mailbox subscription.
-test "recipe: mailbox sync runtime client inspects long-lived policy before live resubscribe" {
+// Plan a bounded mailbox sync runtime explicitly, inspect one broader DM orchestration helper
+// above the bounded runtime, export durable resume state after replay catch-up, restore it into a
+// fresh client, reconnect explicitly, then resume one live mailbox subscription.
+test "recipe: mailbox sync runtime client inspects dm orchestration before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -90,13 +90,14 @@ test "recipe: mailbox sync runtime client inspects long-lived policy before live
         .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var policy_storage = noztr_sdk.client.MailboxLongLivedDmPolicyStorage{};
-    const auth_policy = try client.inspectLongLivedDmPolicy(
+    var orchestration_storage = noztr_sdk.client.MailboxDmOrchestrationStorage{};
+    const auth_policy = try client.inspectDmOrchestration(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(auth_policy.needs_auth_progress);
     try std.testing.expect(auth_policy.nextStep() == .authenticate);
 
     var auth_storage = noztr_sdk.client.MailboxSyncRuntimeAuthEventStorage{};
@@ -111,12 +112,13 @@ test "recipe: mailbox sync runtime client inspects long-lived policy before live
     );
     _ = try client.acceptPreparedAuthEvent(&auth_event, 95, 60);
 
-    const replay_policy = try client.inspectLongLivedDmPolicy(
+    const replay_policy = try client.inspectDmOrchestration(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(replay_policy.needs_replay_catchup);
     try std.testing.expect(replay_policy.nextStep() == .replay_resume);
 
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
@@ -171,27 +173,37 @@ test "recipe: mailbox sync runtime client inspects long-lived policy before live
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
 
-    const reconnect_policy = try resumed.inspectLongLivedDmPolicy(
+    const reconnect_policy = try resumed.inspectDmOrchestration(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(reconnect_policy.needs_connect_progress);
     try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
     try resumed.markRelayConnected(reconnect_policy.nextStep().reconnect.entry.descriptor.relay_index);
 
-    const subscribe_policy = try resumed.inspectLongLivedDmPolicy(
+    const subscribe_policy = try resumed.inspectDmOrchestration(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
-        &policy_storage,
+        &orchestration_storage,
     );
+    try std.testing.expect(subscribe_policy.needs_live_subscription);
     try std.testing.expect(subscribe_policy.nextStep() == .subscribe_resume);
 
     const live_request = try resumed.beginSubscriptionTurn(
         request_output[0..],
         subscription_specs[0..],
     );
+    const receive_policy = try resumed.inspectDmOrchestration(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &orchestration_storage,
+    );
+    try std.testing.expect(receive_policy.can_receive_live);
+    try std.testing.expect(receive_policy.nextStep() == .receive);
     const live_wrap_event = try noztr.nip01_event.event_parse_json(
         live_outbound.wrap_event_json,
         arena.allocator(),

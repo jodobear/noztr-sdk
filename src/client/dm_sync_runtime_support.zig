@@ -1,3 +1,4 @@
+const std = @import("std");
 const runtime = @import("../runtime/mod.zig");
 
 pub const SyncRuntimePlanStorage = struct {
@@ -9,6 +10,10 @@ pub const SyncRuntimePlanStorage = struct {
 pub const LongLivedDmPolicyStorage = struct {
     relay_runtime: runtime.RelayPoolPlanStorage = .{},
     runtime: SyncRuntimePlanStorage = .{},
+};
+
+pub const DmOrchestrationStorage = struct {
+    policy: LongLivedDmPolicyStorage = .{},
 };
 
 pub fn SyncRuntimeStep(comptime ReceiveRequest: type) type {
@@ -61,6 +66,44 @@ pub fn LongLivedDmPolicyPlan(comptime ReceiveRequest: type) type {
         receive_count: u8 = 0,
         replay_phase_complete: bool = false,
         live_subscription_active: bool = false,
+        next_step: Step = .idle,
+
+        pub fn nextStep(self: *const @This()) Step {
+            return self.next_step;
+        }
+    };
+}
+
+pub fn DmOrchestrationStep(comptime ReceiveRequest: type) type {
+    return union(enum) {
+        configure_relays,
+        reconnect: runtime.RelayPoolStep,
+        authenticate: runtime.RelayPoolAuthStep,
+        replay_resume: runtime.RelayPoolReplayStep,
+        subscribe_resume: runtime.RelayPoolSubscriptionStep,
+        receive: ReceiveRequest,
+        idle,
+    };
+}
+
+pub fn DmOrchestrationPlan(comptime ReceiveRequest: type) type {
+    return struct {
+        const Step = DmOrchestrationStep(ReceiveRequest);
+
+        relay_count: u8 = 0,
+        reconnect_count: u8 = 0,
+        authenticate_count: u8 = 0,
+        replay_resume_count: u16 = 0,
+        subscribe_resume_count: u16 = 0,
+        receive_count: u8 = 0,
+        replay_phase_complete: bool = false,
+        live_subscription_active: bool = false,
+        needs_relay_configuration: bool = false,
+        needs_connect_progress: bool = false,
+        needs_auth_progress: bool = false,
+        needs_replay_catchup: bool = false,
+        needs_live_subscription: bool = false,
+        can_receive_live: bool = false,
         next_step: Step = .idle,
 
         pub fn nextStep(self: *const @This()) Step {
@@ -153,6 +196,43 @@ pub fn classifyLongLivedDmPolicy(
     return plan;
 }
 
+pub fn buildDmOrchestration(
+    comptime ReceiveRequest: type,
+    policy_plan: LongLivedDmPolicyPlan(ReceiveRequest),
+) DmOrchestrationPlan(ReceiveRequest) {
+    var plan: DmOrchestrationPlan(ReceiveRequest) = .{
+        .relay_count = policy_plan.relay_count,
+        .reconnect_count = policy_plan.reconnect_count,
+        .authenticate_count = policy_plan.authenticate_count,
+        .replay_resume_count = policy_plan.replay_resume_count,
+        .subscribe_resume_count = policy_plan.subscribe_resume_count,
+        .receive_count = policy_plan.receive_count,
+        .replay_phase_complete = policy_plan.replay_phase_complete,
+        .live_subscription_active = policy_plan.live_subscription_active,
+        .needs_relay_configuration = policy_plan.relay_count == 0,
+        .needs_connect_progress = policy_plan.reconnect_count != 0,
+        .needs_auth_progress = policy_plan.authenticate_count != 0,
+        .needs_replay_catchup = policy_plan.replay_resume_count != 0,
+        .needs_live_subscription = policy_plan.subscribe_resume_count != 0,
+        .can_receive_live = policy_plan.receive_count != 0,
+    };
+
+    if (policy_plan.relay_count == 0) {
+        plan.next_step = .configure_relays;
+        return plan;
+    }
+
+    switch (policy_plan.nextStep()) {
+        .reconnect => |step| plan.next_step = .{ .reconnect = step },
+        .authenticate => |step| plan.next_step = .{ .authenticate = step },
+        .replay_resume => |step| plan.next_step = .{ .replay_resume = step },
+        .subscribe_resume => |step| plan.next_step = .{ .subscribe_resume = step },
+        .receive => |request| plan.next_step = .{ .receive = request },
+        .idle => plan.next_step = .idle,
+    }
+    return plan;
+}
+
 test "shared dm sync runtime helper prioritizes auth then receive then replay then subscribe" {
     const ReceiveRequest = struct { token: u8 };
 
@@ -208,7 +288,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
         true,
         .{ .token = 7 },
     );
-    try @import("std").testing.expect(auth_first.nextStep() == .authenticate);
+    try std.testing.expect(auth_first.nextStep() == .authenticate);
 
     const receive_second = buildSyncRuntimePlan(
         ReceiveRequest,
@@ -219,7 +299,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
         true,
         .{ .token = 7 },
     );
-    try @import("std").testing.expect(receive_second.nextStep() == .receive);
+    try std.testing.expect(receive_second.nextStep() == .receive);
 
     const replay_third = buildSyncRuntimePlan(
         ReceiveRequest,
@@ -230,7 +310,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
         false,
         .{ .token = 7 },
     );
-    try @import("std").testing.expect(replay_third.nextStep() == .replay);
+    try std.testing.expect(replay_third.nextStep() == .replay);
 
     const subscribe_fourth = buildSyncRuntimePlan(
         ReceiveRequest,
@@ -241,11 +321,10 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
         false,
         .{ .token = 7 },
     );
-    try @import("std").testing.expect(subscribe_fourth.nextStep() == .subscribe);
+    try std.testing.expect(subscribe_fourth.nextStep() == .subscribe);
 }
 
 test "shared dm long-lived policy helper prioritizes receive then reconnect then replay resume" {
-    const std = @import("std");
     const ReceiveRequest = struct { token: u8 };
     const runtime_plan = SyncRuntimePlan(ReceiveRequest){
         .receive_count = 1,
@@ -306,4 +385,55 @@ test "shared dm long-lived policy helper prioritizes receive then reconnect then
         false,
     );
     try std.testing.expect(replay_first.nextStep() == .replay_resume);
+}
+
+test "shared dm orchestration helper surfaces relay configuration as a first-class phase" {
+    const ReceiveRequest = struct { token: u8 };
+    const plan = buildDmOrchestration(ReceiveRequest, .{});
+
+    try std.testing.expect(plan.needs_relay_configuration);
+    try std.testing.expect(plan.nextStep() == .configure_relays);
+}
+
+test "shared dm orchestration helper carries broader phase obligations" {
+    const ReceiveRequest = struct { token: u8 };
+    const reconnect_entry = runtime.RelayPoolEntry{
+        .descriptor = .{ .relay_index = 0, .relay_url = "wss://relay.one" },
+        .action = .connect,
+    };
+    const replay_entry = runtime.RelayPoolReplayEntry{
+        .descriptor = .{ .relay_index = 0, .relay_url = "wss://relay.one" },
+        .checkpoint_scope = "mailbox-sync",
+        .action = .replay,
+        .query = .{
+            .kinds = &.{},
+            .authors = &.{},
+            .ids = &.{},
+            .limit = 0,
+            .since = null,
+            .until = null,
+        },
+    };
+    const policy = classifyLongLivedDmPolicy(
+        ReceiveRequest,
+        1,
+        .{
+            .entries = (&[_]runtime.RelayPoolEntry{reconnect_entry})[0..],
+            .relay_count = 1,
+            .connect_count = 1,
+        },
+        .{
+            .replay_count = 1,
+            .subscribe_count = 1,
+            .next_step = .{ .replay = .{ .entry = replay_entry } },
+        },
+        false,
+    );
+    const plan = buildDmOrchestration(ReceiveRequest, policy);
+
+    try std.testing.expect(!plan.needs_relay_configuration);
+    try std.testing.expect(plan.needs_connect_progress);
+    try std.testing.expect(plan.needs_replay_catchup);
+    try std.testing.expect(plan.needs_live_subscription);
+    try std.testing.expect(plan.nextStep() == .reconnect);
 }
