@@ -5,7 +5,7 @@ const mailbox_replay_job = @import("mailbox_replay_job_client.zig");
 const mailbox_replay_turn = @import("mailbox_replay_turn_client.zig");
 const mailbox_subscription_job = @import("mailbox_subscription_job_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
-const relay_auth_support = @import("relay_auth_support.zig");
+const sync_runtime_support = @import("sync_runtime_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
@@ -166,17 +166,14 @@ pub const MailboxSyncRuntimeClient = struct {
         self: *MailboxSyncRuntimeClient,
         relay_index: u8,
     ) MailboxSyncRuntimeClientError!void {
-        try self.replay_job.markRelayConnected(relay_index);
-        try self.subscription_job.markRelayConnected(relay_index);
+        return sync_runtime_support.markRelayConnected(self, relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *MailboxSyncRuntimeClient,
         relay_index: u8,
     ) MailboxSyncRuntimeClientError!void {
-        try self.replay_job.noteRelayDisconnected(relay_index);
-        try self.subscription_job.noteRelayDisconnected(relay_index);
-        self.storage.live_subscription_active = false;
+        return sync_runtime_support.noteRelayDisconnected(self, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -184,15 +181,14 @@ pub const MailboxSyncRuntimeClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) MailboxSyncRuntimeClientError!void {
-        try self.replay_job.noteRelayAuthChallenge(relay_index, challenge);
-        try self.subscription_job.noteRelayAuthChallenge(relay_index, challenge);
+        return sync_runtime_support.noteRelayAuthChallenge(self, relay_index, challenge);
     }
 
     pub fn inspectRelayRuntime(
         self: *const MailboxSyncRuntimeClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay_job.inspectRelayRuntime(storage);
+        return sync_runtime_support.inspectRelayRuntime(self, storage);
     }
 
     pub fn inspectRuntime(
@@ -259,24 +255,15 @@ pub const MailboxSyncRuntimeClient = struct {
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
     ) MailboxSyncRuntimeClientError!PreparedMailboxSyncRuntimeAuthEvent {
-        const target = try self.selectAuthTarget(step);
-        const payload = try relay_auth_support.buildSignedAuthPayload(
-            &self.local_operator,
+        return sync_runtime_support.prepareAuthEvent(
+            self,
             auth_storage,
             event_json_output,
             auth_message_output,
+            step,
             &self.config.recipient_private_key,
             created_at,
-            target.relay.relay_url,
-            target.challenge,
         );
-        return .{
-            .relay = target.relay,
-            .challenge = auth_storage.challengeText(),
-            .event = payload.event,
-            .event_json = payload.event_json,
-            .auth_message_json = payload.auth_message_json,
-        };
     }
 
     pub fn acceptPreparedAuthEvent(
@@ -285,20 +272,12 @@ pub const MailboxSyncRuntimeClient = struct {
         now_unix_seconds: u64,
         window_seconds: u32,
     ) MailboxSyncRuntimeClientError!runtime.RelayDescriptor {
-        const replay_descriptor = try self.replay_job.replay_turn.acceptRelayAuthEvent(
-            prepared.relay.relay_index,
-            &prepared.event,
+        return sync_runtime_support.acceptPreparedAuthEvent(
+            self,
+            prepared,
             now_unix_seconds,
             window_seconds,
         );
-        const subscription_descriptor = try self.subscription_job.subscription_turn.acceptRelayAuthEvent(
-            prepared.relay.relay_index,
-            &prepared.event,
-            now_unix_seconds,
-            window_seconds,
-        );
-        std.debug.assert(std.mem.eql(u8, replay_descriptor.relay_url, subscription_descriptor.relay_url));
-        return replay_descriptor;
     }
 
     pub fn beginReplayTurn(
@@ -391,19 +370,6 @@ pub const MailboxSyncRuntimeClient = struct {
             self.storage.live_subscription_active = false;
         }
         return result;
-    }
-
-    fn selectAuthTarget(
-        self: *const MailboxSyncRuntimeClient,
-        step: *const runtime.RelayPoolAuthStep,
-    ) MailboxSyncRuntimeClientError!relay_auth_client.RelayAuthTarget {
-        var auth_storage = runtime.RelayPoolAuthStorage{};
-        const plan = self.replay_job.replay_turn.inspectAuth(&auth_storage);
-        return relay_auth_support.selectAuthTarget(
-            &self.replay_job.replay_turn.replay_turn.replay_exchange.replay.relay_pool,
-            plan,
-            step,
-        );
     }
 };
 

@@ -5,7 +5,7 @@ const legacy_dm_replay_turn = @import("legacy_dm_replay_turn_client.zig");
 const legacy_dm_subscription_job = @import("legacy_dm_subscription_job_client.zig");
 const local_operator = @import("local_operator_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
-const relay_auth_support = @import("relay_auth_support.zig");
+const sync_runtime_support = @import("sync_runtime_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
@@ -122,27 +122,21 @@ pub const LegacyDmSyncRuntimeClient = struct {
         self: *LegacyDmSyncRuntimeClient,
         relay_url_text: []const u8,
     ) LegacyDmSyncRuntimeClientError!runtime.RelayDescriptor {
-        const replay_relay = try self.replay_job.addRelay(relay_url_text);
-        const subscription_relay = try self.subscription_job.addRelay(relay_url_text);
-        std.debug.assert(std.mem.eql(u8, replay_relay.relay_url, subscription_relay.relay_url));
-        return replay_relay;
+        return sync_runtime_support.addRelay(self, relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *LegacyDmSyncRuntimeClient,
         relay_index: u8,
     ) LegacyDmSyncRuntimeClientError!void {
-        try self.replay_job.markRelayConnected(relay_index);
-        try self.subscription_job.markRelayConnected(relay_index);
+        return sync_runtime_support.markRelayConnected(self, relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *LegacyDmSyncRuntimeClient,
         relay_index: u8,
     ) LegacyDmSyncRuntimeClientError!void {
-        try self.replay_job.noteRelayDisconnected(relay_index);
-        try self.subscription_job.noteRelayDisconnected(relay_index);
-        self.storage.live_subscription_active = false;
+        return sync_runtime_support.noteRelayDisconnected(self, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -150,8 +144,7 @@ pub const LegacyDmSyncRuntimeClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) LegacyDmSyncRuntimeClientError!void {
-        try self.replay_job.noteRelayAuthChallenge(relay_index, challenge);
-        try self.subscription_job.noteRelayAuthChallenge(relay_index, challenge);
+        return sync_runtime_support.noteRelayAuthChallenge(self, relay_index, challenge);
     }
 
     pub fn replayPhaseComplete(self: *const LegacyDmSyncRuntimeClient) bool {
@@ -166,7 +159,7 @@ pub const LegacyDmSyncRuntimeClient = struct {
         self: *const LegacyDmSyncRuntimeClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay_job.inspectRelayRuntime(storage);
+        return sync_runtime_support.inspectRelayRuntime(self, storage);
     }
 
     pub fn inspectRuntime(
@@ -233,24 +226,15 @@ pub const LegacyDmSyncRuntimeClient = struct {
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
     ) LegacyDmSyncRuntimeClientError!PreparedLegacyDmSyncRuntimeAuthEvent {
-        const target = try self.selectAuthTarget(step);
-        const payload = try relay_auth_support.buildSignedAuthPayload(
-            &self.local_operator,
+        return sync_runtime_support.prepareAuthEvent(
+            self,
             auth_storage,
             event_json_output,
             auth_message_output,
+            step,
             &self.config.owner_private_key,
             created_at,
-            target.relay.relay_url,
-            target.challenge,
         );
-        return .{
-            .relay = target.relay,
-            .challenge = auth_storage.challengeText(),
-            .event = payload.event,
-            .event_json = payload.event_json,
-            .auth_message_json = payload.auth_message_json,
-        };
     }
 
     pub fn acceptPreparedAuthEvent(
@@ -259,20 +243,12 @@ pub const LegacyDmSyncRuntimeClient = struct {
         now_unix_seconds: u64,
         window_seconds: u32,
     ) LegacyDmSyncRuntimeClientError!runtime.RelayDescriptor {
-        const replay_descriptor = try self.replay_job.replay_turn.acceptRelayAuthEvent(
-            prepared.relay.relay_index,
-            &prepared.event,
+        return sync_runtime_support.acceptPreparedAuthEvent(
+            self,
+            prepared,
             now_unix_seconds,
             window_seconds,
         );
-        const subscription_descriptor = try self.subscription_job.subscription_turn.acceptRelayAuthEvent(
-            prepared.relay.relay_index,
-            &prepared.event,
-            now_unix_seconds,
-            window_seconds,
-        );
-        std.debug.assert(std.mem.eql(u8, replay_descriptor.relay_url, subscription_descriptor.relay_url));
-        return replay_descriptor;
     }
 
     pub fn beginReplayTurn(
@@ -357,19 +333,6 @@ pub const LegacyDmSyncRuntimeClient = struct {
             self.storage.live_subscription_active = false;
         }
         return result;
-    }
-
-    fn selectAuthTarget(
-        self: *const LegacyDmSyncRuntimeClient,
-        step: *const runtime.RelayPoolAuthStep,
-    ) LegacyDmSyncRuntimeClientError!relay_auth_client.RelayAuthTarget {
-        var auth_storage = runtime.RelayPoolAuthStorage{};
-        const plan = self.replay_job.replay_turn.inspectAuth(&auth_storage);
-        return relay_auth_support.selectAuthTarget(
-            &self.replay_job.replay_turn.replay_turn.replay_exchange.replay.relay_pool,
-            plan,
-            step,
-        );
     }
 };
 

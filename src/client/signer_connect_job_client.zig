@@ -3,6 +3,7 @@ const local_operator = @import("local_operator_client.zig");
 const runtime = @import("../runtime/mod.zig");
 const signer_client = @import("signer_client.zig");
 const signer_job_support = @import("signer_job_support.zig");
+const signer_runtime_support = @import("signer_runtime_support.zig");
 const workflows = @import("../workflows/mod.zig");
 
 pub const SignerConnectJobClientError =
@@ -118,15 +119,18 @@ pub const SignerConnectJobClient = struct {
         storage: *SignerConnectJobClientStorage,
         challenge: []const u8,
     ) SignerConnectJobClientError!void {
-        try self.signer.noteCurrentRelayAuthChallenge(challenge);
-        storage.auth_state.remember(self.signer.currentRelayUrl(), challenge);
+        return signer_runtime_support.noteCurrentRelayAuthChallenge(
+            &self.signer,
+            &storage.auth_state,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const SignerConnectJobClient,
         storage: *SignerConnectJobClientStorage,
     ) runtime.RelayPoolPlan {
-        return self.signer.inspectRelayRuntime(&storage.signer);
+        return signer_runtime_support.inspectRelayRuntime(&self.signer, &storage.signer);
     }
 
     pub fn selectRelayRuntimeStep(
@@ -134,18 +138,18 @@ pub const SignerConnectJobClient = struct {
         storage: *SignerConnectJobClientStorage,
         step: *const runtime.RelayPoolStep,
     ) SignerConnectJobClientError![]const u8 {
-        const relay_url = try self.signer.selectRelayRuntimeStep(step);
-        storage.auth_state.clear();
-        return relay_url;
+        return signer_runtime_support.selectRelayRuntimeStep(
+            &self.signer,
+            &storage.auth_state,
+            step,
+        );
     }
 
     pub fn advanceRelay(
         self: *SignerConnectJobClient,
         storage: *SignerConnectJobClientStorage,
     ) SignerConnectJobClientError![]const u8 {
-        const relay_url = try self.signer.advanceRelay();
-        storage.auth_state.clear();
-        return relay_url;
+        return signer_runtime_support.advanceRelay(&self.signer, &storage.auth_state);
     }
 
     pub fn prepareJob(
