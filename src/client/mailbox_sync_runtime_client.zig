@@ -79,6 +79,36 @@ pub const MailboxSyncRuntimePlan = struct {
     }
 };
 
+pub const MailboxLongLivedDmPolicyStorage = struct {
+    relay_runtime: runtime.RelayPoolPlanStorage = .{},
+    runtime: MailboxSyncRuntimePlanStorage = .{},
+};
+
+pub const MailboxLongLivedDmPolicyStep = union(enum) {
+    reconnect: runtime.RelayPoolStep,
+    authenticate: runtime.RelayPoolAuthStep,
+    replay_resume: runtime.RelayPoolReplayStep,
+    subscribe_resume: runtime.RelayPoolSubscriptionStep,
+    receive: mailbox_subscription_job.MailboxSubscriptionJobRequest,
+    idle,
+};
+
+pub const MailboxLongLivedDmPolicyPlan = struct {
+    relay_count: u8 = 0,
+    reconnect_count: u8 = 0,
+    authenticate_count: u8 = 0,
+    replay_resume_count: u16 = 0,
+    subscribe_resume_count: u16 = 0,
+    receive_count: u8 = 0,
+    replay_phase_complete: bool = false,
+    live_subscription_active: bool = false,
+    next_step: MailboxLongLivedDmPolicyStep = .idle,
+
+    pub fn nextStep(self: *const MailboxLongLivedDmPolicyPlan) MailboxLongLivedDmPolicyStep {
+        return self.next_step;
+    }
+};
+
 pub const MailboxSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
 pub const MailboxSyncRuntimeReplayRequest = mailbox_replay_job.MailboxReplayJobRequest;
@@ -295,6 +325,60 @@ pub const MailboxSyncRuntimeClient = struct {
             return plan;
         }
         plan.next_step = .idle;
+        return plan;
+    }
+
+    pub fn inspectLongLivedDmPolicy(
+        self: *const MailboxSyncRuntimeClient,
+        checkpoint_store: store.ClientCheckpointStore,
+        replay_specs: []const runtime.RelayReplaySpec,
+        subscription_specs: []const runtime.RelaySubscriptionSpec,
+        storage: *MailboxLongLivedDmPolicyStorage,
+    ) MailboxSyncRuntimeClientError!MailboxLongLivedDmPolicyPlan {
+        const relay_runtime = self.inspectRelayRuntime(&storage.relay_runtime);
+        const runtime_plan = try self.inspectRuntime(
+            checkpoint_store,
+            replay_specs,
+            subscription_specs,
+            &storage.runtime,
+        );
+
+        var plan: MailboxLongLivedDmPolicyPlan = .{
+            .relay_count = self.relayCount(),
+            .reconnect_count = relay_runtime.connect_count,
+            .authenticate_count = runtime_plan.authenticate_count,
+            .replay_resume_count = runtime_plan.replay_count,
+            .subscribe_resume_count = runtime_plan.subscribe_count,
+            .receive_count = runtime_plan.receive_count,
+            .replay_phase_complete = runtime_plan.replay_phase_complete,
+            .live_subscription_active = self.storage.live_subscription_active,
+        };
+
+        switch (runtime_plan.nextStep()) {
+            .authenticate => |step| {
+                plan.next_step = .{ .authenticate = step };
+                return plan;
+            },
+            .receive => |request| {
+                plan.next_step = .{ .receive = request };
+                return plan;
+            },
+            else => {},
+        }
+
+        if (relay_runtime.nextStep()) |step| {
+            if (step.entry.action == .connect) {
+                plan.next_step = .{ .reconnect = step };
+                return plan;
+            }
+        }
+
+        switch (runtime_plan.nextStep()) {
+            .replay => |step| plan.next_step = .{ .replay_resume = step },
+            .subscribe => |step| plan.next_step = .{ .subscribe_resume = step },
+            .idle => plan.next_step = .idle,
+            .authenticate, .receive => unreachable,
+        }
         return plan;
     }
 
@@ -578,9 +662,16 @@ test "mailbox sync runtime client exports durable resume state and restores subs
     );
     try std.testing.expect(plan.nextStep() == .idle);
 
-    var relay_runtime_storage = runtime.RelayPoolPlanStorage{};
-    const relay_runtime = restored.inspectRelayRuntime(&relay_runtime_storage);
-    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
+    var policy_storage = MailboxLongLivedDmPolicyStorage{};
+    const policy = try restored.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expectEqual(@as(u8, 1), policy.reconnect_count);
+    try std.testing.expect(policy.nextStep() == .reconnect);
+    try std.testing.expect(policy.nextStep().reconnect.entry.action == .connect);
 }
 
 test "mailbox sync runtime client plans authenticate replay subscribe and receive explicitly" {
@@ -668,6 +759,7 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
     };
 
     var runtime_storage = MailboxSyncRuntimePlanStorage{};
+    var policy_storage = MailboxLongLivedDmPolicyStorage{};
     const auth_plan = try client.inspectRuntime(
         checkpoint_store,
         replay_specs[0..],
@@ -675,6 +767,13 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
         &runtime_storage,
     );
     try std.testing.expect(auth_plan.nextStep() == .authenticate);
+    const auth_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(auth_policy.nextStep() == .authenticate);
 
     var auth_storage = MailboxSyncRuntimeAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
@@ -695,6 +794,13 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
         &runtime_storage,
     );
     try std.testing.expect(replay_plan.nextStep() == .replay);
+    const replay_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(replay_policy.nextStep() == .replay_resume);
 
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const replay_request = try client.beginReplayTurn(
@@ -747,6 +853,13 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
         &runtime_storage,
     );
     try std.testing.expect(subscribe_plan.nextStep() == .subscribe);
+    const subscribe_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(subscribe_policy.nextStep() == .subscribe_resume);
 
     const live_request = try client.beginSubscriptionTurn(
         request_output[0..],
@@ -761,6 +874,17 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
     try std.testing.expect(receive_plan.nextStep() == .receive);
     try std.testing.expect(sameSubscriptionRequest(
         &receive_plan.nextStep().receive,
+        &live_request,
+    ));
+    const receive_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(receive_policy.nextStep() == .receive);
+    try std.testing.expect(sameSubscriptionRequest(
+        &receive_policy.nextStep().receive,
         &live_request,
     ));
 
@@ -800,6 +924,73 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
     );
     const live_result = try client.completeSubscriptionTurn(request_output[0..], &live_request);
     try std.testing.expect(live_result == .subscribed);
+}
+
+test "mailbox sync runtime client long-lived policy falls back to reconnect after disconnect" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+
+    const recipient_secret = [_]u8{0x33} ** 32;
+    var storage = MailboxSyncRuntimeClientStorage{};
+    var client = MailboxSyncRuntimeClient.init(.{
+        .recipient_private_key = recipient_secret,
+    }, &storage);
+
+    var relay_list_storage: [1024]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJson(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        40,
+        &recipient_secret,
+    );
+    _ = try client.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try client.markRelayConnected(0);
+    client.markReplayCatchupComplete();
+
+    const filter = try noztr.nip01_filter.filter_parse_json(
+        "{\"kinds\":[1059]}",
+        arena.allocator(),
+    );
+    const subscription_specs = [_]runtime.RelaySubscriptionSpec{
+        .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+
+    var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
+    const live_request = try client.beginSubscriptionTurn(
+        request_output[0..],
+        subscription_specs[0..],
+    );
+
+    var policy_storage = MailboxLongLivedDmPolicyStorage{};
+    const receive_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(receive_policy.nextStep() == .receive);
+    try std.testing.expect(sameSubscriptionRequest(
+        &receive_policy.nextStep().receive,
+        &live_request,
+    ));
+
+    try client.noteRelayDisconnected(0);
+    const reconnect_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expectEqual(@as(u8, 1), reconnect_policy.reconnect_count);
+    try std.testing.expect(!reconnect_policy.live_subscription_active);
+    try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
+    try std.testing.expectEqualStrings(
+        "wss://relay.one",
+        reconnect_policy.nextStep().reconnect.entry.descriptor.relay_url,
+    );
 }
 
 test "mailbox sync runtime client returns idle when catchup is complete and no live specs remain" {

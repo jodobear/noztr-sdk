@@ -3,9 +3,10 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 
-// Plan a bounded mailbox sync runtime explicitly, export durable resume state after replay catch-up,
-// restore it into a fresh client, reconnect explicitly, then resume one live mailbox subscription.
-test "recipe: mailbox sync runtime client exports resume state before live resubscribe" {
+// Plan a bounded mailbox sync runtime explicitly, inspect one longer-lived mailbox policy above the
+// bounded runtime, export durable resume state after replay catch-up, restore it into a fresh
+// client, reconnect explicitly, then resume one live mailbox subscription.
+test "recipe: mailbox sync runtime client inspects long-lived policy before live resubscribe" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -89,14 +90,14 @@ test "recipe: mailbox sync runtime client exports resume state before live resub
         .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var runtime_storage = noztr_sdk.client.MailboxSyncRuntimePlanStorage{};
-    const auth_plan = try client.inspectRuntime(
+    var policy_storage = noztr_sdk.client.MailboxLongLivedDmPolicyStorage{};
+    const auth_policy = try client.inspectLongLivedDmPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
-        &runtime_storage,
+        &policy_storage,
     );
-    try std.testing.expect(auth_plan.nextStep() == .authenticate);
+    try std.testing.expect(auth_policy.nextStep() == .authenticate);
 
     var auth_storage = noztr_sdk.client.MailboxSyncRuntimeAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
@@ -105,10 +106,18 @@ test "recipe: mailbox sync runtime client exports resume state before live resub
         &auth_storage,
         auth_event_json_output[0..],
         auth_message_output[0..],
-        &auth_plan.nextStep().authenticate,
+        &auth_policy.nextStep().authenticate,
         90,
     );
     _ = try client.acceptPreparedAuthEvent(&auth_event, 95, 60);
+
+    const replay_policy = try client.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(replay_policy.nextStep() == .replay_resume);
 
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const replay_request = try client.beginReplayTurn(
@@ -162,10 +171,22 @@ test "recipe: mailbox sync runtime client exports resume state before live resub
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
 
-    var relay_runtime_storage = noztr_sdk.runtime.RelayPoolPlanStorage{};
-    const relay_runtime = resumed.inspectRelayRuntime(&relay_runtime_storage);
-    try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
-    try resumed.markRelayConnected(relay_runtime.nextStep().?.entry.descriptor.relay_index);
+    const reconnect_policy = try resumed.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
+    try resumed.markRelayConnected(reconnect_policy.nextStep().reconnect.entry.descriptor.relay_index);
+
+    const subscribe_policy = try resumed.inspectLongLivedDmPolicy(
+        checkpoint_store,
+        &.{},
+        subscription_specs[0..],
+        &policy_storage,
+    );
+    try std.testing.expect(subscribe_policy.nextStep() == .subscribe_resume);
 
     const live_request = try resumed.beginSubscriptionTurn(
         request_output[0..],

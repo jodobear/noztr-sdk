@@ -261,6 +261,12 @@ pub const MailboxSyncRuntimePlanStorage =
     mailbox_sync_runtime_client.MailboxSyncRuntimePlanStorage;
 pub const MailboxSyncRuntimeStep = mailbox_sync_runtime_client.MailboxSyncRuntimeStep;
 pub const MailboxSyncRuntimePlan = mailbox_sync_runtime_client.MailboxSyncRuntimePlan;
+pub const MailboxLongLivedDmPolicyStorage =
+    mailbox_sync_runtime_client.MailboxLongLivedDmPolicyStorage;
+pub const MailboxLongLivedDmPolicyStep =
+    mailbox_sync_runtime_client.MailboxLongLivedDmPolicyStep;
+pub const MailboxLongLivedDmPolicyPlan =
+    mailbox_sync_runtime_client.MailboxLongLivedDmPolicyPlan;
 pub const MailboxSyncRuntimeAuthEventStorage =
     mailbox_sync_runtime_client.MailboxSyncRuntimeAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent =

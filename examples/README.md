@@ -617,13 +617,15 @@ Use these docs when you need public routing or contract context before opening a
     layer only exposes command-ready live mailbox posture instead of inventing polling or daemon
     policy
 - `mailbox_sync_runtime_client_recipe.zig`
-  - goal: plan one bounded mailbox sync runtime explicitly across authenticate, replay catch-up,
-    durable resume export/restore, explicit reconnect, resubscribe, and live receive posture
-    without inventing a daemon
+  - goal: plan one bounded mailbox sync runtime explicitly, inspect one longer-lived mailbox DM
+    policy above that runtime, then drive durable resume export/restore, explicit reconnect,
+    resubscribe, and live receive posture without inventing a daemon
   - public SDK surface: `noztr_sdk.client`, `MailboxSyncRuntimeClient`,
     `MailboxSyncRuntimeClientStorage`, `MailboxSyncRuntimeResumeStorage`,
     `MailboxSyncRuntimeResumeState`, `MailboxSyncRuntimePlanStorage`,
     `MailboxSyncRuntimePlan`, `MailboxSyncRuntimeStep`,
+    `MailboxLongLivedDmPolicyStorage`, `MailboxLongLivedDmPolicyPlan`,
+    `MailboxLongLivedDmPolicyStep`,
     `MailboxSyncRuntimeAuthEventStorage`, `PreparedMailboxSyncRuntimeAuthEvent`,
     `MailboxSyncRuntimeReplayRequest`, `MailboxSyncRuntimeReplayIntake`,
     `MailboxSyncRuntimeSubscriptionRequest`, `MailboxSyncRuntimeSubscriptionIntake`
@@ -633,8 +635,8 @@ Use these docs when you need public routing or contract context before opening a
     live transcript work still route through the bounded mailbox replay and subscription floors,
     relay cursors still stay on the shared checkpoint archive seam, restored runtime state still
     requires explicit reconnect/resubscribe driving, auth event creation stays explicit and caller-
-    owned, and this layer only adds typed next-step plus bounded resume planning instead of hidden
-    sync policy
+    owned, and the newer policy helper only classifies one next mailbox sync posture instead of
+    taking hidden cadence or daemon ownership
 - `mailbox_replay_turn_client_recipe.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result

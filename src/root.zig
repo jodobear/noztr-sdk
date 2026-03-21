@@ -123,6 +123,9 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimePlanStorage) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeStep) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimePlan) == type);
+    try std.testing.expect(@TypeOf(client.MailboxLongLivedDmPolicyStorage) == type);
+    try std.testing.expect(@TypeOf(client.MailboxLongLivedDmPolicyStep) == type);
+    try std.testing.expect(@TypeOf(client.MailboxLongLivedDmPolicyPlan) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeAuthEventStorage) == type);
     try std.testing.expect(@TypeOf(client.PreparedMailboxSyncRuntimeAuthEvent) == type);
     try std.testing.expect(@TypeOf(client.MailboxSyncRuntimeReplayRequest) == type);
