@@ -476,6 +476,15 @@ test "phase4 exposes the remote signer workflow surface" {
     try std.testing.expect(@TypeOf(workflows.RemoteSignerRelayPoolRuntimeStorage) == type);
 }
 
+test "phase4b exposes the legacy dm workflow surface" {
+    try std.testing.expect(@TypeOf(workflows.LegacyDmSession) == type);
+    try std.testing.expect(@TypeOf(workflows.LegacyDmError) == type);
+    try std.testing.expect(@TypeOf(workflows.LegacyDmDirectMessageRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.LegacyDmOutboundStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.PreparedLegacyDmEvent) == type);
+    try std.testing.expect(@TypeOf(workflows.LegacyDmMessageOutcome) == type);
+}
+
 test "phase5 exposes the mailbox workflow surface" {
     try std.testing.expect(@TypeOf(workflows.MailboxSession) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxOutboundBuffer) == type);

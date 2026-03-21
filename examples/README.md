@@ -467,6 +467,15 @@ Use these docs when you need public routing or contract context before opening a
     absorbed into `runtime`, replay planning also stays caller-owned and side-effect free over one
     explicit checkpoint scope plus query, and restore still targets one fresh shared pool without
     hidden reset or background runtime
+- `legacy_dm_workflow_recipe.zig`
+  - goal: build one signed legacy kind-`4` direct message explicitly, serialize it once, then
+    accept and decrypt it through the workflow floor without inventing relay or polling policy
+  - public SDK surface: `LegacyDmSession`, `LegacyDmDirectMessageRequest`,
+    `LegacyDmOutboundStorage`, `PreparedLegacyDmEvent`, `LegacyDmMessageOutcome`
+  - kernel fixture help: `noztr.nip04`, `noztr.nostr_keys`, `noztr.nip01_event`
+  - control points: strict legacy payload and kind-`4` validation still route through
+    `noztr-core`, reply and relay-hint tag shaping stay explicit in the SDK workflow floor, and
+    outbound serialization plus inbound plaintext recovery remain fully caller-owned
 - `mailbox_recipe.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a
