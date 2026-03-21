@@ -545,6 +545,20 @@ Use these docs when you need public routing or contract context before opening a
     reserialized back into JSON, mailbox unwrap still routes through the mailbox workflow floor,
     and this layer only closes one bounded live mailbox transcript turn without inventing polling
     or hidden follow ownership
+- `mailbox_subscription_job_client_recipe.zig`
+  - goal: prepare one mailbox live-subscription job that either yields one auth event or one
+    bounded mailbox subscription request, then close the turn explicitly
+  - public SDK surface: `noztr_sdk.client`, `MailboxSubscriptionJobClient`,
+    `MailboxSubscriptionJobClientStorage`, `MailboxSubscriptionJobAuthEventStorage`,
+    `PreparedMailboxSubscriptionJobAuthEvent`, `MailboxSubscriptionJobRequest`,
+    `MailboxSubscriptionJobIntake`, `MailboxSubscriptionJobReady`,
+    `MailboxSubscriptionJobResult`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
+    `noztr.nip01_filter`, `noztr.nip01_message`
+  - control points: auth handling still routes through shared relay auth state, live mailbox
+    transcript work still routes through the bounded mailbox subscription turn floor, and this
+    layer only exposes command-ready live mailbox posture instead of inventing polling or daemon
+    policy
 - `mailbox_replay_turn_client_recipe.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result

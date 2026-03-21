@@ -104,6 +104,16 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnIntake) == type);
     try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnResult) == type);
     try std.testing.expect(@TypeOf(client.MailboxSubscriptionTurnClient) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobClientError) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.PreparedMailboxSubscriptionJobAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobRequest) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobIntake) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobReady) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobResult) == type);
+    try std.testing.expect(@TypeOf(client.MailboxSubscriptionJobClient) == type);
     try std.testing.expect(@TypeOf(client.MailboxReplayTurnClientError) == type);
     try std.testing.expect(@TypeOf(client.MailboxReplayTurnClientConfig) == type);
     try std.testing.expect(@TypeOf(client.MailboxReplayTurnClientStorage) == type);

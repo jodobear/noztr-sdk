@@ -9,6 +9,7 @@ pub const local_entity_job_client = @import("local_entity_job_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
+pub const mailbox_subscription_job_client = @import("mailbox_subscription_job_client.zig");
 pub const mailbox_subscription_turn_client = @import("mailbox_subscription_turn_client.zig");
 pub const mailbox_replay_job_client = @import("mailbox_replay_job_client.zig");
 pub const mailbox_replay_turn_client = @import("mailbox_replay_turn_client.zig");
@@ -122,6 +123,26 @@ pub const MailboxSubscriptionTurnResult =
     mailbox_subscription_turn_client.MailboxSubscriptionTurnResult;
 pub const MailboxSubscriptionTurnClient =
     mailbox_subscription_turn_client.MailboxSubscriptionTurnClient;
+pub const MailboxSubscriptionJobClientError =
+    mailbox_subscription_job_client.MailboxSubscriptionJobClientError;
+pub const MailboxSubscriptionJobClientConfig =
+    mailbox_subscription_job_client.MailboxSubscriptionJobClientConfig;
+pub const MailboxSubscriptionJobClientStorage =
+    mailbox_subscription_job_client.MailboxSubscriptionJobClientStorage;
+pub const MailboxSubscriptionJobAuthEventStorage =
+    mailbox_subscription_job_client.MailboxSubscriptionJobAuthEventStorage;
+pub const PreparedMailboxSubscriptionJobAuthEvent =
+    mailbox_subscription_job_client.PreparedMailboxSubscriptionJobAuthEvent;
+pub const MailboxSubscriptionJobRequest =
+    mailbox_subscription_job_client.MailboxSubscriptionJobRequest;
+pub const MailboxSubscriptionJobIntake =
+    mailbox_subscription_job_client.MailboxSubscriptionJobIntake;
+pub const MailboxSubscriptionJobReady =
+    mailbox_subscription_job_client.MailboxSubscriptionJobReady;
+pub const MailboxSubscriptionJobResult =
+    mailbox_subscription_job_client.MailboxSubscriptionJobResult;
+pub const MailboxSubscriptionJobClient =
+    mailbox_subscription_job_client.MailboxSubscriptionJobClient;
 pub const MailboxReplayTurnClientError = mailbox_replay_turn_client.MailboxReplayTurnClientError;
 pub const MailboxReplayTurnClientConfig = mailbox_replay_turn_client.MailboxReplayTurnClientConfig;
 pub const MailboxReplayTurnClientStorage =
