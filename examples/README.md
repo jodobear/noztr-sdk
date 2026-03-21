@@ -843,6 +843,17 @@ Use these docs when you need public routing or contract context before opening a
     whole fleet, and finally plans one explicit per-relay moderation publish through caller-owned
     buffers plus one typed next-publish step and one explicit background relay selection without
     hidden merge or runtime policy
+- `group_fleet_client_recipe.zig`
+  - goal: drive one client-facing multi-relay groups path above `GroupFleet` to inspect runtime,
+    inspect consistency, inspect one explicit background-runtime step, and select the relay for
+    that next step
+  - public SDK surface: `noztr_sdk.client`, `GroupFleetClient`, `GroupFleetClientStorage`,
+    `GroupFleetClientBackgroundRequest`, `GroupFleetRuntimePlan`, `GroupFleetConsistencyReport`,
+    `GroupFleetBackgroundRuntimePlan`
+  - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
+  - control points: caller still owns the relay-local `GroupClient` members and the scheduler,
+    while the client layer packages bounded runtime/background/consistency posture into one SDK
+    route without introducing hidden relay or merge ownership
 
 ## Adversarial Examples
 

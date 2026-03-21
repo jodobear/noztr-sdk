@@ -12,6 +12,7 @@ pub const legacy_dm_replay_turn_client = @import("legacy_dm_replay_turn_client.z
 pub const legacy_dm_subscription_job_client = @import("legacy_dm_subscription_job_client.zig");
 pub const legacy_dm_subscription_turn_client = @import("legacy_dm_subscription_turn_client.zig");
 pub const legacy_dm_sync_runtime_client = @import("legacy_dm_sync_runtime_client.zig");
+pub const group_fleet_client = @import("group_fleet_client.zig");
 pub const local_event_job_client = @import("local_event_job_client.zig");
 pub const local_key_job_client = @import("local_key_job_client.zig");
 pub const mailbox_job_client = @import("mailbox_job_client.zig");
@@ -233,6 +234,12 @@ pub const LegacyDmSyncRuntimeSubscriptionRequest =
 pub const LegacyDmSyncRuntimeSubscriptionIntake =
     legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeSubscriptionIntake;
 pub const LegacyDmSyncRuntimeClient = legacy_dm_sync_runtime_client.LegacyDmSyncRuntimeClient;
+pub const GroupFleetClientError = group_fleet_client.GroupFleetClientError;
+pub const GroupFleetClientConfig = group_fleet_client.GroupFleetClientConfig;
+pub const GroupFleetClientBackgroundRequest =
+    group_fleet_client.GroupFleetClientBackgroundRequest;
+pub const GroupFleetClientStorage = group_fleet_client.GroupFleetClientStorage;
+pub const GroupFleetClient = group_fleet_client.GroupFleetClient;
 pub const MailboxJobClientError = mailbox_job_client.MailboxJobClientError;
 pub const MailboxJobClientConfig = mailbox_job_client.MailboxJobClientConfig;
 pub const MailboxJobClientStorage = mailbox_job_client.MailboxJobClientStorage;

@@ -585,6 +585,11 @@ test "phase4e exposes the legacy dm replay live runtime floors" {
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeSubscriptionRequest) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeSubscriptionIntake) == type);
     try std.testing.expect(@TypeOf(client.LegacyDmSyncRuntimeClient) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientError) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientBackgroundRequest) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.GroupFleetClient) == type);
 }
 
 test "phase5 exposes the mailbox workflow surface" {

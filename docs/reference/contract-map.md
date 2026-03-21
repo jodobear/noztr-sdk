@@ -86,6 +86,7 @@ open.
 | `NIP-05` address resolution and verification over the public HTTP seam | `Nip05Resolver`, `Nip05LookupRequest`, `Nip05LookupStorage` | `noztr_sdk.workflows.Nip05Resolver` | [nip05_resolution_recipe.zig](../../examples/nip05_resolution_recipe.zig) |
 | Relay-local group replay, checkpointing, and moderation publish | `GroupClient`, `GroupSession`, `GroupCheckpointContext`, `GroupPublishContext` | `noztr_sdk.workflows.GroupClient` | [group_session_recipe.zig](../../examples/group_session_recipe.zig) |
 | Multi-relay groups routing, reconciliation, merge policy, checkpoints, and background runtime inspection | `GroupFleet`, `GroupFleetRuntimePlan`, `GroupFleetBackgroundRuntimePlan`, `MemoryGroupFleetCheckpointStore`, `GroupFleetPublishStep` | `noztr_sdk.workflows.GroupFleet` | [group_fleet_recipe.zig](../../examples/group_fleet_recipe.zig) |
+| Client-facing multi-relay groups runtime, consistency, and background inspection composition above `GroupFleet` | `noztr_sdk.client`, `GroupFleetClient`, `GroupFleetClientStorage`, `GroupFleetClientBackgroundRequest`, `GroupFleetRuntimePlan`, `GroupFleetConsistencyReport`, `GroupFleetBackgroundRuntimePlan` | `noztr_sdk.client.GroupFleetClient` | [group_fleet_client_recipe.zig](../../examples/group_fleet_client_recipe.zig) |
 
 ## Scope Note
 
