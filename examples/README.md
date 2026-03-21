@@ -420,6 +420,17 @@ Use these docs when you need public routing or contract context before opening a
   - control points: HTTP ownership stays explicit, URL/body/parse buffers stay caller-owned, and
     the job layer adds one command-ready metadata refresh posture instead of pulling network policy
     or file ownership into the SDK
+- `relay_workspace_client_recipe.zig`
+  - goal: remember one explicit relay set, restore it into the shared relay runtime, inspect the
+    bounded runtime view, and derive one bounded replay plan over that remembered state
+  - public SDK surface: `noztr_sdk.client`, `RelayWorkspaceClient`,
+    `RelayWorkspaceClientStorage`, `RelayWorkspaceRestoreResult`, `noztr_sdk.store.RelayRegistryArchive`,
+    `noztr_sdk.store.RelayCheckpointArchive`, `noztr_sdk.runtime.RelayPoolPlan`,
+    `noztr_sdk.runtime.RelayPoolReplayPlan`
+  - kernel fixture help: none beyond the shared relay runtime and relay URL seams
+  - control points: remembered relay state stays explicit, runtime restore stays a separate step
+    instead of hidden bootstrap, and replay/checkpoint inspection reuse the shared SDK seams
+    instead of forcing `znk` to rebuild another local relay workspace model
 - `relay_local_group_archive_recipe.zig`
   - goal: archive one relay-local `NIP-29` snapshot through the shared event store seam and
     restore it into a fresh group client in explicit oldest-to-newest replay order

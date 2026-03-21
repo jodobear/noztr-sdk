@@ -21,6 +21,7 @@ pub const RelayPoolAuthEntry = relay_pool.RelayPoolAuthEntry;
 pub const RelayPoolAuthStorage = relay_pool.RelayPoolAuthStorage;
 pub const RelayPoolAuthPlan = relay_pool.RelayPoolAuthPlan;
 pub const RelayPoolAuthStep = relay_pool.RelayPoolAuthStep;
+pub const RelayPoolCheckpointError = relay_pool.RelayPoolCheckpointError;
 pub const RelayPoolCheckpointRecord = relay_pool.RelayPoolCheckpointRecord;
 pub const RelayPoolCheckpointStorage = relay_pool.RelayPoolCheckpointStorage;
 pub const RelayPoolCheckpointSet = relay_pool.RelayPoolCheckpointSet;
