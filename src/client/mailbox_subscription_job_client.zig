@@ -2,6 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const local_operator = @import("local_operator_client.zig");
 const mailbox_subscription_turn = @import("mailbox_subscription_turn_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
 const relay_url = @import("../relay/url.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -106,14 +107,18 @@ pub const MailboxSubscriptionJobClient = struct {
         self: *MailboxSubscriptionJobClient,
         relay_index: u8,
     ) MailboxSubscriptionJobClientError!void {
-        return self.subscription_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *MailboxSubscriptionJobClient,
         relay_index: u8,
     ) MailboxSubscriptionJobClientError!void {
-        return self.subscription_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "subscription_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -121,14 +126,19 @@ pub const MailboxSubscriptionJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) MailboxSubscriptionJobClientError!void {
-        return self.subscription_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "subscription_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const MailboxSubscriptionJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.subscription_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn prepareJob(

@@ -1,5 +1,6 @@
 const std = @import("std");
 const relay_replay = @import("relay_replay_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_response = @import("relay_response_client.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
@@ -73,21 +74,21 @@ pub const RelayReplayExchangeClient = struct {
         self: *RelayReplayExchangeClient,
         relay_url_text: []const u8,
     ) RelayReplayExchangeClientError!runtime.RelayDescriptor {
-        return self.replay.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "replay", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *RelayReplayExchangeClient,
         relay_index: u8,
     ) RelayReplayExchangeClientError!void {
-        return self.replay.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "replay", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *RelayReplayExchangeClient,
         relay_index: u8,
     ) RelayReplayExchangeClientError!void {
-        return self.replay.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "replay", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -95,14 +96,19 @@ pub const RelayReplayExchangeClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) RelayReplayExchangeClientError!void {
-        return self.replay.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "replay",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const RelayReplayExchangeClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "replay", storage);
     }
 
     pub fn inspectReplay(

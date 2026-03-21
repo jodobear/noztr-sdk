@@ -2,6 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const local_operator = @import("local_operator_client.zig");
 const mailbox_replay_turn = @import("mailbox_replay_turn_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
 const relay_url = @import("../relay/url.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -107,14 +108,14 @@ pub const MailboxReplayJobClient = struct {
         self: *MailboxReplayJobClient,
         relay_index: u8,
     ) MailboxReplayJobClientError!void {
-        return self.replay_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *MailboxReplayJobClient,
         relay_index: u8,
     ) MailboxReplayJobClientError!void {
-        return self.replay_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -122,14 +123,19 @@ pub const MailboxReplayJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) MailboxReplayJobClientError!void {
-        return self.replay_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "replay_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const MailboxReplayJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "replay_turn", storage);
     }
 
     pub fn prepareJob(

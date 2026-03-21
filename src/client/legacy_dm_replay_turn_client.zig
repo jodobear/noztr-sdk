@@ -1,5 +1,6 @@
 const std = @import("std");
 const local_operator = @import("local_operator_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_replay_turn = @import("relay_replay_turn_client.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
@@ -67,21 +68,21 @@ pub const LegacyDmReplayTurnClient = struct {
         self: *LegacyDmReplayTurnClient,
         relay_url_text: []const u8,
     ) LegacyDmReplayTurnClientError!runtime.RelayDescriptor {
-        return self.replay_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "replay_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *LegacyDmReplayTurnClient,
         relay_index: u8,
     ) LegacyDmReplayTurnClientError!void {
-        return self.replay_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *LegacyDmReplayTurnClient,
         relay_index: u8,
     ) LegacyDmReplayTurnClientError!void {
-        return self.replay_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -89,7 +90,12 @@ pub const LegacyDmReplayTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) LegacyDmReplayTurnClientError!void {
-        return self.replay_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "replay_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn acceptRelayAuthEvent(
@@ -114,7 +120,7 @@ pub const LegacyDmReplayTurnClient = struct {
         self: *const LegacyDmReplayTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "replay_turn", storage);
     }
 
     pub fn inspectAuth(

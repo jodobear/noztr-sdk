@@ -2,6 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const local_operator = @import("local_operator_client.zig");
 const legacy_dm_subscription_turn = @import("legacy_dm_subscription_turn_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
 const relay_url = @import("../relay/url.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -79,21 +80,25 @@ pub const LegacyDmSubscriptionJobClient = struct {
         self: *LegacyDmSubscriptionJobClient,
         relay_url_text: []const u8,
     ) LegacyDmSubscriptionJobClientError!runtime.RelayDescriptor {
-        return self.subscription_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "subscription_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *LegacyDmSubscriptionJobClient,
         relay_index: u8,
     ) LegacyDmSubscriptionJobClientError!void {
-        return self.subscription_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *LegacyDmSubscriptionJobClient,
         relay_index: u8,
     ) LegacyDmSubscriptionJobClientError!void {
-        return self.subscription_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "subscription_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -101,14 +106,19 @@ pub const LegacyDmSubscriptionJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) LegacyDmSubscriptionJobClientError!void {
-        return self.subscription_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "subscription_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const LegacyDmSubscriptionJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.subscription_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn prepareJob(

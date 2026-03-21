@@ -1,5 +1,6 @@
 const std = @import("std");
 const cli_archive = @import("cli_archive_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
@@ -111,14 +112,14 @@ pub const RelayWorkspaceClient = struct {
         self: *RelayWorkspaceClient,
         relay_index: u8,
     ) RelayWorkspaceClientError!void {
-        return self.cli_archive.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "cli_archive", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *RelayWorkspaceClient,
         relay_index: u8,
     ) RelayWorkspaceClientError!void {
-        return self.cli_archive.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "cli_archive", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -126,14 +127,19 @@ pub const RelayWorkspaceClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) RelayWorkspaceClientError!void {
-        return self.cli_archive.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "cli_archive",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const RelayWorkspaceClient,
         storage_: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.cli_archive.inspectRelayRuntime(storage_);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "cli_archive", storage_);
     }
 
     pub fn saveRelayCheckpoint(

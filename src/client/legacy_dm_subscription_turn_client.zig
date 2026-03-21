@@ -1,6 +1,7 @@
 const std = @import("std");
 const noztr = @import("noztr");
 const local_operator = @import("local_operator_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const subscription_turn = @import("subscription_turn_client.zig");
 const workflows = @import("../workflows/mod.zig");
@@ -67,21 +68,25 @@ pub const LegacyDmSubscriptionTurnClient = struct {
         self: *LegacyDmSubscriptionTurnClient,
         relay_url_text: []const u8,
     ) LegacyDmSubscriptionTurnClientError!runtime.RelayDescriptor {
-        return self.subscription_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "subscription_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *LegacyDmSubscriptionTurnClient,
         relay_index: u8,
     ) LegacyDmSubscriptionTurnClientError!void {
-        return self.subscription_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *LegacyDmSubscriptionTurnClient,
         relay_index: u8,
     ) LegacyDmSubscriptionTurnClientError!void {
-        return self.subscription_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(
+            self,
+            "subscription_turn",
+            relay_index,
+        );
     }
 
     pub fn noteRelayAuthChallenge(
@@ -89,7 +94,12 @@ pub const LegacyDmSubscriptionTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) LegacyDmSubscriptionTurnClientError!void {
-        return self.subscription_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "subscription_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn acceptRelayAuthEvent(
@@ -114,7 +124,7 @@ pub const LegacyDmSubscriptionTurnClient = struct {
         self: *const LegacyDmSubscriptionTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.subscription_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn inspectAuth(

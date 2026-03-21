@@ -2,6 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const local_operator = @import("local_operator_client.zig");
 const legacy_dm_replay_turn = @import("legacy_dm_replay_turn_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
 const relay_url = @import("../relay/url.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -80,21 +81,21 @@ pub const LegacyDmReplayJobClient = struct {
         self: *LegacyDmReplayJobClient,
         relay_url_text: []const u8,
     ) LegacyDmReplayJobClientError!runtime.RelayDescriptor {
-        return self.replay_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "replay_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *LegacyDmReplayJobClient,
         relay_index: u8,
     ) LegacyDmReplayJobClientError!void {
-        return self.replay_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *LegacyDmReplayJobClient,
         relay_index: u8,
     ) LegacyDmReplayJobClientError!void {
-        return self.replay_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -102,14 +103,19 @@ pub const LegacyDmReplayJobClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) LegacyDmReplayJobClientError!void {
-        return self.replay_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "replay_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const LegacyDmReplayJobClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "replay_turn", storage);
     }
 
     pub fn prepareJob(

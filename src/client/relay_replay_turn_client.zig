@@ -1,6 +1,7 @@
 const std = @import("std");
 const relay_replay_exchange = @import("relay_replay_exchange_client.zig");
 const replay_checkpoint_advance = @import("replay_checkpoint_advance_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 const relay_response = @import("relay_response_client.zig");
@@ -78,21 +79,21 @@ pub const RelayReplayTurnClient = struct {
         self: *RelayReplayTurnClient,
         relay_url_text: []const u8,
     ) RelayReplayTurnClientError!runtime.RelayDescriptor {
-        return self.replay_exchange.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "replay_exchange", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *RelayReplayTurnClient,
         relay_index: u8,
     ) RelayReplayTurnClientError!void {
-        return self.replay_exchange.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "replay_exchange", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *RelayReplayTurnClient,
         relay_index: u8,
     ) RelayReplayTurnClientError!void {
-        return self.replay_exchange.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "replay_exchange", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -100,14 +101,19 @@ pub const RelayReplayTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) RelayReplayTurnClientError!void {
-        return self.replay_exchange.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "replay_exchange",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const RelayReplayTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.replay_exchange.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "replay_exchange", storage);
     }
 
     pub fn inspectReplay(

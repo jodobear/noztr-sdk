@@ -1,6 +1,7 @@
 const std = @import("std");
 const count_turn = @import("count_turn_client.zig");
 const relay_auth_client = @import("relay_auth_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_auth = @import("../relay/auth.zig");
 const local_operator = @import("local_operator_client.zig");
 const runtime = @import("../runtime/mod.zig");
@@ -66,21 +67,21 @@ pub const AuthCountTurnClient = struct {
         self: *AuthCountTurnClient,
         relay_url_text: []const u8,
     ) AuthCountTurnClientError!runtime.RelayDescriptor {
-        return self.count_turn.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "count_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *AuthCountTurnClient,
         relay_index: u8,
     ) AuthCountTurnClientError!void {
-        return self.count_turn.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "count_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *AuthCountTurnClient,
         relay_index: u8,
     ) AuthCountTurnClientError!void {
-        return self.count_turn.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "count_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -88,14 +89,19 @@ pub const AuthCountTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) AuthCountTurnClientError!void {
-        return self.count_turn.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "count_turn",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const AuthCountTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.count_turn.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "count_turn", storage);
     }
 
     pub fn inspectAuth(

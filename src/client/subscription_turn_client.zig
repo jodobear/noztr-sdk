@@ -1,5 +1,6 @@
 const std = @import("std");
 const relay_exchange = @import("relay_exchange_client.zig");
+const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
 const relay_response = @import("relay_response_client.zig");
 const runtime = @import("../runtime/mod.zig");
 
@@ -82,21 +83,21 @@ pub const SubscriptionTurnClient = struct {
         self: *SubscriptionTurnClient,
         relay_url_text: []const u8,
     ) SubscriptionTurnClientError!runtime.RelayDescriptor {
-        return self.relay_exchange.addRelay(relay_url_text);
+        return relay_lifecycle_support.addRelay(self, "relay_exchange", relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *SubscriptionTurnClient,
         relay_index: u8,
     ) SubscriptionTurnClientError!void {
-        return self.relay_exchange.markRelayConnected(relay_index);
+        return relay_lifecycle_support.markRelayConnected(self, "relay_exchange", relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *SubscriptionTurnClient,
         relay_index: u8,
     ) SubscriptionTurnClientError!void {
-        return self.relay_exchange.noteRelayDisconnected(relay_index);
+        return relay_lifecycle_support.noteRelayDisconnected(self, "relay_exchange", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -104,14 +105,19 @@ pub const SubscriptionTurnClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) SubscriptionTurnClientError!void {
-        return self.relay_exchange.noteRelayAuthChallenge(relay_index, challenge);
+        return relay_lifecycle_support.noteRelayAuthChallenge(
+            self,
+            "relay_exchange",
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const SubscriptionTurnClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.relay_exchange.inspectRelayRuntime(storage);
+        return relay_lifecycle_support.inspectRelayRuntime(self, "relay_exchange", storage);
     }
 
     pub fn inspectSubscriptions(
