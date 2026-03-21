@@ -962,13 +962,32 @@ pub const MailboxSession = struct {
         try self.requireCurrentRelayReady();
 
         const wrap_event = try noztr.nip01_event.event_parse_json(wrap_event_json, scratch);
+        return self.acceptWrappedEnvelopeEvent(
+            &wrap_event,
+            recipients_out,
+            thumbs_out,
+            fallbacks_out,
+            scratch,
+        );
+    }
+
+    pub fn acceptWrappedEnvelopeEvent(
+        self: *MailboxSession,
+        wrap_event: *const noztr.nip01_event.Event,
+        recipients_out: []noztr.nip17_private_messages.DmRecipient,
+        thumbs_out: [][]const u8,
+        fallbacks_out: [][]const u8,
+        scratch: std.mem.Allocator,
+    ) MailboxError!MailboxEnvelopeOutcome {
+        try self.requireCurrentRelayReady();
+
         if (self.hasSeenWrap(&wrap_event.id)) return error.DuplicateWrap;
 
         var rumor_event: noztr.nip01_event.Event = undefined;
         try noztr.nip59_wrap.nip59_unwrap(
             &rumor_event,
             &self._state.recipient_private_key,
-            &wrap_event,
+            wrap_event,
             scratch,
         );
 

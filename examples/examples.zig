@@ -42,6 +42,7 @@ comptime {
     _ = @import("relay_pool_recipe.zig");
     _ = @import("relay_pool_checkpoint_recipe.zig");
     _ = @import("mailbox_recipe.zig");
+    _ = @import("mailbox_event_intake_recipe.zig");
     _ = @import("mailbox_receive_turn_recipe.zig");
     _ = @import("mailbox_sync_turn_recipe.zig");
     _ = @import("mailbox_job_client_recipe.zig");

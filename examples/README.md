@@ -493,6 +493,14 @@ Use these docs when you need public routing or contract context before opening a
     can build and plan one explicit outbound file-message wrap on the same surface, can classify
     direct-message vs file-message rumors explicitly, and still owns publication and polling
     policy
+- `mailbox_event_intake_recipe.zig`
+  - goal: parse one wrapped event object once, then feed that event object directly into the
+    mailbox intake floor without reserializing it back into JSON
+  - public SDK surface: `MailboxSession`, `MailboxEnvelopeOutcome`
+  - kernel fixture help: `noztr.nip01_event`, `noztr.nip17_private_messages`
+  - control points: parsed relay transcript events can stay as event objects, mailbox unwrap still
+    routes through the SDK workflow floor, and replay-driven inbox sync does not need to rebuild
+    JSON just to reuse mailbox intake logic
 - `mailbox_receive_turn_recipe.zig`
   - goal: select one ready mailbox relay explicitly, then accept one wrapped envelope through one
     bounded receive-turn floor
