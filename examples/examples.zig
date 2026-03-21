@@ -3,6 +3,7 @@ comptime {
     _ = @import("common.zig");
     _ = @import("remote_signer_recipe.zig");
     _ = @import("local_entity_job_client_recipe.zig");
+    _ = @import("local_event_job_client_recipe.zig");
     _ = @import("local_key_job_client_recipe.zig");
     _ = @import("local_operator_client_recipe.zig");
     _ = @import("publish_client_recipe.zig");

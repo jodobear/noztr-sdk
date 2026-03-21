@@ -113,6 +113,16 @@ Use these docs when you need public routing or contract context before opening a
   - control points: entity encode-decode still routes through the local operator floor, the job
     layer adds command-ready result posture instead of CLI-owned bech32 wiring, and downstream
     tools can build local entity commands without stitching `NIP-19` helpers together ad hoc
+- `local_event_job_client_recipe.zig`
+  - goal: sign one local draft, verify that signed event, and inspect one event JSON through one
+    command-ready SDK job layer
+  - public SDK surface: `noztr_sdk.client`, `LocalEventJobClient`,
+    `LocalEventJobClientStorage`, `LocalEventJobRequest`, `LocalEventJobResult`
+  - kernel fixture help: `noztr.nip01_event`, `noztr.nostr_keys`
+  - control points: event parse, sign, and verify still route through the local operator floor,
+    the job layer adds command-ready result posture instead of CLI-owned event wiring, and
+    downstream tools can build local inspect/sign commands without stitching event helpers
+    together ad hoc
 - `publish_client_recipe.zig`
   - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
     runtime, then pair one ready relay with one prepared outbound publish payload
