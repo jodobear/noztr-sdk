@@ -17,6 +17,7 @@ pub const publish_job_client = @import("publish_job_client.zig");
 pub const publish_client = @import("publish_client.zig");
 pub const publish_turn_client = @import("publish_turn_client.zig");
 pub const relay_auth_client = @import("relay_auth_client.zig");
+pub const relay_directory_job_client = @import("relay_directory_job_client.zig");
 pub const relay_exchange_client = @import("relay_exchange_client.zig");
 pub const relay_query_client = @import("relay_query_client.zig");
 pub const replay_job_client = @import("replay_job_client.zig");
@@ -169,6 +170,14 @@ pub const RelayAuthTarget = relay_auth_client.RelayAuthTarget;
 pub const RelayAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedRelayAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
 pub const RelayAuthClient = relay_auth_client.RelayAuthClient;
+pub const RelayDirectoryJobClientError = relay_directory_job_client.RelayDirectoryJobClientError;
+pub const RelayDirectoryJobClientConfig = relay_directory_job_client.RelayDirectoryJobClientConfig;
+pub const RelayDirectoryJobClientStorage =
+    relay_directory_job_client.RelayDirectoryJobClientStorage;
+pub const RelayDirectoryRefreshJob = relay_directory_job_client.RelayDirectoryRefreshJob;
+pub const RelayDirectoryRefreshJobResult =
+    relay_directory_job_client.RelayDirectoryRefreshJobResult;
+pub const RelayDirectoryJobClient = relay_directory_job_client.RelayDirectoryJobClient;
 pub const RelayExchangeClientError = relay_exchange_client.RelayExchangeClientError;
 pub const RelayExchangeClientConfig = relay_exchange_client.RelayExchangeClientConfig;
 pub const RelayExchangeClientStorage = relay_exchange_client.RelayExchangeClientStorage;

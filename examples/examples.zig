@@ -19,6 +19,7 @@ comptime {
     _ = @import("subscription_job_client_recipe.zig");
     _ = @import("subscription_turn_client_recipe.zig");
     _ = @import("relay_auth_client_recipe.zig");
+    _ = @import("relay_directory_job_client_recipe.zig");
     _ = @import("relay_exchange_client_recipe.zig");
     _ = @import("relay_query_client_recipe.zig");
     _ = @import("replay_job_client_recipe.zig");

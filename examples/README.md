@@ -410,6 +410,16 @@ Use these docs when you need public routing or contract context before opening a
   - control points: caller still owns store construction and relay URL choice, and the helper
     proves relay-local runtime state can ride the shared checkpoint seam without exposing backend
     schema or forcing the internal relay pool module into the public surface
+- `relay_directory_job_client_recipe.zig`
+  - goal: refresh one relay's `NIP-11` metadata over the explicit HTTP seam and keep the bounded
+    remembered record in the relay registry
+  - public SDK surface: `noztr_sdk.client`, `RelayDirectoryJobClient`,
+    `RelayDirectoryJobClientStorage`, `RelayDirectoryRefreshJob`, `RelayDirectoryRefreshJobResult`,
+    `noztr_sdk.transport.HttpClient`, `noztr_sdk.store.RelayRegistryArchive`
+  - kernel fixture help: `noztr.nip11`
+  - control points: HTTP ownership stays explicit, URL/body/parse buffers stay caller-owned, and
+    the job layer adds one command-ready metadata refresh posture instead of pulling network policy
+    or file ownership into the SDK
 - `relay_local_group_archive_recipe.zig`
   - goal: archive one relay-local `NIP-29` snapshot through the shared event store seam and
     restore it into a fresh group client in explicit oldest-to-newest replay order
