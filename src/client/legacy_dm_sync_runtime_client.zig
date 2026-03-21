@@ -8,6 +8,7 @@ const relay_auth_client = @import("relay_auth_client.zig");
 const sync_runtime_support = @import("sync_runtime_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
+const workflows = @import("../workflows/mod.zig");
 
 pub const LegacyDmSyncRuntimeClientError =
     legacy_dm_replay_job.LegacyDmReplayJobClientError ||
@@ -364,4 +365,211 @@ fn sameSubscriptionRequest(
     return left.subscription.relay.relay_index == right.subscription.relay.relay_index and
         std.mem.eql(u8, left.subscription.relay.relay_url, right.subscription.relay.relay_url) and
         std.mem.eql(u8, left.subscription.subscription_id, right.subscription.subscription_id);
+}
+
+test "legacy dm sync runtime client exposes caller-owned config and storage" {
+    var storage = LegacyDmSyncRuntimeClientStorage{};
+    var client = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = [_]u8{0x33} ** 32,
+    }, &storage);
+
+    try std.testing.expect(!client.replayPhaseComplete());
+    try std.testing.expect(!client.liveSubscriptionActive());
+}
+
+test "legacy dm sync runtime client plans authenticate replay subscribe and receive explicitly" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+    const checkpoint_archive = store.RelayCheckpointArchive.init(memory_store.asClientStore());
+
+    const sender_secret = [_]u8{0x11} ** 32;
+    const recipient_secret = [_]u8{0x22} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
+
+    var storage_buf = LegacyDmSyncRuntimeClientStorage{};
+    var client = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = recipient_secret,
+    }, &storage_buf);
+
+    const relay = try client.addRelay("wss://relay.one");
+    try client.markRelayConnected(relay.relay_index);
+    try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
+    try checkpoint_archive.saveRelayCheckpoint("legacy-dm", relay.relay_url, .{ .offset = 7 });
+
+    const sender = workflows.LegacyDmSession.init(&sender_secret);
+    var replay_outbound = workflows.LegacyDmOutboundStorage{};
+    const replay_prepared = try sender.buildDirectMessageEvent(&replay_outbound, &.{
+        .recipient_pubkey = recipient_pubkey,
+        .content = "legacy dm sync runtime replay payload",
+        .created_at = 41,
+        .iv = [_]u8{0x55} ** noztr.limits.nip04_iv_bytes,
+    });
+
+    var live_outbound = workflows.LegacyDmOutboundStorage{};
+    const live_prepared = try sender.buildDirectMessageEvent(&live_outbound, &.{
+        .recipient_pubkey = recipient_pubkey,
+        .content = "legacy dm sync runtime live payload",
+        .created_at = 42,
+        .iv = [_]u8{0x66} ** noztr.limits.nip04_iv_bytes,
+    });
+
+    const replay_specs = [_]runtime.RelayReplaySpec{
+        .{
+            .checkpoint_scope = "legacy-dm",
+            .query = .{ .limit = 16 },
+        },
+    };
+    const filter = try noztr.nip01_filter.filter_parse_json(
+        "{\"kinds\":[4]}",
+        arena.allocator(),
+    );
+    const subscription_specs = [_]runtime.RelaySubscriptionSpec{
+        .{ .subscription_id = "legacy-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
+    };
+
+    var runtime_storage = LegacyDmSyncRuntimePlanStorage{};
+    const auth_plan = try client.inspectRuntime(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &runtime_storage,
+    );
+    try std.testing.expect(auth_plan.nextStep() == .authenticate);
+
+    var auth_storage = LegacyDmSyncRuntimeAuthEventStorage{};
+    var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
+    var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
+    const prepared_auth = try client.prepareAuthEvent(
+        &auth_storage,
+        auth_event_json_output[0..],
+        auth_message_output[0..],
+        &auth_plan.nextStep().authenticate,
+        90,
+    );
+    _ = try client.acceptPreparedAuthEvent(&prepared_auth, 95, 60);
+
+    const replay_plan = try client.inspectRuntime(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &runtime_storage,
+    );
+    try std.testing.expect(replay_plan.nextStep() == .replay);
+
+    var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
+    const replay_request = try client.beginReplayTurn(
+        checkpoint_store,
+        request_output[0..],
+        "legacy-replay",
+        replay_specs[0..],
+    );
+
+    var relay_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
+    const replay_event_json = try noztr.nip01_message.relay_message_serialize_json(
+        relay_output[0..],
+        &.{ .event = .{ .subscription_id = "legacy-replay", .event = replay_prepared.event } },
+    );
+    var plaintext_output: [noztr.limits.nip04_plaintext_max_bytes]u8 = undefined;
+    const replay_intake = try client.acceptReplayMessageJson(
+        &replay_request,
+        replay_event_json,
+        plaintext_output[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(replay_intake.message != null);
+    try std.testing.expectEqualStrings(
+        "legacy dm sync runtime replay payload",
+        replay_intake.message.?.plaintext,
+    );
+
+    const replay_eose_json = try noztr.nip01_message.relay_message_serialize_json(
+        relay_output[0..],
+        &.{ .eose = .{ .subscription_id = "legacy-replay" } },
+    );
+    _ = try client.acceptReplayMessageJson(
+        &replay_request,
+        replay_eose_json,
+        plaintext_output[0..],
+        arena.allocator(),
+    );
+    const replay_result = try client.completeReplayTurn(request_output[0..], &replay_request);
+    try std.testing.expect(replay_result == .replayed);
+    try client.saveReplayTurnResult(checkpoint_archive, &replay_result.replayed);
+    client.markReplayCatchupComplete();
+
+    const subscribe_plan = try client.inspectRuntime(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &runtime_storage,
+    );
+    try std.testing.expect(subscribe_plan.nextStep() == .subscribe);
+
+    const live_request = try client.beginSubscriptionTurn(
+        request_output[0..],
+        subscription_specs[0..],
+    );
+    const receive_plan = try client.inspectRuntime(
+        checkpoint_store,
+        replay_specs[0..],
+        subscription_specs[0..],
+        &runtime_storage,
+    );
+    try std.testing.expect(receive_plan.nextStep() == .receive);
+    try std.testing.expect(sameSubscriptionRequest(
+        &receive_plan.nextStep().receive,
+        &live_request,
+    ));
+
+    const live_event_json = try noztr.nip01_message.relay_message_serialize_json(
+        relay_output[0..],
+        &.{ .event = .{ .subscription_id = "legacy-feed", .event = live_prepared.event } },
+    );
+    const live_intake = try client.acceptSubscriptionMessageJson(
+        &live_request,
+        live_event_json,
+        plaintext_output[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(live_intake.message != null);
+    try std.testing.expectEqualStrings(
+        "legacy dm sync runtime live payload",
+        live_intake.message.?.plaintext,
+    );
+
+    const live_eose_json = try noztr.nip01_message.relay_message_serialize_json(
+        relay_output[0..],
+        &.{ .eose = .{ .subscription_id = "legacy-feed" } },
+    );
+    _ = try client.acceptSubscriptionMessageJson(
+        &live_request,
+        live_eose_json,
+        plaintext_output[0..],
+        arena.allocator(),
+    );
+    const live_result = try client.completeSubscriptionTurn(request_output[0..], &live_request);
+    try std.testing.expect(live_result == .subscribed);
+    try std.testing.expect(!client.liveSubscriptionActive());
+}
+
+test "legacy dm sync runtime client returns idle when catchup is complete and no live specs remain" {
+    var client_storage = LegacyDmSyncRuntimeClientStorage{};
+    var client = LegacyDmSyncRuntimeClient.init(.{
+        .owner_private_key = [_]u8{0x33} ** 32,
+    }, &client_storage);
+    client.markReplayCatchupComplete();
+
+    var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
+    var runtime_storage = LegacyDmSyncRuntimePlanStorage{};
+    const plan = try client.inspectRuntime(
+        checkpoint_store,
+        &.{},
+        &.{},
+        &runtime_storage,
+    );
+    try std.testing.expect(plan.nextStep() == .idle);
 }
