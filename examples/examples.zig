@@ -46,6 +46,7 @@ comptime {
     _ = @import("mailbox_receive_turn_recipe.zig");
     _ = @import("mailbox_sync_turn_recipe.zig");
     _ = @import("mailbox_job_client_recipe.zig");
+    _ = @import("mailbox_replay_turn_client_recipe.zig");
     _ = @import("nip03_verify_client_recipe.zig");
     _ = @import("nip05_verify_client_recipe.zig");
     _ = @import("nip39_verify_client_recipe.zig");

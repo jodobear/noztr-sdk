@@ -531,6 +531,18 @@ Use these docs when you need public routing or contract context before opening a
     session floor, receive work still routes through the bounded receive-turn floor, and this
     layer only exposes command-ready mailbox posture instead of inventing transport, polling, or
     UI policy
+- `mailbox_replay_turn_client_recipe.zig`
+  - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
+    events through mailbox intake, then close the replay turn with one explicit checkpoint result
+  - public SDK surface: `noztr_sdk.client`, `MailboxReplayTurnClient`,
+    `MailboxReplayTurnClientConfig`, `MailboxReplayTurnClientStorage`,
+    `MailboxReplayTurnRequest`, `MailboxReplayTurnIntake`, `MailboxReplayTurnResult`,
+    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.store.RelayCheckpointArchive`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip01_message`
+  - control points: replay cursor planning still routes through the shared replay turn floor,
+    wrapped transcript events stay as parsed event objects instead of being reserialized back into
+    JSON, mailbox unwrap still routes through the mailbox workflow floor, and this layer only
+    closes one bounded mailbox replay turn without inventing polling or hidden sync policy
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
