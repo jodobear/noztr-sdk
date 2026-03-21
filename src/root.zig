@@ -447,6 +447,9 @@ test "phase5 exposes the mailbox workflow surface" {
     try std.testing.expect(@TypeOf(workflows.MailboxReceiveTurnStorage) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxReceiveTurnRequest) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxReceiveTurnResult) == type);
+    try std.testing.expect(@TypeOf(workflows.MailboxSyncTurnStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.MailboxSyncTurnRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.MailboxSyncTurnResult) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxDirectMessageRequest) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxFileMessageRequest) == type);
     try std.testing.expect(@TypeOf(workflows.MailboxOutboundMessage) == type);

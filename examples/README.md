@@ -502,6 +502,16 @@ Use these docs when you need public routing or contract context before opening a
   - control points: ready-relay selection still routes through mailbox runtime inspection, intake
     still routes through the mailbox unwrap floor, and this layer only closes one receive turn
     without inventing polling, sync policy, or hidden relay rotation
+- `mailbox_sync_turn_recipe.zig`
+  - goal: promote one pending mailbox delivery into one explicit publish step, and fall back to
+    one bounded receive step when no delivery is pending
+  - public SDK surface: `MailboxSession`, `MailboxSyncTurnStorage`, `MailboxSyncTurnRequest`,
+    `MailboxSyncTurnResult`, `MailboxDeliveryPlan`, `MailboxReceiveTurnResult`
+  - kernel fixture help: `noztr.nip17_private_messages`
+  - control points: mailbox workflow inspection still owns next-step ordering, publish work stays
+    explicit instead of hidden behind a send loop, receive work still routes through the bounded
+    receive-turn floor, and this layer only exposes one typed sync step at a time instead of
+    inventing a daemon or background mailbox scheduler
 - `nip03_verification_recipe.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification

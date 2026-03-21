@@ -43,6 +43,8 @@ pub const MailboxError =
         NoReceiveRelay,
         StaleReceiveTurn,
         InvalidReceiveTurnRelay,
+        NoSyncStep,
+        InvalidSyncTurnAction,
     };
 
 /// Parsed mailbox intake result.
@@ -505,6 +507,21 @@ pub const ReceiveTurnResult = struct {
     envelope: MailboxEnvelopeOutcome,
 };
 
+pub const SyncTurnStorage = struct {
+    workflow: WorkflowStorage = .{},
+};
+
+pub const SyncTurnRequest = union(enum) {
+    connect: WorkflowEntry,
+    authenticate: WorkflowEntry,
+    publish: DeliveryStep,
+    receive: ReceiveTurnRequest,
+};
+
+pub const SyncTurnResult = union(enum) {
+    received: ReceiveTurnResult,
+};
+
 pub const MailboxSession = struct {
     const State = struct {
         pool: relay_pool.Pool,
@@ -804,6 +821,59 @@ pub const MailboxSession = struct {
                 fallbacks_out,
                 scratch,
             ),
+        };
+    }
+
+    pub fn beginSyncTurn(
+        self: *MailboxSession,
+        request: WorkflowRequest,
+    ) MailboxError!SyncTurnRequest {
+        const workflow = try self.inspectWorkflow(request);
+        const step = workflow.nextStep() orelse return error.NoSyncStep;
+        const relay_url_text = try self.selectWorkflowRelay(step);
+        switch (step.entry.action) {
+            .connect => return .{ .connect = step.entry },
+            .authenticate => return .{ .authenticate = step.entry },
+            .publish_recipient, .publish_sender_copy => return .{
+                .publish = .{
+                    .relay_index = step.entry.relay_index,
+                    .relay_url = relay_url_text,
+                    .role = step.entry.role,
+                    .wrap_event_id = step.entry.wrap_event_id orelse return error.InvalidSyncTurnAction,
+                    .wrap_event_json = step.entry.wrap_event_json orelse return error.InvalidSyncTurnAction,
+                },
+            },
+            .receive => return .{
+                .receive = .{
+                    .relay_index = step.entry.relay_index,
+                    .relay_url = relay_url_text,
+                },
+            },
+            .idle => return error.NoSyncStep,
+        }
+    }
+
+    pub fn acceptSyncEnvelopeJson(
+        self: *MailboxSession,
+        request: *const SyncTurnRequest,
+        wrap_event_json: []const u8,
+        recipients_out: []noztr.nip17_private_messages.DmRecipient,
+        thumbs_out: [][]const u8,
+        fallbacks_out: [][]const u8,
+        scratch: std.mem.Allocator,
+    ) MailboxError!SyncTurnResult {
+        return switch (request.*) {
+            .receive => |receive| .{
+                .received = try self.acceptReceiveEnvelopeJson(
+                    &receive,
+                    wrap_event_json,
+                    recipients_out,
+                    thumbs_out,
+                    fallbacks_out,
+                    scratch,
+                ),
+            },
+            else => error.InvalidSyncTurnAction,
         };
     }
 
@@ -2115,6 +2185,103 @@ test "mailbox receive turn rejects stale relay selection explicitly" {
             arena.allocator(),
         ),
     );
+}
+
+test "mailbox sync turn promotes pending delivery into one explicit publish step" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const sender_secret = [_]u8{0x11} ** 32;
+    const recipient_secret = [_]u8{0x33} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
+
+    var sender_session = MailboxSession.init(&sender_secret);
+    var sender_relay_list_storage: [4096]u8 = undefined;
+    const sender_relay_list_json = try buildRelayListEventJsonTwo(
+        sender_relay_list_storage[0..],
+        "wss://relay.one",
+        "wss://relay.two",
+        1_710_000_041,
+        &sender_secret,
+    );
+    _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
+    try sender_session.markCurrentRelayConnected();
+    try std.testing.expectEqualStrings("wss://relay.two", try sender_session.advanceRelay());
+    try sender_session.markCurrentRelayConnected();
+
+    var recipient_relay_list_storage: [4096]u8 = undefined;
+    const recipient_relay_list_json = try buildRelayListEventJsonOne(
+        recipient_relay_list_storage[0..],
+        "wss://relay.two",
+        1_710_000_042,
+        &recipient_secret,
+    );
+    var outbound_buffer = OutboundBuffer{};
+    var delivery_storage = DeliveryStorage{};
+    const delivery = try sender_session.planDirectMessageDelivery(
+        &outbound_buffer,
+        &delivery_storage,
+        recipient_relay_list_json,
+        null,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://relay.two",
+            .content = "sync publish payload",
+            .created_at = 44,
+            .wrap_signer_private_key = [_]u8{0x22} ** 32,
+            .seal_nonce = [_]u8{0x44} ** 32,
+            .wrap_nonce = [_]u8{0x55} ** 32,
+        },
+        arena.allocator(),
+    );
+
+    var sync_storage = SyncTurnStorage{};
+    const sync_request = try sender_session.beginSyncTurn(.{
+        .pending_delivery = &delivery,
+        .storage = &sync_storage.workflow,
+    });
+    try std.testing.expect(sync_request == .publish);
+    try std.testing.expectEqualStrings("wss://relay.two", sync_request.publish.relay_url);
+    try std.testing.expect(sync_request.publish.role.recipient);
+}
+
+test "mailbox sync turn falls back to receive and reuses the receive turn floor" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var session = MailboxSession.init(&test_wrap_recipient_private_key);
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonOne(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        1_710_000_031,
+        &test_wrap_recipient_private_key,
+    );
+    _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try session.markCurrentRelayConnected();
+
+    var sync_storage = SyncTurnStorage{};
+    const sync_request = try session.beginSyncTurn(.{
+        .storage = &sync_storage.workflow,
+    });
+    try std.testing.expect(sync_request == .receive);
+    try std.testing.expectEqualStrings("wss://relay.one", sync_request.receive.relay_url);
+
+    var wrap_json_storage: [8192]u8 = undefined;
+    const wrap_event_json = try buildValidWrappedMessageJson(wrap_json_storage[0..]);
+    var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
+    var thumbs: [1][]const u8 = undefined;
+    var fallbacks: [1][]const u8 = undefined;
+    const result = try session.acceptSyncEnvelopeJson(
+        &sync_request,
+        wrap_event_json,
+        recipients[0..],
+        thumbs[0..0],
+        fallbacks[0..0],
+        arena.allocator(),
+    );
+    try std.testing.expect(result == .received);
+    try std.testing.expectEqualStrings("wrapped hello", result.received.envelope.direct_message.message.content);
 }
 
 test "mailbox workflow inspection keeps only the current connected relay on receive and leaves others idle" {
