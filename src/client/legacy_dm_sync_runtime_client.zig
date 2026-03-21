@@ -1,5 +1,6 @@
 const std = @import("std");
 const noztr = @import("noztr");
+const dm_sync_runtime_support = @import("dm_sync_runtime_support.zig");
 const legacy_dm_replay_job = @import("legacy_dm_replay_job_client.zig");
 const legacy_dm_replay_turn = @import("legacy_dm_replay_turn_client.zig");
 const legacy_dm_subscription_job = @import("legacy_dm_subscription_job_client.zig");
@@ -36,11 +37,7 @@ pub const LegacyDmSyncRuntimeClientStorage = struct {
     live_subscription_request: legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest = undefined,
 };
 
-pub const LegacyDmSyncRuntimePlanStorage = struct {
-    auth: runtime.RelayPoolAuthStorage = .{},
-    replay: runtime.RelayPoolReplayStorage = .{},
-    subscription: runtime.RelayPoolSubscriptionStorage = .{},
-};
+pub const LegacyDmSyncRuntimePlanStorage = dm_sync_runtime_support.SyncRuntimePlanStorage;
 
 pub const LegacyDmSyncRuntimeResumeStorage = struct {
     relay_members: runtime.RelayPoolMemberStorage = .{},
@@ -57,56 +54,15 @@ pub const LegacyDmSyncRuntimeResumeState = struct {
     }
 };
 
-pub const LegacyDmSyncRuntimeStep = union(enum) {
-    authenticate: runtime.RelayPoolAuthStep,
-    replay: runtime.RelayPoolReplayStep,
-    subscribe: runtime.RelayPoolSubscriptionStep,
-    receive: legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
-    idle,
-};
-
-pub const LegacyDmSyncRuntimePlan = struct {
-    authenticate_count: u8 = 0,
-    replay_count: u16 = 0,
-    subscribe_count: u16 = 0,
-    receive_count: u8 = 0,
-    replay_phase_complete: bool = false,
-    next_step: LegacyDmSyncRuntimeStep = .idle,
-
-    pub fn nextStep(self: *const LegacyDmSyncRuntimePlan) LegacyDmSyncRuntimeStep {
-        return self.next_step;
-    }
-};
-
-pub const LegacyDmLongLivedDmPolicyStorage = struct {
-    relay_runtime: runtime.RelayPoolPlanStorage = .{},
-    runtime: LegacyDmSyncRuntimePlanStorage = .{},
-};
-
-pub const LegacyDmLongLivedDmPolicyStep = union(enum) {
-    reconnect: runtime.RelayPoolStep,
-    authenticate: runtime.RelayPoolAuthStep,
-    replay_resume: runtime.RelayPoolReplayStep,
-    subscribe_resume: runtime.RelayPoolSubscriptionStep,
-    receive: legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
-    idle,
-};
-
-pub const LegacyDmLongLivedDmPolicyPlan = struct {
-    relay_count: u8 = 0,
-    reconnect_count: u8 = 0,
-    authenticate_count: u8 = 0,
-    replay_resume_count: u16 = 0,
-    subscribe_resume_count: u16 = 0,
-    receive_count: u8 = 0,
-    replay_phase_complete: bool = false,
-    live_subscription_active: bool = false,
-    next_step: LegacyDmLongLivedDmPolicyStep = .idle,
-
-    pub fn nextStep(self: *const LegacyDmLongLivedDmPolicyPlan) LegacyDmLongLivedDmPolicyStep {
-        return self.next_step;
-    }
-};
+pub const LegacyDmSyncRuntimeStep =
+    dm_sync_runtime_support.SyncRuntimeStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmSyncRuntimePlan =
+    dm_sync_runtime_support.SyncRuntimePlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmLongLivedDmPolicyStorage = dm_sync_runtime_support.LongLivedDmPolicyStorage;
+pub const LegacyDmLongLivedDmPolicyStep =
+    dm_sync_runtime_support.LongLivedDmPolicyStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const LegacyDmLongLivedDmPolicyPlan =
+    dm_sync_runtime_support.LongLivedDmPolicyPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
 
 pub const LegacyDmSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedLegacyDmSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
@@ -269,34 +225,15 @@ pub const LegacyDmSyncRuntimeClient = struct {
             &storage.subscription,
         );
 
-        var plan: LegacyDmSyncRuntimePlan = .{
-            .authenticate_count = auth_plan.authenticate_count,
-            .replay_count = if (self.storage.replay_phase_complete) 0 else replay_plan.replay_count,
-            .subscribe_count = subscription_plan.subscribe_count,
-            .receive_count = if (self.storage.live_subscription_active) 1 else 0,
-            .replay_phase_complete = self.storage.replay_phase_complete,
-        };
-
-        if (auth_plan.nextStep()) |step| {
-            plan.next_step = .{ .authenticate = step };
-            return plan;
-        }
-        if (self.storage.live_subscription_active) {
-            plan.next_step = .{ .receive = self.storage.live_subscription_request };
-            return plan;
-        }
-        if (!self.storage.replay_phase_complete) {
-            if (replay_plan.nextStep()) |step| {
-                plan.next_step = .{ .replay = step };
-                return plan;
-            }
-        }
-        if (subscription_plan.nextStep()) |step| {
-            plan.next_step = .{ .subscribe = step };
-            return plan;
-        }
-        plan.next_step = .idle;
-        return plan;
+        return dm_sync_runtime_support.buildSyncRuntimePlan(
+            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            auth_plan,
+            replay_plan,
+            subscription_plan,
+            self.storage.replay_phase_complete,
+            self.storage.live_subscription_active,
+            self.storage.live_subscription_request,
+        );
     }
 
     pub fn inspectLongLivedDmPolicy(
@@ -314,43 +251,13 @@ pub const LegacyDmSyncRuntimeClient = struct {
             &storage.runtime,
         );
 
-        var plan: LegacyDmLongLivedDmPolicyPlan = .{
-            .relay_count = self.relayCount(),
-            .reconnect_count = relay_runtime.connect_count,
-            .authenticate_count = runtime_plan.authenticate_count,
-            .replay_resume_count = runtime_plan.replay_count,
-            .subscribe_resume_count = runtime_plan.subscribe_count,
-            .receive_count = runtime_plan.receive_count,
-            .replay_phase_complete = runtime_plan.replay_phase_complete,
-            .live_subscription_active = self.storage.live_subscription_active,
-        };
-
-        switch (runtime_plan.nextStep()) {
-            .authenticate => |step| {
-                plan.next_step = .{ .authenticate = step };
-                return plan;
-            },
-            .receive => |request| {
-                plan.next_step = .{ .receive = request };
-                return plan;
-            },
-            else => {},
-        }
-
-        if (relay_runtime.nextStep()) |step| {
-            if (step.entry.action == .connect) {
-                plan.next_step = .{ .reconnect = step };
-                return plan;
-            }
-        }
-
-        switch (runtime_plan.nextStep()) {
-            .replay => |step| plan.next_step = .{ .replay_resume = step },
-            .subscribe => |step| plan.next_step = .{ .subscribe_resume = step },
-            .idle => plan.next_step = .idle,
-            .authenticate, .receive => unreachable,
-        }
-        return plan;
+        return dm_sync_runtime_support.classifyLongLivedDmPolicy(
+            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            self.relayCount(),
+            relay_runtime,
+            runtime_plan,
+            self.storage.live_subscription_active,
+        );
     }
 
     pub fn markReplayCatchupComplete(self: *LegacyDmSyncRuntimeClient) void {

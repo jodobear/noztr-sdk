@@ -1,6 +1,7 @@
 const std = @import("std");
 const noztr = @import("noztr");
 const local_operator = @import("local_operator_client.zig");
+const dm_sync_runtime_support = @import("dm_sync_runtime_support.zig");
 const mailbox_replay_job = @import("mailbox_replay_job_client.zig");
 const mailbox_replay_turn = @import("mailbox_replay_turn_client.zig");
 const mailbox_subscription_job = @import("mailbox_subscription_job_client.zig");
@@ -36,11 +37,7 @@ pub const MailboxSyncRuntimeClientStorage = struct {
     live_subscription_request: mailbox_subscription_job.MailboxSubscriptionJobRequest = undefined,
 };
 
-pub const MailboxSyncRuntimePlanStorage = struct {
-    auth: runtime.RelayPoolAuthStorage = .{},
-    replay: runtime.RelayPoolReplayStorage = .{},
-    subscription: runtime.RelayPoolSubscriptionStorage = .{},
-};
+pub const MailboxSyncRuntimePlanStorage = dm_sync_runtime_support.SyncRuntimePlanStorage;
 
 pub const MailboxSyncRuntimeResumeStorage = struct {
     relay_members: runtime.RelayPoolMemberStorage = .{},
@@ -58,56 +55,15 @@ pub const MailboxSyncRuntimeResumeState = struct {
     }
 };
 
-pub const MailboxSyncRuntimeStep = union(enum) {
-    authenticate: runtime.RelayPoolAuthStep,
-    replay: runtime.RelayPoolReplayStep,
-    subscribe: runtime.RelayPoolSubscriptionStep,
-    receive: mailbox_subscription_job.MailboxSubscriptionJobRequest,
-    idle,
-};
-
-pub const MailboxSyncRuntimePlan = struct {
-    authenticate_count: u8 = 0,
-    replay_count: u16 = 0,
-    subscribe_count: u16 = 0,
-    receive_count: u8 = 0,
-    replay_phase_complete: bool = false,
-    next_step: MailboxSyncRuntimeStep = .idle,
-
-    pub fn nextStep(self: *const MailboxSyncRuntimePlan) MailboxSyncRuntimeStep {
-        return self.next_step;
-    }
-};
-
-pub const MailboxLongLivedDmPolicyStorage = struct {
-    relay_runtime: runtime.RelayPoolPlanStorage = .{},
-    runtime: MailboxSyncRuntimePlanStorage = .{},
-};
-
-pub const MailboxLongLivedDmPolicyStep = union(enum) {
-    reconnect: runtime.RelayPoolStep,
-    authenticate: runtime.RelayPoolAuthStep,
-    replay_resume: runtime.RelayPoolReplayStep,
-    subscribe_resume: runtime.RelayPoolSubscriptionStep,
-    receive: mailbox_subscription_job.MailboxSubscriptionJobRequest,
-    idle,
-};
-
-pub const MailboxLongLivedDmPolicyPlan = struct {
-    relay_count: u8 = 0,
-    reconnect_count: u8 = 0,
-    authenticate_count: u8 = 0,
-    replay_resume_count: u16 = 0,
-    subscribe_resume_count: u16 = 0,
-    receive_count: u8 = 0,
-    replay_phase_complete: bool = false,
-    live_subscription_active: bool = false,
-    next_step: MailboxLongLivedDmPolicyStep = .idle,
-
-    pub fn nextStep(self: *const MailboxLongLivedDmPolicyPlan) MailboxLongLivedDmPolicyStep {
-        return self.next_step;
-    }
-};
+pub const MailboxSyncRuntimeStep =
+    dm_sync_runtime_support.SyncRuntimeStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxSyncRuntimePlan =
+    dm_sync_runtime_support.SyncRuntimePlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxLongLivedDmPolicyStorage = dm_sync_runtime_support.LongLivedDmPolicyStorage;
+pub const MailboxLongLivedDmPolicyStep =
+    dm_sync_runtime_support.LongLivedDmPolicyStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+pub const MailboxLongLivedDmPolicyPlan =
+    dm_sync_runtime_support.LongLivedDmPolicyPlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
 
 pub const MailboxSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedMailboxSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
@@ -298,34 +254,15 @@ pub const MailboxSyncRuntimeClient = struct {
             &storage.subscription,
         );
 
-        var plan: MailboxSyncRuntimePlan = .{
-            .authenticate_count = auth_plan.authenticate_count,
-            .replay_count = if (self.storage.replay_phase_complete) 0 else replay_plan.replay_count,
-            .subscribe_count = subscription_plan.subscribe_count,
-            .receive_count = if (self.storage.live_subscription_active) 1 else 0,
-            .replay_phase_complete = self.storage.replay_phase_complete,
-        };
-
-        if (auth_plan.nextStep()) |step| {
-            plan.next_step = .{ .authenticate = step };
-            return plan;
-        }
-        if (self.storage.live_subscription_active) {
-            plan.next_step = .{ .receive = self.storage.live_subscription_request };
-            return plan;
-        }
-        if (!self.storage.replay_phase_complete) {
-            if (replay_plan.nextStep()) |step| {
-                plan.next_step = .{ .replay = step };
-                return plan;
-            }
-        }
-        if (subscription_plan.nextStep()) |step| {
-            plan.next_step = .{ .subscribe = step };
-            return plan;
-        }
-        plan.next_step = .idle;
-        return plan;
+        return dm_sync_runtime_support.buildSyncRuntimePlan(
+            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            auth_plan,
+            replay_plan,
+            subscription_plan,
+            self.storage.replay_phase_complete,
+            self.storage.live_subscription_active,
+            self.storage.live_subscription_request,
+        );
     }
 
     pub fn inspectLongLivedDmPolicy(
@@ -343,43 +280,13 @@ pub const MailboxSyncRuntimeClient = struct {
             &storage.runtime,
         );
 
-        var plan: MailboxLongLivedDmPolicyPlan = .{
-            .relay_count = self.relayCount(),
-            .reconnect_count = relay_runtime.connect_count,
-            .authenticate_count = runtime_plan.authenticate_count,
-            .replay_resume_count = runtime_plan.replay_count,
-            .subscribe_resume_count = runtime_plan.subscribe_count,
-            .receive_count = runtime_plan.receive_count,
-            .replay_phase_complete = runtime_plan.replay_phase_complete,
-            .live_subscription_active = self.storage.live_subscription_active,
-        };
-
-        switch (runtime_plan.nextStep()) {
-            .authenticate => |step| {
-                plan.next_step = .{ .authenticate = step };
-                return plan;
-            },
-            .receive => |request| {
-                plan.next_step = .{ .receive = request };
-                return plan;
-            },
-            else => {},
-        }
-
-        if (relay_runtime.nextStep()) |step| {
-            if (step.entry.action == .connect) {
-                plan.next_step = .{ .reconnect = step };
-                return plan;
-            }
-        }
-
-        switch (runtime_plan.nextStep()) {
-            .replay => |step| plan.next_step = .{ .replay_resume = step },
-            .subscribe => |step| plan.next_step = .{ .subscribe_resume = step },
-            .idle => plan.next_step = .idle,
-            .authenticate, .receive => unreachable,
-        }
-        return plan;
+        return dm_sync_runtime_support.classifyLongLivedDmPolicy(
+            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            self.relayCount(),
+            relay_runtime,
+            runtime_plan,
+            self.storage.live_subscription_active,
+        );
     }
 
     pub fn markReplayCatchupComplete(self: *MailboxSyncRuntimeClient) void {
