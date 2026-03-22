@@ -18,6 +18,7 @@ pub const RelayServerIoCloseFrame = relay_server_io.RelayServerIoCloseFrame;
 pub const RelayServerIoInboundMessage = relay_server_io.RelayServerIoInboundMessage;
 pub const RelayServerIoListener = relay_server_io.RelayServerIoListener;
 pub const RelayServerIoConnection = relay_server_io.RelayServerIoConnection;
+pub const RelayServerIoDriver = relay_server_io.RelayServerIoDriver;
 
 pub const ClockError = clock.ClockError;
 pub const RetryBackoffPolicy = clock.RetryBackoffPolicy;

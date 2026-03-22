@@ -100,6 +100,17 @@ pub const RelayServerIoListener = struct {
     }
 };
 
+pub const RelayServerIoDriver = struct {
+    ctx: ?*anyopaque,
+    start_listener_fn: *const fn (ctx: *anyopaque, request: RelayServerIoListenRequest) RelayServerIoError!RelayServerIoListener,
+
+    pub fn startListener(self: RelayServerIoDriver, request: RelayServerIoListenRequest) RelayServerIoError!RelayServerIoListener {
+        if (self.ctx == null) return error.InvalidClient;
+        if (request.endpoint.len == 0) return error.InvalidRequest;
+        return self.start_listener_fn(self.ctx.?, request);
+    }
+};
+
 test "relay server io listener forwards listen accept close and connection operations" {
     const FakeServer = struct {
         listener_state: RelayServerIoListenerState = .idle,
@@ -268,4 +279,167 @@ test "relay server io surfaces reject invalid caller inputs with typed errors" {
     const accepted = try listener.accept();
     try std.testing.expectError(error.InvalidClient, accepted.readNext(buffer[0..]));
     try std.testing.expectError(error.InvalidMessage, listener.accept().writeText(""));
+}
+
+test "relay server io driver starts one listener and forwards listener lifecycle" {
+    const FakeServer = struct {
+        listener_state: RelayServerIoListenerState = .idle,
+        last_endpoint: []const u8 = "",
+
+        fn startListener(ctx: *anyopaque, request: RelayServerIoListenRequest) RelayServerIoError!RelayServerIoListener {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            self.last_endpoint = request.endpoint;
+            self.listener_state = .listening;
+            return .{
+                .ctx = self,
+                .listen_fn = listen,
+                .accept_fn = accept,
+                .close_fn = closeListener,
+                .inspect_state_fn = inspectListenerState,
+            };
+        }
+
+        fn listen(ctx: *anyopaque, request: RelayServerIoListenRequest) RelayServerIoError!void {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            self.last_endpoint = request.endpoint;
+            self.listener_state = .listening;
+        }
+
+        fn accept(_: *anyopaque) RelayServerIoError!RelayServerIoConnection {
+            return error.AcceptFailed;
+        }
+
+        fn closeListener(ctx: *anyopaque, _: RelayServerIoCloseFrame) RelayServerIoError!void {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            self.listener_state = .closed;
+        }
+
+        fn inspectListenerState(ctx: *anyopaque) RelayServerIoListenerState {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            return self.listener_state;
+        }
+    };
+
+    var fake = FakeServer{};
+    const driver = RelayServerIoDriver{
+        .ctx = &fake,
+        .start_listener_fn = FakeServer.startListener,
+    };
+
+    const listener = try driver.startListener(.{ .endpoint = "ws://127.0.0.1:7447" });
+    try std.testing.expectEqualStrings("ws://127.0.0.1:7447", fake.last_endpoint);
+    try std.testing.expectEqual(.listening, try listener.inspectState());
+
+    try listener.close(.{});
+    try std.testing.expectEqual(.closed, try listener.inspectState());
+}
+
+test "relay server io driver rejects invalid caller inputs with typed errors" {
+    const FakeServer = struct {
+        fn startListener(_: *anyopaque, _: RelayServerIoListenRequest) RelayServerIoError!RelayServerIoListener {
+            return .{
+                .ctx = null,
+                .listen_fn = listen,
+                .accept_fn = accept,
+                .close_fn = closeListener,
+                .inspect_state_fn = inspectListenerState,
+            };
+        }
+
+        fn listen(_: *anyopaque, _: RelayServerIoListenRequest) RelayServerIoError!void {}
+        fn accept(_: *anyopaque) RelayServerIoError!RelayServerIoConnection {
+            return error.AcceptFailed;
+        }
+        fn closeListener(_: *anyopaque, _: RelayServerIoCloseFrame) RelayServerIoError!void {}
+        fn inspectListenerState(_: *anyopaque) RelayServerIoListenerState {
+            return .idle;
+        }
+    };
+
+    const invalid_driver = RelayServerIoDriver{
+        .ctx = null,
+        .start_listener_fn = FakeServer.startListener,
+    };
+    try std.testing.expectError(error.InvalidClient, invalid_driver.startListener(.{ .endpoint = "ws://127.0.0.1:7447" }));
+
+    var fake_ctx: u8 = 0;
+    const driver = RelayServerIoDriver{
+        .ctx = &fake_ctx,
+        .start_listener_fn = FakeServer.startListener,
+    };
+    try std.testing.expectError(error.InvalidRequest, driver.startListener(.{ .endpoint = "" }));
+}
+
+test "relay server io propagates closed-connection and bounded-message errors" {
+    const FakeServer = struct {
+        connection_state: RelayServerIoConnectionState = .open,
+
+        fn startListener(ctx: *anyopaque, _: RelayServerIoListenRequest) RelayServerIoError!RelayServerIoListener {
+            return .{
+                .ctx = ctx,
+                .listen_fn = listen,
+                .accept_fn = accept,
+                .close_fn = closeListener,
+                .inspect_state_fn = inspectListenerState,
+            };
+        }
+
+        fn listen(_: *anyopaque, _: RelayServerIoListenRequest) RelayServerIoError!void {}
+
+        fn accept(ctx: *anyopaque) RelayServerIoError!RelayServerIoConnection {
+            return .{
+                .ctx = ctx,
+                .read_next_fn = readNext,
+                .write_text_fn = writeText,
+                .close_fn = closeConnection,
+                .inspect_state_fn = inspectConnectionState,
+            };
+        }
+
+        fn closeListener(_: *anyopaque, _: RelayServerIoCloseFrame) RelayServerIoError!void {}
+
+        fn inspectListenerState(_: *anyopaque) RelayServerIoListenerState {
+            return .listening;
+        }
+
+        fn readNext(ctx: *anyopaque, buffer: []u8) RelayServerIoError!RelayServerIoInboundMessage {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (self.connection_state == .closed) return error.ConnectionClosed;
+            const message = "[\"EVENT\",\"payload\"]";
+            if (buffer.len < message.len) return error.MessageTooLarge;
+            @memcpy(buffer[0..message.len], message);
+            return .{ .text = buffer[0..message.len] };
+        }
+
+        fn writeText(ctx: *anyopaque, _: []const u8) RelayServerIoError!void {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (self.connection_state == .closed) return error.ConnectionClosed;
+        }
+
+        fn closeConnection(ctx: *anyopaque, _: RelayServerIoCloseFrame) RelayServerIoError!void {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            self.connection_state = .closed;
+        }
+
+        fn inspectConnectionState(ctx: *anyopaque) RelayServerIoConnectionState {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            return self.connection_state;
+        }
+    };
+
+    var fake = FakeServer{};
+    const driver = RelayServerIoDriver{
+        .ctx = &fake,
+        .start_listener_fn = FakeServer.startListener,
+    };
+    const listener = try driver.startListener(.{ .endpoint = "ws://127.0.0.1:7447" });
+    const connection = try listener.accept();
+
+    var small: [8]u8 = undefined;
+    try std.testing.expectError(error.MessageTooLarge, connection.readNext(small[0..]));
+
+    try connection.close(.{});
+    try std.testing.expectEqual(.closed, try connection.inspectState());
+    try std.testing.expectError(error.ConnectionClosed, connection.readNext(small[0..]));
+    try std.testing.expectError(error.ConnectionClosed, connection.writeText("[\"OK\"]"));
 }
