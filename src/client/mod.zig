@@ -43,6 +43,7 @@ const relay_replay_exchange_client = @import("relay_replay_exchange_client.zig")
 const relay_replay_turn_client = @import("relay_replay_turn_client.zig");
 const relay_response_client = @import("relay_response_client.zig");
 const signer_connect_job_client = @import("signer_connect_job_client.zig");
+const signer_capability = @import("signer_capability.zig");
 const signer_client = @import("signer_client.zig");
 const signer_nip44_encrypt_job_client = @import("signer_nip44_encrypt_job_client.zig");
 const signer_pubkey_job_client = @import("signer_pubkey_job_client.zig");
@@ -86,6 +87,7 @@ pub const relay = struct {
 };
 
 pub const signer = struct {
+    pub const capability = signer_capability;
     pub const session = signer_client;
     pub const connect_job = signer_connect_job_client;
     pub const pubkey_job = signer_pubkey_job_client;

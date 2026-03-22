@@ -20,6 +20,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.relay) == type);
     try std.testing.expect(@TypeOf(client.relay.session.RelaySessionClient) == type);
     try std.testing.expect(@TypeOf(client.signer) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerCapabilityProfile) == type);
     try std.testing.expect(@TypeOf(client.signer.session.SignerClient) == type);
     try std.testing.expect(@TypeOf(client.dm) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClient) == type);
@@ -235,6 +236,15 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.relay.publish.PublishTarget) == type);
     try std.testing.expect(@TypeOf(client.relay.publish.TargetedPublishEvent) == type);
     try std.testing.expect(@TypeOf(client.relay.publish.PublishClient) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerBackendKind) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerOperation) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerOperationMode) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerOperationModes) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerCapabilityProfile) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerPubkeyTextRequest) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerOperationRequest) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerTextResponse) == type);
+    try std.testing.expect(@TypeOf(client.signer.capability.SignerOperationResult) == type);
     try std.testing.expect(@TypeOf(client.relay.publish_turn.PublishTurnClientError) == type);
     try std.testing.expect(@TypeOf(client.relay.publish_turn.PublishTurnClientConfig) == type);
     try std.testing.expect(@TypeOf(client.relay.publish_turn.PublishTurnClientStorage) == type);

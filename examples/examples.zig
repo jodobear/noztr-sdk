@@ -35,6 +35,7 @@ comptime {
     _ = @import("relay_replay_turn_client_recipe.zig");
     _ = @import("relay_response_client_recipe.zig");
     _ = @import("signer_connect_job_client_recipe.zig");
+    _ = @import("signer_capability_recipe.zig");
     _ = @import("signer_client_recipe.zig");
     _ = @import("signer_nip44_encrypt_job_client_recipe.zig");
     _ = @import("signer_pubkey_job_client_recipe.zig");

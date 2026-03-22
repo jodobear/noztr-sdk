@@ -99,6 +99,15 @@ They do not imply:
 - `downstream_mixed_route_recipe.zig`
   - goal: one arbitrary signed kernel event authored in `noztr`, then handed into generic SDK
     publish and relay-session composition without a duplicate downstream runtime layer
+- `signer_capability_recipe.zig`
+  - goal: inspect one shared signer capability surface that keeps local and remote signer
+    differences explicit without forcing product runtime or browser assumptions
+  - related SDK symbols: `noztr_sdk.client.signer.capability`, `SignerBackendKind`,
+    `SignerOperation`, `SignerOperationMode`, `SignerCapabilityProfile`,
+    `SignerOperationRequest`, `SignerOperationResult`
+  - control points: capability reporting stays honest about unsupported operations, shared request
+    and result vocabulary stays bounded, and the surface is reusable before any `NIP-07` adapter
+    exists
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response
