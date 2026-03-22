@@ -25,7 +25,10 @@ is:
 - `noztr_sdk.transport.HttpClient` for explicit HTTP-backed jobs
 - `noztr_sdk.runtime.RelayPool` plus relay specs/plans for shared relay-state inspection and
   next-step selection
-- the relay auth/query/exchange/replay/publish client family for explicit relay-backed composition
+- the relay auth/query/exchange/replay/publish and response client family for explicit
+  relay-backed composition
+- `noztr_sdk.client.RelayWorkspaceClient` for remembered relay/workspace state plus checkpoint and
+  replay planning
 - the remote-signer workflow/client family for reusable relay-session/auth/session-state
   composition
 - caller-owned stores and checkpoints for durable state
@@ -47,7 +50,7 @@ depending on `noztr-sdk` to act like a generic socket framework.
 
 | Job | Primary public symbols | Start here | Example |
 | --- | --- | --- | --- |
-| Build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | `noztr_sdk.transport.HttpClient`, `noztr_sdk.runtime`, `RelayPool`, `RelayPoolPlan`, `RelayPoolSubscriptionPlan`, `RelayPoolReplayPlan`, `RelayPoolPublishPlan`, `noztr_sdk.client`, `RelayAuthClient`, `RelayQueryClient`, `RelayExchangeClient`, `RelayReplayClient`, `RelayResponseClient`, `PublishClient`, `noztr_sdk.workflows.RemoteSignerSession`, `noztr_sdk.client.SignerClient`, `noztr_sdk.store.RelayCheckpointArchive` | `noztr_sdk.runtime.RelayPool` | [relay_pool_recipe.zig](../../examples/relay_pool_recipe.zig) |
+| Build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | `noztr_sdk.transport.HttpClient`, `noztr_sdk.runtime`, `RelayPool`, `RelayPoolPlan`, `RelayPoolSubscriptionPlan`, `RelayPoolReplayPlan`, `RelayPoolPublishPlan`, `noztr_sdk.client`, `RelayAuthClient`, `RelayQueryClient`, `RelayExchangeClient`, `RelayReplayClient`, `RelayResponseClient`, `PublishClient`, `RelayWorkspaceClient`, `noztr_sdk.workflows.RemoteSignerSession`, `noztr_sdk.client.SignerClient`, `noztr_sdk.store.RelayCheckpointArchive` | `noztr_sdk.runtime.RelayPool` | [relay_pool_recipe.zig](../../examples/relay_pool_recipe.zig) |
 | Command-ready local `NIP-19` entity encode-decode over the local operator floor | `noztr_sdk.client`, `LocalEntityJobClient`, `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult` | `noztr_sdk.client.LocalEntityJobClient` | [local_entity_job_client_recipe.zig](../../examples/local_entity_job_client_recipe.zig) |
 | Command-ready local event inspect plus draft-sign-verify over the local operator floor | `noztr_sdk.client`, `LocalEventJobClient`, `LocalEventJobClientStorage`, `LocalEventJobRequest`, `LocalEventJobResult` | `noztr_sdk.client.LocalEventJobClient` | [local_event_job_client_recipe.zig](../../examples/local_event_job_client_recipe.zig) |
 | Command-ready local key generation and public-key derivation over the local operator floor | `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`, `LocalKeyJobRequest`, `LocalKeyJobResult` | `noztr_sdk.client.LocalKeyJobClient` | [local_key_job_client_recipe.zig](../../examples/local_key_job_client_recipe.zig) |

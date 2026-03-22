@@ -65,6 +65,8 @@ That means:
   helpers, and reusable bounded orchestration substrate.
 - `noztr-sdk` should absorb common relay/auth/query/exchange/replay/lifecycle heavy lifting when
   that work is generic across many Nostr apps and SDK consumers.
+- `noztr-sdk` already provides reusable relay response, replay/checkpoint, remembered workspace,
+  and remote-signer/session composition above those shared seams.
 - downstream libraries own their own protocol-specific contracts and product/runtime policy above
   that floor.
 - `noztr-sdk` does not currently promise a generic public websocket framework or hidden background

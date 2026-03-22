@@ -54,6 +54,10 @@ Today, the downstream-targetable foundation is relay-centric:
 - shared relay runtime planning starts from `noztr_sdk.runtime.RelayPool`
 - explicit relay-backed composition starts from the relay auth/query/exchange/replay/publish and
   remote-signer client/workflow families
+- inbound relay message ownership and transcript validation start from
+  `noztr_sdk.client.RelayResponseClient`
+- remembered relay workspace, checkpoint restore, and replay planning start from
+  `noztr_sdk.client.RelayWorkspaceClient`
 
 If you are building another Zig SDK above `noztr-sdk`, start with the public contract map and the
 relay/runtime examples rather than expecting a generic socket ownership layer.

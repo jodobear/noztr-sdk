@@ -33,7 +33,7 @@ Use these docs when you need public routing or contract context before opening a
 
 ## If You Are Building Another Zig SDK
 
-Use the relay/runtime examples as the reusable downstream floor:
+Use the relay/runtime examples as the reusable downstream foundation:
 
 - [relay_pool_recipe.zig](./relay_pool_recipe.zig)
 - [relay_query_client_recipe.zig](./relay_query_client_recipe.zig)
@@ -41,8 +41,10 @@ Use the relay/runtime examples as the reusable downstream floor:
 - [relay_replay_client_recipe.zig](./relay_replay_client_recipe.zig)
 - [relay_auth_client_recipe.zig](./relay_auth_client_recipe.zig)
 - [relay_response_client_recipe.zig](./relay_response_client_recipe.zig)
+- [relay_workspace_client_recipe.zig](./relay_workspace_client_recipe.zig)
+- [remote_signer_recipe.zig](./remote_signer_recipe.zig)
 
-These examples show the current public floor another Zig SDK can drive explicitly.
+These examples show the current public foundation another Zig SDK can drive explicitly.
 
 They do not imply:
 - a hidden websocket/runtime framework
