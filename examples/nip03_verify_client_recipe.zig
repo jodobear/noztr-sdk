@@ -11,8 +11,8 @@ const ots_header_magic = [_]u8{
 const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 // Prepare one command-ready NIP-03 detached-proof verify job, run it over the explicit HTTP,
-// proof-store, and remembered-verification seams, then inspect bounded remembered-proof planning
-// through the client route.
+// proof-store, and remembered-verification seams, then inspect bounded remembered-proof runtime,
+// refresh cadence, and refresh planning through the client route.
 test "recipe: nip03 verify client prepares, remembers, and inspects proof planning" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&signer_secret);
@@ -115,6 +115,33 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     };
     var target_matches: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.Match = undefined;
     var target_latest_entries: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    var cadence_entries: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
+    var cadence_groups: [5]noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
+    const cadence_plan = try client.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .storage = noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshCadenceStorage.init(
+                target_matches[0..],
+                target_latest_entries[0..],
+                cadence_entries[0..],
+                cadence_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), cadence_plan.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 1), cadence_plan.stable_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        stale_target.id[0..],
+        cadence_plan.nextDueStep().?.entry.target.target_event_id[0..],
+    );
+
+    var refresh_target_matches: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.Match = undefined;
+    var refresh_target_latest_entries: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
     var refresh_entries: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.RefreshEntry = undefined;
     var refresh_targets: [2]noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshEntry = undefined;
     const refresh_plan = try client.planStoredVerificationRefreshForTargets(
@@ -124,8 +151,8 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .storage = noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshStorage.init(
-                target_matches[0..],
-                target_latest_entries[0..],
+                refresh_target_matches[0..],
+                refresh_target_latest_entries[0..],
                 refresh_entries[0..],
                 refresh_targets[0..],
             ),

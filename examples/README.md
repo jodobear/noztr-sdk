@@ -713,7 +713,7 @@ Use these docs when you need public routing or contract context before opening a
 - `nip03_verify_client_recipe.zig`
   - goal: prepare and run one command-ready remembered detached-proof `NIP-03` verify job over
     the explicit HTTP, proof-store, and remembered-verification seams, then inspect bounded
-    remembered-proof runtime and refresh planning through the client surface
+    remembered-proof runtime, refresh-cadence, and refresh planning through the client surface
   - public SDK surface: `noztr_sdk.client`, `Nip03VerifyClient`, `Nip03VerifyClientStorage`,
     `Nip03VerifyJob`, `Nip03VerifyCachedResult`, `Nip03VerifyJobResult`,
     `Nip03StoredVerificationPlanning`

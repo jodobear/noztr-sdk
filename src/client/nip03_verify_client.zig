@@ -67,6 +67,20 @@ pub const Nip03StoredVerificationPlanning = struct {
     pub const TargetRefreshRequest = workflows.OpenTimestampsStoredVerificationTargetRefreshRequest;
     pub const TargetRefreshPlan = workflows.OpenTimestampsStoredVerificationTargetRefreshPlan;
     pub const TargetRefreshStep = workflows.OpenTimestampsStoredVerificationTargetRefreshStep;
+    pub const TargetRefreshCadenceAction =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceAction;
+    pub const TargetRefreshCadenceEntry =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry;
+    pub const TargetRefreshCadenceGroup =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup;
+    pub const TargetRefreshCadenceStorage =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceStorage;
+    pub const TargetRefreshCadenceRequest =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceRequest;
+    pub const TargetRefreshCadencePlan =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadencePlan;
+    pub const TargetRefreshCadenceStep =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceStep;
 };
 
 pub const Nip03VerifyClient = struct {
@@ -207,6 +221,18 @@ pub const Nip03VerifyClient = struct {
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshPlan {
         _ = self;
         return workflows.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredVerificationRefreshCadenceForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.TargetRefreshCadenceRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshCadencePlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
             verification_store,
             request,
         );
@@ -431,6 +457,42 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         u8,
         stale_target.id[0..],
         refresh_plan.nextStep().?.entry.target.target_event_id[0..],
+    );
+
+    var cadence_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var cadence_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    var cadence_entries: [3]Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
+    var cadence_groups: [5]Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
+    const cadence_plan = try client.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip03StoredVerificationPlanning.TargetRefreshCadenceStorage.init(
+                cadence_target_matches[0..],
+                cadence_target_latest_entries[0..],
+                cadence_entries[0..],
+                cadence_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), cadence_plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), cadence_plan.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 0), cadence_plan.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 0), cadence_plan.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), cadence_plan.stable_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        missing_target.target_event_id[0..],
+        cadence_plan.nextDueStep().?.entry.target.target_event_id[0..],
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        stale_target.id[0..],
+        cadence_plan.usableWhileRefreshingEntries()[0].target.target_event_id[0..],
     );
 }
 
