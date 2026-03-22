@@ -659,6 +659,145 @@ pub const OpenTimestampsStoredVerificationTargetRefreshBatchStep = struct {
     entry: OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
 };
 
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyAction = enum {
+    verify_now,
+    refresh_selected,
+    use_cached,
+    defer_refresh,
+};
+
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyEntry = struct {
+    target: OpenTimestampsStoredVerificationTarget,
+    action: OpenTimestampsStoredVerificationTargetTurnPolicyAction,
+    latest: ?OpenTimestampsLatestStoredVerificationFreshness = null,
+};
+
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyGroup = struct {
+    action: OpenTimestampsStoredVerificationTargetTurnPolicyAction,
+    entries: []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
+};
+
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyStorage = struct {
+    matches: []OpenTimestampsStoredVerificationMatch,
+    latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
+    cadence_entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+    cadence_groups: []OpenTimestampsStoredVerificationTargetRefreshCadenceGroup,
+    entries: []OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
+    groups: []OpenTimestampsStoredVerificationTargetTurnPolicyGroup,
+
+    pub fn init(
+        matches: []OpenTimestampsStoredVerificationMatch,
+        latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
+        cadence_entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+        cadence_groups: []OpenTimestampsStoredVerificationTargetRefreshCadenceGroup,
+        entries: []OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
+        groups: []OpenTimestampsStoredVerificationTargetTurnPolicyGroup,
+    ) OpenTimestampsStoredVerificationTargetTurnPolicyStorage {
+        return .{
+            .matches = matches,
+            .latest_entries = latest_entries,
+            .cadence_entries = cadence_entries,
+            .cadence_groups = cadence_groups,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyRequest = struct {
+    targets: []const OpenTimestampsStoredVerificationTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    max_selected: usize,
+    fallback_policy: OpenTimestampsStoredVerificationFallbackPolicy = .allow_stale_latest,
+    storage: OpenTimestampsStoredVerificationTargetTurnPolicyStorage,
+};
+
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyPlan = struct {
+    entries: []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
+    groups: []const OpenTimestampsStoredVerificationTargetTurnPolicyGroup,
+    verify_now_count: u32 = 0,
+    refresh_selected_count: u32 = 0,
+    use_cached_count: u32 = 0,
+    defer_refresh_count: u32 = 0,
+    fresh_count: u32 = 0,
+    stale_count: u32 = 0,
+    missing_count: u32 = 0,
+
+    pub fn nextWorkEntry(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) ?*const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        const work_count = self.verify_now_count + self.refresh_selected_count;
+        if (work_count == 0) return null;
+        return &self.entries[0];
+    }
+
+    pub fn nextWorkStep(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) ?OpenTimestampsStoredVerificationTargetTurnPolicyStep {
+        const entry = self.nextWorkEntry() orelse return null;
+        return .{
+            .action = entry.action,
+            .entry = entry.*,
+        };
+    }
+
+    pub fn verifyNowEntries(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        return self.entries[0..@as(usize, @intCast(self.verify_now_count))];
+    }
+
+    pub fn refreshSelectedEntries(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        const start: usize = @intCast(self.verify_now_count);
+        const end = start + @as(usize, @intCast(self.refresh_selected_count));
+        return self.entries[start..end];
+    }
+
+    pub fn workEntries(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        const end =
+            @as(usize, @intCast(self.verify_now_count + self.refresh_selected_count));
+        return self.entries[0..end];
+    }
+
+    pub fn idleEntries(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        const start =
+            @as(usize, @intCast(self.verify_now_count + self.refresh_selected_count));
+        return self.entries[start..];
+    }
+
+    pub fn useCachedEntries(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        const start =
+            @as(usize, @intCast(self.verify_now_count + self.refresh_selected_count));
+        const end = start + @as(usize, @intCast(self.use_cached_count));
+        return self.entries[start..end];
+    }
+
+    pub fn deferredEntries(
+        self: *const OpenTimestampsStoredVerificationTargetTurnPolicyPlan,
+    ) []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry {
+        const start = @as(
+            usize,
+            @intCast(self.verify_now_count + self.refresh_selected_count + self.use_cached_count),
+        );
+        return self.entries[start..];
+    }
+};
+
+pub const OpenTimestampsStoredVerificationTargetTurnPolicyStep = struct {
+    action: OpenTimestampsStoredVerificationTargetTurnPolicyAction,
+    entry: OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
+};
+
 pub const OpenTimestampsVerificationStoreVTable = struct {
     put_remote_verification: *const fn (
         ctx: *anyopaque,
@@ -1726,7 +1865,168 @@ pub const OpenTimestampsVerifier = struct {
             .deferred_count = @intCast(due_len - selected_len),
         };
     }
+
+    pub fn inspectStoredVerificationTurnPolicyForTargets(
+        verification_store: OpenTimestampsVerificationStore,
+        request: OpenTimestampsStoredVerificationTargetTurnPolicyRequest,
+    ) OpenTimestampsStoredVerificationDiscoveryError!OpenTimestampsStoredVerificationTargetTurnPolicyPlan {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+        if (request.storage.groups.len < 4) return error.BufferTooSmall;
+
+        const latest_entries = try discoverLatestStoredVerificationFreshnessForTargets(
+            verification_store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = .{
+                    .matches = request.storage.matches,
+                    .entries = request.storage.latest_entries,
+                },
+            },
+        );
+        const batch = try inspectStoredVerificationRefreshBatchForTargets(
+            verification_store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .refresh_soon_age_seconds = request.refresh_soon_age_seconds,
+                .max_selected = request.max_selected,
+                .fallback_policy = request.fallback_policy,
+                .storage = .init(
+                    request.storage.matches,
+                    request.storage.latest_entries,
+                    request.storage.cadence_entries,
+                    request.storage.cadence_groups,
+                ),
+            },
+        );
+
+        var verify_now_count: usize = 0;
+        var refresh_selected_count: usize = 0;
+        var use_cached_count: usize = 0;
+        var defer_refresh_count: usize = 0;
+        var fresh_count: u32 = 0;
+        var stale_count: u32 = 0;
+        var missing_count: u32 = 0;
+
+        for (latest_entries) |latest_entry| {
+            const action: OpenTimestampsStoredVerificationTargetTurnPolicyAction =
+                if (latest_entry.latest == null)
+                    .verify_now
+                else if (containsStoredVerificationTarget(batch.selectedEntries(), latest_entry.target))
+                    .refresh_selected
+                else if (containsStoredVerificationTarget(batch.deferredEntries(), latest_entry.target))
+                    .defer_refresh
+                else
+                    .use_cached;
+
+            switch (action) {
+                .verify_now => verify_now_count += 1,
+                .refresh_selected => refresh_selected_count += 1,
+                .use_cached => use_cached_count += 1,
+                .defer_refresh => defer_refresh_count += 1,
+            }
+
+            if (latest_entry.latest) |latest| {
+                switch (latest.freshness) {
+                    .fresh => fresh_count += 1,
+                    .stale => stale_count += 1,
+                }
+            } else {
+                missing_count += 1;
+            }
+        }
+
+        const verify_now_start: usize = 0;
+        const refresh_selected_start = verify_now_start + verify_now_count;
+        const use_cached_start = refresh_selected_start + refresh_selected_count;
+        const defer_refresh_start = use_cached_start + use_cached_count;
+
+        var next_verify_now = verify_now_start;
+        var next_refresh_selected = refresh_selected_start;
+        var next_use_cached = use_cached_start;
+        var next_defer_refresh = defer_refresh_start;
+
+        for (latest_entries) |latest_entry| {
+            const action: OpenTimestampsStoredVerificationTargetTurnPolicyAction =
+                if (latest_entry.latest == null)
+                    .verify_now
+                else if (containsStoredVerificationTarget(batch.selectedEntries(), latest_entry.target))
+                    .refresh_selected
+                else if (containsStoredVerificationTarget(batch.deferredEntries(), latest_entry.target))
+                    .defer_refresh
+                else
+                    .use_cached;
+
+            const insert_index = switch (action) {
+                .verify_now => blk: {
+                    defer next_verify_now += 1;
+                    break :blk next_verify_now;
+                },
+                .refresh_selected => blk: {
+                    defer next_refresh_selected += 1;
+                    break :blk next_refresh_selected;
+                },
+                .use_cached => blk: {
+                    defer next_use_cached += 1;
+                    break :blk next_use_cached;
+                },
+                .defer_refresh => blk: {
+                    defer next_defer_refresh += 1;
+                    break :blk next_defer_refresh;
+                },
+            };
+
+            request.storage.entries[insert_index] = .{
+                .target = latest_entry.target,
+                .action = action,
+                .latest = latest_entry.latest,
+            };
+        }
+
+        const total_entries = request.targets.len;
+        request.storage.groups[0] = .{
+            .action = .verify_now,
+            .entries = request.storage.entries[verify_now_start..refresh_selected_start],
+        };
+        request.storage.groups[1] = .{
+            .action = .refresh_selected,
+            .entries = request.storage.entries[refresh_selected_start..use_cached_start],
+        };
+        request.storage.groups[2] = .{
+            .action = .use_cached,
+            .entries = request.storage.entries[use_cached_start..defer_refresh_start],
+        };
+        request.storage.groups[3] = .{
+            .action = .defer_refresh,
+            .entries = request.storage.entries[defer_refresh_start..total_entries],
+        };
+
+        return .{
+            .entries = request.storage.entries[0..total_entries],
+            .groups = request.storage.groups[0..4],
+            .verify_now_count = @intCast(verify_now_count),
+            .refresh_selected_count = @intCast(refresh_selected_count),
+            .use_cached_count = @intCast(use_cached_count),
+            .defer_refresh_count = @intCast(defer_refresh_count),
+            .fresh_count = fresh_count,
+            .stale_count = stale_count,
+            .missing_count = missing_count,
+        };
+    }
 };
+
+fn containsStoredVerificationTarget(
+    entries: []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+    target: OpenTimestampsStoredVerificationTarget,
+) bool {
+    for (entries) |entry| {
+        if (std.mem.eql(u8, &entry.target.target_event_id, &target.target_event_id)) return true;
+    }
+    return false;
+}
 
 fn verifyFetchedProof(
     proof_url: []const u8,
@@ -4152,6 +4452,230 @@ test "opentimestamps verifier refresh batch exposes selected and deferred views"
     try std.testing.expectEqualSlices(u8, &stale_target.id, &batch.selectedEntries()[1].target.target_event_id);
     try std.testing.expectEqual(@as(usize, 1), batch.deferredEntries().len);
     try std.testing.expectEqualSlices(u8, &soon_target.id, &batch.deferredEntries()[0].target.target_event_id);
+}
+
+test "opentimestamps verifier turn policy classifies verify refresh cached and deferred work" {
+    var stable_target = try testTargetEvent(1, "stable");
+    var stale_target = try testTargetEvent(1, "stale");
+    stable_target.id = [_]u8{0xa1} ** 32;
+    stale_target.id = [_]u8{0xa2} ** 32;
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stable_target,
+        45,
+        45,
+        0x51,
+        "https://proof.example/stable.ots",
+    );
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stale_target,
+        5,
+        5,
+        0x52,
+        "https://proof.example/stale.ots",
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = [_]u8{0xa3} ** 32 },
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = stable_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [3]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [3]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    var entries_storage: [3]OpenTimestampsStoredVerificationTargetTurnPolicyEntry = undefined;
+    var groups_storage: [4]OpenTimestampsStoredVerificationTargetTurnPolicyGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 31,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 10,
+            .max_selected = 1,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+                entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 1), plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.defer_refresh_count);
+    try std.testing.expectEqualSlices(u8, &targets[0].target_event_id, &plan.nextWorkStep().?.entry.target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &stable_target.id, &plan.useCachedEntries()[0].target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &plan.deferredEntries()[0].target.target_event_id);
+}
+
+test "opentimestamps verifier turn policy tracks selected refresh entries when batch work is bounded" {
+    var stable_target = try testTargetEvent(1, "stable");
+    var soon_target = try testTargetEvent(1, "soon");
+    var stale_target = try testTargetEvent(1, "stale");
+    stable_target.id = [_]u8{0xa4} ** 32;
+    soon_target.id = [_]u8{0xa5} ** 32;
+    stale_target.id = [_]u8{0xa6} ** 32;
+
+    var verification_store_records: [3]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(&verification_store, &stable_target, 0x53, 45, 0x53, "https://proof.example/stable.ots");
+    try rememberTestRemoteVerification(&verification_store, &soon_target, 0x54, 35, 0x54, "https://proof.example/soon.ots");
+    try rememberTestRemoteVerification(&verification_store, &stale_target, 0x55, 5, 0x55, "https://proof.example/stale.ots");
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = soon_target.id },
+        .{ .target_event_id = stable_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [3]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [3]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    var entries_storage: [3]OpenTimestampsStoredVerificationTargetTurnPolicyEntry = undefined;
+    var groups_storage: [4]OpenTimestampsStoredVerificationTargetTurnPolicyGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+                entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 0), plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.defer_refresh_count);
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &plan.refreshSelectedEntries()[0].target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &soon_target.id, &plan.refreshSelectedEntries()[1].target.target_event_id);
+}
+
+test "opentimestamps verifier turn policy exposes typed next work step" {
+    var stale_target = try testTargetEvent(1, "stale");
+    stale_target.id = [_]u8{0xa7} ** 32;
+
+    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stale_target,
+        5,
+        5,
+        0x56,
+        "https://proof.example/stale.ots",
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = stale_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [1]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [1]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    var entries_storage: [1]OpenTimestampsStoredVerificationTargetTurnPolicyEntry = undefined;
+    var groups_storage: [4]OpenTimestampsStoredVerificationTargetTurnPolicyGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 1,
+            .fallback_policy = .require_fresh,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+                entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+    const step = plan.nextWorkStep().?;
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationTargetTurnPolicyAction.refresh_selected, step.action);
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &step.entry.target.target_event_id);
+}
+
+test "opentimestamps verifier turn policy exposes work idle cached and deferred views" {
+    var stable_target = try testTargetEvent(1, "stable");
+    var soon_target = try testTargetEvent(1, "soon");
+    var stale_target = try testTargetEvent(1, "stale");
+    stable_target.id = [_]u8{0xa8} ** 32;
+    soon_target.id = [_]u8{0xa9} ** 32;
+    stale_target.id = [_]u8{0xaa} ** 32;
+
+    var verification_store_records: [3]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(&verification_store, &stable_target, 0x57, 45, 0x57, "https://proof.example/stable.ots");
+    try rememberTestRemoteVerification(&verification_store, &soon_target, 0x58, 35, 0x58, "https://proof.example/soon.ots");
+    try rememberTestRemoteVerification(&verification_store, &stale_target, 0x59, 5, 0x59, "https://proof.example/stale.ots");
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = soon_target.id },
+        .{ .target_event_id = stable_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [3]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [3]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var cadence_groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    var entries_storage: [3]OpenTimestampsStoredVerificationTargetTurnPolicyEntry = undefined;
+    var groups_storage: [4]OpenTimestampsStoredVerificationTargetTurnPolicyGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 1,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                cadence_groups_storage[0..],
+                entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 1), plan.workEntries().len);
+    try std.testing.expectEqual(@as(usize, 2), plan.idleEntries().len);
+    try std.testing.expectEqual(@as(usize, 1), plan.useCachedEntries().len);
+    try std.testing.expectEqual(@as(usize, 1), plan.deferredEntries().len);
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &plan.workEntries()[0].target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &stable_target.id, &plan.useCachedEntries()[0].target.target_event_id);
+    try std.testing.expectEqualSlices(u8, &soon_target.id, &plan.deferredEntries()[0].target.target_event_id);
 }
 
 test "opentimestamps verifier target-set refresh plan returns stale remembered proofs newest first" {

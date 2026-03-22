@@ -796,6 +796,13 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshBatchRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshBatchPlan) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshBatchStep) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyAction) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyGroup) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetTurnPolicyStep) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.MemoryOpenTimestampsVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsRemoteProofRequest) == type);
