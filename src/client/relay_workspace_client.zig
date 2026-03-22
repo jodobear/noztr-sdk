@@ -1,28 +1,23 @@
 const std = @import("std");
-const cli_archive = @import("cli_archive_client.zig");
-const relay_lifecycle_support = @import("relay_lifecycle_support.zig");
+const local_state = @import("local_state_client.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
-pub const RelayWorkspaceClientError = store.RelayRegistryArchiveError || cli_archive.CliArchiveClientError || runtime.RelayPoolCheckpointError || error{
-    RememberedRelayListTruncated,
-    TooManyRememberedRelays,
-};
+pub const RelayWorkspaceClientError = local_state.LocalStateClientError;
 
 pub const RelayWorkspaceClientConfig = struct {
-    cli_archive: cli_archive.CliArchiveClientConfig = .{},
+    local_state: local_state.LocalStateClientConfig = .{},
 };
 
 pub const RelayWorkspaceClientStorage = struct {
-    cli_archive: cli_archive.CliArchiveClientStorage = .{},
+    local_state: local_state.LocalStateClientStorage = .{},
 };
 
-pub const RelayWorkspaceRestoreResult = runtime.RelayPoolCheckpointSet;
+pub const RelayWorkspaceRestoreResult = local_state.LocalStateRestoreResult;
 
 pub const RelayWorkspaceClient = struct {
     config: RelayWorkspaceClientConfig,
-    registry: store.RelayRegistryArchive,
-    cli_archive: cli_archive.CliArchiveClient,
+    local_state: local_state.LocalStateClient,
 
     pub fn init(
         config: RelayWorkspaceClientConfig,
@@ -33,11 +28,11 @@ pub const RelayWorkspaceClient = struct {
         storage.* = .{};
         return .{
             .config = config,
-            .registry = store.RelayRegistryArchive.init(relay_info_store),
-            .cli_archive = cli_archive.CliArchiveClient.init(
-                config.cli_archive,
+            .local_state = local_state.LocalStateClient.init(
+                config.local_state,
                 client_store,
-                &storage.cli_archive,
+                relay_info_store,
+                &storage.local_state,
             ),
         };
     }
@@ -50,11 +45,11 @@ pub const RelayWorkspaceClient = struct {
     ) RelayWorkspaceClient {
         return .{
             .config = config,
-            .registry = store.RelayRegistryArchive.init(relay_info_store),
-            .cli_archive = cli_archive.CliArchiveClient.attach(
-                config.cli_archive,
+            .local_state = local_state.LocalStateClient.attach(
+                config.local_state,
                 client_store,
-                &storage.cli_archive,
+                relay_info_store,
+                &storage.local_state,
             ),
         };
     }
@@ -63,21 +58,21 @@ pub const RelayWorkspaceClient = struct {
         self: RelayWorkspaceClient,
         relay_url_text: []const u8,
     ) RelayWorkspaceClientError!store.RelayInfoRecord {
-        return self.registry.rememberRelay(relay_url_text);
+        return self.local_state.rememberRelay(relay_url_text);
     }
 
     pub fn loadRememberedRelay(
         self: RelayWorkspaceClient,
         relay_url_text: []const u8,
     ) RelayWorkspaceClientError!?store.RelayInfoRecord {
-        return self.registry.loadRelayInfo(relay_url_text);
+        return self.local_state.loadRememberedRelay(relay_url_text);
     }
 
     pub fn listRememberedRelays(
         self: RelayWorkspaceClient,
         page: *store.RelayInfoResultPage,
     ) RelayWorkspaceClientError!void {
-        return self.registry.listRelayInfo(page);
+        return self.local_state.listRememberedRelays(page);
     }
 
     pub fn restoreRememberedRelays(
@@ -85,41 +80,21 @@ pub const RelayWorkspaceClient = struct {
         page: *store.RelayInfoResultPage,
         checkpoint_storage: *runtime.RelayPoolCheckpointStorage,
     ) RelayWorkspaceClientError!RelayWorkspaceRestoreResult {
-        try self.listRememberedRelays(page);
-        if (page.truncated) return error.RememberedRelayListTruncated;
-        if (page.count > checkpoint_storage.records.len) return error.TooManyRememberedRelays;
-
-        for (page.slice(), 0..) |record, index| {
-            checkpoint_storage.records[index] = .{
-                .relay_url_len = record.relay_url_len,
-                .cursor = .{},
-            };
-            @memcpy(
-                checkpoint_storage.records[index].relay_url[0..record.relay_url_len],
-                record.relay_url[0..record.relay_url_len],
-            );
-        }
-
-        const checkpoints = runtime.RelayPoolCheckpointSet{
-            .records = checkpoint_storage.records[0..page.count],
-            .relay_count = @intCast(page.count),
-        };
-        try self.cli_archive.relay_pool.restoreCheckpoints(&checkpoints);
-        return checkpoints;
+        return self.local_state.restoreRememberedRelays(page, checkpoint_storage);
     }
 
     pub fn markRelayConnected(
         self: *RelayWorkspaceClient,
         relay_index: u8,
     ) RelayWorkspaceClientError!void {
-        return relay_lifecycle_support.markRelayConnected(self, "cli_archive", relay_index);
+        return self.local_state.markRelayConnected(relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *RelayWorkspaceClient,
         relay_index: u8,
     ) RelayWorkspaceClientError!void {
-        return relay_lifecycle_support.noteRelayDisconnected(self, "cli_archive", relay_index);
+        return self.local_state.noteRelayDisconnected(relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -127,19 +102,14 @@ pub const RelayWorkspaceClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) RelayWorkspaceClientError!void {
-        return relay_lifecycle_support.noteRelayAuthChallenge(
-            self,
-            "cli_archive",
-            relay_index,
-            challenge,
-        );
+        return self.local_state.noteRelayAuthChallenge(relay_index, challenge);
     }
 
     pub fn inspectRelayRuntime(
         self: *const RelayWorkspaceClient,
         storage_: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return relay_lifecycle_support.inspectRelayRuntime(self, "cli_archive", storage_);
+        return self.local_state.inspectRelayRuntime(storage_);
     }
 
     pub fn saveRelayCheckpoint(
@@ -147,14 +117,14 @@ pub const RelayWorkspaceClient = struct {
         relay_url_text: []const u8,
         cursor: store.EventCursor,
     ) RelayWorkspaceClientError!void {
-        return self.cli_archive.saveRelayCheckpoint(relay_url_text, cursor);
+        return self.local_state.saveRelayCheckpoint(relay_url_text, cursor);
     }
 
     pub fn loadRelayCheckpoint(
         self: RelayWorkspaceClient,
         relay_url_text: []const u8,
     ) RelayWorkspaceClientError!?store.ClientCheckpointRecord {
-        return self.cli_archive.loadRelayCheckpoint(relay_url_text);
+        return self.local_state.loadRelayCheckpoint(relay_url_text);
     }
 
     pub fn inspectReplay(
@@ -162,7 +132,7 @@ pub const RelayWorkspaceClient = struct {
         specs: []const runtime.RelayReplaySpec,
         storage_: *runtime.RelayPoolReplayStorage,
     ) RelayWorkspaceClientError!runtime.RelayPoolReplayPlan {
-        return self.cli_archive.inspectReplay(specs, storage_);
+        return self.local_state.inspectReplay(specs, storage_);
     }
 };
 
@@ -171,14 +141,14 @@ test "relay workspace client exposes caller-owned config and storage" {
     var relay_info_store = store.MemoryRelayInfoStore{};
     var storage_ = RelayWorkspaceClientStorage{};
     const client = RelayWorkspaceClient.init(
-        .{ .cli_archive = .{ .relay_checkpoint_scope = "tooling" } },
+        .{ .local_state = .{ .relay_checkpoint_scope = "tooling" } },
         client_store.asClientStore(),
         relay_info_store.asRelayInfoStore(),
         &storage_,
     );
 
-    try std.testing.expectEqualStrings("tooling", client.config.cli_archive.relay_checkpoint_scope);
-    try std.testing.expectEqual(@as(u8, 0), client.cli_archive.relay_pool.relayCount());
+    try std.testing.expectEqualStrings("tooling", client.config.local_state.relay_checkpoint_scope);
+    try std.testing.expectEqual(@as(u8, 0), client.local_state.archive.relay_pool.relayCount());
 }
 
 test "relay workspace client remembers relays and restores runtime from remembered state" {
@@ -186,7 +156,7 @@ test "relay workspace client remembers relays and restores runtime from remember
     var relay_info_store = store.MemoryRelayInfoStore{};
     var storage_ = RelayWorkspaceClientStorage{};
     var client = RelayWorkspaceClient.init(
-        .{ .cli_archive = .{ .relay_checkpoint_scope = "tooling" } },
+        .{ .local_state = .{ .relay_checkpoint_scope = "tooling" } },
         client_store.asClientStore(),
         relay_info_store.asRelayInfoStore(),
         &storage_,

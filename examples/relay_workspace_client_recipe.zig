@@ -8,7 +8,7 @@ test "recipe: relay workspace client composes remembered relay state with runtim
     var relay_info_store = noztr_sdk.store.MemoryRelayInfoStore{};
     var storage = noztr_sdk.client.RelayWorkspaceClientStorage{};
     var client = noztr_sdk.client.RelayWorkspaceClient.init(
-        .{ .cli_archive = .{ .relay_checkpoint_scope = "tooling" } },
+        .{ .local_state = .{ .relay_checkpoint_scope = "tooling" } },
         client_store.asClientStore(),
         relay_info_store.asRelayInfoStore(),
         &storage,
