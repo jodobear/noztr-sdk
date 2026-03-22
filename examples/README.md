@@ -41,6 +41,7 @@ Use the relay/runtime examples as the reusable downstream foundation:
 - [relay_replay_client_recipe.zig](./relay_replay_client_recipe.zig)
 - [relay_auth_client_recipe.zig](./relay_auth_client_recipe.zig)
 - [relay_response_client_recipe.zig](./relay_response_client_recipe.zig)
+- [relay_session_client_recipe.zig](./relay_session_client_recipe.zig)
 - [relay_workspace_client_recipe.zig](./relay_workspace_client_recipe.zig)
 - [remote_signer_recipe.zig](./remote_signer_recipe.zig)
 
@@ -376,6 +377,22 @@ They do not imply:
     only adds explicit receive-side validation and typed outcomes, and downstream tools can now
     stay on SDK surfaces for the first bounded relay-response intake jobs without hiding stream
     ownership
+- `relay_session_client_recipe.zig`
+  - goal: drive one explicit relay session over shared runtime inspection, relay auth, outbound
+    request shaping, receive-side transcript intake, and bounded member/checkpoint export-restore
+  - public SDK surface: `noztr_sdk.client`, `RelaySessionClient`,
+    `RelaySessionClientStorage`, `RelaySessionCloseRequest`,
+    `RelaySubscriptionTranscriptStorage`, `PreparedRelayAuthEvent`,
+    `noztr_sdk.runtime.RelayPoolPlan`, `noztr_sdk.runtime.RelayPoolAuthPlan`,
+    `noztr_sdk.runtime.RelayPoolSubscriptionPlan`, `noztr_sdk.runtime.RelayPoolMemberSet`,
+    `noztr_sdk.runtime.RelayPoolCheckpointSet`
+  - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`,
+    `noztr.nostr_keys`
+  - control points: shared relay runtime remains explicit instead of turning into hidden session
+    ownership, auth signing still routes through the local operator floor, outbound `REQ` and
+    `CLOSE` payloads still serialize on the kernel, receive-side transcript validation still
+    routes through the response floor, and downstream SDKs can now build one reusable relay
+    session foundation without stitching query/auth/response/checkpoint helpers together ad hoc
 - `signer_client_recipe.zig`
   - goal: use one first signer-tooling client surface to drive explicit `NIP-46` connect,
     `get_public_key`, one `nip44_encrypt` request, and one shared relay-runtime inspect/select step

@@ -52,8 +52,9 @@ substrate again.
 Today, the downstream-targetable foundation is relay-centric:
 - HTTP-backed work starts from `noztr_sdk.transport.HttpClient`
 - shared relay runtime planning starts from `noztr_sdk.runtime.RelayPool`
-- explicit relay-backed composition starts from the relay auth/query/exchange/replay/publish and
-  remote-signer client/workflow families
+- explicit relay-session composition starts from `noztr_sdk.client.RelaySessionClient`
+- explicit relay-backed composition extends through the relay auth/query/exchange/replay/publish,
+  workspace, and remote-signer client/workflow families
 - inbound relay message ownership and transcript validation start from
   `noztr_sdk.client.RelayResponseClient`
 - remembered relay workspace, checkpoint restore, and replay planning start from
@@ -109,7 +110,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
 | build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |
 | build group flows | [public contract map](./reference/contract-map.md) | [group_session_recipe.zig](../examples/group_session_recipe.zig), [group_fleet_recipe.zig](../examples/group_fleet_recipe.zig) |
-| build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | [public contract map](./reference/contract-map.md) | [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig), [relay_query_client_recipe.zig](../examples/relay_query_client_recipe.zig), [relay_exchange_client_recipe.zig](../examples/relay_exchange_client_recipe.zig), [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
+| build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | [public contract map](./reference/contract-map.md) | [relay_session_client_recipe.zig](../examples/relay_session_client_recipe.zig), [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig), [relay_workspace_client_recipe.zig](../examples/relay_workspace_client_recipe.zig), [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
 
 ## Best First Examples
 
@@ -131,6 +132,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first relay-local workflow replay route over shared storage
 - [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig)
   - first shared relay-pool runtime plus subscription-spec route
+- [relay_session_client_recipe.zig](../examples/relay_session_client_recipe.zig)
+  - first generic relay-session composition route
 - [relay_pool_checkpoint_recipe.zig](../examples/relay_pool_checkpoint_recipe.zig)
   - first shared relay-pool checkpoint plus replay-planning route
 - [mailbox_recipe.zig](../examples/mailbox_recipe.zig)
