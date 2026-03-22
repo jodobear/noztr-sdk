@@ -1,6 +1,9 @@
 const std = @import("std");
 
 pub const RelayIoError = error{
+    InvalidClient,
+    InvalidRequest,
+    InvalidMessage,
     TransportUnavailable,
     InvalidRelayUrl,
     ConnectFailed,
@@ -35,7 +38,7 @@ pub const RelayIoInboundMessage = union(enum) {
 };
 
 pub const RelayIoConnection = struct {
-    ctx: *anyopaque,
+    ctx: ?*anyopaque,
     connect_fn: *const fn (ctx: *anyopaque, request: RelayIoConnectRequest) RelayIoError!void,
     send_text_fn: *const fn (ctx: *anyopaque, text: []const u8) RelayIoError!void,
     next_fn: *const fn (ctx: *anyopaque, buffer: []u8) RelayIoError!RelayIoInboundMessage,
@@ -43,30 +46,30 @@ pub const RelayIoConnection = struct {
     inspect_state_fn: *const fn (ctx: *anyopaque) RelayIoConnectionState,
 
     pub fn connect(self: RelayIoConnection, request: RelayIoConnectRequest) RelayIoError!void {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        std.debug.assert(request.relay_url.len > 0);
-        return self.connect_fn(self.ctx, request);
+        if (self.ctx == null) return error.InvalidClient;
+        if (request.relay_url.len == 0) return error.InvalidRequest;
+        return self.connect_fn(self.ctx.?, request);
     }
 
     pub fn sendText(self: RelayIoConnection, text: []const u8) RelayIoError!void {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        std.debug.assert(text.len > 0);
-        return self.send_text_fn(self.ctx, text);
+        if (self.ctx == null) return error.InvalidClient;
+        if (text.len == 0) return error.InvalidMessage;
+        return self.send_text_fn(self.ctx.?, text);
     }
 
     pub fn next(self: RelayIoConnection, buffer: []u8) RelayIoError!RelayIoInboundMessage {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        return self.next_fn(self.ctx, buffer);
+        if (self.ctx == null) return error.InvalidClient;
+        return self.next_fn(self.ctx.?, buffer);
     }
 
     pub fn close(self: RelayIoConnection, frame: RelayIoCloseFrame) RelayIoError!void {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        return self.close_fn(self.ctx, frame);
+        if (self.ctx == null) return error.InvalidClient;
+        return self.close_fn(self.ctx.?, frame);
     }
 
-    pub fn inspectState(self: RelayIoConnection) RelayIoConnectionState {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        return self.inspect_state_fn(self.ctx);
+    pub fn inspectState(self: RelayIoConnection) RelayIoError!RelayIoConnectionState {
+        if (self.ctx == null) return error.InvalidClient;
+        return self.inspect_state_fn(self.ctx.?);
     }
 };
 
@@ -121,7 +124,7 @@ test "relay io connection forwards connect send next close and state inspection"
 
     try connection.connect(.{ .relay_url = "wss://relay.one" });
     try std.testing.expectEqualStrings("wss://relay.one", fake.last_url);
-    try std.testing.expectEqual(.open, connection.inspectState());
+    try std.testing.expectEqual(.open, try connection.inspectState());
 
     try connection.sendText("[\"REQ\",\"one\"]");
     try std.testing.expectEqualStrings("[\"REQ\",\"one\"]", fake.last_text);
@@ -132,5 +135,48 @@ test "relay io connection forwards connect send next close and state inspection"
     try connection.close(.{ .code = 4000, .reason = "done" });
     try std.testing.expectEqual(@as(u16, 4000), fake.last_close.code);
     try std.testing.expectEqualStrings("done", fake.last_close.reason);
-    try std.testing.expectEqual(.closed, connection.inspectState());
+    try std.testing.expectEqual(.closed, try connection.inspectState());
+}
+
+test "relay io connection rejects invalid caller inputs with typed errors" {
+    const FakeConnection = struct {
+        fn connect(_: *anyopaque, _: RelayIoConnectRequest) RelayIoError!void {}
+        fn sendText(_: *anyopaque, _: []const u8) RelayIoError!void {}
+        fn next(_: *anyopaque, _: []u8) RelayIoError!RelayIoInboundMessage {
+            return .idle;
+        }
+        fn close(_: *anyopaque, _: RelayIoCloseFrame) RelayIoError!void {}
+        fn inspectState(_: *anyopaque) RelayIoConnectionState {
+            return .idle;
+        }
+    };
+
+    const invalid = RelayIoConnection{
+        .ctx = null,
+        .connect_fn = FakeConnection.connect,
+        .send_text_fn = FakeConnection.sendText,
+        .next_fn = FakeConnection.next,
+        .close_fn = FakeConnection.close,
+        .inspect_state_fn = FakeConnection.inspectState,
+    };
+    var buffer: [8]u8 = undefined;
+
+    try std.testing.expectError(error.InvalidClient, invalid.connect(.{ .relay_url = "wss://relay.one" }));
+    try std.testing.expectError(error.InvalidClient, invalid.sendText("[\"REQ\"]"));
+    try std.testing.expectError(error.InvalidClient, invalid.next(buffer[0..]));
+    try std.testing.expectError(error.InvalidClient, invalid.close(.{}));
+    try std.testing.expectError(error.InvalidClient, invalid.inspectState());
+
+    var fake_ctx: u8 = 0;
+    const connection = RelayIoConnection{
+        .ctx = &fake_ctx,
+        .connect_fn = FakeConnection.connect,
+        .send_text_fn = FakeConnection.sendText,
+        .next_fn = FakeConnection.next,
+        .close_fn = FakeConnection.close,
+        .inspect_state_fn = FakeConnection.inspectState,
+    };
+
+    try std.testing.expectError(error.InvalidRequest, connection.connect(.{ .relay_url = "" }));
+    try std.testing.expectError(error.InvalidMessage, connection.sendText(""));
 }

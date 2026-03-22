@@ -41,7 +41,7 @@ pub const RelayDirectory = struct {
 };
 
 fn compose_lookup_url(relay_url_text: []const u8, out: []u8) DirectoryError![]const u8 {
-    std.debug.assert(relay_url_text.len > 0);
+    if (relay_url_text.len == 0) return error.InvalidRelayUrl;
 
     const secure_prefix = "wss://";
     const plain_prefix = "ws://";
@@ -129,4 +129,9 @@ test "relay directory propagates invalid nip11 documents" {
             &parse_scratch,
         ),
     );
+}
+
+test "compose lookup url rejects empty relay text with typed error" {
+    var out: [64]u8 = undefined;
+    try std.testing.expectError(error.InvalidRelayUrl, compose_lookup_url("", out[0..]));
 }
