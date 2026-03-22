@@ -483,6 +483,114 @@ pub const OpenTimestampsStoredVerificationTargetRefreshStep = struct {
     entry: OpenTimestampsStoredVerificationTargetRefreshEntry,
 };
 
+pub const OpenTimestampsStoredVerificationTargetRefreshCadenceAction = enum {
+    verify_now,
+    refresh_now,
+    usable_while_refreshing,
+    refresh_soon,
+    stable,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = struct {
+    target: OpenTimestampsStoredVerificationTarget,
+    action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction,
+    latest: ?OpenTimestampsLatestStoredVerificationFreshness = null,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = struct {
+    action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction,
+    entries: []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshCadenceStorage = struct {
+    matches: []OpenTimestampsStoredVerificationMatch,
+    latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
+    entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+    groups: []OpenTimestampsStoredVerificationTargetRefreshCadenceGroup,
+
+    pub fn init(
+        matches: []OpenTimestampsStoredVerificationMatch,
+        latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
+        entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+        groups: []OpenTimestampsStoredVerificationTargetRefreshCadenceGroup,
+    ) OpenTimestampsStoredVerificationTargetRefreshCadenceStorage {
+        return .{
+            .matches = matches,
+            .latest_entries = latest_entries,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshCadenceRequest = struct {
+    targets: []const OpenTimestampsStoredVerificationTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    fallback_policy: OpenTimestampsStoredVerificationFallbackPolicy = .allow_stale_latest,
+    storage: OpenTimestampsStoredVerificationTargetRefreshCadenceStorage,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshCadencePlan = struct {
+    entries: []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+    groups: []const OpenTimestampsStoredVerificationTargetRefreshCadenceGroup,
+    verify_now_count: u32 = 0,
+    refresh_now_count: u32 = 0,
+    usable_while_refreshing_count: u32 = 0,
+    refresh_soon_count: u32 = 0,
+    stable_count: u32 = 0,
+    fresh_count: u32 = 0,
+    stale_count: u32 = 0,
+    missing_count: u32 = 0,
+
+    pub fn nextDueEntry(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshCadencePlan,
+    ) ?*const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry {
+        const due_count = self.verify_now_count +
+            self.refresh_now_count +
+            self.usable_while_refreshing_count +
+            self.refresh_soon_count;
+        if (due_count == 0) return null;
+        return &self.entries[0];
+    }
+
+    pub fn nextDueStep(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshCadencePlan,
+    ) ?OpenTimestampsStoredVerificationTargetRefreshCadenceStep {
+        const entry = self.nextDueEntry() orelse return null;
+        return .{
+            .action = entry.action,
+            .entry = entry.*,
+        };
+    }
+
+    pub fn usableWhileRefreshingEntries(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshCadencePlan,
+    ) []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry {
+        const start =
+            @as(usize, @intCast(self.verify_now_count + self.refresh_now_count));
+        const end = start + @as(usize, @intCast(self.usable_while_refreshing_count));
+        return self.entries[start..end];
+    }
+
+    pub fn refreshSoonEntries(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshCadencePlan,
+    ) []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry {
+        const start = @as(
+            usize,
+            @intCast(self.verify_now_count + self.refresh_now_count + self.usable_while_refreshing_count),
+        );
+        const end = start + @as(usize, @intCast(self.refresh_soon_count));
+        return self.entries[start..end];
+    }
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshCadenceStep = struct {
+    action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction,
+    entry: OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
+};
+
 pub const OpenTimestampsVerificationStoreVTable = struct {
     put_remote_verification: *const fn (
         ctx: *anyopaque,
@@ -1358,6 +1466,161 @@ pub const OpenTimestampsVerifier = struct {
 
         return .{
             .entries = request.storage.entries[0..stale_count],
+        };
+    }
+
+    pub fn inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store: OpenTimestampsVerificationStore,
+        request: OpenTimestampsStoredVerificationTargetRefreshCadenceRequest,
+    ) OpenTimestampsStoredVerificationDiscoveryError!OpenTimestampsStoredVerificationTargetRefreshCadencePlan {
+        if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
+        if (request.storage.groups.len < 5) return error.BufferTooSmall;
+
+        const latest_entries = try discoverLatestStoredVerificationFreshnessForTargets(
+            verification_store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = .{
+                    .matches = request.storage.matches,
+                    .entries = request.storage.latest_entries,
+                },
+            },
+        );
+
+        var verify_now_count: usize = 0;
+        var refresh_now_count: usize = 0;
+        var usable_while_refreshing_count: usize = 0;
+        var refresh_soon_count: usize = 0;
+        var stable_count: usize = 0;
+        var fresh_count: u32 = 0;
+        var stale_count: u32 = 0;
+        var missing_count: u32 = 0;
+
+        for (latest_entries) |entry| {
+            const action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction = if (entry.latest) |latest|
+                switch (latest.freshness) {
+                    .fresh => if (latest.age_seconds >= request.refresh_soon_age_seconds)
+                        .refresh_soon
+                    else
+                        .stable,
+                    .stale => switch (request.fallback_policy) {
+                        .require_fresh => .refresh_now,
+                        .allow_stale_latest => .usable_while_refreshing,
+                    },
+                }
+            else
+                .verify_now;
+
+            switch (action) {
+                .verify_now => verify_now_count += 1,
+                .refresh_now => refresh_now_count += 1,
+                .usable_while_refreshing => usable_while_refreshing_count += 1,
+                .refresh_soon => refresh_soon_count += 1,
+                .stable => stable_count += 1,
+            }
+
+            if (entry.latest) |latest| {
+                switch (latest.freshness) {
+                    .fresh => fresh_count += 1,
+                    .stale => stale_count += 1,
+                }
+            } else {
+                missing_count += 1;
+            }
+        }
+
+        const verify_now_start: usize = 0;
+        const refresh_now_start = verify_now_start + verify_now_count;
+        const usable_while_refreshing_start = refresh_now_start + refresh_now_count;
+        const refresh_soon_start = usable_while_refreshing_start + usable_while_refreshing_count;
+        const stable_start = refresh_soon_start + refresh_soon_count;
+
+        var next_verify_now = verify_now_start;
+        var next_refresh_now = refresh_now_start;
+        var next_usable_while_refreshing = usable_while_refreshing_start;
+        var next_refresh_soon = refresh_soon_start;
+        var next_stable = stable_start;
+
+        for (latest_entries) |entry| {
+            const action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction = if (entry.latest) |latest|
+                switch (latest.freshness) {
+                    .fresh => if (latest.age_seconds >= request.refresh_soon_age_seconds)
+                        .refresh_soon
+                    else
+                        .stable,
+                    .stale => switch (request.fallback_policy) {
+                        .require_fresh => .refresh_now,
+                        .allow_stale_latest => .usable_while_refreshing,
+                    },
+                }
+            else
+                .verify_now;
+
+            const insert_index = switch (action) {
+                .verify_now => blk: {
+                    defer next_verify_now += 1;
+                    break :blk next_verify_now;
+                },
+                .refresh_now => blk: {
+                    defer next_refresh_now += 1;
+                    break :blk next_refresh_now;
+                },
+                .usable_while_refreshing => blk: {
+                    defer next_usable_while_refreshing += 1;
+                    break :blk next_usable_while_refreshing;
+                },
+                .refresh_soon => blk: {
+                    defer next_refresh_soon += 1;
+                    break :blk next_refresh_soon;
+                },
+                .stable => blk: {
+                    defer next_stable += 1;
+                    break :blk next_stable;
+                },
+            };
+
+            request.storage.entries[insert_index] = .{
+                .target = entry.target,
+                .action = action,
+                .latest = entry.latest,
+            };
+        }
+
+        const total_entries = request.targets.len;
+        request.storage.groups[0] = .{
+            .action = .verify_now,
+            .entries = request.storage.entries[verify_now_start..refresh_now_start],
+        };
+        request.storage.groups[1] = .{
+            .action = .refresh_now,
+            .entries = request.storage.entries[refresh_now_start..usable_while_refreshing_start],
+        };
+        request.storage.groups[2] = .{
+            .action = .usable_while_refreshing,
+            .entries = request.storage.entries[usable_while_refreshing_start..refresh_soon_start],
+        };
+        request.storage.groups[3] = .{
+            .action = .refresh_soon,
+            .entries = request.storage.entries[refresh_soon_start..stable_start],
+        };
+        request.storage.groups[4] = .{
+            .action = .stable,
+            .entries = request.storage.entries[stable_start..total_entries],
+        };
+
+        return .{
+            .entries = request.storage.entries[0..total_entries],
+            .groups = request.storage.groups[0..5],
+            .verify_now_count = @intCast(verify_now_count),
+            .refresh_now_count = @intCast(refresh_now_count),
+            .usable_while_refreshing_count = @intCast(usable_while_refreshing_count),
+            .refresh_soon_count = @intCast(refresh_soon_count),
+            .stable_count = @intCast(stable_count),
+            .fresh_count = fresh_count,
+            .stale_count = stale_count,
+            .missing_count = missing_count,
         };
     }
 };
@@ -3206,6 +3469,322 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
     );
 }
 
+test "opentimestamps verifier grouped refresh cadence classifies missing stale soon and stable targets" {
+    var stable_target = try testTargetEvent(1, "stable");
+    var soon_target = try testTargetEvent(1, "soon");
+    var stale_target = try testTargetEvent(1, "stale");
+    stable_target.id = [_]u8{0xd1} ** 32;
+    soon_target.id = [_]u8{0xd2} ** 32;
+    stale_target.id = [_]u8{0xd3} ** 32;
+
+    var verification_store_records: [3]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stable_target,
+        0xd4,
+        45,
+        0x40,
+        "https://proof.example/stable.ots",
+    );
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &soon_target,
+        0xd5,
+        35,
+        0x41,
+        "https://proof.example/soon.ots",
+    );
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stale_target,
+        0xd6,
+        5,
+        0x42,
+        "https://proof.example/stale.ots",
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = [_]u8{0xd0} ** 32 },
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = soon_target.id },
+        .{ .target_event_id = stable_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [4]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [4]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 4), plan.entries.len);
+    try std.testing.expectEqual(@as(usize, 5), plan.groups.len);
+    try std.testing.expectEqual(@as(u32, 1), plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.stable_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.fresh_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.stale_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_count);
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationTargetRefreshCadenceAction.verify_now, plan.groups[0].action);
+    try std.testing.expectEqualSlices(u8, &targets[0].target_event_id, &plan.groups[0].entries[0].target.target_event_id);
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshCadenceAction.usable_while_refreshing,
+        plan.groups[2].action,
+    );
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &plan.groups[2].entries[0].target.target_event_id);
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshCadenceAction.refresh_soon,
+        plan.groups[3].action,
+    );
+    try std.testing.expectEqualSlices(u8, &soon_target.id, &plan.groups[3].entries[0].target.target_event_id);
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationTargetRefreshCadenceAction.stable, plan.groups[4].action);
+    try std.testing.expectEqualSlices(u8, &stable_target.id, &plan.groups[4].entries[0].target.target_event_id);
+}
+
+test "opentimestamps verifier grouped refresh cadence stays bounded by caller-owned grouped storage" {
+    var verification_store_records: [0]OpenTimestampsStoredVerificationRecord = .{};
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = [_]u8{0xe1} ** 32 },
+    };
+    var matches_storage: [0]OpenTimestampsStoredVerificationMatch = .{};
+    var latest_entries_storage: [1]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [1]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [4]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+            verification_store.asStore(),
+            .{
+                .targets = targets[0..],
+                .now_unix_seconds = 50,
+                .max_age_seconds = 20,
+                .refresh_soon_age_seconds = 10,
+                .storage = .init(
+                    matches_storage[0..],
+                    latest_entries_storage[0..],
+                    cadence_entries_storage[0..],
+                    groups_storage[0..],
+                ),
+            },
+        ),
+    );
+}
+
+test "opentimestamps verifier grouped refresh cadence next-due selector prefers missing then stale then soon" {
+    var soon_target = try testTargetEvent(1, "soon");
+    var stale_target = try testTargetEvent(1, "stale");
+    soon_target.id = [_]u8{0xe2} ** 32;
+    stale_target.id = [_]u8{0xe3} ** 32;
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &soon_target,
+        0xe4,
+        35,
+        0x43,
+        "https://proof.example/soon.ots",
+    );
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stale_target,
+        0xe5,
+        5,
+        0x44,
+        "https://proof.example/stale.ots",
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = [_]u8{0xe6} ** 32 },
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = soon_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [3]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [3]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqualSlices(u8, &targets[0].target_event_id, &plan.nextDueEntry().?.target.target_event_id);
+
+    const due_targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = soon_target.id },
+    };
+    var due_latest_entries: [2]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var due_cadence_entries: [2]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var due_groups: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    const due_plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = due_targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                due_latest_entries[0..],
+                due_cadence_entries[0..],
+                due_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &due_plan.nextDueEntry().?.target.target_event_id);
+}
+
+test "opentimestamps verifier grouped refresh cadence exposes typed next-due step" {
+    var stale_target = try testTargetEvent(1, "stale");
+    stale_target.id = [_]u8{0xe7} ** 32;
+
+    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stale_target,
+        0xe8,
+        5,
+        0x45,
+        "https://proof.example/stale.ots",
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = stale_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [1]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [1]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .require_fresh,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+    const step = plan.nextDueStep().?;
+    try std.testing.expectEqual(OpenTimestampsStoredVerificationTargetRefreshCadenceAction.refresh_now, step.action);
+    try std.testing.expectEqualSlices(u8, &stale_target.id, &step.entry.target.target_event_id);
+}
+
+test "opentimestamps verifier grouped refresh cadence exposes usable-while-refreshing and refresh-soon views" {
+    var soon_target = try testTargetEvent(1, "soon");
+    var stale_target = try testTargetEvent(1, "stale");
+    soon_target.id = [_]u8{0xe9} ** 32;
+    stale_target.id = [_]u8{0xea} ** 32;
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &soon_target,
+        0xeb,
+        35,
+        0x46,
+        "https://proof.example/soon.ots",
+    );
+    try rememberTestRemoteVerification(
+        &verification_store,
+        &stale_target,
+        0xec,
+        5,
+        0x47,
+        "https://proof.example/stale.ots",
+    );
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = stale_target.id },
+        .{ .target_event_id = soon_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_entries_storage: [2]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var cadence_entries_storage: [2]OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var groups_storage: [5]OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                matches_storage[0..],
+                latest_entries_storage[0..],
+                cadence_entries_storage[0..],
+                groups_storage[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 1), plan.usableWhileRefreshingEntries().len);
+    try std.testing.expectEqualSlices(
+        u8,
+        &stale_target.id,
+        &plan.usableWhileRefreshingEntries()[0].target.target_event_id,
+    );
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshCadenceAction.usable_while_refreshing,
+        plan.usableWhileRefreshingEntries()[0].action,
+    );
+    try std.testing.expectEqual(@as(usize, 1), plan.refreshSoonEntries().len);
+    try std.testing.expectEqualSlices(
+        u8,
+        &soon_target.id,
+        &plan.refreshSoonEntries()[0].target.target_event_id,
+    );
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshCadenceAction.refresh_soon,
+        plan.refreshSoonEntries()[0].action,
+    );
+}
+
 test "opentimestamps verifier target-set refresh plan returns stale remembered proofs newest first" {
     var first_target = try testTargetEvent(1, "hello");
     var second_target = try testTargetEvent(1, "world");
@@ -3403,6 +3982,46 @@ fn testTargetEvent(kind: u32, content: []const u8) !noztr.nip01_event.Event {
     };
     event.id = try noztr.nip01_event.event_compute_id_checked(&event);
     return event;
+}
+
+fn rememberTestRemoteVerification(
+    verification_store: *MemoryOpenTimestampsVerificationStore,
+    target: *const noztr.nip01_event.Event,
+    attestation_id_fill: u8,
+    attestation_created_at: u64,
+    proof_marker: u8,
+    proof_url: []const u8,
+) !void {
+    const proof = testLocalProof(target.id, bitcoin_attestation_tag, &.{proof_marker});
+    var proof_base64_storage: [128]u8 = undefined;
+    var attestation_fixture = try testAttestationEvent(
+        proof_base64_storage[0..],
+        target,
+        proof,
+        testLocalProofLen(1),
+    );
+    attestation_fixture.event.id = [_]u8{attestation_id_fill} ** 32;
+    attestation_fixture.event.created_at = attestation_created_at;
+    attestation_fixture.fixup();
+
+    var decoded_proof: [128]u8 = undefined;
+    const verification: OpenTimestampsRemoteVerification = .{
+        .verification = .{
+            .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
+                decoded_proof[0..],
+                &attestation_fixture.event,
+            ),
+            .proof = proof[0..testLocalProofLen(1)],
+        },
+        .proof_url = proof_url,
+    };
+
+    _ = try OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store.asStore(),
+        target,
+        &attestation_fixture.event,
+        &verification,
+    );
 }
 
 const TestAttestationFixture = struct {
