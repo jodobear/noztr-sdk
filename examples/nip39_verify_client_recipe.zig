@@ -4,9 +4,9 @@ const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
 // Prepare one command-ready NIP-39 profile-verify job over caller-owned buffers, run it over the
-// explicit public HTTP seam, then inspect one bounded stored watched-target turn policy through
-// the client surface.
-test "recipe: nip39 verify client verifies and inspects stored watched target policy" {
+// explicit public HTTP seam, then inspect one bounded stored watched-target long-lived planning
+// route through the client surface: refresh cadence, refresh batch, and turn policy.
+test "recipe: nip39 verify client verifies and inspects stored watched target long-lived planning" {
     const claim = noztr.nip39_external_identities.IdentityClaim{
         .provider = .github,
         .identity = "alice",
@@ -121,8 +121,67 @@ test "recipe: nip39 verify client verifies and inspects stored watched target po
     var policy_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyGroup = undefined;
     var cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
     var cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+    var batch_latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var batch_cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var batch_cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
     var turn_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyEntry = undefined;
     var turn_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyGroup = undefined;
+
+    const cadence = try client.inspectStoredWatchedTargetRefreshCadence(
+        profile_store.asStore(),
+        watched_target_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.StoredWatchedTargetRefreshCadenceStorage.init(
+                listed_records[0..],
+                targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    cadence_entries[0..],
+                    cadence_groups[0..],
+                ),
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 4), cadence.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), cadence.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), cadence.cadence.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 1), cadence.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 0), cadence.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), cadence.cadence.stable_count);
+    try std.testing.expectEqualStrings("carol", cadence.nextDueEntry().?.target.identity);
+
+    const batch = try client.inspectStoredWatchedTargetRefreshBatch(
+        profile_store.asStore(),
+        watched_target_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.StoredWatchedTargetRefreshBatchStorage.init(
+                listed_records[0..],
+                targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshBatchStorage.init(
+                    matches[0..],
+                    batch_latest_entries[0..],
+                    batch_cadence_entries[0..],
+                    batch_cadence_groups[0..],
+                ),
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 4), batch.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), batch.batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), batch.batch.deferred_count);
+    try std.testing.expectEqualStrings("carol", batch.selectedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("dave", batch.selectedEntries()[1].target.identity);
+    try std.testing.expectEqualStrings("bob", batch.deferredEntries()[0].target.identity);
 
     const turn_policy = try client.inspectStoredWatchedTargetTurnPolicy(
         profile_store.asStore(),
