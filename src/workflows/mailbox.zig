@@ -11,9 +11,9 @@ const seal_event_kind: u32 = 13;
 const wrap_event_kind: u32 = 1059;
 
 pub const MailboxError =
-    noztr.nip17_private_messages.Nip17Error ||
-    noztr.nip17_private_messages.Nip17RelayListError ||
-    noztr.nip44.Nip44Error ||
+    noztr.nip17_private_messages.PrivateMessageError ||
+    noztr.nip17_private_messages.RelayListError ||
+    noztr.nip44.ConversationEncryptionError ||
     noztr.nip42_auth.AuthError ||
     noztr.nip01_event.EventShapeError ||
     noztr.nip01_event.EventParseError ||

@@ -4,7 +4,7 @@ const store = @import("../store/mod.zig");
 const transport = @import("../transport/mod.zig");
 const relay_url = @import("url.zig");
 
-pub const DirectoryError = transport.HttpError || store.StoreError || noztr.nip11.Nip11Error || error{
+pub const DirectoryError = transport.HttpError || store.StoreError || noztr.nip11.RelayInfoError || error{
     InvalidRelayUrl,
     BufferTooSmall,
 };

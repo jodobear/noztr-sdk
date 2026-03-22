@@ -28,7 +28,7 @@ pub const GroupObservedEventKind = enum {
 };
 
 pub const GroupSessionError =
-    noztr.nip29_relay_groups.Nip29Error ||
+    noztr.nip29_relay_groups.GroupError ||
     noztr.nip42_auth.AuthError ||
     noztr.nip01_event.EventParseError ||
     noztr.nip01_event.EventVerifyError ||

@@ -5,7 +5,7 @@ const transport = @import("../transport/mod.zig");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
 
 pub const IdentityVerifierError =
-    noztr.nip39_external_identities.Nip39Error ||
+    noztr.nip39_external_identities.ExternalIdentityError ||
     error{UnsupportedProviderVerification};
 
 pub const IdentityVerificationMatch = struct {
@@ -1347,7 +1347,7 @@ pub const IdentityClaimVerification = struct {
 
     pub fn providerDetails(
         self: *const IdentityClaimVerification,
-    ) noztr.nip39_external_identities.Nip39Error!IdentityProviderDetails {
+    ) noztr.nip39_external_identities.ExternalIdentityError!IdentityProviderDetails {
         return providerDetailsForClaim(&self.claim);
     }
 };
@@ -2932,7 +2932,7 @@ const profile_store_vtable = IdentityProfileStoreVTable{
 
 fn providerDetailsForClaim(
     claim: *const noztr.nip39_external_identities.IdentityClaim,
-) noztr.nip39_external_identities.Nip39Error!IdentityProviderDetails {
+) noztr.nip39_external_identities.ExternalIdentityError!IdentityProviderDetails {
     try validateClaimForDetails(claim);
     return switch (claim.provider) {
         .github => .{
@@ -2958,7 +2958,7 @@ fn providerDetailsForClaim(
 
 fn validateClaimForDetails(
     claim: *const noztr.nip39_external_identities.IdentityClaim,
-) noztr.nip39_external_identities.Nip39Error!void {
+) noztr.nip39_external_identities.ExternalIdentityError!void {
     var proof_url_scratch: [256]u8 = undefined;
     var expected_text_scratch: [256]u8 = undefined;
     _ = try noztr.nip39_external_identities.identity_claim_build_proof_url(
@@ -2974,7 +2974,7 @@ fn validateClaimForDetails(
 
 fn parseMastodonDetails(
     claim: *const noztr.nip39_external_identities.IdentityClaim,
-) noztr.nip39_external_identities.Nip39Error!MastodonIdentityDetails {
+) noztr.nip39_external_identities.ExternalIdentityError!MastodonIdentityDetails {
     const marker = std.mem.indexOf(u8, claim.identity, "/@") orelse return error.InvalidIdentity;
     const host = claim.identity[0..marker];
     const handle = claim.identity[marker + 2 ..];
@@ -2988,7 +2988,7 @@ fn parseMastodonDetails(
 
 fn parseTelegramDetails(
     claim: *const noztr.nip39_external_identities.IdentityClaim,
-) noztr.nip39_external_identities.Nip39Error!TelegramIdentityDetails {
+) noztr.nip39_external_identities.ExternalIdentityError!TelegramIdentityDetails {
     const separator = std.mem.indexOfScalar(u8, claim.proof, '/') orelse return error.InvalidProof;
     const channel = claim.proof[0..separator];
     const message_id = claim.proof[separator + 1 ..];

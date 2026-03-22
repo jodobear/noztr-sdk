@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 
 pub const LegacyDmError =
-    noztr.nip04.Nip04Error ||
+    noztr.nip04.LegacyDmError ||
     noztr.nip01_event.EventParseError ||
     noztr.nip01_event.EventVerifyError ||
     noztr.nip01_event.EventSerializeError ||

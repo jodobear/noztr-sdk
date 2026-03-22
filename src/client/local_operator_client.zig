@@ -19,7 +19,7 @@ pub const SignatureHex = [signature_hex_bytes]u8;
 pub const LocalOperatorClientError = error{
     InvalidSecretKeyHex,
     InvalidPublicKeyHex,
-} || noztr.nostr_keys.NostrKeysError || noztr.nip19_bech32.Nip19Error || noztr.nip01_event.EventParseError || noztr.nip01_event.EventVerifyError || noztr.nip01_event.EventShapeError || noztr.nip01_event.EventSerializeError || noztr.nip44.Nip44Error;
+} || noztr.nostr_keys.NostrKeysError || noztr.nip19_bech32.Bech32Error || noztr.nip01_event.EventParseError || noztr.nip01_event.EventVerifyError || noztr.nip01_event.EventShapeError || noztr.nip01_event.EventSerializeError || noztr.nip44.ConversationEncryptionError;
 
 pub const LocalOperatorClientConfig = struct {};
 
@@ -308,7 +308,7 @@ fn parseHex32(
 fn randomNip44Nonce(
     _: ?*anyopaque,
     out_nonce: *[32]u8,
-) noztr.nip44.Nip44Error!void {
+) noztr.nip44.ConversationEncryptionError!void {
     std.crypto.random.bytes(out_nonce[0..]);
 }
 

@@ -9,7 +9,7 @@ pub const max_secret_bytes: u16 = noztr.limits.nip46_secret_bytes_max;
 pub const max_signer_error_bytes: u16 = 512;
 
 pub const RemoteSignerError =
-    noztr.nip46_remote_signing.Nip46Error ||
+    noztr.nip46_remote_signing.RemoteSigningError ||
     noztr.nip42_auth.AuthError ||
     noztr.nip01_event.EventParseError ||
     error{
@@ -719,7 +719,7 @@ fn classifySignerRelayAction(state: relay_session.SessionState) shared_runtime.R
 fn serialize_response(
     json_out: []u8,
     response: noztr.nip46_remote_signing.Response,
-) noztr.nip46_remote_signing.Nip46Error![]const u8 {
+) noztr.nip46_remote_signing.RemoteSigningError![]const u8 {
     return noztr.nip46_remote_signing.message_serialize_json(
         json_out,
         .{ .response = response },

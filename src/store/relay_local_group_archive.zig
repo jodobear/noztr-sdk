@@ -15,7 +15,7 @@ pub const RelayLocalGroupArchive = struct {
     pub fn init(
         store: client.ClientStore,
         reference_text: []const u8,
-    ) noztr.nip29_relay_groups.Nip29Error!RelayLocalGroupArchive {
+    ) noztr.nip29_relay_groups.GroupError!RelayLocalGroupArchive {
         return .{
             .archive = archive.EventArchive.init(store),
             .reference = try noztr.nip29_relay_groups.group_reference_parse(reference_text),

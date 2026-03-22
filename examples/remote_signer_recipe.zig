@@ -109,7 +109,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) noztr.nip46_remote_signing.Nip46Error![]const u8 {
+) noztr.nip46_remote_signing.RemoteSigningError![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },
@@ -119,6 +119,6 @@ fn textResponse(
 fn serializeResponseJson(
     output: []u8,
     response: noztr.nip46_remote_signing.Response,
-) noztr.nip46_remote_signing.Nip46Error![]const u8 {
+) noztr.nip46_remote_signing.RemoteSigningError![]const u8 {
     return noztr.nip46_remote_signing.message_serialize_json(output, .{ .response = response });
 }

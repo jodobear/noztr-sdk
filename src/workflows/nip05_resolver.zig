@@ -4,7 +4,7 @@ const noztr = @import("noztr");
 const transport = @import("../transport/mod.zig");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
 
-pub const Nip05ResolverError = noztr.nip05_identity.Nip05Error;
+pub const Nip05ResolverError = noztr.nip05_identity.IdentityError;
 
 pub const Nip05Resolution = struct {
     address: noztr.nip05_identity.Address,
