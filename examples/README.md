@@ -55,6 +55,7 @@ Use the relay/runtime examples as the reusable downstream foundation:
 - [relay_auth_client_recipe.zig](./relay_auth_client_recipe.zig)
 - [relay_response_client_recipe.zig](./relay_response_client_recipe.zig)
 - [relay_session_client_recipe.zig](./relay_session_client_recipe.zig)
+- [downstream_mixed_route_recipe.zig](./downstream_mixed_route_recipe.zig)
 - [local_state_client_recipe.zig](./local_state_client_recipe.zig)
 - [relay_workspace_client_recipe.zig](./relay_workspace_client_recipe.zig)
 - [remote_signer_recipe.zig](./remote_signer_recipe.zig)
@@ -69,6 +70,9 @@ The intended arbitrary-event route is:
 - deterministic event and tag shaping on `noztr`
 - optional local operator composition on `noztr-sdk`
 - publish or relay-session composition on `noztr-sdk`
+
+The dedicated proof of that route is:
+- `downstream_mixed_route_recipe.zig`
 
 They do not imply:
 - a hidden websocket/runtime framework
@@ -92,6 +96,9 @@ They do not imply:
     `buffer + id + scratch`, the shared relay-pool runtime stays explicit instead of becoming
     hidden signer policy, and the recipe keeps repetitive response JSON wiring in one small helper
     so the public session flow stays primary
+- `downstream_mixed_route_recipe.zig`
+  - goal: one arbitrary signed kernel event authored in `noztr`, then handed into generic SDK
+    publish and relay-session composition without a duplicate downstream runtime layer
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

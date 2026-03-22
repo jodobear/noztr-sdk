@@ -127,6 +127,20 @@ pub const PublishClient = struct {
         };
     }
 
+    pub fn prepareExistingSignedEvent(
+        self: PublishClient,
+        output: []u8,
+        event: *const noztr.nip01_event.Event,
+    ) PublishClientError!PreparedPublishEvent {
+        _ = self;
+
+        const event_json = try noztr.nip01_event.event_serialize_json_object(output, event);
+        return .{
+            .event = event.*,
+            .event_json = event_json,
+        };
+    }
+
     pub fn serializeEventClientMessage(
         self: PublishClient,
         output: []u8,
@@ -246,4 +260,38 @@ test "publish client rejects stale or no-longer-ready publish steps" {
         error.RelayNotReady,
         client.selectPublishTarget(&step),
     );
+}
+
+test "publish client prepares one caller-owned signed event for publish composition" {
+    var storage = PublishClientStorage{};
+    var client = PublishClient.init(.{}, &storage);
+
+    const relay = try client.addRelay("wss://relay.one");
+    try client.markRelayConnected(relay.relay_index);
+
+    const secret_key = [_]u8{0x33} ** 32;
+    const public_key = try noztr.nostr_keys.nostr_derive_public_key(&secret_key);
+    var event = noztr.nip01_event.Event{
+        .id = [_]u8{0} ** 32,
+        .pubkey = public_key,
+        .sig = [_]u8{0} ** 64,
+        .kind = 10051,
+        .created_at = 77,
+        .tags = &.{},
+        .content = "{\"relays\":[\"wss://relay.one\"]}",
+    };
+    try noztr.nostr_keys.nostr_sign_event(&secret_key, &event);
+
+    var event_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try client.prepareExistingSignedEvent(event_json_buffer[0..], &event);
+
+    var publish_storage = runtime.RelayPoolPublishStorage{};
+    const plan = client.inspectPublish(&publish_storage);
+    const step = plan.nextStep().?;
+
+    var message_buffer: [noztr.limits.relay_message_bytes_max]u8 = undefined;
+    const targeted = try client.composeTargetedPublish(message_buffer[0..], &step, &prepared);
+    try std.testing.expectEqualStrings("wss://relay.one", targeted.relay.relay_url);
+    try std.testing.expect(std.mem.startsWith(u8, targeted.event_message_json, "[\"EVENT\","));
+    try std.testing.expect(std.mem.indexOf(u8, targeted.event_json, "\"kind\":10051") != null);
 }

@@ -93,6 +93,9 @@ For arbitrary downstream event kinds and tags, the intended route is:
    `noztr_sdk.client.relay.session.RelaySessionClient`, or the narrower relay replay/query/
    subscription clients as needed
 
+The dedicated public proof of that mixed route is:
+- [downstream_mixed_route_recipe.zig](../../examples/downstream_mixed_route_recipe.zig)
+
 ## Recommended Downstream Route
 
 For another Zig SDK above Nostr:
@@ -120,6 +123,7 @@ Start here when you are evaluating that mixed route:
 - [getting-started.md](../getting-started.md)
 - [contract-map.md](./contract-map.md)
 - [local_operator_client_recipe.zig](../../examples/local_operator_client_recipe.zig)
+- [downstream_mixed_route_recipe.zig](../../examples/downstream_mixed_route_recipe.zig)
 - [publish_client_recipe.zig](../../examples/publish_client_recipe.zig)
 - [relay_session_client_recipe.zig](../../examples/relay_session_client_recipe.zig)
 - [local_state_client_recipe.zig](../../examples/local_state_client_recipe.zig)
