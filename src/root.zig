@@ -474,11 +474,6 @@ test "root module exposes store runtime transport and boundary namespaces" {
     try std.testing.expect(@TypeOf(runtime.RelayPool) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolPlan) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolStep) == type);
-    try std.testing.expect(@TypeOf(runtime.RelayServerSessionError) == type);
-    try std.testing.expect(@TypeOf(runtime.RelayServerSessionState) == type);
-    try std.testing.expect(@TypeOf(runtime.RelayServerSessionIntake) == type);
-    try std.testing.expect(@TypeOf(runtime.RelayServerSessionCloseOutcome) == type);
-    try std.testing.expect(@TypeOf(runtime.RelayServerSession) == type);
     try std.testing.expect(@TypeOf(transport) == type);
     try std.testing.expect(@TypeOf(internal_runtime.RelayIoConnection) == type);
     try std.testing.expect(@TypeOf(internal_runtime.Clock) == type);

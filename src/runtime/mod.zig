@@ -1,5 +1,4 @@
 pub const relay_pool = @import("relay_pool.zig");
-pub const relay_server_session = @import("../relay/server_session.zig");
 
 pub const pool_capacity = relay_pool.pool_capacity;
 pub const subscription_specs_capacity = relay_pool.subscription_specs_capacity;
@@ -55,9 +54,3 @@ pub const RelayPoolReplayStep = relay_pool.RelayPoolReplayStep;
 pub const RelayPool = relay_pool.RelayPool;
 pub const RelayPoolPlan = relay_pool.RelayPoolPlan;
 pub const RelayPoolStep = relay_pool.RelayPoolStep;
-
-pub const RelayServerSessionError = relay_server_session.RelayServerSessionError;
-pub const RelayServerSessionState = relay_server_session.RelayServerSessionState;
-pub const RelayServerSessionIntake = relay_server_session.RelayServerSessionIntake;
-pub const RelayServerSessionCloseOutcome = relay_server_session.RelayServerSessionCloseOutcome;
-pub const RelayServerSession = relay_server_session.RelayServerSession;
