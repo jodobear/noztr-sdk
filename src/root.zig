@@ -424,6 +424,10 @@ test "root module exposes store runtime transport and boundary namespaces" {
     try std.testing.expect(@TypeOf(store.EventArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayRegistryArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayCheckpointArchive) == type);
+    try std.testing.expect(@TypeOf(store.RelayLocalArchiveTargetError) == type);
+    try std.testing.expect(@TypeOf(store.RelayLocalArchiveError) == type);
+    try std.testing.expect(@TypeOf(store.RelayLocalArchiveTarget) == type);
+    try std.testing.expect(@TypeOf(store.RelayLocalArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayLocalGroupArchive) == type);
     try std.testing.expect(@TypeOf(runtime) == type);
     try std.testing.expect(@TypeOf(runtime.RelayPoolStorage) == type);

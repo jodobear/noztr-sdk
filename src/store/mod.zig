@@ -6,6 +6,7 @@ pub const client_sqlite = @import("client_sqlite.zig");
 pub const archive = @import("archive.zig");
 pub const relay_checkpoint = @import("relay_checkpoint.zig");
 pub const relay_registry = @import("relay_registry.zig");
+pub const relay_local_archive = @import("relay_local_archive.zig");
 pub const relay_local_group_archive = @import("relay_local_group_archive.zig");
 
 pub const RelayInfoRecord = traits.RelayInfoRecord;
@@ -42,5 +43,9 @@ pub const RelayCheckpointArchive = relay_checkpoint.RelayCheckpointArchive;
 pub const checkpoint_name_for_relay = relay_checkpoint.checkpoint_name_for_relay;
 pub const RelayRegistryArchiveError = relay_registry.RelayRegistryArchiveError;
 pub const RelayRegistryArchive = relay_registry.RelayRegistryArchive;
+pub const RelayLocalArchiveTargetError = relay_local_archive.RelayLocalArchiveTargetError;
+pub const RelayLocalArchiveError = relay_local_archive.RelayLocalArchiveError;
+pub const RelayLocalArchiveTarget = relay_local_archive.RelayLocalArchiveTarget;
+pub const RelayLocalArchive = relay_local_archive.RelayLocalArchive;
 pub const RelayLocalGroupArchiveError = relay_local_group_archive.RelayLocalGroupArchiveError;
 pub const RelayLocalGroupArchive = relay_local_group_archive.RelayLocalGroupArchive;
