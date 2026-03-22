@@ -552,6 +552,16 @@ test "phase3 session helpers stay internal and explicit" {
     try std.testing.expect(!relay_session.canSendRequests());
 }
 
+test "phase architecture relay policy hooks stay internal and explicit" {
+    const relay_policy_hook = @import("relay/policy_hook.zig");
+
+    try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookError) == type);
+    try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookEvent) == type);
+    try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookContext) == type);
+    try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookDecision) == type);
+    try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHook) == type);
+}
+
 test "phase4 exposes the remote signer workflow surface" {
     try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSession) == type);
     try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerPubkeyTextRequest) == type);
