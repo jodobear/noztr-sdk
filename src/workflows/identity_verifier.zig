@@ -369,6 +369,44 @@ pub const IdentityStoredProfileTarget = struct {
     identity: []const u8,
 };
 
+pub const IdentityWatchedTargetStoreError = error{
+    IdentityTooLong,
+    StoreFull,
+};
+
+pub const IdentityWatchedTargetRecord = struct {
+    provider: noztr.nip39_external_identities.IdentityProvider = .github,
+    identity: [identity_profile_store_identity_max_bytes]u8 = [_]u8{0} **
+        identity_profile_store_identity_max_bytes,
+    identity_len: u16 = 0,
+    occupied: bool = false,
+
+    pub fn identitySlice(self: *const IdentityWatchedTargetRecord) []const u8 {
+        return self.identity[0..self.identity_len];
+    }
+
+    pub fn asTarget(self: *const IdentityWatchedTargetRecord) IdentityStoredProfileTarget {
+        return .{
+            .provider = self.provider,
+            .identity = self.identitySlice(),
+        };
+    }
+};
+
+pub const IdentityWatchedTargetResultPage = struct {
+    entries: []IdentityWatchedTargetRecord,
+    count: usize = 0,
+    truncated: bool = false,
+
+    pub fn init(entries: []IdentityWatchedTargetRecord) IdentityWatchedTargetResultPage {
+        return .{ .entries = entries };
+    }
+
+    pub fn slice(self: *const IdentityWatchedTargetResultPage) []const IdentityWatchedTargetRecord {
+        return self.entries[0..self.count];
+    }
+};
+
 pub const IdentityStoredProfileTargetDiscoveryGroup = struct {
     target: IdentityStoredProfileTarget,
     entries: []const IdentityStoredProfileDiscoveryEntry,
@@ -1294,6 +1332,124 @@ pub const MemoryIdentityProfileStore = struct {
         for (self.records[0..self.count], 0..) |*record, index| {
             if (!record.occupied) continue;
             if (std.mem.eql(u8, record.pubkey[0..], pubkey[0..])) return index;
+        }
+        return null;
+    }
+};
+
+pub const IdentityWatchedTargetStoreVTable = struct {
+    remember_target: *const fn (
+        ctx: *anyopaque,
+        target: IdentityStoredProfileTarget,
+    ) IdentityWatchedTargetStoreError!IdentityWatchedTargetRecord,
+    load_target: *const fn (
+        ctx: *anyopaque,
+        provider: noztr.nip39_external_identities.IdentityProvider,
+        identity: []const u8,
+    ) IdentityWatchedTargetStoreError!?IdentityWatchedTargetRecord,
+    list_targets: *const fn (
+        ctx: *anyopaque,
+        out: []IdentityWatchedTargetRecord,
+        truncated: *bool,
+    ) IdentityWatchedTargetStoreError!usize,
+};
+
+pub const IdentityWatchedTargetStore = struct {
+    ctx: *anyopaque,
+    vtable: *const IdentityWatchedTargetStoreVTable,
+
+    pub fn rememberTarget(
+        self: IdentityWatchedTargetStore,
+        target: IdentityStoredProfileTarget,
+    ) IdentityWatchedTargetStoreError!IdentityWatchedTargetRecord {
+        return self.vtable.remember_target(self.ctx, target);
+    }
+
+    pub fn loadTarget(
+        self: IdentityWatchedTargetStore,
+        provider: noztr.nip39_external_identities.IdentityProvider,
+        identity: []const u8,
+    ) IdentityWatchedTargetStoreError!?IdentityWatchedTargetRecord {
+        return self.vtable.load_target(self.ctx, provider, identity);
+    }
+
+    pub fn listTargets(
+        self: IdentityWatchedTargetStore,
+        page: *IdentityWatchedTargetResultPage,
+    ) IdentityWatchedTargetStoreError!void {
+        page.count = try self.vtable.list_targets(self.ctx, page.entries, &page.truncated);
+    }
+};
+
+pub const MemoryIdentityWatchedTargetStore = struct {
+    records: []IdentityWatchedTargetRecord,
+    count: usize = 0,
+
+    pub fn init(records: []IdentityWatchedTargetRecord) MemoryIdentityWatchedTargetStore {
+        return .{ .records = records };
+    }
+
+    pub fn asStore(self: *MemoryIdentityWatchedTargetStore) IdentityWatchedTargetStore {
+        return .{
+            .ctx = self,
+            .vtable = &watched_target_store_vtable,
+        };
+    }
+
+    pub fn rememberTarget(
+        self: *MemoryIdentityWatchedTargetStore,
+        target: IdentityStoredProfileTarget,
+    ) IdentityWatchedTargetStoreError!IdentityWatchedTargetRecord {
+        if (target.identity.len > identity_profile_store_identity_max_bytes) {
+            return error.IdentityTooLong;
+        }
+        if (self.findIndex(target.provider, target.identity)) |index| {
+            return self.records[index];
+        }
+        if (self.count == self.records.len) return error.StoreFull;
+
+        var record = IdentityWatchedTargetRecord{
+            .provider = target.provider,
+            .identity_len = @intCast(target.identity.len),
+            .occupied = true,
+        };
+        @memcpy(record.identity[0..target.identity.len], target.identity);
+        self.records[self.count] = record;
+        self.count += 1;
+        return record;
+    }
+
+    pub fn loadTarget(
+        self: *MemoryIdentityWatchedTargetStore,
+        provider: noztr.nip39_external_identities.IdentityProvider,
+        identity: []const u8,
+    ) IdentityWatchedTargetStoreError!?IdentityWatchedTargetRecord {
+        if (identity.len > identity_profile_store_identity_max_bytes) return error.IdentityTooLong;
+        const index = self.findIndex(provider, identity) orelse return null;
+        return self.records[index];
+    }
+
+    pub fn listTargets(
+        self: *MemoryIdentityWatchedTargetStore,
+        page: *IdentityWatchedTargetResultPage,
+    ) IdentityWatchedTargetStoreError!void {
+        page.count = @min(self.count, page.entries.len);
+        page.truncated = self.count > page.entries.len;
+        for (self.records[0..page.count], 0..) |record, index| {
+            page.entries[index] = record;
+        }
+    }
+
+    fn findIndex(
+        self: *const MemoryIdentityWatchedTargetStore,
+        provider: noztr.nip39_external_identities.IdentityProvider,
+        identity: []const u8,
+    ) ?usize {
+        for (self.records[0..self.count], 0..) |*record, index| {
+            if (!record.occupied) continue;
+            if (record.provider != provider) continue;
+            if (!std.mem.eql(u8, record.identitySlice(), identity)) continue;
+            return index;
         }
         return null;
     }
@@ -2928,6 +3084,41 @@ const profile_store_vtable = IdentityProfileStoreVTable{
     .put_profile_summary = profile_store_put,
     .get_profile = profile_store_get,
     .find_profiles = profile_store_find,
+};
+
+fn watched_target_store_remember(
+    ctx: *anyopaque,
+    target: IdentityStoredProfileTarget,
+) IdentityWatchedTargetStoreError!IdentityWatchedTargetRecord {
+    const self: *MemoryIdentityWatchedTargetStore = @ptrCast(@alignCast(ctx));
+    return self.rememberTarget(target);
+}
+
+fn watched_target_store_load(
+    ctx: *anyopaque,
+    provider: noztr.nip39_external_identities.IdentityProvider,
+    identity: []const u8,
+) IdentityWatchedTargetStoreError!?IdentityWatchedTargetRecord {
+    const self: *MemoryIdentityWatchedTargetStore = @ptrCast(@alignCast(ctx));
+    return self.loadTarget(provider, identity);
+}
+
+fn watched_target_store_list(
+    ctx: *anyopaque,
+    out: []IdentityWatchedTargetRecord,
+    truncated: *bool,
+) IdentityWatchedTargetStoreError!usize {
+    const self: *MemoryIdentityWatchedTargetStore = @ptrCast(@alignCast(ctx));
+    var page = IdentityWatchedTargetResultPage.init(out);
+    try self.listTargets(&page);
+    truncated.* = page.truncated;
+    return page.count;
+}
+
+const watched_target_store_vtable = IdentityWatchedTargetStoreVTable{
+    .remember_target = watched_target_store_remember,
+    .load_target = watched_target_store_load,
+    .list_targets = watched_target_store_list,
 };
 
 fn providerDetailsForClaim(
@@ -7760,6 +7951,49 @@ test "identity verifier returns typed error for inconsistent remembered profile 
             },
         ),
     );
+}
+
+test "identity watched target store remembers loads and lists targets in stable order" {
+    var records: [3]IdentityWatchedTargetRecord = undefined;
+    var store = MemoryIdentityWatchedTargetStore.init(records[0..]);
+
+    const alice = try store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    const bob = try store.rememberTarget(.{ .provider = .mastodon, .identity = "@bob@example.com" });
+    _ = bob;
+    const duplicate = try store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+
+    try std.testing.expectEqualStrings("alice", alice.identitySlice());
+    try std.testing.expectEqualStrings("alice", duplicate.identitySlice());
+    try std.testing.expectEqual(@as(usize, 2), store.count);
+
+    const loaded = try store.loadTarget(.mastodon, "@bob@example.com");
+    try std.testing.expect(loaded != null);
+    try std.testing.expectEqualStrings("@bob@example.com", loaded.?.identitySlice());
+
+    var page_storage: [2]IdentityWatchedTargetRecord = undefined;
+    var page = IdentityWatchedTargetResultPage.init(page_storage[0..]);
+    try store.listTargets(&page);
+    try std.testing.expectEqual(@as(usize, 2), page.count);
+    try std.testing.expect(!page.truncated);
+    try std.testing.expectEqualStrings("alice", page.slice()[0].identitySlice());
+    try std.testing.expectEqualStrings("@bob@example.com", page.slice()[1].identitySlice());
+}
+
+test "identity watched target store reports truncation and typed capacity errors" {
+    var records: [1]IdentityWatchedTargetRecord = undefined;
+    var store = MemoryIdentityWatchedTargetStore.init(records[0..]);
+
+    _ = try store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    try std.testing.expectError(
+        error.StoreFull,
+        store.rememberTarget(.{ .provider = .github, .identity = "bob" }),
+    );
+
+    var page_storage: [0]IdentityWatchedTargetRecord = .{};
+    var page = IdentityWatchedTargetResultPage.init(page_storage[0..]);
+    try store.listTargets(&page);
+    try std.testing.expectEqual(@as(usize, 0), page.count);
+    try std.testing.expect(page.truncated);
 }
 
 const TestHttpResponse = struct {

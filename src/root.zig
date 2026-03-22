@@ -694,6 +694,9 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileDiscoveryFreshnessStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileDiscoveryFreshnessRequest) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTarget) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityWatchedTargetStoreError) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityWatchedTargetRecord) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityWatchedTargetResultPage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryGroup) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetDiscoveryRequest) == type);
@@ -757,6 +760,8 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileRefreshStep) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityProfileStore) == type);
     try std.testing.expect(@TypeOf(workflows.MemoryIdentityProfileStore) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityWatchedTargetStore) == type);
+    try std.testing.expect(@TypeOf(workflows.MemoryIdentityWatchedTargetStore) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityVerificationStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityVerificationRequest) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityProviderDetails) == type);
