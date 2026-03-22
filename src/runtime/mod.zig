@@ -57,7 +57,7 @@ pub const RelayPoolPlan = relay_pool.RelayPoolPlan;
 pub const RelayPoolStep = relay_pool.RelayPoolStep;
 
 pub const RelayServerSessionError = relay_server_session.RelayServerSessionError;
-pub const ServerSessionState = relay_server_session.ServerSessionState;
+pub const RelayServerSessionState = relay_server_session.RelayServerSessionState;
 pub const RelayServerSessionIntake = relay_server_session.RelayServerSessionIntake;
 pub const RelayServerSessionCloseOutcome = relay_server_session.RelayServerSessionCloseOutcome;
 pub const RelayServerSession = relay_server_session.RelayServerSession;
