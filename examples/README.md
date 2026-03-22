@@ -444,6 +444,15 @@ They do not imply:
   - control points: caller builds event JSON on the kernel, converts it into bounded store
     records explicitly, queries through one backend-agnostic selection surface with caller-owned
     page storage, and persists one named checkpoint without committing to a durable backend yet
+- `sqlite_client_store_recipe.zig`
+  - goal: open one embedded durable SQLite-backed store, archive event/checkpoint state through
+    the shared store seam, persist one relay-local checkpoint, and restore that state after reopen
+  - related SDK symbols: `noztr_sdk.store`, `SqliteClientStore`, `ClientStore`, `EventArchive`,
+    `RelayCheckpointArchive`
+  - kernel fixture help: `noztr.nip01_event`
+  - control points: the durable baseline still satisfies the same shared store seam, higher
+    archive/checkpoint helpers stay backend-agnostic, and the recipe proves serious local tooling
+    can adopt one honest embedded store without inventing product-local persistence first
 - `store_archive_recipe.zig`
   - goal: use one minimal CLI-facing archive helper above the shared store seam to ingest event
     JSON, replay a bounded query, and restore one named checkpoint

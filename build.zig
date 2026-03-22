@@ -33,6 +33,11 @@ pub fn build(builder: *std.Build) void {
     examples_step.dependOn(&run_examples_tests.step);
 }
 
+fn add_sqlite_support(module: *std.Build.Module) void {
+    module.link_libc = true;
+    module.linkSystemLibrary("sqlite3", .{});
+}
+
 fn create_root_module(
     builder: *std.Build,
     target: std.Build.ResolvedTarget,
@@ -49,6 +54,7 @@ fn create_root_module(
         .optimize = optimize,
     });
     root_module.addImport("noztr", noztr_module);
+    add_sqlite_support(root_module);
     return root_module;
 }
 
@@ -68,6 +74,7 @@ fn add_public_root_module(
         .optimize = optimize,
     });
     root_module.addImport("noztr", noztr_module);
+    add_sqlite_support(root_module);
     return root_module;
 }
 
@@ -86,5 +93,6 @@ fn create_examples_module(
     });
     examples_module.addImport("noztr", noztr_module);
     examples_module.addImport("noztr_sdk", public_root_module);
+    add_sqlite_support(examples_module);
     return examples_module;
 }

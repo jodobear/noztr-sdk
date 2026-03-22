@@ -10,6 +10,8 @@ pub const ClientStoreError = error{
     InvalidCheckpointName,
     CheckpointNameTooLong,
     StoreFull,
+    StoreUnavailable,
+    StoreCorrupt,
 };
 
 pub const event_id_hex_bytes: u8 = 64;

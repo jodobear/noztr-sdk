@@ -39,6 +39,7 @@ comptime {
     _ = @import("signer_nip44_encrypt_job_client_recipe.zig");
     _ = @import("signer_pubkey_job_client_recipe.zig");
     _ = @import("store_query_recipe.zig");
+    _ = @import("sqlite_client_store_recipe.zig");
     _ = @import("store_archive_recipe.zig");
     _ = @import("relay_registry_archive_recipe.zig");
     _ = @import("cli_archive_client_recipe.zig");

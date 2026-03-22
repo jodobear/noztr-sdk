@@ -262,3 +262,87 @@ test "cli archive client inspects shared replay posture over relay checkpoints" 
     try std.testing.expect(next_step.entry.query.cursor == null);
     try std.testing.expectEqual(@as(u32, 9), plan.entry(1).?.query.cursor.?.offset);
 }
+
+test "cli archive client composes over the sqlite durable store baseline" {
+    var tmp_dir = std.testing.tmpDir(.{});
+    defer tmp_dir.cleanup();
+
+    var path_buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const db_path = try std.fmt.bufPrint(
+        path_buffer[0..],
+        ".zig-cache/tmp/{s}/cli_archive.sqlite",
+        .{&tmp_dir.sub_path},
+    );
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    {
+        var sqlite_store = try store.SqliteClientStore.open(std.testing.allocator, db_path);
+        defer sqlite_store.deinit();
+
+        var storage = CliArchiveClientStorage{};
+        const client = CliArchiveClient.init(
+            .{ .relay_checkpoint_scope = "tooling" },
+            sqlite_store.asClientStore(),
+            &storage,
+        );
+
+        const first_json =
+            \\{"id":"1111111111111111111111111111111111111111111111111111111111111111","pubkey":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","created_at":10,"kind":1,"tags":[],"content":"first","sig":"33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"}
+        ;
+        const second_json =
+            \\{"id":"2222222222222222222222222222222222222222222222222222222222222222","pubkey":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","created_at":20,"kind":1,"tags":[],"content":"second","sig":"44444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444"}
+        ;
+        try client.ingestEventJson(first_json, arena.allocator());
+        try client.ingestEventJson(second_json, arena.allocator());
+
+        const authors = [_]store.EventPubkeyHex{
+            try store.event_pubkey_hex_from_text(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ),
+        };
+        var page_storage: [1]store.ClientEventRecord = undefined;
+        var page = store.EventQueryResultPage.init(page_storage[0..]);
+        try client.queryEvents(&.{
+            .authors = authors[0..],
+            .limit = 1,
+        }, &page);
+        try std.testing.expectEqual(@as(usize, 1), page.count);
+        try std.testing.expect(page.next_cursor != null);
+
+        try client.saveCheckpoint("recent", page.next_cursor.?);
+        try client.saveRelayCheckpoint("wss://relay.one", .{ .offset = 7 });
+    }
+
+    {
+        var sqlite_store = try store.SqliteClientStore.open(std.testing.allocator, db_path);
+        defer sqlite_store.deinit();
+
+        var storage = CliArchiveClientStorage{};
+        const client = CliArchiveClient.init(
+            .{ .relay_checkpoint_scope = "tooling" },
+            sqlite_store.asClientStore(),
+            &storage,
+        );
+
+        var page_storage: [1]store.ClientEventRecord = undefined;
+        var page = store.EventQueryResultPage.init(page_storage[0..]);
+        try client.queryEvents(&.{
+            .limit = 1,
+        }, &page);
+        try std.testing.expectEqual(@as(usize, 1), page.count);
+        try std.testing.expectEqualStrings(
+            "2222222222222222222222222222222222222222222222222222222222222222",
+            &page.slice()[0].id_hex,
+        );
+
+        const checkpoint = try client.loadCheckpoint("recent");
+        try std.testing.expect(checkpoint != null);
+        try std.testing.expectEqual(@as(u32, 1), checkpoint.?.cursor.offset);
+
+        const relay_checkpoint = try client.loadRelayCheckpoint("wss://relay.one");
+        try std.testing.expect(relay_checkpoint != null);
+        try std.testing.expectEqual(@as(u32, 7), relay_checkpoint.?.cursor.offset);
+    }
+}

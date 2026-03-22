@@ -311,3 +311,99 @@ test "local state client inspects runtime and replay over restored remembered re
     try std.testing.expect(next_step.entry.query.cursor == null);
     try std.testing.expectEqual(@as(u32, 9), replay_plan.entry(1).?.query.cursor.?.offset);
 }
+
+test "local state client composes archive and replay state over the sqlite durable store baseline" {
+    var tmp_dir = std.testing.tmpDir(.{});
+    defer tmp_dir.cleanup();
+
+    var path_buffer: [std.fs.max_path_bytes]u8 = undefined;
+    const db_path = try std.fmt.bufPrint(
+        path_buffer[0..],
+        ".zig-cache/tmp/{s}/local_state.sqlite",
+        .{&tmp_dir.sub_path},
+    );
+
+    var relay_info_store = store.MemoryRelayInfoStore{};
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    {
+        var sqlite_store = try store.SqliteClientStore.open(std.testing.allocator, db_path);
+        defer sqlite_store.deinit();
+
+        var storage_ = LocalStateClientStorage{};
+        var client = LocalStateClient.init(
+            .{ .relay_checkpoint_scope = "workspace" },
+            sqlite_store.asClientStore(),
+            relay_info_store.asRelayInfoStore(),
+            &storage_,
+        );
+
+        const first_json =
+            \\{"id":"1111111111111111111111111111111111111111111111111111111111111111","pubkey":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","created_at":10,"kind":1,"tags":[],"content":"first","sig":"33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"}
+        ;
+        const second_json =
+            \\{"id":"2222222222222222222222222222222222222222222222222222222222222222","pubkey":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","created_at":20,"kind":1,"tags":[],"content":"second","sig":"44444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444"}
+        ;
+        try client.ingestEventJson(first_json, arena.allocator());
+        try client.ingestEventJson(second_json, arena.allocator());
+
+        const authors = [_]store.EventPubkeyHex{
+            try store.event_pubkey_hex_from_text(
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ),
+        };
+        var event_page_storage: [1]store.ClientEventRecord = undefined;
+        var event_page = store.EventQueryResultPage.init(event_page_storage[0..]);
+        try client.queryEvents(&.{
+            .authors = authors[0..],
+            .limit = 1,
+        }, &event_page);
+        try std.testing.expectEqual(@as(usize, 1), event_page.count);
+        try std.testing.expect(event_page.next_cursor != null);
+
+        try client.saveCheckpoint("recent", event_page.next_cursor.?);
+        _ = try client.rememberRelay("wss://relay.one");
+        _ = try client.rememberRelay("wss://relay.two");
+        try client.saveRelayCheckpoint("wss://relay.two", .{ .offset = 9 });
+    }
+
+    {
+        var sqlite_store = try store.SqliteClientStore.open(std.testing.allocator, db_path);
+        defer sqlite_store.deinit();
+
+        var storage_ = LocalStateClientStorage{};
+        var client = LocalStateClient.init(
+            .{ .relay_checkpoint_scope = "workspace" },
+            sqlite_store.asClientStore(),
+            relay_info_store.asRelayInfoStore(),
+            &storage_,
+        );
+
+        var event_page_storage: [1]store.ClientEventRecord = undefined;
+        var event_page = store.EventQueryResultPage.init(event_page_storage[0..]);
+        try client.queryEvents(&.{
+            .limit = 1,
+        }, &event_page);
+        try std.testing.expectEqual(@as(usize, 1), event_page.count);
+        try std.testing.expectEqualStrings(
+            "2222222222222222222222222222222222222222222222222222222222222222",
+            &event_page.slice()[0].id_hex,
+        );
+
+        const restored_checkpoint = try client.loadCheckpoint("recent");
+        try std.testing.expect(restored_checkpoint != null);
+        try std.testing.expectEqual(@as(u32, 1), restored_checkpoint.?.cursor.offset);
+
+        var relay_page_storage: [2]store.RelayInfoRecord = undefined;
+        var relay_page = store.RelayInfoResultPage.init(relay_page_storage[0..]);
+        var checkpoint_storage = runtime.RelayPoolCheckpointStorage{};
+        const restored = try client.restoreRememberedRelays(&relay_page, &checkpoint_storage);
+        try std.testing.expectEqual(@as(u8, 2), restored.relay_count);
+
+        const relay_checkpoint = try client.loadRelayCheckpoint("wss://relay.two");
+        try std.testing.expect(relay_checkpoint != null);
+        try std.testing.expectEqual(@as(u32, 9), relay_checkpoint.?.cursor.offset);
+    }
+}

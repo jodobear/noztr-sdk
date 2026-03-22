@@ -408,6 +408,8 @@ test "root module exposes store runtime transport and boundary namespaces" {
     try std.testing.expect(@TypeOf(store.EventCursor) == type);
     try std.testing.expect(@TypeOf(store.IndexSelection) == type);
     try std.testing.expect(@TypeOf(store.MemoryClientStore) == type);
+    try std.testing.expect(@TypeOf(store.SqliteClientStoreInitError) == type);
+    try std.testing.expect(@TypeOf(store.SqliteClientStore) == type);
     try std.testing.expect(@TypeOf(store.EventArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayRegistryArchive) == type);
     try std.testing.expect(@TypeOf(store.RelayCheckpointArchive) == type);

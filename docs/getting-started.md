@@ -155,6 +155,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | understand the public SDK workflow surface | [public contract map](./reference/contract-map.md) | [examples/README.md](../examples/README.md) |
 | verify install/import works | [consumer_smoke.zig](../examples/consumer_smoke.zig) | one workflow recipe |
 | build local bounded event/query/checkpoint storage first | [public contract map](./reference/contract-map.md) | [store_query_recipe.zig](../examples/store_query_recipe.zig) |
+| build one first embedded durable local-storage baseline | [public contract map](./reference/contract-map.md) | [sqlite_client_store_recipe.zig](../examples/sqlite_client_store_recipe.zig) |
 | build a first CLI-facing archive surface above shared storage | [public contract map](./reference/contract-map.md) | [store_archive_recipe.zig](../examples/store_archive_recipe.zig) |
 | build a first CLI-facing client surface above shared store plus runtime | [public contract map](./reference/contract-map.md) | [cli_archive_client_recipe.zig](../examples/cli_archive_client_recipe.zig) |
 | persist relay-local runtime cursors over shared storage | [public contract map](./reference/contract-map.md) | [relay_checkpoint_recipe.zig](../examples/relay_checkpoint_recipe.zig) |
@@ -178,6 +179,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first signer-tooling client route over the remote-signer workflow
 - [store_query_recipe.zig](../examples/store_query_recipe.zig)
   - first bounded store/query/checkpoint route
+- [sqlite_client_store_recipe.zig](../examples/sqlite_client_store_recipe.zig)
+  - first embedded durable store baseline over the shared store seam
 - [store_archive_recipe.zig](../examples/store_archive_recipe.zig)
   - first CLI-facing archive route over the shared store seam
 - [cli_archive_client_recipe.zig](../examples/cli_archive_client_recipe.zig)
