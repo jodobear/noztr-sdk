@@ -89,6 +89,20 @@ pub const Nip03StoredVerificationPlanning = struct {
         workflows.OpenTimestampsStoredVerificationTargetRefreshBatchPlan;
     pub const TargetRefreshBatchStep =
         workflows.OpenTimestampsStoredVerificationTargetRefreshBatchStep;
+    pub const TargetTurnPolicyAction =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyAction;
+    pub const TargetTurnPolicyEntry =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyEntry;
+    pub const TargetTurnPolicyGroup =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyGroup;
+    pub const TargetTurnPolicyStorage =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyStorage;
+    pub const TargetTurnPolicyRequest =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyRequest;
+    pub const TargetTurnPolicyPlan =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyPlan;
+    pub const TargetTurnPolicyStep =
+        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyStep;
 };
 
 pub const Nip03VerifyClient = struct {
@@ -253,6 +267,18 @@ pub const Nip03VerifyClient = struct {
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshBatchPlan {
         _ = self;
         return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredVerificationTurnPolicyForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.TargetTurnPolicyRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetTurnPolicyPlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
             verification_store,
             request,
         );
@@ -547,6 +573,51 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         u8,
         stale_target.id[0..],
         batch_plan.deferredEntries()[0].target.target_event_id[0..],
+    );
+
+    var turn_policy_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var turn_policy_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    var turn_policy_cadence_entries: [3]Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
+    var turn_policy_cadence_groups: [5]Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
+    var turn_policy_entries: [3]Nip03StoredVerificationPlanning.TargetTurnPolicyEntry = undefined;
+    var turn_policy_groups: [4]Nip03StoredVerificationPlanning.TargetTurnPolicyGroup = undefined;
+    const turn_policy_plan = try client.inspectStoredVerificationTurnPolicyForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 1,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip03StoredVerificationPlanning.TargetTurnPolicyStorage.init(
+                turn_policy_matches[0..],
+                turn_policy_latest_entries[0..],
+                turn_policy_cadence_entries[0..],
+                turn_policy_cadence_groups[0..],
+                turn_policy_entries[0..],
+                turn_policy_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), turn_policy_plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), turn_policy_plan.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), turn_policy_plan.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 1), turn_policy_plan.defer_refresh_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        missing_target.target_event_id[0..],
+        turn_policy_plan.nextWorkStep().?.entry.target.target_event_id[0..],
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        fresh_target.id[0..],
+        turn_policy_plan.useCachedEntries()[0].target.target_event_id[0..],
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        stale_target.id[0..],
+        turn_policy_plan.deferredEntries()[0].target.target_event_id[0..],
     );
 }
 
