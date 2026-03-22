@@ -164,6 +164,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | persist and restore a shared relay-pool checkpoint set, then derive bounded replay steps | [public contract map](./reference/contract-map.md) | [relay_pool_checkpoint_recipe.zig](../examples/relay_pool_checkpoint_recipe.zig) |
 | build signer/session flows | [public contract map](./reference/contract-map.md) | [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
 | build a first signer-tooling client surface above the remote-signer workflow | [public contract map](./reference/contract-map.md) | [signer_client_recipe.zig](../examples/signer_client_recipe.zig) |
+| build a shared signer route across local remote and browser adapters | [public contract map](./reference/contract-map.md) | [signer_capability_recipe.zig](../examples/signer_capability_recipe.zig), [nip07_browser_signer_recipe.zig](../examples/nip07_browser_signer_recipe.zig) |
 | build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
 | build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |
 | build group flows | [public contract map](./reference/contract-map.md) | [group_session_recipe.zig](../examples/group_session_recipe.zig), [group_fleet_recipe.zig](../examples/group_fleet_recipe.zig) |
@@ -177,6 +178,10 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first signer/session route
 - [signer_client_recipe.zig](../examples/signer_client_recipe.zig)
   - first signer-tooling client route over the remote-signer workflow
+- [signer_capability_recipe.zig](../examples/signer_capability_recipe.zig)
+  - first shared signer route across local, remote, and browser adapters
+- [nip07_browser_signer_recipe.zig](../examples/nip07_browser_signer_recipe.zig)
+  - first thin browser signer route over the shared signer-capability seam
 - [store_query_recipe.zig](../examples/store_query_recipe.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store_recipe.zig](../examples/sqlite_client_store_recipe.zig)

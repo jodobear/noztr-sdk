@@ -65,7 +65,8 @@ The current public floor is grouped and broad:
 - `client.relay.*`
   - relay auth, query, exchange, replay, publish, response, workspace, and session composition
 - `client.signer.*`
-  - signer session and signer job composition above the remote-signer workflow
+  - signer capability, thin browser signer, signer session, and signer job composition above the
+    remote-signer workflow
 - `client.dm.*`
   - mailbox and legacy-DM runtime, replay, subscription, and orchestration composition
 - `client.identity.*`
