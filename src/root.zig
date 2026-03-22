@@ -560,6 +560,7 @@ test "phase architecture relay policy hooks stay internal and explicit" {
     try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookContext) == type);
     try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookDecision) == type);
     try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHook) == type);
+    try std.testing.expect(@TypeOf(relay_policy_hook.RelayPolicyHookAdapter) == type);
 }
 
 test "phase4 exposes the remote signer workflow surface" {
