@@ -1,10 +1,14 @@
 const std = @import("std");
 const runtime = @import("../runtime/mod.zig");
 const workflows = @import("../workflows/mod.zig");
+const signer_capability = @import("signer_capability.zig");
 
 pub const signer_client_request_id_max_bytes: u8 = 32;
 
 pub const SignerClientError = workflows.signer.remote.RemoteSignerError;
+pub const SignerClientCapabilityError = SignerClientError || error{
+    UnexpectedCapabilityOutcome,
+};
 
 pub const SignerClientConfig = struct {};
 
@@ -93,6 +97,13 @@ pub const SignerClient = struct {
 
     pub fn getUserPubkey(self: *const SignerClient) ?[32]u8 {
         return self.session.getUserPubkey();
+    }
+
+    pub fn signerCapabilityProfile(
+        self: *const SignerClient,
+    ) signer_capability.SignerCapabilityProfile {
+        _ = self;
+        return .remoteSigner();
     }
 
     pub fn lastSignerError(self: *const SignerClient) ?[]const u8 {
@@ -268,6 +279,26 @@ pub const SignerClient = struct {
         return self.session.beginPing(storage.request.nextRequestContext(scratch));
     }
 
+    pub fn beginSignerCapabilityOperation(
+        self: *SignerClient,
+        storage: *SignerClientStorage,
+        scratch: std.mem.Allocator,
+        request: *const signer_capability.SignerOperationRequest,
+    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+        return switch (request.*) {
+            .get_public_key => self.beginGetPublicKey(storage, scratch),
+            .sign_event => |unsigned_event_json| self.beginSignEvent(
+                storage,
+                scratch,
+                unsigned_event_json,
+            ),
+            .nip04_encrypt => |value| self.beginNip04Encrypt(storage, scratch, &value),
+            .nip04_decrypt => |value| self.beginNip04Decrypt(storage, scratch, &value),
+            .nip44_encrypt => |value| self.beginNip44Encrypt(storage, scratch, &value),
+            .nip44_decrypt => |value| self.beginNip44Decrypt(storage, scratch, &value),
+        };
+    }
+
     pub fn acceptResponseJson(
         self: *SignerClient,
         response_json: []const u8,
@@ -275,7 +306,44 @@ pub const SignerClient = struct {
     ) SignerClientError!workflows.signer.remote.RemoteSignerResponseOutcome {
         return self.session.acceptResponseJson(response_json, scratch);
     }
+
+    pub fn acceptSignerCapabilityResponseJson(
+        self: *SignerClient,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) SignerClientCapabilityError!signer_capability.SignerOperationResult {
+        const outcome = try self.acceptResponseJson(response_json, scratch);
+        return switch (outcome) {
+            .user_pubkey => |pubkey| .{ .user_pubkey = pubkey },
+            .signed_event_json => |signed_event_json| .{ .signed_event_json = signed_event_json },
+            .text_response => |response| .{
+                .text_response = .{
+                    .operation = capabilityOperationFromRemoteMethod(response.method) orelse
+                        return error.UnexpectedCapabilityOutcome,
+                    .text = response.text,
+                },
+            },
+            .connected,
+            .pong,
+            .relays_switched,
+            => error.UnexpectedCapabilityOutcome,
+        };
+    }
 };
+
+fn capabilityOperationFromRemoteMethod(
+    method: workflows.signer.remote.RemoteSignerMethod,
+) ?signer_capability.SignerOperation {
+    return switch (method) {
+        .get_public_key => .get_public_key,
+        .sign_event => .sign_event,
+        .nip04_encrypt => .nip04_encrypt,
+        .nip04_decrypt => .nip04_decrypt,
+        .nip44_encrypt => .nip44_encrypt,
+        .nip44_decrypt => .nip44_decrypt,
+        else => null,
+    };
+}
 
 test "signer client request storage generates sequential bounded request ids" {
     var storage = SignerClientRequestStorage{};
@@ -475,6 +543,96 @@ test "signer client exposes session cadence parity" {
     try std.testing.expectEqual(
         SignerClientSessionCadenceWaitReason.reconnect_backoff,
         cadence.nextStep().wait.reason,
+    );
+}
+
+test "signer client adapts onto the signer capability surface" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const bunker_uri =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&secret=secret";
+    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    client.markCurrentRelayConnected();
+
+    const capability = client.signerCapabilityProfile();
+    try std.testing.expectEqual(.remote, capability.backend);
+    try std.testing.expectEqual(.caller_driven_request, capability.modeFor(.get_public_key));
+    try std.testing.expectEqual(.caller_driven_request, capability.modeFor(.nip04_encrypt));
+
+    var storage = SignerClientStorage{};
+
+    var connect_scratch_bytes: [1024]u8 = undefined;
+    var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_bytes);
+    _ = try client.beginConnect(&storage, connect_scratch.allocator(), &.{});
+
+    var connect_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var connect_response_scratch_bytes: [2048]u8 = undefined;
+    var connect_response_scratch = std.heap.FixedBufferAllocator.init(&connect_response_scratch_bytes);
+    _ = try client.acceptResponseJson(
+        try serializeResponseJson(connect_response_json[0..], .{
+            .id = "signer-1",
+            .result = .{ .value = .{ .text = "secret" } },
+        }),
+        connect_response_scratch.allocator(),
+    );
+
+    const get_public_key_request: signer_capability.SignerOperationRequest = .{ .get_public_key = {} };
+    var pubkey_scratch_bytes: [1024]u8 = undefined;
+    var pubkey_scratch = std.heap.FixedBufferAllocator.init(&pubkey_scratch_bytes);
+    const outbound_pubkey = try client.beginSignerCapabilityOperation(
+        &storage,
+        pubkey_scratch.allocator(),
+        &get_public_key_request,
+    );
+    try std.testing.expect(
+        std.mem.indexOf(u8, outbound_pubkey.json, "\"method\":\"get_public_key\"") != null,
+    );
+
+    const user_pubkey = [_]u8{0x44} ** 32;
+    const user_pubkey_hex = std.fmt.bytesToHex(user_pubkey, .lower);
+    var pubkey_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var pubkey_response_scratch_bytes: [2048]u8 = undefined;
+    var pubkey_response_scratch = std.heap.FixedBufferAllocator.init(&pubkey_response_scratch_bytes);
+    const pubkey_result = try client.acceptSignerCapabilityResponseJson(
+        try textResponse(pubkey_response_json[0..], "signer-2", user_pubkey_hex[0..]),
+        pubkey_response_scratch.allocator(),
+    );
+    try std.testing.expect(get_public_key_request.acceptsResult(&pubkey_result));
+
+    var unexpected_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var unexpected_response_scratch_bytes: [2048]u8 = undefined;
+    var unexpected_response_scratch = std.heap.FixedBufferAllocator.init(
+        &unexpected_response_scratch_bytes,
+    );
+    try std.testing.expectError(
+        error.UnknownResponseId,
+        client.acceptSignerCapabilityResponseJson(
+            try serializeResponseJson(unexpected_response_json[0..], .{
+                .id = "signer-99",
+                .result = .{ .value = .{ .text = "secret" } },
+            }),
+            unexpected_response_scratch.allocator(),
+        ),
+    );
+
+    var ping_scratch_bytes: [1024]u8 = undefined;
+    var ping_scratch = std.heap.FixedBufferAllocator.init(&ping_scratch_bytes);
+    _ = try client.beginPing(&storage, ping_scratch.allocator());
+
+    var pong_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var pong_response_scratch_bytes: [2048]u8 = undefined;
+    var pong_response_scratch = std.heap.FixedBufferAllocator.init(&pong_response_scratch_bytes);
+    try std.testing.expectError(
+        error.UnexpectedCapabilityOutcome,
+        client.acceptSignerCapabilityResponseJson(
+            try serializeResponseJson(pong_response_json[0..], .{
+                .id = "signer-3",
+                .result = .{ .value = .{ .text = "pong" } },
+            }),
+            pong_response_scratch.allocator(),
+        ),
     );
 }
 

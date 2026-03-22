@@ -1,5 +1,6 @@
 const std = @import("std");
 const noztr = @import("noztr");
+const signer_capability = @import("signer_capability.zig");
 
 pub const secret_key_bytes: u8 = 32;
 pub const public_key_bytes: u8 = 32;
@@ -20,6 +21,10 @@ pub const LocalOperatorClientError = error{
     InvalidSecretKeyHex,
     InvalidPublicKeyHex,
 } || noztr.nostr_keys.NostrKeysError || noztr.nip19_bech32.Bech32Error || noztr.nip01_event.EventParseError || noztr.nip01_event.EventVerifyError || noztr.nip01_event.EventShapeError || noztr.nip01_event.EventSerializeError || noztr.nip44.ConversationEncryptionError;
+
+pub const LocalOperatorSignerCapabilityError = LocalOperatorClientError || error{
+    UnsupportedSignerOperation,
+};
 
 pub const LocalOperatorClientConfig = struct {};
 
@@ -193,6 +198,13 @@ pub const LocalOperatorClient = struct {
         return self.inspectEvent(&event);
     }
 
+    pub fn signerCapabilityProfile(
+        self: LocalOperatorClient,
+    ) signer_capability.SignerCapabilityProfile {
+        _ = self;
+        return .localOperator();
+    }
+
     pub fn buildUnsignedEvent(
         self: LocalOperatorClient,
         draft: *const LocalEventDraft,
@@ -228,6 +240,55 @@ pub const LocalOperatorClient = struct {
         var event = self.buildUnsignedEvent(draft, &public_key);
         try self.signEvent(secret_key, &event);
         return event;
+    }
+
+    pub fn completeSignerCapabilityOperation(
+        self: LocalOperatorClient,
+        output: []u8,
+        secret_key: *const [secret_key_bytes]u8,
+        request: *const signer_capability.SignerOperationRequest,
+        scratch: std.mem.Allocator,
+    ) LocalOperatorSignerCapabilityError!signer_capability.SignerOperationResult {
+        return switch (request.*) {
+            .get_public_key => .{ .user_pubkey = try self.derivePublicKey(secret_key) },
+            .sign_event => |unsigned_event_json| blk: {
+                var event = try self.parseEventJson(unsigned_event_json, scratch);
+                try self.signEvent(secret_key, &event);
+                const signed_event_json = try self.serializeEventJson(output, &event);
+                break :blk .{ .signed_event_json = signed_event_json };
+            },
+            .nip44_encrypt => |value| blk: {
+                const ciphertext = try self.encryptNip44ToPeer(
+                    output,
+                    secret_key,
+                    &value.pubkey,
+                    value.text,
+                );
+                break :blk .{
+                    .text_response = .{
+                        .operation = .nip44_encrypt,
+                        .text = ciphertext,
+                    },
+                };
+            },
+            .nip44_decrypt => |value| blk: {
+                const plaintext = try self.decryptNip44FromPeer(
+                    output,
+                    secret_key,
+                    &value.pubkey,
+                    value.text,
+                );
+                break :blk .{
+                    .text_response = .{
+                        .operation = .nip44_decrypt,
+                        .text = plaintext,
+                    },
+                };
+            },
+            .nip04_encrypt,
+            .nip04_decrypt,
+            => error.UnsupportedSignerOperation,
+        };
     }
 
     pub fn serializeEventJson(
@@ -430,5 +491,67 @@ test "local operator client rejects invalid key text and malformed nip19 text" {
     try std.testing.expectError(
         error.InvalidBech32,
         client.decodeEntity("nostr", tlv_scratch[0..]),
+    );
+}
+
+test "local operator client adapts onto the signer capability surface" {
+    const client = LocalOperatorClient.init(.{});
+    const secret_key = [_]u8{0x11} ** 32;
+    const peer_secret = [_]u8{0x22} ** 32;
+    const peer_pubkey = try client.derivePublicKey(&peer_secret);
+
+    const capability = client.signerCapabilityProfile();
+    try std.testing.expectEqual(.local, capability.backend);
+    try std.testing.expectEqual(.local_immediate, capability.modeFor(.get_public_key));
+    try std.testing.expectEqual(.unsupported, capability.modeFor(.nip04_decrypt));
+
+    var output: [512]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const get_public_key_request: signer_capability.SignerOperationRequest = .{ .get_public_key = {} };
+    const get_public_key_result = try client.completeSignerCapabilityOperation(
+        output[0..],
+        &secret_key,
+        &get_public_key_request,
+        arena.allocator(),
+    );
+    try std.testing.expect(get_public_key_request.acceptsResult(&get_public_key_result));
+
+    var unsigned_event = client.buildUnsignedEvent(
+        &.{
+            .kind = 1,
+            .created_at = 42,
+            .content = "sign me",
+        },
+        &get_public_key_result.user_pubkey,
+    );
+    var unsigned_event_json_output: [512]u8 = undefined;
+    const unsigned_event_json = try client.serializeEventJson(unsigned_event_json_output[0..], &unsigned_event);
+    const sign_event_request: signer_capability.SignerOperationRequest = .{
+        .sign_event = unsigned_event_json,
+    };
+    const sign_event_result = try client.completeSignerCapabilityOperation(
+        output[0..],
+        &secret_key,
+        &sign_event_request,
+        arena.allocator(),
+    );
+    try std.testing.expect(sign_event_request.acceptsResult(&sign_event_result));
+
+    const decrypt_request: signer_capability.SignerOperationRequest = .{
+        .nip04_decrypt = .{
+            .pubkey = peer_pubkey,
+            .text = "ciphertext",
+        },
+    };
+    try std.testing.expectError(
+        error.UnsupportedSignerOperation,
+        client.completeSignerCapabilityOperation(
+            output[0..],
+            &secret_key,
+            &decrypt_request,
+            arena.allocator(),
+        ),
     );
 }
