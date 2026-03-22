@@ -1,6 +1,12 @@
 const std = @import("std");
 const signer_capability = @import("signer_capability.zig");
 
+pub const Nip07BrowserError = error{
+    SignerUnavailable,
+    UnsupportedMethod,
+    InvalidPublicKeyHex,
+};
+
 pub const Nip07BrowserAvailability = enum {
     absent,
     present,
@@ -72,6 +78,11 @@ pub const Nip07BrowserProvider = struct {
 
     pub const VTable = struct {
         inspectSupport: *const fn (context: *const anyopaque) Nip07BrowserSupport,
+        completeOperation: *const fn (
+            context: *const anyopaque,
+            output: []u8,
+            request: *const signer_capability.SignerOperationRequest,
+        ) Nip07BrowserError![]const u8,
     };
 
     pub fn init(
@@ -94,7 +105,40 @@ pub const Nip07BrowserProvider = struct {
         const support = self.inspectSupport();
         return support.signerCapabilityProfile();
     }
+
+    pub fn completeSignerCapabilityOperation(
+        self: *const Nip07BrowserProvider,
+        output: []u8,
+        request: *const signer_capability.SignerOperationRequest,
+    ) Nip07BrowserError!signer_capability.SignerOperationResult {
+        const support = self.inspectSupport();
+        if (!support.isPresent()) return error.SignerUnavailable;
+        if (!request.isSupportedBy(&support.signerCapabilityProfile())) return error.UnsupportedMethod;
+
+        const response = try self.vtable.completeOperation(self.context, output, request);
+        return switch (request.*) {
+            .get_public_key => .{ .user_pubkey = try parsePublicKeyHex(response) },
+            .sign_event => .{ .signed_event_json = response },
+            .nip04_encrypt,
+            .nip04_decrypt,
+            .nip44_encrypt,
+            .nip44_decrypt,
+            => .{
+                .text_response = .{
+                    .operation = request.operation(),
+                    .text = response,
+                },
+            },
+        };
+    }
 };
+
+fn parsePublicKeyHex(text: []const u8) Nip07BrowserError![32]u8 {
+    if (text.len != 64) return error.InvalidPublicKeyHex;
+    var public_key: [32]u8 = undefined;
+    _ = std.fmt.hexToBytes(public_key[0..], text) catch return error.InvalidPublicKeyHex;
+    return public_key;
+}
 
 test "nip07 browser support stays explicit about absent and partial signer availability" {
     const absent: Nip07BrowserSupport = .{};
@@ -127,6 +171,28 @@ test "nip07 browser provider exposes capability profile through a thin support s
                 return typed.support;
             }
         }.call,
+        .completeOperation = struct {
+            fn call(
+                context: *const anyopaque,
+                output: []u8,
+                request: *const signer_capability.SignerOperationRequest,
+            ) Nip07BrowserError![]const u8 {
+                _ = context;
+                return switch (request.*) {
+                    .get_public_key => std.fmt.bufPrint(output, "{s}", .{
+                        "4444444444444444444444444444444444444444444444444444444444444444",
+                    }) catch unreachable,
+                    .sign_event => |unsigned_event_json| std.fmt.bufPrint(output, "{s}", .{
+                        unsigned_event_json,
+                    }) catch unreachable,
+                    .nip04_encrypt,
+                    .nip04_decrypt,
+                    .nip44_encrypt,
+                    .nip44_decrypt,
+                    => std.fmt.bufPrint(output, "{s}", .{"text"}) catch unreachable,
+                };
+            }
+        }.call,
     };
 
     const fake_context = FakeContext{
@@ -152,4 +218,86 @@ test "nip07 browser provider exposes capability profile through a thin support s
     try std.testing.expectEqual(.caller_driven_request, capability.modeFor(.get_public_key));
     try std.testing.expectEqual(.caller_driven_request, capability.modeFor(.nip44_encrypt));
     try std.testing.expectEqual(.unsupported, capability.modeFor(.nip04_encrypt));
+
+    var output: [256]u8 = undefined;
+    const get_public_key_request: signer_capability.SignerOperationRequest = .{ .get_public_key = {} };
+    const result = try provider.completeSignerCapabilityOperation(output[0..], &get_public_key_request);
+    try std.testing.expect(get_public_key_request.acceptsResult(&result));
+}
+
+test "nip07 browser adapter completes shared signer requests while keeping unsupported methods explicit" {
+    const FakeContext = struct {
+        support: Nip07BrowserSupport,
+    };
+    const fake_vtable = Nip07BrowserProvider.VTable{
+        .inspectSupport = struct {
+            fn call(context: *const anyopaque) Nip07BrowserSupport {
+                const typed: *const FakeContext = @ptrCast(@alignCast(context));
+                return typed.support;
+            }
+        }.call,
+        .completeOperation = struct {
+            fn call(
+                context: *const anyopaque,
+                output: []u8,
+                request: *const signer_capability.SignerOperationRequest,
+            ) Nip07BrowserError![]const u8 {
+                _ = context;
+                return switch (request.*) {
+                    .get_public_key => std.fmt.bufPrint(output, "{s}", .{
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    }) catch unreachable,
+                    .sign_event => std.fmt.bufPrint(output, "{s}", .{
+                        "{\"id\":\"browser\"}",
+                    }) catch unreachable,
+                    .nip44_encrypt => std.fmt.bufPrint(output, "{s}", .{"ciphertext"}) catch unreachable,
+                    .nip44_decrypt => std.fmt.bufPrint(output, "{s}", .{"plaintext"}) catch unreachable,
+                    .nip04_encrypt,
+                    .nip04_decrypt,
+                    => unreachable,
+                };
+            }
+        }.call,
+    };
+
+    const partial_context = FakeContext{
+        .support = .{
+            .availability = .present,
+            .methods = .{
+                .get_public_key = true,
+                .sign_event = true,
+                .nip44_encrypt = true,
+                .nip44_decrypt = true,
+            },
+        },
+    };
+    const provider = Nip07BrowserProvider.init(&partial_context, &fake_vtable);
+
+    var output: [256]u8 = undefined;
+    const sign_event_request: signer_capability.SignerOperationRequest = .{
+        .sign_event = "{\"kind\":1}",
+    };
+    const sign_event_result = try provider.completeSignerCapabilityOperation(
+        output[0..],
+        &sign_event_request,
+    );
+    try std.testing.expect(sign_event_request.acceptsResult(&sign_event_result));
+
+    const nip04_request: signer_capability.SignerOperationRequest = .{
+        .nip04_encrypt = .{
+            .pubkey = [_]u8{0x22} ** 32,
+            .text = "hello",
+        },
+    };
+    try std.testing.expectError(
+        error.UnsupportedMethod,
+        provider.completeSignerCapabilityOperation(output[0..], &nip04_request),
+    );
+
+    const absent_context = FakeContext{ .support = .{} };
+    const absent_provider = Nip07BrowserProvider.init(&absent_context, &fake_vtable);
+    try std.testing.expectError(
+        error.SignerUnavailable,
+        absent_provider.completeSignerCapabilityOperation(output[0..], &sign_event_request),
+    );
 }

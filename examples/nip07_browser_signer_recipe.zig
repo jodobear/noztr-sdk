@@ -1,10 +1,9 @@
 const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 
-// Thin NIP-07 browser adapter route: presence and supported-method reporting stay explicit, and
-// the browser seam can project onto the shared signer-capability vocabulary without claiming a
-// full browser-extension product.
-test "recipe: thin NIP-07 browser support projects onto signer capability honestly" {
+// Thin NIP-07 browser adapter route: presence, supported-method reporting, and shared signer
+// capability completion stay explicit without claiming a full browser-extension product.
+test "recipe: thin NIP-07 browser adapter projects onto signer capability honestly" {
     const FakeBrowser = struct {
         support: noztr_sdk.client.signer.browser.Nip07BrowserSupport,
     };
@@ -15,6 +14,28 @@ test "recipe: thin NIP-07 browser support projects onto signer capability honest
             ) noztr_sdk.client.signer.browser.Nip07BrowserSupport {
                 const typed: *const FakeBrowser = @ptrCast(@alignCast(context));
                 return typed.support;
+            }
+        }.call,
+        .completeOperation = struct {
+            fn call(
+                context: *const anyopaque,
+                output: []u8,
+                request: *const noztr_sdk.client.signer.capability.SignerOperationRequest,
+            ) noztr_sdk.client.signer.browser.Nip07BrowserError![]const u8 {
+                _ = context;
+                return switch (request.*) {
+                    .get_public_key => std.fmt.bufPrint(output, "{s}", .{
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    }) catch unreachable,
+                    .sign_event => |unsigned_event_json| std.fmt.bufPrint(output, "{s}", .{
+                        unsigned_event_json,
+                    }) catch unreachable,
+                    .nip04_encrypt,
+                    .nip04_decrypt,
+                    .nip44_encrypt,
+                    .nip44_decrypt,
+                    => std.fmt.bufPrint(output, "{s}", .{"text"}) catch unreachable,
+                };
             }
         }.call,
     };
@@ -57,4 +78,11 @@ test "recipe: thin NIP-07 browser support projects onto signer capability honest
         get_public_key_request.modeIn(&capability),
     );
     try std.testing.expectEqual(.unsupported, nip04_encrypt_request.modeIn(&capability));
+
+    var output: [256]u8 = undefined;
+    const public_key_result = try browser.completeSignerCapabilityOperation(
+        output[0..],
+        &get_public_key_request,
+    );
+    try std.testing.expect(get_public_key_request.acceptsResult(&public_key_result));
 }

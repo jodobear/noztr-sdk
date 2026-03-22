@@ -2,9 +2,9 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-// Shared signer capability route: the same request vocabulary can be driven through local and
-// remote signer clients while preserving the real backend differences.
-test "recipe: signer capability adapters stay explicit across local and remote signers" {
+// Shared signer capability route: the same request vocabulary can be driven through local,
+// remote, and browser signer adapters while preserving the real backend differences.
+test "recipe: signer capability adapters stay explicit across local remote and browser signers" {
     const local = noztr_sdk.client.local.operator.LocalOperatorClient.init(.{});
     const local_capability = local.signerCapabilityProfile();
     const author_secret = [_]u8{0x11} ** 32;
@@ -106,4 +106,62 @@ test "recipe: signer capability adapters stay explicit across local and remote s
         response_scratch.allocator(),
     );
     try std.testing.expect(get_public_key_request.acceptsResult(&remote_result));
+
+    const FakeBrowser = struct {
+        support: noztr_sdk.client.signer.browser.Nip07BrowserSupport,
+    };
+    const fake_browser_vtable = noztr_sdk.client.signer.browser.Nip07BrowserProvider.VTable{
+        .inspectSupport = struct {
+            fn call(
+                context: *const anyopaque,
+            ) noztr_sdk.client.signer.browser.Nip07BrowserSupport {
+                const typed: *const FakeBrowser = @ptrCast(@alignCast(context));
+                return typed.support;
+            }
+        }.call,
+        .completeOperation = struct {
+            fn call(
+                context: *const anyopaque,
+                output: []u8,
+                request: *const noztr_sdk.client.signer.capability.SignerOperationRequest,
+            ) noztr_sdk.client.signer.browser.Nip07BrowserError![]const u8 {
+                _ = context;
+                return switch (request.*) {
+                    .get_public_key => std.fmt.bufPrint(output, "{s}", .{
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    }) catch unreachable,
+                    .sign_event => |unsigned_browser_event_json| std.fmt.bufPrint(output, "{s}", .{
+                        unsigned_browser_event_json,
+                    }) catch unreachable,
+                    .nip04_encrypt,
+                    .nip04_decrypt,
+                    .nip44_encrypt,
+                    .nip44_decrypt,
+                    => std.fmt.bufPrint(output, "{s}", .{"text"}) catch unreachable,
+                };
+            }
+        }.call,
+    };
+    const fake_browser = FakeBrowser{
+        .support = .{
+            .availability = .present,
+            .methods = .{
+                .get_public_key = true,
+                .sign_event = true,
+                .nip44_encrypt = true,
+                .nip44_decrypt = true,
+            },
+        },
+    };
+    const browser = noztr_sdk.client.signer.browser.Nip07BrowserProvider.init(
+        &fake_browser,
+        &fake_browser_vtable,
+    );
+    const browser_capability = browser.signerCapabilityProfile();
+    try std.testing.expectEqual(.caller_driven_request, get_public_key_request.modeIn(&browser_capability));
+    const browser_result = try browser.completeSignerCapabilityOperation(
+        local_output[0..],
+        &get_public_key_request,
+    );
+    try std.testing.expect(get_public_key_request.acceptsResult(&browser_result));
 }
