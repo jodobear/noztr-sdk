@@ -1056,6 +1056,91 @@ pub const IdentityStoredProfileTargetTurnPolicyStep = struct {
     entry: IdentityStoredProfileTargetTurnPolicyEntry,
 };
 
+pub const IdentityStoredWatchedTargetTurnPolicyError =
+    IdentityStoredProfileDiscoveryError || IdentityWatchedTargetStoreError || error{
+        WatchedTargetListTruncated,
+    };
+
+pub const IdentityStoredWatchedTargetTurnPolicyStorage = struct {
+    watched_target_records: []IdentityWatchedTargetRecord,
+    targets: []IdentityStoredProfileTarget,
+    turn_policy: IdentityStoredProfileTargetTurnPolicyStorage,
+
+    pub fn init(
+        watched_target_records: []IdentityWatchedTargetRecord,
+        targets: []IdentityStoredProfileTarget,
+        turn_policy: IdentityStoredProfileTargetTurnPolicyStorage,
+    ) IdentityStoredWatchedTargetTurnPolicyStorage {
+        return .{
+            .watched_target_records = watched_target_records,
+            .targets = targets,
+            .turn_policy = turn_policy,
+        };
+    }
+};
+
+pub const IdentityStoredWatchedTargetTurnPolicyRequest = struct {
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    max_selected: usize,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredWatchedTargetTurnPolicyStorage,
+};
+
+pub const IdentityStoredWatchedTargetTurnPolicyPlan = struct {
+    watched_target_count: u32 = 0,
+    turn_policy: IdentityStoredProfileTargetTurnPolicyPlan,
+
+    pub fn nextWorkEntry(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) ?*const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.nextWorkEntry();
+    }
+
+    pub fn nextWorkStep(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) ?IdentityStoredProfileTargetTurnPolicyStep {
+        return self.turn_policy.nextWorkStep();
+    }
+
+    pub fn verifyNowEntries(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.verifyNowEntries();
+    }
+
+    pub fn refreshSelectedEntries(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.refreshSelectedEntries();
+    }
+
+    pub fn workEntries(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.workEntries();
+    }
+
+    pub fn idleEntries(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.idleEntries();
+    }
+
+    pub fn useCachedEntries(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.useCachedEntries();
+    }
+
+    pub fn deferredEntries(
+        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn_policy.deferredEntries();
+    }
+};
+
 pub const IdentityStoredProfileTargetLatestFreshnessPlan = struct {
     entries: []const IdentityStoredProfileTargetLatestFreshnessEntry,
     fresh_count: u32 = 0,
@@ -2587,6 +2672,39 @@ pub const IdentityVerifier = struct {
             .fresh_count = policy.fresh_count,
             .stale_count = policy.stale_count,
             .missing_count = policy.missing_count,
+        };
+    }
+
+    pub fn inspectStoredWatchedTargetTurnPolicy(
+        store: IdentityProfileStore,
+        watched_target_store: IdentityWatchedTargetStore,
+        request: IdentityStoredWatchedTargetTurnPolicyRequest,
+    ) IdentityStoredWatchedTargetTurnPolicyError!IdentityStoredWatchedTargetTurnPolicyPlan {
+        var page = IdentityWatchedTargetResultPage.init(request.storage.watched_target_records);
+        try watched_target_store.listTargets(&page);
+        if (page.truncated) return error.WatchedTargetListTruncated;
+        if (page.count > request.storage.targets.len) return error.BufferTooSmall;
+
+        for (page.slice(), 0..) |*record, index| {
+            request.storage.targets[index] = record.asTarget();
+        }
+
+        const turn_policy = try inspectStoredProfileTurnPolicyForTargets(
+            store,
+            .{
+                .targets = request.storage.targets[0..page.count],
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .refresh_soon_age_seconds = request.refresh_soon_age_seconds,
+                .max_selected = request.max_selected,
+                .fallback_policy = request.fallback_policy,
+                .storage = request.storage.turn_policy,
+            },
+        );
+
+        return .{
+            .watched_target_count = @intCast(page.count),
+            .turn_policy = turn_policy,
         };
     }
 
@@ -7994,6 +8112,145 @@ test "identity watched target store reports truncation and typed capacity errors
     try store.listTargets(&page);
     try std.testing.expectEqual(@as(usize, 0), page.count);
     try std.testing.expect(page.truncated);
+}
+
+test "identity verifier inspects stored watched target turn policy over an explicit watched target store" {
+    const stable_pubkey = [_]u8{0xc1} ** 32;
+    const stale_pubkey = [_]u8{0xc2} ** 32;
+    const stable_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-alice" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-alice",
+                    .expected_text = "npub-alice",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-bob" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-bob",
+                    .expected_text = "npub-bob",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var profile_records: [2]IdentityProfileRecord = undefined;
+    var profile_store = MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    var watched_records: [4]IdentityWatchedTargetRecord = undefined;
+    var watched_store = MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
+
+    var listed_records: [4]IdentityWatchedTargetRecord = undefined;
+    var targets: [4]IdentityStoredProfileTarget = undefined;
+    var matches: [2]IdentityProfileMatch = undefined;
+    var latest_entries: [4]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries: [4]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var policy_groups: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    var cadence_entries: [4]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    var turn_entries: [4]IdentityStoredProfileTargetTurnPolicyEntry = undefined;
+    var turn_groups: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
+
+    const plan = try IdentityVerifier.inspectStoredWatchedTargetTurnPolicy(
+        profile_store.asStore(),
+        watched_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 3,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                listed_records[0..],
+                targets[0..],
+                IdentityStoredProfileTargetTurnPolicyStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    policy_entries[0..],
+                    policy_groups[0..],
+                    cadence_entries[0..],
+                    cadence_groups[0..],
+                    turn_entries[0..],
+                    turn_groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 4), plan.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.turn_policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn_policy.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn_policy.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.turn_policy.defer_refresh_count);
+    try std.testing.expectEqualStrings("carol", plan.verifyNowEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("dave", plan.verifyNowEntries()[1].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.refreshSelectedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("alice", plan.useCachedEntries()[0].target.identity);
+}
+
+test "identity verifier rejects stored watched target policy when watched target listing truncates" {
+    var watched_records: [1]IdentityWatchedTargetRecord = undefined;
+    var watched_store = MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    try std.testing.expectError(
+        error.StoreFull,
+        watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" }),
+    );
+
+    var profile_records: [0]IdentityProfileRecord = .{};
+    var profile_store = MemoryIdentityProfileStore.init(profile_records[0..]);
+    var listed_records: [0]IdentityWatchedTargetRecord = .{};
+    var targets: [0]IdentityStoredProfileTarget = .{};
+    var matches: [0]IdentityProfileMatch = .{};
+    var latest_entries: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+    var policy_entries: [0]IdentityStoredProfileTargetPolicyEntry = .{};
+    var policy_groups: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    var cadence_entries: [0]IdentityStoredProfileTargetRefreshCadenceEntry = .{};
+    var cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    var turn_entries: [0]IdentityStoredProfileTargetTurnPolicyEntry = .{};
+    var turn_groups: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
+
+    try std.testing.expectError(
+        error.WatchedTargetListTruncated,
+        IdentityVerifier.inspectStoredWatchedTargetTurnPolicy(
+            profile_store.asStore(),
+            watched_store.asStore(),
+            .{
+                .now_unix_seconds = 10,
+                .max_age_seconds = 5,
+                .refresh_soon_age_seconds = 3,
+                .max_selected = 1,
+                .storage = .init(
+                    listed_records[0..],
+                    targets[0..],
+                    IdentityStoredProfileTargetTurnPolicyStorage.init(
+                        matches[0..],
+                        latest_entries[0..],
+                        policy_entries[0..],
+                        policy_groups[0..],
+                        cadence_entries[0..],
+                        cadence_groups[0..],
+                        turn_entries[0..],
+                        turn_groups[0..],
+                    ),
+                ),
+            },
+        ),
+    );
 }
 
 const TestHttpResponse = struct {

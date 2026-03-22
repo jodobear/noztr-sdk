@@ -7,7 +7,8 @@ const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else
 
 pub const Nip39VerifyClientError =
     workflows.IdentityRememberedProfileVerificationError ||
-    workflows.IdentityStoredProfileDiscoveryError;
+    workflows.IdentityStoredProfileDiscoveryError ||
+    workflows.IdentityStoredWatchedTargetTurnPolicyError;
 
 pub const Nip39VerifyClientConfig = struct {};
 
@@ -45,6 +46,7 @@ pub const Nip39VerifyJobResult = workflows.IdentityRememberedProfileVerification
 
 pub const Nip39StoredProfilePlanning = struct {
     pub const ProfileMatch = workflows.IdentityProfileMatch;
+    pub const WatchedTargetRecord = workflows.IdentityWatchedTargetRecord;
     pub const StoredProfileDiscoveryEntry = workflows.IdentityStoredProfileDiscoveryEntry;
     pub const StoredProfileFreshness = workflows.IdentityStoredProfileFreshness;
     pub const StoredProfileFallbackPolicy = workflows.IdentityStoredProfileFallbackPolicy;
@@ -111,6 +113,14 @@ pub const Nip39StoredProfilePlanning = struct {
     pub const TargetTurnPolicyRequest = workflows.IdentityStoredProfileTargetTurnPolicyRequest;
     pub const TargetTurnPolicyPlan = workflows.IdentityStoredProfileTargetTurnPolicyPlan;
     pub const TargetTurnPolicyStep = workflows.IdentityStoredProfileTargetTurnPolicyStep;
+    pub const StoredWatchedTargetTurnPolicyError =
+        workflows.IdentityStoredWatchedTargetTurnPolicyError;
+    pub const StoredWatchedTargetTurnPolicyStorage =
+        workflows.IdentityStoredWatchedTargetTurnPolicyStorage;
+    pub const StoredWatchedTargetTurnPolicyRequest =
+        workflows.IdentityStoredWatchedTargetTurnPolicyRequest;
+    pub const StoredWatchedTargetTurnPolicyPlan =
+        workflows.IdentityStoredWatchedTargetTurnPolicyPlan;
 };
 
 pub const Nip39VerifyClient = struct {
@@ -278,6 +288,20 @@ pub const Nip39VerifyClient = struct {
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetTurnPolicyPlan {
         _ = self;
         return workflows.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(store, request);
+    }
+
+    pub fn inspectStoredWatchedTargetTurnPolicy(
+        self: *const Nip39VerifyClient,
+        store: workflows.IdentityProfileStore,
+        watched_target_store: workflows.IdentityWatchedTargetStore,
+        request: Nip39StoredProfilePlanning.StoredWatchedTargetTurnPolicyRequest,
+    ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetTurnPolicyPlan {
+        _ = self;
+        return workflows.IdentityVerifier.inspectStoredWatchedTargetTurnPolicy(
+            store,
+            watched_target_store,
+            request,
+        );
     }
 };
 
@@ -482,4 +506,103 @@ test "nip39 verify client lifts remembered target turn policy into the client su
     try std.testing.expectEqualStrings("carol", plan.nextWorkStep().?.entry.target.identity);
     try std.testing.expectEqualStrings("alice", plan.useCachedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", plan.deferredEntries()[0].target.identity);
+}
+
+test "nip39 verify client inspects stored watched target turn policy through the client surface" {
+    const stable_pubkey = [_]u8{0xc1} ** 32;
+    const stale_pubkey = [_]u8{0xc2} ** 32;
+    const stable_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-alice" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-alice",
+                    .expected_text = "npub-alice",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-bob" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-bob",
+                    .expected_text = "npub-bob",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
+    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(
+        profile_store.asStore(),
+        &stable_pubkey,
+        45,
+        &stable_summary,
+    );
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(
+        profile_store.asStore(),
+        &stale_pubkey,
+        5,
+        &stale_summary,
+    );
+
+    var watched_records: [4]workflows.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
+
+    var listed_records: [4]Nip39StoredProfilePlanning.WatchedTargetRecord = undefined;
+    var targets: [4]Nip39StoredProfilePlanning.Target = undefined;
+    var matches: [2]Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var latest_entries: [4]Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var policy_entries: [4]Nip39StoredProfilePlanning.TargetPolicyEntry = undefined;
+    var policy_groups: [4]Nip39StoredProfilePlanning.TargetPolicyGroup = undefined;
+    var cadence_entries: [4]Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var cadence_groups: [5]Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+    var turn_entries: [4]Nip39StoredProfilePlanning.TargetTurnPolicyEntry = undefined;
+    var turn_groups: [4]Nip39StoredProfilePlanning.TargetTurnPolicyGroup = undefined;
+
+    const client = Nip39VerifyClient.init(.{});
+    const plan = try client.inspectStoredWatchedTargetTurnPolicy(
+        profile_store.asStore(),
+        watched_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 3,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip39StoredProfilePlanning.StoredWatchedTargetTurnPolicyStorage.init(
+                listed_records[0..],
+                targets[0..],
+                Nip39StoredProfilePlanning.TargetTurnPolicyStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    policy_entries[0..],
+                    policy_groups[0..],
+                    cadence_entries[0..],
+                    cadence_groups[0..],
+                    turn_entries[0..],
+                    turn_groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 4), plan.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.turn_policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn_policy.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn_policy.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.turn_policy.defer_refresh_count);
+    try std.testing.expectEqualStrings("carol", plan.verifyNowEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("dave", plan.verifyNowEntries()[1].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.refreshSelectedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("alice", plan.useCachedEntries()[0].target.identity);
 }
