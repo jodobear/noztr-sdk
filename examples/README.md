@@ -519,6 +519,16 @@ They do not imply:
   - control points: caller still owns store construction and relay URL choice, and the helper
     proves relay-local runtime state can ride the shared checkpoint seam without exposing backend
     schema or forcing the internal relay pool module into the public surface
+- `relay_local_archive_recipe.zig`
+  - goal: archive one relay-local event set through the shared event seam, restore one scoped
+    cursor, and derive one checkpoint-backed replay query explicitly
+  - related SDK symbols: `noztr_sdk.store`, `RelayLocalArchive`, `RelayLocalArchiveTarget`,
+    `RelayLocalArchiveReplayPlan`, `MemoryClientStore`
+  - kernel fixture help: `noztr.nip01_event`
+  - control points: caller still owns store construction and relay choice, the helper stays
+    relay-local instead of pretending the shared event seam already indexes events by relay, and
+    replay planning remains one explicit checkpoint-restored query step instead of hidden server
+    runtime behavior
 - `relay_directory_job_client_recipe.zig`
   - goal: refresh one relay's `NIP-11` metadata over the explicit HTTP seam and keep the bounded
     remembered record in the relay registry

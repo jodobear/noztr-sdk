@@ -46,6 +46,7 @@ comptime {
     _ = @import("relay_registry_archive_recipe.zig");
     _ = @import("cli_archive_client_recipe.zig");
     _ = @import("relay_checkpoint_recipe.zig");
+    _ = @import("relay_local_archive_recipe.zig");
     _ = @import("relay_local_group_archive_recipe.zig");
     _ = @import("relay_pool_recipe.zig");
     _ = @import("relay_pool_checkpoint_recipe.zig");

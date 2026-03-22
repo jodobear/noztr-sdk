@@ -159,6 +159,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build a first CLI-facing archive surface above shared storage | [public contract map](./reference/contract-map.md) | [store_archive_recipe.zig](../examples/store_archive_recipe.zig) |
 | build a first CLI-facing client surface above shared store plus runtime | [public contract map](./reference/contract-map.md) | [cli_archive_client_recipe.zig](../examples/cli_archive_client_recipe.zig) |
 | persist relay-local runtime cursors over shared storage | [public contract map](./reference/contract-map.md) | [relay_checkpoint_recipe.zig](../examples/relay_checkpoint_recipe.zig) |
+| build one relay-local archive plus checkpoint-backed replay route over shared storage | [public contract map](./reference/contract-map.md) | [relay_local_archive_recipe.zig](../examples/relay_local_archive_recipe.zig) |
 | restore one relay-local group snapshot over shared storage | [public contract map](./reference/contract-map.md) | [relay_local_group_archive_recipe.zig](../examples/relay_local_group_archive_recipe.zig) |
 | inspect a shared multi-relay runtime floor and derive bounded subscription targets | [public contract map](./reference/contract-map.md) | [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig) |
 | persist and restore a shared relay-pool checkpoint set, then derive bounded replay steps | [public contract map](./reference/contract-map.md) | [relay_pool_checkpoint_recipe.zig](../examples/relay_pool_checkpoint_recipe.zig) |
@@ -192,6 +193,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first CLI-facing client composition route over shared store plus runtime
 - [relay_checkpoint_recipe.zig](../examples/relay_checkpoint_recipe.zig)
   - first relay-local checkpoint route over shared storage
+- [relay_local_archive_recipe.zig](../examples/relay_local_archive_recipe.zig)
+  - first relay-local archive plus replay-planning route over shared storage
 - [relay_local_group_archive_recipe.zig](../examples/relay_local_group_archive_recipe.zig)
   - first relay-local workflow replay route over shared storage
 - [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig)
