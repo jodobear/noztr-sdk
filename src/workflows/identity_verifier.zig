@@ -1226,6 +1226,94 @@ pub const IdentityStoredWatchedTargetRefreshBatchPlan = struct {
     }
 };
 
+pub const IdentityStoredWatchedTargetOrchestrationError = IdentityStoredWatchedTargetPlanningError;
+
+pub const IdentityStoredWatchedTargetOrchestrationStorage = struct {
+    watched_target_records: []IdentityWatchedTargetRecord,
+    targets: []IdentityStoredProfileTarget,
+    policy: IdentityStoredProfileTargetPolicyStorage,
+    cadence: IdentityStoredProfileTargetRefreshCadenceStorage,
+    batch: IdentityStoredProfileTargetRefreshBatchStorage,
+    turn: IdentityStoredProfileTargetTurnPolicyStorage,
+
+    pub fn init(
+        watched_target_records: []IdentityWatchedTargetRecord,
+        targets: []IdentityStoredProfileTarget,
+        policy: IdentityStoredProfileTargetPolicyStorage,
+        cadence: IdentityStoredProfileTargetRefreshCadenceStorage,
+        batch: IdentityStoredProfileTargetRefreshBatchStorage,
+        turn: IdentityStoredProfileTargetTurnPolicyStorage,
+    ) IdentityStoredWatchedTargetOrchestrationStorage {
+        return .{
+            .watched_target_records = watched_target_records,
+            .targets = targets,
+            .policy = policy,
+            .cadence = cadence,
+            .batch = batch,
+            .turn = turn,
+        };
+    }
+};
+
+pub const IdentityStoredWatchedTargetOrchestrationRequest = struct {
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    max_selected: usize,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityStoredWatchedTargetOrchestrationStorage,
+};
+
+pub const IdentityStoredWatchedTargetOrchestrationPlan = struct {
+    watched_target_count: u32 = 0,
+    policy: IdentityStoredProfileTargetPolicyPlan,
+    cadence: IdentityStoredProfileTargetRefreshCadencePlan,
+    batch: IdentityStoredProfileTargetRefreshBatchPlan,
+    turn: IdentityStoredProfileTargetTurnPolicyPlan,
+
+    pub fn nextWorkStep(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) ?IdentityStoredProfileTargetTurnPolicyStep {
+        return self.turn.nextWorkStep();
+    }
+
+    pub fn nextDueStep(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) ?IdentityStoredProfileTargetRefreshCadenceStep {
+        return self.cadence.nextDueStep();
+    }
+
+    pub fn nextRefreshBatchStep(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) ?IdentityStoredProfileTargetRefreshBatchStep {
+        return self.batch.nextBatchStep();
+    }
+
+    pub fn verifyNowEntries(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn.verifyNowEntries();
+    }
+
+    pub fn refreshSelectedEntries(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn.refreshSelectedEntries();
+    }
+
+    pub fn useCachedEntries(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn.useCachedEntries();
+    }
+
+    pub fn deferredEntries(
+        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+    ) []const IdentityStoredProfileTargetTurnPolicyEntry {
+        return self.turn.deferredEntries();
+    }
+};
+
 pub const IdentityStoredWatchedTargetTurnPolicyError = IdentityStoredWatchedTargetPlanningError;
 
 pub const IdentityStoredWatchedTargetTurnPolicyStorage = struct {
@@ -2942,6 +3030,73 @@ pub const IdentityVerifier = struct {
         return .{
             .watched_target_count = @intCast(count),
             .batch = batch,
+        };
+    }
+
+    pub fn inspectStoredWatchedTargetOrchestration(
+        store: IdentityProfileStore,
+        watched_target_store: IdentityWatchedTargetStore,
+        request: IdentityStoredWatchedTargetOrchestrationRequest,
+    ) IdentityStoredWatchedTargetOrchestrationError!IdentityStoredWatchedTargetOrchestrationPlan {
+        const count = try loadStoredWatchedTargets(
+            watched_target_store,
+            request.storage.watched_target_records,
+            request.storage.targets,
+        );
+        const targets = request.storage.targets[0..count];
+
+        const policy = try inspectStoredProfilePolicyForTargets(
+            store,
+            .{
+                .targets = targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .fallback_policy = request.fallback_policy,
+                .storage = request.storage.policy,
+            },
+        );
+        const cadence = try inspectStoredProfileRefreshCadenceForTargets(
+            store,
+            .{
+                .targets = targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .refresh_soon_age_seconds = request.refresh_soon_age_seconds,
+                .fallback_policy = request.fallback_policy,
+                .storage = request.storage.cadence,
+            },
+        );
+        const batch = try inspectStoredProfileRefreshBatchForTargets(
+            store,
+            .{
+                .targets = targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .refresh_soon_age_seconds = request.refresh_soon_age_seconds,
+                .max_selected = request.max_selected,
+                .fallback_policy = request.fallback_policy,
+                .storage = request.storage.batch,
+            },
+        );
+        const turn = try inspectStoredProfileTurnPolicyForTargets(
+            store,
+            .{
+                .targets = targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .refresh_soon_age_seconds = request.refresh_soon_age_seconds,
+                .max_selected = request.max_selected,
+                .fallback_policy = request.fallback_policy,
+                .storage = request.storage.turn,
+            },
+        );
+
+        return .{
+            .watched_target_count = @intCast(count),
+            .policy = policy,
+            .cadence = cadence,
+            .batch = batch,
+            .turn = turn,
         };
     }
 
@@ -8624,6 +8779,237 @@ test "identity verifier inspects stored watched target refresh batch over an exp
     try std.testing.expectEqualStrings("dave", batch.selectedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("carol", batch.selectedEntries()[1].target.identity);
     try std.testing.expectEqualStrings("bob", batch.deferredEntries()[0].target.identity);
+}
+
+test "identity verifier inspects stored watched target orchestration over an explicit watched target store" {
+    const stable_pubkey = [_]u8{0xa1} ** 32;
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const stable_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-stable",
+                    .expected_text = "npub-stable",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const soon_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var profile_records: [3]IdentityProfileRecord = undefined;
+    var profile_store = MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    var watched_records: [4]IdentityWatchedTargetRecord = undefined;
+    var watched_store = MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+
+    var listed_records: [4]IdentityWatchedTargetRecord = undefined;
+    var targets: [4]IdentityStoredProfileTarget = undefined;
+
+    var policy_matches: [1]IdentityProfileMatch = undefined;
+    var policy_latest_entries: [4]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var policy_entries: [4]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var policy_groups: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+
+    var cadence_matches: [1]IdentityProfileMatch = undefined;
+    var cadence_latest_entries: [4]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries: [4]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+
+    var batch_matches: [1]IdentityProfileMatch = undefined;
+    var batch_latest_entries: [4]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var batch_cadence_entries: [4]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var batch_cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+
+    var turn_matches: [1]IdentityProfileMatch = undefined;
+    var turn_latest_entries: [4]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var turn_policy_entries: [4]IdentityStoredProfileTargetPolicyEntry = undefined;
+    var turn_policy_groups: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    var turn_cadence_entries: [4]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var turn_cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    var turn_entries: [4]IdentityStoredProfileTargetTurnPolicyEntry = undefined;
+    var turn_groups: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
+
+    const plan = try IdentityVerifier.inspectStoredWatchedTargetOrchestration(
+        profile_store.asStore(),
+        watched_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                listed_records[0..],
+                targets[0..],
+                IdentityStoredProfileTargetPolicyStorage.init(
+                    policy_matches[0..],
+                    policy_latest_entries[0..],
+                    policy_entries[0..],
+                    policy_groups[0..],
+                ),
+                IdentityStoredProfileTargetRefreshCadenceStorage.init(
+                    cadence_matches[0..],
+                    cadence_latest_entries[0..],
+                    cadence_entries[0..],
+                    cadence_groups[0..],
+                ),
+                IdentityStoredProfileTargetRefreshBatchStorage.init(
+                    batch_matches[0..],
+                    batch_latest_entries[0..],
+                    batch_cadence_entries[0..],
+                    batch_cadence_groups[0..],
+                ),
+                IdentityStoredProfileTargetTurnPolicyStorage.init(
+                    turn_matches[0..],
+                    turn_latest_entries[0..],
+                    turn_policy_entries[0..],
+                    turn_policy_groups[0..],
+                    turn_cadence_entries[0..],
+                    turn_cadence_groups[0..],
+                    turn_entries[0..],
+                    turn_groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 4), plan.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.policy.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.policy.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.stable_count);
+    try std.testing.expectEqual(@as(u32, 2), plan.batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.batch.deferred_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.turn.defer_refresh_count);
+    try std.testing.expectEqualStrings("dave", plan.nextDueStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("dave", plan.nextRefreshBatchStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("dave", plan.nextWorkStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("alice", plan.useCachedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.deferredEntries()[0].target.identity);
+}
+
+test "identity verifier rejects stored watched target orchestration when watched target listing truncates" {
+    var watched_records: [1]IdentityWatchedTargetRecord = undefined;
+    var watched_store = MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    try std.testing.expectError(
+        error.StoreFull,
+        watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" }),
+    );
+
+    var profile_records: [0]IdentityProfileRecord = .{};
+    var profile_store = MemoryIdentityProfileStore.init(profile_records[0..]);
+    var listed_records: [0]IdentityWatchedTargetRecord = .{};
+    var targets: [0]IdentityStoredProfileTarget = .{};
+
+    var policy_matches: [0]IdentityProfileMatch = .{};
+    var policy_latest_entries: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+    var policy_entries: [0]IdentityStoredProfileTargetPolicyEntry = .{};
+    var policy_groups: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+
+    var cadence_matches: [0]IdentityProfileMatch = .{};
+    var cadence_latest_entries: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+    var cadence_entries: [0]IdentityStoredProfileTargetRefreshCadenceEntry = .{};
+    var cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+
+    var batch_matches: [0]IdentityProfileMatch = .{};
+    var batch_latest_entries: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+    var batch_cadence_entries: [0]IdentityStoredProfileTargetRefreshCadenceEntry = .{};
+    var batch_cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+
+    var turn_matches: [0]IdentityProfileMatch = .{};
+    var turn_latest_entries: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+    var turn_policy_entries: [0]IdentityStoredProfileTargetPolicyEntry = .{};
+    var turn_policy_groups: [4]IdentityStoredProfileTargetPolicyGroup = undefined;
+    var turn_cadence_entries: [0]IdentityStoredProfileTargetRefreshCadenceEntry = .{};
+    var turn_cadence_groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+    var turn_entries: [0]IdentityStoredProfileTargetTurnPolicyEntry = .{};
+    var turn_groups: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
+
+    try std.testing.expectError(
+        error.WatchedTargetListTruncated,
+        IdentityVerifier.inspectStoredWatchedTargetOrchestration(
+            profile_store.asStore(),
+            watched_store.asStore(),
+            .{
+                .now_unix_seconds = 50,
+                .max_age_seconds = 20,
+                .refresh_soon_age_seconds = 12,
+                .max_selected = 2,
+                .storage = .init(
+                    listed_records[0..],
+                    targets[0..],
+                    IdentityStoredProfileTargetPolicyStorage.init(
+                        policy_matches[0..],
+                        policy_latest_entries[0..],
+                        policy_entries[0..],
+                        policy_groups[0..],
+                    ),
+                    IdentityStoredProfileTargetRefreshCadenceStorage.init(
+                        cadence_matches[0..],
+                        cadence_latest_entries[0..],
+                        cadence_entries[0..],
+                        cadence_groups[0..],
+                    ),
+                    IdentityStoredProfileTargetRefreshBatchStorage.init(
+                        batch_matches[0..],
+                        batch_latest_entries[0..],
+                        batch_cadence_entries[0..],
+                        batch_cadence_groups[0..],
+                    ),
+                    IdentityStoredProfileTargetTurnPolicyStorage.init(
+                        turn_matches[0..],
+                        turn_latest_entries[0..],
+                        turn_policy_entries[0..],
+                        turn_policy_groups[0..],
+                        turn_cadence_entries[0..],
+                        turn_cadence_groups[0..],
+                        turn_entries[0..],
+                        turn_groups[0..],
+                    ),
+                ),
+            },
+        ),
+    );
 }
 
 test "identity verifier inspects stored watched target turn policy over an explicit watched target store" {
