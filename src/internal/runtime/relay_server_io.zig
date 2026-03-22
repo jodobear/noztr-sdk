@@ -278,7 +278,15 @@ test "relay server io surfaces reject invalid caller inputs with typed errors" {
 
     const accepted = try listener.accept();
     try std.testing.expectError(error.InvalidClient, accepted.readNext(buffer[0..]));
-    try std.testing.expectError(error.InvalidMessage, listener.accept().writeText(""));
+
+    const valid_connection = RelayServerIoConnection{
+        .ctx = &fake_ctx,
+        .read_next_fn = FakeServer.readNext,
+        .write_text_fn = FakeServer.writeText,
+        .close_fn = FakeServer.closeConnection,
+        .inspect_state_fn = FakeServer.inspectConnectionState,
+    };
+    try std.testing.expectError(error.InvalidMessage, valid_connection.writeText(""));
 }
 
 test "relay server io driver starts one listener and forwards listener lifecycle" {
