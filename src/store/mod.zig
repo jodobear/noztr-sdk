@@ -46,6 +46,7 @@ pub const RelayRegistryArchive = relay_registry.RelayRegistryArchive;
 pub const RelayLocalArchiveTargetError = relay_local_archive.RelayLocalArchiveTargetError;
 pub const RelayLocalArchiveError = relay_local_archive.RelayLocalArchiveError;
 pub const RelayLocalArchiveTarget = relay_local_archive.RelayLocalArchiveTarget;
+pub const RelayLocalArchiveReplayPlan = relay_local_archive.RelayLocalArchiveReplayPlan;
 pub const RelayLocalArchive = relay_local_archive.RelayLocalArchive;
 pub const RelayLocalGroupArchiveError = relay_local_group_archive.RelayLocalGroupArchiveError;
 pub const RelayLocalGroupArchive = relay_local_group_archive.RelayLocalGroupArchive;
