@@ -801,15 +801,15 @@ They do not imply:
   - goal: prepare and run one command-ready remembered `NIP-39` profile verify job over the
     public HTTP seam with explicit cache and profile-store seams, then inspect one bounded stored
     watched-target long-lived planning route through the client surface: refresh cadence, refresh
-    batch, and turn policy
+    batch, turn policy, and one bundled orchestration view
   - public SDK surface: `noztr_sdk.client`, `Nip39VerifyClient`, `Nip39VerifyClientStorage`,
     `Nip39VerifyJob`, `Nip39VerifySummary`, `Nip39VerifyJobResult`,
     `Nip39StoredProfilePlanning`, `MemoryIdentityWatchedTargetStore`
   - kernel fixture help: `noztr.nip39_external_identities`
   - control points: the client assembles one profile verification job plus one explicit watched-
-    target-store-backed long-lived planning route above the existing identity workflow, HTTP/
-    cache/store ownership stays explicit, caller-owned planning storage stays explicit, and this
-    layer still avoids inventing autonomous refresh or output policy
+    target-store-backed long-lived planning and orchestration route above the existing identity
+    workflow, HTTP/cache/store ownership stays explicit, caller-owned planning storage stays
+    explicit, and this layer still avoids inventing autonomous refresh or output policy
 - `nip39_verification_recipe.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify

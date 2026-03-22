@@ -5,8 +5,9 @@ const http_fake = @import("http_fake.zig");
 
 // Prepare one command-ready NIP-39 profile-verify job over caller-owned buffers, run it over the
 // explicit public HTTP seam, then inspect one bounded stored watched-target long-lived planning
-// route through the client surface: refresh cadence, refresh batch, and turn policy.
-test "recipe: nip39 verify client verifies and inspects stored watched target long-lived planning" {
+// route through the client surface: refresh cadence, refresh batch, turn policy, and one bundled
+// orchestration view above those same store-backed helpers.
+test "recipe: nip39 verify client verifies and inspects stored watched target long-lived planning and orchestration" {
     const claim = noztr.nip39_external_identities.IdentityClaim{
         .provider = .github,
         .identity = "alice",
@@ -124,8 +125,28 @@ test "recipe: nip39 verify client verifies and inspects stored watched target lo
     var batch_latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
     var batch_cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
     var batch_cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+    var orchestration_policy_matches: [2]noztr_sdk.client.Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var orchestration_policy_latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var orchestration_policy_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyEntry = undefined;
+    var orchestration_policy_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyGroup = undefined;
+    var orchestration_cadence_matches: [2]noztr_sdk.client.Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var orchestration_cadence_latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var orchestration_cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var orchestration_cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+    var orchestration_batch_matches: [2]noztr_sdk.client.Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var orchestration_batch_latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var orchestration_batch_cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var orchestration_batch_cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+    var orchestration_turn_matches: [2]noztr_sdk.client.Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var orchestration_turn_latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var orchestration_turn_policy_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyEntry = undefined;
+    var orchestration_turn_policy_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyGroup = undefined;
+    var orchestration_turn_cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var orchestration_turn_cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
     var turn_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyEntry = undefined;
     var turn_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyGroup = undefined;
+    var orchestration_turn_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyEntry = undefined;
+    var orchestration_turn_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyGroup = undefined;
 
     const cadence = try client.inspectStoredWatchedTargetRefreshCadence(
         profile_store.asStore(),
@@ -217,4 +238,67 @@ test "recipe: nip39 verify client verifies and inspects stored watched target lo
     try std.testing.expectEqualStrings("dave", turn_policy.verifyNowEntries()[1].target.identity);
     try std.testing.expectEqualStrings("bob", turn_policy.refreshSelectedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("alice", turn_policy.useCachedEntries()[0].target.identity);
+
+    const orchestration = try client.inspectStoredWatchedTargetOrchestration(
+        profile_store.asStore(),
+        watched_target_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.StoredWatchedTargetOrchestrationStorage.init(
+                listed_records[0..],
+                targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyStorage.init(
+                    orchestration_policy_matches[0..],
+                    orchestration_policy_latest_entries[0..],
+                    orchestration_policy_entries[0..],
+                    orchestration_policy_groups[0..],
+                ),
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceStorage.init(
+                    orchestration_cadence_matches[0..],
+                    orchestration_cadence_latest_entries[0..],
+                    orchestration_cadence_entries[0..],
+                    orchestration_cadence_groups[0..],
+                ),
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshBatchStorage.init(
+                    orchestration_batch_matches[0..],
+                    orchestration_batch_latest_entries[0..],
+                    orchestration_batch_cadence_entries[0..],
+                    orchestration_batch_cadence_groups[0..],
+                ),
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyStorage.init(
+                    orchestration_turn_matches[0..],
+                    orchestration_turn_latest_entries[0..],
+                    orchestration_turn_policy_entries[0..],
+                    orchestration_turn_policy_groups[0..],
+                    orchestration_turn_cadence_entries[0..],
+                    orchestration_turn_cadence_groups[0..],
+                    orchestration_turn_entries[0..],
+                    orchestration_turn_groups[0..],
+                ),
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 4), orchestration.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), orchestration.policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.policy.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.policy.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 2), orchestration.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 0), orchestration.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.cadence.stable_count);
+    try std.testing.expectEqual(@as(u32, 2), orchestration.batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.batch.deferred_count);
+    try std.testing.expectEqual(@as(u32, 2), orchestration.turn.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), orchestration.turn.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.turn.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 1), orchestration.turn.defer_refresh_count);
+    try std.testing.expectEqualStrings("carol", orchestration.nextDueStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("carol", orchestration.nextRefreshBatchStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("carol", orchestration.nextWorkStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("alice", orchestration.useCachedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", orchestration.deferredEntries()[0].target.identity);
 }
