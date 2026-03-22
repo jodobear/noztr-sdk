@@ -4,9 +4,9 @@ const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
 // Prepare one command-ready NIP-39 profile-verify job over caller-owned buffers, run it over the
-// explicit public HTTP seam, then inspect one bounded remembered-target turn policy through the
-// client surface.
-test "recipe: nip39 verify client verifies and inspects remembered target policy" {
+// explicit public HTTP seam, then inspect one bounded stored watched-target turn policy through
+// the client surface.
+test "recipe: nip39 verify client verifies and inspects stored watched target policy" {
     const claim = noztr.nip39_external_identities.IdentityClaim{
         .provider = .github,
         .identity = "alice",
@@ -104,46 +104,58 @@ test "recipe: nip39 verify client verifies and inspects remembered target policy
         &stale_summary,
     );
 
-    const targets = [_]noztr_sdk.client.Nip39StoredProfilePlanning.Target{
-        .{ .provider = .github, .identity = "alice" },
-        .{ .provider = .github, .identity = "bob" },
-        .{ .provider = .github, .identity = "carol" },
-    };
+    var watched_target_records: [4]noztr_sdk.workflows.IdentityWatchedTargetRecord = undefined;
+    var watched_target_store = noztr_sdk.workflows.MemoryIdentityWatchedTargetStore.init(
+        watched_target_records[0..],
+    );
+    _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+    _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
+
+    var listed_records: [4]noztr_sdk.client.Nip39StoredProfilePlanning.WatchedTargetRecord = undefined;
+    var targets: [4]noztr_sdk.client.Nip39StoredProfilePlanning.Target = undefined;
     var matches: [2]noztr_sdk.client.Nip39StoredProfilePlanning.ProfileMatch = undefined;
-    var latest_entries: [3]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
-    var policy_entries: [3]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyEntry = undefined;
+    var latest_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var policy_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyEntry = undefined;
     var policy_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetPolicyGroup = undefined;
-    var cadence_entries: [3]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var cadence_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
     var cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
-    var turn_entries: [3]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyEntry = undefined;
+    var turn_entries: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyEntry = undefined;
     var turn_groups: [4]noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyGroup = undefined;
 
-    const turn_policy = try client.inspectStoredProfileTurnPolicyForTargets(
+    const turn_policy = try client.inspectStoredWatchedTargetTurnPolicy(
         profile_store.asStore(),
+        watched_target_store.asStore(),
         .{
-            .targets = targets[0..],
-            .now_unix_seconds = 51,
+            .now_unix_seconds = 50,
             .max_age_seconds = 20,
-            .refresh_soon_age_seconds = 10,
-            .max_selected = 1,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 3,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyStorage.init(
-                matches[0..],
-                latest_entries[0..],
-                policy_entries[0..],
-                policy_groups[0..],
-                cadence_entries[0..],
-                cadence_groups[0..],
-                turn_entries[0..],
-                turn_groups[0..],
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.StoredWatchedTargetTurnPolicyStorage.init(
+                listed_records[0..],
+                targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetTurnPolicyStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    policy_entries[0..],
+                    policy_groups[0..],
+                    cadence_entries[0..],
+                    cadence_groups[0..],
+                    turn_entries[0..],
+                    turn_groups[0..],
+                ),
             ),
         },
     );
-    try std.testing.expectEqual(@as(u32, 1), turn_policy.verify_now_count);
-    try std.testing.expectEqual(@as(u32, 0), turn_policy.refresh_selected_count);
-    try std.testing.expectEqual(@as(u32, 1), turn_policy.use_cached_count);
-    try std.testing.expectEqual(@as(u32, 1), turn_policy.defer_refresh_count);
-    try std.testing.expectEqualStrings("carol", turn_policy.nextWorkStep().?.entry.target.identity);
+    try std.testing.expectEqual(@as(u32, 4), turn_policy.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), turn_policy.turn_policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), turn_policy.turn_policy.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), turn_policy.turn_policy.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 0), turn_policy.turn_policy.defer_refresh_count);
+    try std.testing.expectEqualStrings("carol", turn_policy.verifyNowEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("dave", turn_policy.verifyNowEntries()[1].target.identity);
+    try std.testing.expectEqualStrings("bob", turn_policy.refreshSelectedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("alice", turn_policy.useCachedEntries()[0].target.identity);
-    try std.testing.expectEqualStrings("bob", turn_policy.deferredEntries()[0].target.identity);
 }
