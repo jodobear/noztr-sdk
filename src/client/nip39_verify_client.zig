@@ -113,6 +113,30 @@ pub const Nip39StoredProfilePlanning = struct {
     pub const TargetTurnPolicyRequest = workflows.IdentityStoredProfileTargetTurnPolicyRequest;
     pub const TargetTurnPolicyPlan = workflows.IdentityStoredProfileTargetTurnPolicyPlan;
     pub const TargetTurnPolicyStep = workflows.IdentityStoredProfileTargetTurnPolicyStep;
+    pub const StoredWatchedTargetPolicyError =
+        workflows.IdentityStoredWatchedTargetPolicyError;
+    pub const StoredWatchedTargetPolicyStorage =
+        workflows.IdentityStoredWatchedTargetPolicyStorage;
+    pub const StoredWatchedTargetPolicyRequest =
+        workflows.IdentityStoredWatchedTargetPolicyRequest;
+    pub const StoredWatchedTargetPolicyPlan =
+        workflows.IdentityStoredWatchedTargetPolicyPlan;
+    pub const StoredWatchedTargetRefreshCadenceError =
+        workflows.IdentityStoredWatchedTargetRefreshCadenceError;
+    pub const StoredWatchedTargetRefreshCadenceStorage =
+        workflows.IdentityStoredWatchedTargetRefreshCadenceStorage;
+    pub const StoredWatchedTargetRefreshCadenceRequest =
+        workflows.IdentityStoredWatchedTargetRefreshCadenceRequest;
+    pub const StoredWatchedTargetRefreshCadencePlan =
+        workflows.IdentityStoredWatchedTargetRefreshCadencePlan;
+    pub const StoredWatchedTargetRefreshBatchError =
+        workflows.IdentityStoredWatchedTargetRefreshBatchError;
+    pub const StoredWatchedTargetRefreshBatchStorage =
+        workflows.IdentityStoredWatchedTargetRefreshBatchStorage;
+    pub const StoredWatchedTargetRefreshBatchRequest =
+        workflows.IdentityStoredWatchedTargetRefreshBatchRequest;
+    pub const StoredWatchedTargetRefreshBatchPlan =
+        workflows.IdentityStoredWatchedTargetRefreshBatchPlan;
     pub const StoredWatchedTargetTurnPolicyError =
         workflows.IdentityStoredWatchedTargetTurnPolicyError;
     pub const StoredWatchedTargetTurnPolicyStorage =
@@ -288,6 +312,48 @@ pub const Nip39VerifyClient = struct {
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetTurnPolicyPlan {
         _ = self;
         return workflows.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(store, request);
+    }
+
+    pub fn inspectStoredWatchedTargetPolicy(
+        self: *const Nip39VerifyClient,
+        store: workflows.IdentityProfileStore,
+        watched_target_store: workflows.IdentityWatchedTargetStore,
+        request: Nip39StoredProfilePlanning.StoredWatchedTargetPolicyRequest,
+    ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetPolicyPlan {
+        _ = self;
+        return workflows.IdentityVerifier.inspectStoredWatchedTargetPolicy(
+            store,
+            watched_target_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredWatchedTargetRefreshCadence(
+        self: *const Nip39VerifyClient,
+        store: workflows.IdentityProfileStore,
+        watched_target_store: workflows.IdentityWatchedTargetStore,
+        request: Nip39StoredProfilePlanning.StoredWatchedTargetRefreshCadenceRequest,
+    ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetRefreshCadencePlan {
+        _ = self;
+        return workflows.IdentityVerifier.inspectStoredWatchedTargetRefreshCadence(
+            store,
+            watched_target_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredWatchedTargetRefreshBatch(
+        self: *const Nip39VerifyClient,
+        store: workflows.IdentityProfileStore,
+        watched_target_store: workflows.IdentityWatchedTargetStore,
+        request: Nip39StoredProfilePlanning.StoredWatchedTargetRefreshBatchRequest,
+    ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetRefreshBatchPlan {
+        _ = self;
+        return workflows.IdentityVerifier.inspectStoredWatchedTargetRefreshBatch(
+            store,
+            watched_target_store,
+            request,
+        );
     }
 
     pub fn inspectStoredWatchedTargetTurnPolicy(
@@ -605,4 +671,252 @@ test "nip39 verify client inspects stored watched target turn policy through the
     try std.testing.expectEqualStrings("dave", plan.verifyNowEntries()[1].target.identity);
     try std.testing.expectEqualStrings("bob", plan.refreshSelectedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("alice", plan.useCachedEntries()[0].target.identity);
+}
+
+test "nip39 verify client inspects stored watched target policy through the client surface" {
+    const fresh_pubkey = [_]u8{0xb1} ** 32;
+    const stale_pubkey = [_]u8{0xb2} ** 32;
+    const fresh_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-fresh" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-fresh",
+                    .expected_text = "npub-fresh",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
+    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &fresh_pubkey, 45, &fresh_summary);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    var watched_records: [3]workflows.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+
+    var listed_records: [3]Nip39StoredProfilePlanning.WatchedTargetRecord = undefined;
+    var targets: [3]Nip39StoredProfilePlanning.Target = undefined;
+    var matches: [1]Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var latest_entries: [3]Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var policy_entries: [3]Nip39StoredProfilePlanning.TargetPolicyEntry = undefined;
+    var groups: [4]Nip39StoredProfilePlanning.TargetPolicyGroup = undefined;
+
+    const client = Nip39VerifyClient.init(.{});
+    const plan = try client.inspectStoredWatchedTargetPolicy(
+        profile_store.asStore(),
+        watched_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = Nip39StoredProfilePlanning.StoredWatchedTargetPolicyStorage.init(
+                listed_records[0..],
+                targets[0..],
+                Nip39StoredProfilePlanning.TargetPolicyStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    policy_entries[0..],
+                    groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 3), plan.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.policy.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.policy.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.policy.refresh_existing_count);
+    try std.testing.expectEqualStrings("carol", plan.verifyNowEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("alice", plan.usablePreferredEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.usablePreferredEntries()[1].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.refreshNeededEntries()[0].target.identity);
+}
+
+test "nip39 verify client inspects stored watched target refresh cadence through the client surface" {
+    const stable_pubkey = [_]u8{0xa1} ** 32;
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const stable_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-stable",
+                    .expected_text = "npub-stable",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const soon_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var profile_records: [3]workflows.IdentityProfileRecord = undefined;
+    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    var watched_records: [4]workflows.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
+
+    var listed_records: [4]Nip39StoredProfilePlanning.WatchedTargetRecord = undefined;
+    var targets: [4]Nip39StoredProfilePlanning.Target = undefined;
+    var matches: [1]Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var latest_entries: [4]Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var cadence_entries: [4]Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var groups: [5]Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+
+    const client = Nip39VerifyClient.init(.{});
+    const plan = try client.inspectStoredWatchedTargetRefreshCadence(
+        profile_store.asStore(),
+        watched_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip39StoredProfilePlanning.StoredWatchedTargetRefreshCadenceStorage.init(
+                listed_records[0..],
+                targets[0..],
+                Nip39StoredProfilePlanning.TargetRefreshCadenceStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    cadence_entries[0..],
+                    groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 4), plan.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.cadence.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.stable_count);
+    try std.testing.expectEqualStrings("dave", plan.nextDueEntry().?.target.identity);
+    try std.testing.expectEqualStrings("carol", plan.usableWhileRefreshingEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.refreshSoonEntries()[0].target.identity);
+}
+
+test "nip39 verify client inspects stored watched target refresh batch through the client surface" {
+    const soon_pubkey = [_]u8{0xa2} ** 32;
+    const stale_pubkey = [_]u8{0xa3} ** 32;
+    const soon_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = workflows.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
+    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    var watched_records: [3]workflows.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
+    _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
+
+    var listed_records: [3]Nip39StoredProfilePlanning.WatchedTargetRecord = undefined;
+    var targets: [3]Nip39StoredProfilePlanning.Target = undefined;
+    var matches: [1]Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var latest_entries: [3]Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var cadence_entries: [3]Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var cadence_groups: [5]Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+
+    const client = Nip39VerifyClient.init(.{});
+    const batch = try client.inspectStoredWatchedTargetRefreshBatch(
+        profile_store.asStore(),
+        watched_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 2,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip39StoredProfilePlanning.StoredWatchedTargetRefreshBatchStorage.init(
+                listed_records[0..],
+                targets[0..],
+                Nip39StoredProfilePlanning.TargetRefreshBatchStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    cadence_entries[0..],
+                    cadence_groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 3), batch.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), batch.batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), batch.batch.deferred_count);
+    try std.testing.expectEqualStrings("dave", batch.selectedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("carol", batch.selectedEntries()[1].target.identity);
+    try std.testing.expectEqualStrings("bob", batch.deferredEntries()[0].target.identity);
 }
