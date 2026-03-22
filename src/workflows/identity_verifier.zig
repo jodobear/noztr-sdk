@@ -1501,6 +1501,61 @@ pub const IdentityRememberedIdentityLatestFreshnessPlan = struct {
     }
 };
 
+pub const IdentityRememberedIdentityRefreshCadenceStorage = struct {
+    remembered_identity_records: []IdentityRememberedIdentityRecord,
+    targets: []IdentityStoredProfileTarget,
+    cadence: IdentityStoredProfileTargetRefreshCadenceStorage,
+
+    pub fn init(
+        remembered_identity_records: []IdentityRememberedIdentityRecord,
+        targets: []IdentityStoredProfileTarget,
+        cadence: IdentityStoredProfileTargetRefreshCadenceStorage,
+    ) IdentityRememberedIdentityRefreshCadenceStorage {
+        return .{
+            .remembered_identity_records = remembered_identity_records,
+            .targets = targets,
+            .cadence = cadence,
+        };
+    }
+};
+
+pub const IdentityRememberedIdentityRefreshCadenceRequest = struct {
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    refresh_soon_age_seconds: u64,
+    fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
+    storage: IdentityRememberedIdentityRefreshCadenceStorage,
+};
+
+pub const IdentityRememberedIdentityRefreshCadencePlan = struct {
+    remembered_identity_count: u32 = 0,
+    cadence: IdentityStoredProfileTargetRefreshCadencePlan,
+
+    pub fn nextDueEntry(
+        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+    ) ?*const IdentityStoredProfileTargetRefreshCadenceEntry {
+        return self.cadence.nextDueEntry();
+    }
+
+    pub fn nextDueStep(
+        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+    ) ?IdentityStoredProfileTargetRefreshCadenceStep {
+        return self.cadence.nextDueStep();
+    }
+
+    pub fn usableWhileRefreshingEntries(
+        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+    ) []const IdentityStoredProfileTargetRefreshCadenceEntry {
+        return self.cadence.usableWhileRefreshingEntries();
+    }
+
+    pub fn refreshSoonEntries(
+        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+    ) []const IdentityStoredProfileTargetRefreshCadenceEntry {
+        return self.cadence.refreshSoonEntries();
+    }
+};
+
 pub const IdentityStoredProfileRuntimeAction = enum {
     verify_now,
     refresh_existing,
@@ -2235,6 +2290,32 @@ pub const IdentityVerifier = struct {
         return .{
             .remembered_identity_count = @intCast(count),
             .freshness = freshness,
+        };
+    }
+
+    pub fn inspectRememberedIdentityRefreshCadence(
+        store: IdentityProfileStore,
+        request: IdentityRememberedIdentityRefreshCadenceRequest,
+    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityRefreshCadencePlan {
+        const count = try loadRememberedIdentities(
+            store,
+            request.storage.remembered_identity_records,
+            request.storage.targets,
+        );
+        const cadence = try inspectStoredProfileRefreshCadenceForTargets(
+            store,
+            .{
+                .targets = request.storage.targets[0..count],
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .refresh_soon_age_seconds = request.refresh_soon_age_seconds,
+                .fallback_policy = request.fallback_policy,
+                .storage = request.storage.cadence,
+            },
+        );
+        return .{
+            .remembered_identity_count = @intCast(count),
+            .cadence = cadence,
         };
     }
 
@@ -7748,6 +7829,91 @@ test "identity verifier rejects remembered identity latest freshness when rememb
             },
         ),
     );
+}
+
+test "identity verifier inspects remembered identity refresh cadence over explicit profile store" {
+    const stable_pubkey = [_]u8{0xf6} ** 32;
+    const soon_pubkey = [_]u8{0xf7} ** 32;
+    const stale_pubkey = [_]u8{0xf8} ** 32;
+    const stable_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/alice/gist-stable",
+                    .expected_text = "npub-stable",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const soon_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/bob/gist-soon",
+                    .expected_text = "npub-soon",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+    const stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
+                .outcome = .{ .verified = .{
+                    .proof_url = "https://gist.github.com/carol/gist-stale",
+                    .expected_text = "npub-stale",
+                } },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [3]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &stale_pubkey, 5, &stale_summary);
+
+    var remembered_records: [3]IdentityRememberedIdentityRecord = undefined;
+    var targets: [3]IdentityStoredProfileTarget = undefined;
+    var matches: [1]IdentityProfileMatch = undefined;
+    var latest_entries: [3]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+    var cadence_entries: [3]IdentityStoredProfileTargetRefreshCadenceEntry = undefined;
+    var groups: [5]IdentityStoredProfileTargetRefreshCadenceGroup = undefined;
+
+    const plan = try IdentityVerifier.inspectRememberedIdentityRefreshCadence(
+        store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = .init(
+                remembered_records[0..],
+                targets[0..],
+                IdentityStoredProfileTargetRefreshCadenceStorage.init(
+                    matches[0..],
+                    latest_entries[0..],
+                    cadence_entries[0..],
+                    groups[0..],
+                ),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 3), plan.remembered_identity_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.cadence.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.cadence.stable_count);
+    try std.testing.expectEqualStrings("carol", plan.nextDueEntry().?.target.identity);
+    try std.testing.expectEqualStrings("carol", plan.usableWhileRefreshingEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", plan.refreshSoonEntries()[0].target.identity);
 }
 
 test "identity verifier selects preferred remembered profile across watched targets" {
