@@ -32,6 +32,10 @@ current public workflow contract.
   - shortest public route from install/import to first workflow examples
 - [public contract map](./reference/contract-map.md)
   - task-to-symbol route for the current public workflow surface
+- [release process](./reference/release-process.md)
+  - project versioning, RC criteria, tagging guidance, and first-release framing
+- [CHANGELOG.md](../CHANGELOG.md)
+  - project-level release line and notable changes
 - [remote signer naming migration](./reference/remote-signer-naming-migration.md)
   - short pre-`1.0` migration note for direct `remote_signer` submodule imports
 - [workflow submodule naming migration](./reference/workflow-submodule-naming-migration.md)

@@ -107,6 +107,22 @@ zig build test --summary all
 
 Import/module naming uses `noztr_sdk` in Zig-facing package metadata.
 
+## Versioning And Compatibility
+
+`noztr-sdk` uses its own project version line.
+
+It does not use the Zig toolchain version as the library version.
+
+Current project line:
+- `0.1.0-dev.0`
+- first intended public release target: `0.1.0-rc.1`
+
+Current toolchain baseline:
+- Zig `0.15.2`
+
+For release criteria, tagging guidance, and first-release framing, use
+`docs/reference/release-process.md`.
+
 ## Quick Start
 
 1. Read `docs/getting-started.md` for the shortest public path into the SDK.

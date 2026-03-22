@@ -133,6 +133,26 @@ If you touch public docs, prefer improving:
 
 Keep docs and examples linked both ways whenever that materially helps users or LLMs navigate.
 
+## Release Prep
+
+Release prep is normal repo work, not an afterthought.
+
+If a slice changes public package metadata, versioning posture, changelog state, or release-facing
+docs, update the release surfaces in the same pass:
+
+- `build.zig.zon`
+- `CHANGELOG.md`
+- `docs/reference/release-process.md`
+
+Project versioning should follow the SDK's own pre-`1.0` line.
+Do not use the Zig/toolchain version as the library version.
+
+Prefer annotated public tags such as:
+
+```bash
+git tag -a v0.1.0-rc.1 -m "noztr-sdk v0.1.0-rc.1"
+```
+
 ## Code Contributions
 
 For code work:
