@@ -369,6 +369,39 @@ pub const IdentityStoredProfileTarget = struct {
     identity: []const u8,
 };
 
+pub const IdentityRememberedIdentityRecord = struct {
+    provider: noztr.nip39_external_identities.IdentityProvider = .github,
+    identity: [identity_profile_store_identity_max_bytes]u8 = [_]u8{0} **
+        identity_profile_store_identity_max_bytes,
+    identity_len: u16 = 0,
+    occupied: bool = false,
+
+    pub fn identitySlice(self: *const IdentityRememberedIdentityRecord) []const u8 {
+        return self.identity[0..self.identity_len];
+    }
+
+    pub fn asTarget(self: *const IdentityRememberedIdentityRecord) IdentityStoredProfileTarget {
+        return .{
+            .provider = self.provider,
+            .identity = self.identitySlice(),
+        };
+    }
+};
+
+pub const IdentityRememberedIdentityResultPage = struct {
+    entries: []IdentityRememberedIdentityRecord,
+    count: usize = 0,
+    truncated: bool = false,
+
+    pub fn init(entries: []IdentityRememberedIdentityRecord) IdentityRememberedIdentityResultPage {
+        return .{ .entries = entries };
+    }
+
+    pub fn slice(self: *const IdentityRememberedIdentityResultPage) []const IdentityRememberedIdentityRecord {
+        return self.entries[0..self.count];
+    }
+};
+
 pub const IdentityWatchedTargetStoreError = error{
     IdentityTooLong,
     StoreFull,
@@ -1424,6 +1457,50 @@ pub const IdentityStoredProfileTargetLatestFreshnessStep = struct {
     entry: IdentityStoredProfileTargetLatestFreshnessEntry,
 };
 
+pub const IdentityRememberedIdentityPlanningError =
+    IdentityProfileStoreError || error{RememberedIdentityListTruncated, BufferTooSmall};
+
+pub const IdentityRememberedIdentityLatestFreshnessStorage = struct {
+    remembered_identity_records: []IdentityRememberedIdentityRecord,
+    targets: []IdentityStoredProfileTarget,
+    freshness: IdentityStoredProfileTargetLatestFreshnessStorage,
+
+    pub fn init(
+        remembered_identity_records: []IdentityRememberedIdentityRecord,
+        targets: []IdentityStoredProfileTarget,
+        freshness: IdentityStoredProfileTargetLatestFreshnessStorage,
+    ) IdentityRememberedIdentityLatestFreshnessStorage {
+        return .{
+            .remembered_identity_records = remembered_identity_records,
+            .targets = targets,
+            .freshness = freshness,
+        };
+    }
+};
+
+pub const IdentityRememberedIdentityLatestFreshnessRequest = struct {
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    storage: IdentityRememberedIdentityLatestFreshnessStorage,
+};
+
+pub const IdentityRememberedIdentityLatestFreshnessPlan = struct {
+    remembered_identity_count: u32 = 0,
+    freshness: IdentityStoredProfileTargetLatestFreshnessPlan,
+
+    pub fn nextEntry(
+        self: *const IdentityRememberedIdentityLatestFreshnessPlan,
+    ) ?*const IdentityStoredProfileTargetLatestFreshnessEntry {
+        return self.freshness.nextEntry();
+    }
+
+    pub fn nextStep(
+        self: *const IdentityRememberedIdentityLatestFreshnessPlan,
+    ) ?IdentityStoredProfileTargetLatestFreshnessStep {
+        return self.freshness.nextStep();
+    }
+};
+
 pub const IdentityStoredProfileRuntimeAction = enum {
     verify_now,
     refresh_existing,
@@ -1572,6 +1649,11 @@ pub const IdentityProfileStoreVTable = struct {
         identity: []const u8,
         out: []IdentityProfileMatch,
     ) IdentityProfileStoreError!usize,
+    list_remembered_identities: *const fn (
+        ctx: *anyopaque,
+        out: []IdentityRememberedIdentityRecord,
+        truncated: *bool,
+    ) IdentityProfileStoreError!usize,
 };
 
 pub const IdentityProfileStore = struct {
@@ -1602,6 +1684,17 @@ pub const IdentityProfileStore = struct {
     ) IdentityProfileStoreError![]const IdentityProfileMatch {
         const count = try self.vtable.find_profiles(self.ctx, provider, identity, out);
         return out[0..count];
+    }
+
+    pub fn listRememberedIdentities(
+        self: IdentityProfileStore,
+        page: *IdentityRememberedIdentityResultPage,
+    ) IdentityProfileStoreError!void {
+        page.count = try self.vtable.list_remembered_identities(
+            self.ctx,
+            page.entries,
+            &page.truncated,
+        );
     }
 };
 
@@ -1668,6 +1761,43 @@ pub const MemoryIdentityProfileStore = struct {
         return out[0..count];
     }
 
+    pub fn listRememberedIdentities(
+        self: *MemoryIdentityProfileStore,
+        page: *IdentityRememberedIdentityResultPage,
+    ) IdentityProfileStoreError!void {
+        var count: usize = 0;
+        var truncated = false;
+
+        for (self.records[0..self.count]) |*record| {
+            if (!record.occupied) continue;
+            for (record.verifiedClaims()) |*claim| {
+                if (findRememberedIdentityIndex(
+                    page.entries[0..count],
+                    claim.provider,
+                    claim.identitySlice(),
+                ) != null) continue;
+                if (count == page.entries.len) {
+                    truncated = true;
+                    continue;
+                }
+
+                page.entries[count] = .{
+                    .provider = claim.provider,
+                    .identity_len = @intCast(claim.identity_len),
+                    .occupied = true,
+                };
+                @memcpy(
+                    page.entries[count].identity[0..claim.identity_len],
+                    claim.identitySlice(),
+                );
+                count += 1;
+            }
+        }
+
+        page.count = count;
+        page.truncated = truncated;
+    }
+
     fn findIndex(self: *const MemoryIdentityProfileStore, pubkey: *const [32]u8) ?usize {
         for (self.records[0..self.count], 0..) |*record, index| {
             if (!record.occupied) continue;
@@ -1676,6 +1806,20 @@ pub const MemoryIdentityProfileStore = struct {
         return null;
     }
 };
+
+fn findRememberedIdentityIndex(
+    entries: []const IdentityRememberedIdentityRecord,
+    provider: noztr.nip39_external_identities.IdentityProvider,
+    identity: []const u8,
+) ?usize {
+    for (entries, 0..) |*entry, index| {
+        if (!entry.occupied) continue;
+        if (entry.provider != provider) continue;
+        if (!std.mem.eql(u8, entry.identitySlice(), identity)) continue;
+        return index;
+    }
+    return null;
+}
 
 pub const IdentityWatchedTargetStoreVTable = struct {
     remember_target: *const fn (
@@ -2068,6 +2212,30 @@ pub const IdentityVerifier = struct {
         request: IdentityProfileDiscoveryRequest,
     ) IdentityProfileStoreError![]const IdentityProfileMatch {
         return store.findProfiles(request.provider, request.identity, request.results);
+    }
+
+    pub fn inspectRememberedIdentityLatestFreshness(
+        store: IdentityProfileStore,
+        request: IdentityRememberedIdentityLatestFreshnessRequest,
+    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityLatestFreshnessPlan {
+        const count = try loadRememberedIdentities(
+            store,
+            request.storage.remembered_identity_records,
+            request.storage.targets,
+        );
+        const freshness = try inspectLatestStoredProfileFreshnessForTargets(
+            store,
+            .{
+                .targets = request.storage.targets[0..count],
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = request.storage.freshness,
+            },
+        );
+        return .{
+            .remembered_identity_count = @intCast(count),
+            .freshness = freshness,
+        };
     }
 
     pub fn discoverStoredProfileEntriesForTargets(
@@ -2946,6 +3114,22 @@ pub const IdentityVerifier = struct {
         return page.count;
     }
 
+    fn loadRememberedIdentities(
+        store: IdentityProfileStore,
+        remembered_identity_records: []IdentityRememberedIdentityRecord,
+        targets: []IdentityStoredProfileTarget,
+    ) IdentityRememberedIdentityPlanningError!usize {
+        var page = IdentityRememberedIdentityResultPage.init(remembered_identity_records);
+        try store.listRememberedIdentities(&page);
+        if (page.truncated) return error.RememberedIdentityListTruncated;
+        if (page.count > targets.len) return error.BufferTooSmall;
+
+        for (page.slice(), 0..) |*record, index| {
+            targets[index] = record.asTarget();
+        }
+        return page.count;
+    }
+
     pub fn inspectStoredWatchedTargetPolicy(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
@@ -3620,10 +3804,23 @@ fn profile_store_find(
     return matches.len;
 }
 
+fn profile_store_list_remembered_identities(
+    ctx: *anyopaque,
+    out: []IdentityRememberedIdentityRecord,
+    truncated: *bool,
+) IdentityProfileStoreError!usize {
+    const self: *MemoryIdentityProfileStore = @ptrCast(@alignCast(ctx));
+    var page = IdentityRememberedIdentityResultPage.init(out);
+    try self.listRememberedIdentities(&page);
+    truncated.* = page.truncated;
+    return page.count;
+}
+
 const profile_store_vtable = IdentityProfileStoreVTable{
     .put_profile_summary = profile_store_put,
     .get_profile = profile_store_get,
     .find_profiles = profile_store_find,
+    .list_remembered_identities = profile_store_list_remembered_identities,
 };
 
 fn watched_target_store_remember(
@@ -7326,6 +7523,233 @@ test "identity verifier target-set latest freshness plan returns null when all w
     try std.testing.expect(plan.nextStep() == null);
 }
 
+test "identity profile store lists remembered identities in stable deduplicated order" {
+    const alice_pubkey_a = [_]u8{0xe1} ** 32;
+    const alice_pubkey_b = [_]u8{0xe2} ** 32;
+    const alice_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice-a",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice-a",
+                        .expected_text = "npub-alice-a",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const alice_and_bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice-b",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice-b",
+                        .expected_text = "npub-alice-b",
+                    },
+                },
+            },
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 2,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey_a, 10, &alice_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey_b, 45, &alice_and_bob_summary);
+
+    var remembered_records: [2]IdentityRememberedIdentityRecord = undefined;
+    var page = IdentityRememberedIdentityResultPage.init(remembered_records[0..]);
+    try store.asStore().listRememberedIdentities(&page);
+
+    try std.testing.expectEqual(@as(usize, 2), page.count);
+    try std.testing.expect(!page.truncated);
+    try std.testing.expectEqualStrings("alice", page.slice()[0].identitySlice());
+    try std.testing.expectEqualStrings("bob", page.slice()[1].identitySlice());
+}
+
+test "identity verifier inspects remembered identity latest freshness over explicit profile store" {
+    const alice_pubkey_a = [_]u8{0xf1} ** 32;
+    const alice_pubkey_b = [_]u8{0xf2} ** 32;
+    const bob_pubkey = [_]u8{0xf3} ** 32;
+    const alice_stale_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice-stale",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice-stale",
+                        .expected_text = "npub-alice-stale",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const alice_fresh_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice-fresh",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice-fresh",
+                        .expected_text = "npub-alice-fresh",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [3]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey_a, 10, &alice_stale_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey_b, 45, &alice_fresh_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &bob_pubkey, 5, &bob_summary);
+
+    var remembered_records: [2]IdentityRememberedIdentityRecord = undefined;
+    var targets: [2]IdentityStoredProfileTarget = undefined;
+    var matches: [2]IdentityProfileMatch = undefined;
+    var entries: [2]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
+
+    const plan = try IdentityVerifier.inspectRememberedIdentityLatestFreshness(
+        store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = .init(
+                remembered_records[0..],
+                targets[0..],
+                .init(matches[0..], entries[0..]),
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 2), plan.remembered_identity_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.freshness.fresh_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.freshness.stale_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.freshness.missing_count);
+    try std.testing.expectEqualStrings("bob", plan.nextEntry().?.target.identity);
+    try std.testing.expectEqualStrings("bob", plan.nextStep().?.entry.target.identity);
+    try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, plan.nextEntry().?.latest.?.freshness);
+}
+
+test "identity verifier rejects remembered identity latest freshness when remembered identity listing truncates" {
+    const alice_pubkey = [_]u8{0xf4} ** 32;
+    const bob_pubkey = [_]u8{0xf5} ** 32;
+    const alice_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "alice",
+                    .proof = "gist-alice",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/alice/gist-alice",
+                        .expected_text = "npub-alice",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+    const bob_summary = IdentityProfileVerificationSummary{
+        .claims = &[_]IdentityClaimVerification{
+            .{
+                .claim = .{
+                    .provider = .github,
+                    .identity = "bob",
+                    .proof = "gist-bob",
+                },
+                .outcome = .{
+                    .verified = .{
+                        .proof_url = "https://gist.github.com/bob/gist-bob",
+                        .expected_text = "npub-bob",
+                    },
+                },
+            },
+        },
+        .verified_count = 1,
+    };
+
+    var store_records: [2]IdentityProfileRecord = undefined;
+    var store = MemoryIdentityProfileStore.init(store_records[0..]);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey, 10, &alice_summary);
+    _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &bob_pubkey, 5, &bob_summary);
+
+    var remembered_records: [1]IdentityRememberedIdentityRecord = undefined;
+    var targets: [0]IdentityStoredProfileTarget = .{};
+    var matches: [0]IdentityProfileMatch = .{};
+    var entries: [0]IdentityStoredProfileTargetLatestFreshnessEntry = .{};
+
+    try std.testing.expectError(
+        error.RememberedIdentityListTruncated,
+        IdentityVerifier.inspectRememberedIdentityLatestFreshness(
+            store.asStore(),
+            .{
+                .now_unix_seconds = 50,
+                .max_age_seconds = 20,
+                .storage = .init(
+                    remembered_records[0..],
+                    targets[0..],
+                    .init(matches[0..], entries[0..]),
+                ),
+            },
+        ),
+    );
+}
+
 test "identity verifier selects preferred remembered profile across watched targets" {
     const alice_pubkey = [_]u8{0xe1} ** 32;
     const bob_pubkey = [_]u8{0xe2} ** 32;
@@ -8451,10 +8875,20 @@ test "identity verifier returns typed error for inconsistent remembered profile 
             return 1;
         }
 
+        fn listRemembered(
+            _: *anyopaque,
+            _: []IdentityRememberedIdentityRecord,
+            truncated: *bool,
+        ) IdentityProfileStoreError!usize {
+            truncated.* = false;
+            return 0;
+        }
+
         const vtable = IdentityProfileStoreVTable{
             .put_profile_summary = put,
             .get_profile = get,
             .find_profiles = find,
+            .list_remembered_identities = listRemembered,
         };
     };
 
