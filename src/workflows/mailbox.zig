@@ -68,19 +68,19 @@ pub const MailboxEnvelopeOutcome = union(enum) {
     file_message: MailboxFileMessageOutcome,
 };
 
-pub const FileDimensions = noztr.nip17_private_messages.FileDimensions;
+pub const MailboxFileDimensions = noztr.nip17_private_messages.FileDimensions;
 
 /// Caller-owned storage for one outbound wrapped-message JSON payload.
-/// `OutboundMessage.wrap_event_json` borrows from this buffer until it is overwritten.
-pub const OutboundBuffer = struct {
+/// `MailboxOutboundMessage.wrap_event_json` borrows from this buffer until it is overwritten.
+pub const MailboxOutboundBuffer = struct {
     storage: [noztr.limits.event_json_max]u8 = [_]u8{0} ** noztr.limits.event_json_max,
 
-    fn writable(self: *OutboundBuffer) []u8 {
+    fn writable(self: *MailboxOutboundBuffer) []u8 {
         return self.storage[0..];
     }
 };
 
-pub const DirectMessageRequest = struct {
+pub const MailboxDirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
     content: []const u8,
@@ -90,7 +90,7 @@ pub const DirectMessageRequest = struct {
     wrap_nonce: [32]u8,
 };
 
-pub const FileMessageRequest = struct {
+pub const MailboxFileMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
     file_url: []const u8,
@@ -100,7 +100,7 @@ pub const FileMessageRequest = struct {
     encrypted_file_hash: [32]u8,
     original_file_hash: ?[32]u8 = null,
     size: ?u64 = null,
-    dimensions: ?FileDimensions = null,
+    dimensions: ?MailboxFileDimensions = null,
     blurhash: ?[]const u8 = null,
     thumbs: []const []const u8 = &.{},
     fallbacks: []const []const u8 = &.{},
@@ -111,14 +111,14 @@ pub const FileMessageRequest = struct {
 };
 
 /// Transport-ready outbound mailbox payload.
-/// `wrap_event_json` borrows from the caller-provided `OutboundBuffer`.
-pub const OutboundMessage = struct {
+/// `wrap_event_json` borrows from the caller-provided `MailboxOutboundBuffer`.
+pub const MailboxOutboundMessage = struct {
     relay_url: []const u8,
     wrap_event_id: [32]u8,
     wrap_event_json: []const u8,
 };
 
-pub const DeliveryStorage = struct {
+pub const MailboxDeliveryStorage = struct {
     relay_urls: [relay_pool.pool_capacity][relay_url.relay_url_max_bytes]u8 =
         [_][relay_url.relay_url_max_bytes]u8{[_]u8{0} ** relay_url.relay_url_max_bytes} **
         relay_pool.pool_capacity,
@@ -126,42 +126,42 @@ pub const DeliveryStorage = struct {
     recipient_targets: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
     sender_copy_targets: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
 
-    fn clear(self: *DeliveryStorage) void {
+    fn clear(self: *MailboxDeliveryStorage) void {
         self.relay_url_lens = [_]u16{0} ** relay_pool.pool_capacity;
         self.recipient_targets = [_]bool{false} ** relay_pool.pool_capacity;
         self.sender_copy_targets = [_]bool{false} ** relay_pool.pool_capacity;
     }
 
-    fn relayUrl(self: *const DeliveryStorage, index: u8) []const u8 {
+    fn relayUrl(self: *const MailboxDeliveryStorage, index: u8) []const u8 {
         return self.relay_urls[index][0..self.relay_url_lens[index]];
     }
 };
 
-pub const DeliveryRole = struct {
+pub const MailboxDeliveryRole = struct {
     recipient: bool = false,
     sender_copy: bool = false,
 };
 
-pub const DeliveryStep = struct {
+pub const MailboxDeliveryStep = struct {
     relay_index: u8,
     relay_url: []const u8,
-    role: DeliveryRole,
+    role: MailboxDeliveryRole,
     wrap_event_id: [32]u8,
     wrap_event_json: []const u8,
 };
 
-pub const DeliveryPlan = struct {
+pub const MailboxDeliveryPlan = struct {
     relay_count: u8,
     wrap_event_id: [32]u8,
     wrap_event_json: []const u8,
-    _storage: *const DeliveryStorage,
+    _storage: *const MailboxDeliveryStorage,
 
-    pub fn relayUrl(self: *const DeliveryPlan, index: u8) ?[]const u8 {
+    pub fn relayUrl(self: *const MailboxDeliveryPlan, index: u8) ?[]const u8 {
         if (index >= self.relay_count) return null;
         return self._storage.relayUrl(index);
     }
 
-    pub fn role(self: *const DeliveryPlan, index: u8) ?DeliveryRole {
+    pub fn role(self: *const MailboxDeliveryPlan, index: u8) ?MailboxDeliveryRole {
         if (index >= self.relay_count) return null;
         return .{
             .recipient = self._storage.recipient_targets[index],
@@ -169,17 +169,17 @@ pub const DeliveryPlan = struct {
         };
     }
 
-    pub fn deliversToRecipient(self: *const DeliveryPlan, index: u8) bool {
+    pub fn deliversToRecipient(self: *const MailboxDeliveryPlan, index: u8) bool {
         const delivery_role = self.role(index) orelse return false;
         return delivery_role.recipient;
     }
 
-    pub fn deliversSenderCopy(self: *const DeliveryPlan, index: u8) bool {
+    pub fn deliversSenderCopy(self: *const MailboxDeliveryPlan, index: u8) bool {
         const delivery_role = self.role(index) orelse return false;
         return delivery_role.sender_copy;
     }
 
-    pub fn nextRelayIndex(self: *const DeliveryPlan) ?u8 {
+    pub fn nextRelayIndex(self: *const MailboxDeliveryPlan) ?u8 {
         var index: u8 = 0;
         while (index < self.relay_count) : (index += 1) {
             if (self.deliversToRecipient(index)) return index;
@@ -191,7 +191,7 @@ pub const DeliveryPlan = struct {
         return null;
     }
 
-    pub fn nextRecipientRelayIndex(self: *const DeliveryPlan) ?u8 {
+    pub fn nextRecipientRelayIndex(self: *const MailboxDeliveryPlan) ?u8 {
         var index: u8 = 0;
         while (index < self.relay_count) : (index += 1) {
             if (self.deliversToRecipient(index)) return index;
@@ -199,7 +199,7 @@ pub const DeliveryPlan = struct {
         return null;
     }
 
-    pub fn nextSenderCopyRelayIndex(self: *const DeliveryPlan) ?u8 {
+    pub fn nextSenderCopyRelayIndex(self: *const MailboxDeliveryPlan) ?u8 {
         var index: u8 = 0;
         while (index < self.relay_count) : (index += 1) {
             if (self.deliversSenderCopy(index)) return index;
@@ -207,7 +207,7 @@ pub const DeliveryPlan = struct {
         return null;
     }
 
-    pub fn nextStep(self: *const DeliveryPlan) ?DeliveryStep {
+    pub fn nextStep(self: *const MailboxDeliveryPlan) ?MailboxDeliveryStep {
         const relay_index = self.nextRelayIndex() orelse return null;
         return .{
             .relay_index = relay_index,
@@ -218,7 +218,7 @@ pub const DeliveryPlan = struct {
         };
     }
 
-    pub fn nextRecipientStep(self: *const DeliveryPlan) ?DeliveryStep {
+    pub fn nextRecipientStep(self: *const MailboxDeliveryPlan) ?MailboxDeliveryStep {
         const relay_index = self.nextRecipientRelayIndex() orelse return null;
         return .{
             .relay_index = relay_index,
@@ -229,7 +229,7 @@ pub const DeliveryPlan = struct {
         };
     }
 
-    pub fn nextSenderCopyStep(self: *const DeliveryPlan) ?DeliveryStep {
+    pub fn nextSenderCopyStep(self: *const MailboxDeliveryPlan) ?MailboxDeliveryStep {
         const relay_index = self.nextSenderCopyRelayIndex() orelse return null;
         return .{
             .relay_index = relay_index,
@@ -241,33 +241,33 @@ pub const DeliveryPlan = struct {
     }
 };
 
-pub const RuntimeAction = enum {
+pub const MailboxRuntimeAction = enum {
     connect,
     authenticate,
     receive,
 };
 
-pub const RuntimeEntry = struct {
+pub const MailboxRuntimeEntry = struct {
     relay_index: u8,
     relay_url: []const u8,
-    action: RuntimeAction,
+    action: MailboxRuntimeAction,
     is_current: bool,
 };
 
-pub const RuntimeStep = struct {
-    entry: RuntimeEntry,
+pub const MailboxRuntimeStep = struct {
+    entry: MailboxRuntimeEntry,
 };
 
-pub const RelayPoolStorage = struct {
+pub const MailboxRelayPoolStorage = struct {
     relay_pool_storage: shared_runtime.RelayPoolStorage = .{},
 };
 
-pub const RelayPoolRuntimeStorage = struct {
-    relay_pool_storage: RelayPoolStorage = .{},
+pub const MailboxRelayPoolRuntimeStorage = struct {
+    relay_pool_storage: MailboxRelayPoolStorage = .{},
     plan_storage: shared_runtime.RelayPoolPlanStorage = .{},
 };
 
-pub const WorkflowAction = enum {
+pub const MailboxWorkflowAction = enum {
     connect,
     authenticate,
     receive,
@@ -276,41 +276,41 @@ pub const WorkflowAction = enum {
     idle,
 };
 
-pub const WorkflowEntry = struct {
+pub const MailboxWorkflowEntry = struct {
     relay_index: u8,
     relay_url: []const u8,
-    action: WorkflowAction,
+    action: MailboxWorkflowAction,
     is_current: bool = false,
-    role: DeliveryRole = .{},
+    role: MailboxDeliveryRole = .{},
     wrap_event_id: ?[32]u8 = null,
     wrap_event_json: ?[]const u8 = null,
 };
 
-pub const WorkflowStep = struct {
-    entry: WorkflowEntry,
+pub const MailboxWorkflowStep = struct {
+    entry: MailboxWorkflowEntry,
 };
 
-pub const WorkflowStorage = struct {
-    runtime: RuntimeStorage = .{},
-    actions: [relay_pool.pool_capacity]WorkflowAction = [_]WorkflowAction{.idle} **
+pub const MailboxWorkflowStorage = struct {
+    runtime: MailboxRuntimeStorage = .{},
+    actions: [relay_pool.pool_capacity]MailboxWorkflowAction = [_]MailboxWorkflowAction{.idle} **
         relay_pool.pool_capacity,
     recipient_targets: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
     sender_copy_targets: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
 
-    fn clear(self: *WorkflowStorage) void {
+    fn clear(self: *MailboxWorkflowStorage) void {
         self.runtime.clear();
-        self.actions = [_]WorkflowAction{.idle} ** relay_pool.pool_capacity;
+        self.actions = [_]MailboxWorkflowAction{.idle} ** relay_pool.pool_capacity;
         self.recipient_targets = [_]bool{false} ** relay_pool.pool_capacity;
         self.sender_copy_targets = [_]bool{false} ** relay_pool.pool_capacity;
     }
 };
 
-pub const WorkflowRequest = struct {
-    pending_delivery: ?*const DeliveryPlan = null,
-    storage: *WorkflowStorage,
+pub const MailboxWorkflowRequest = struct {
+    pending_delivery: ?*const MailboxDeliveryPlan = null,
+    storage: *MailboxWorkflowStorage,
 };
 
-pub const WorkflowPlan = struct {
+pub const MailboxWorkflowPlan = struct {
     relay_count: u8,
     connect_count: u8 = 0,
     authenticate_count: u8 = 0,
@@ -319,13 +319,13 @@ pub const WorkflowPlan = struct {
     publish_sender_copy_count: u8 = 0,
     idle_count: u8 = 0,
     _session: *const MailboxSession,
-    _runtime: RuntimePlan,
-    _delivery: ?*const DeliveryPlan,
-    _storage: *const WorkflowStorage,
+    _runtime: MailboxRuntimePlan,
+    _delivery: ?*const MailboxDeliveryPlan,
+    _storage: *const MailboxWorkflowStorage,
 
-    pub fn entry(self: *const WorkflowPlan, index: u8) ?WorkflowEntry {
+    pub fn entry(self: *const MailboxWorkflowPlan, index: u8) ?MailboxWorkflowEntry {
         const runtime_entry = self._runtime.entry(index) orelse return null;
-        const delivery_role: DeliveryRole = .{
+        const delivery_role: MailboxDeliveryRole = .{
             .recipient = self._storage.recipient_targets[index],
             .sender_copy = self._storage.sender_copy_targets[index],
         };
@@ -346,18 +346,18 @@ pub const WorkflowPlan = struct {
         };
     }
 
-    pub fn runtimePlan(self: *const WorkflowPlan) *const RuntimePlan {
+    pub fn runtimePlan(self: *const MailboxWorkflowPlan) *const MailboxRuntimePlan {
         return &self._runtime;
     }
 
-    pub fn nextEntry(self: *const WorkflowPlan) ?WorkflowEntry {
+    pub fn nextEntry(self: *const MailboxWorkflowPlan) ?MailboxWorkflowEntry {
         if (self._delivery) |delivery| {
             if (delivery.nextRecipientRelayIndex()) |delivery_index| {
                 if (self.entryForDeliveryIndex(delivery_index)) |selected| return selected;
             }
         }
 
-        for ([_]WorkflowAction{ .receive, .authenticate, .connect }) |priority| {
+        for ([_]MailboxWorkflowAction{ .receive, .authenticate, .connect }) |priority| {
             if (self.findPriorityEntry(priority)) |selected| return selected;
         }
 
@@ -371,15 +371,15 @@ pub const WorkflowPlan = struct {
         return null;
     }
 
-    pub fn nextStep(self: *const WorkflowPlan) ?WorkflowStep {
+    pub fn nextStep(self: *const MailboxWorkflowPlan) ?MailboxWorkflowStep {
         const selected_entry = self.nextEntry() orelse return null;
         return .{ .entry = selected_entry };
     }
 
     fn entryForDeliveryIndex(
-        self: *const WorkflowPlan,
+        self: *const MailboxWorkflowPlan,
         delivery_index: u8,
-    ) ?WorkflowEntry {
+    ) ?MailboxWorkflowEntry {
         const delivery = self._delivery orelse return null;
         const relay_url_text = delivery.relayUrl(delivery_index) orelse return null;
         var index: u8 = 0;
@@ -392,11 +392,11 @@ pub const WorkflowPlan = struct {
     }
 
     fn findPriorityEntry(
-        self: *const WorkflowPlan,
-        action: WorkflowAction,
-    ) ?WorkflowEntry {
-        var current_match: ?WorkflowEntry = null;
-        var first_match: ?WorkflowEntry = null;
+        self: *const MailboxWorkflowPlan,
+        action: MailboxWorkflowAction,
+    ) ?MailboxWorkflowEntry {
+        var current_match: ?MailboxWorkflowEntry = null;
+        var first_match: ?MailboxWorkflowEntry = null;
         var index: u8 = 0;
         while (index < self.relay_count) : (index += 1) {
             const candidate = self.entry(index) orelse continue;
@@ -412,27 +412,27 @@ pub const WorkflowPlan = struct {
     }
 };
 
-pub const RuntimeStorage = struct {
+pub const MailboxRuntimeStorage = struct {
     relay_indexes: [relay_pool.pool_capacity]u8 = [_]u8{0} ** relay_pool.pool_capacity,
-    actions: [relay_pool.pool_capacity]RuntimeAction = [_]RuntimeAction{.connect} ** relay_pool.pool_capacity,
+    actions: [relay_pool.pool_capacity]MailboxRuntimeAction = [_]MailboxRuntimeAction{.connect} ** relay_pool.pool_capacity,
     current_flags: [relay_pool.pool_capacity]bool = [_]bool{false} ** relay_pool.pool_capacity,
 
-    fn clear(self: *RuntimeStorage) void {
+    fn clear(self: *MailboxRuntimeStorage) void {
         self.relay_indexes = [_]u8{0} ** relay_pool.pool_capacity;
-        self.actions = [_]RuntimeAction{.connect} ** relay_pool.pool_capacity;
+        self.actions = [_]MailboxRuntimeAction{.connect} ** relay_pool.pool_capacity;
         self.current_flags = [_]bool{false} ** relay_pool.pool_capacity;
     }
 };
 
-pub const RuntimePlan = struct {
+pub const MailboxRuntimePlan = struct {
     relay_count: u8,
     connect_count: u8,
     authenticate_count: u8,
     receive_count: u8,
     _session: *const MailboxSession,
-    _storage: *const RuntimeStorage,
+    _storage: *const MailboxRuntimeStorage,
 
-    pub fn entry(self: *const RuntimePlan, index: u8) ?RuntimeEntry {
+    pub fn entry(self: *const MailboxRuntimePlan, index: u8) ?MailboxRuntimeEntry {
         if (index >= self.relay_count) return null;
         const relay_index = self._storage.relay_indexes[index];
         const relay = self._session._state.pool.getRelayConst(relay_index) orelse return null;
@@ -444,11 +444,11 @@ pub const RuntimePlan = struct {
         };
     }
 
-    pub fn nextEntry(self: *const RuntimePlan) ?RuntimeEntry {
-        const priorities = [_]RuntimeAction{ .receive, .authenticate, .connect };
+    pub fn nextEntry(self: *const MailboxRuntimePlan) ?MailboxRuntimeEntry {
+        const priorities = [_]MailboxRuntimeAction{ .receive, .authenticate, .connect };
         for (priorities) |priority| {
-            var current_match: ?RuntimeEntry = null;
-            var first_match: ?RuntimeEntry = null;
+            var current_match: ?MailboxRuntimeEntry = null;
+            var first_match: ?MailboxRuntimeEntry = null;
             var index: u8 = 0;
             while (index < self.relay_count) : (index += 1) {
                 const candidate = self.entry(index) orelse continue;
@@ -465,14 +465,14 @@ pub const RuntimePlan = struct {
         return null;
     }
 
-    pub fn nextStep(self: *const RuntimePlan) ?RuntimeStep {
+    pub fn nextStep(self: *const MailboxRuntimePlan) ?MailboxRuntimeStep {
         const selected_entry = self.nextEntry() orelse return null;
         return .{ .entry = selected_entry };
     }
 
-    pub fn nextReceiveEntry(self: *const RuntimePlan) ?RuntimeEntry {
-        var current_match: ?RuntimeEntry = null;
-        var first_match: ?RuntimeEntry = null;
+    pub fn nextReceiveEntry(self: *const MailboxRuntimePlan) ?MailboxRuntimeEntry {
+        var current_match: ?MailboxRuntimeEntry = null;
+        var first_match: ?MailboxRuntimeEntry = null;
         var index: u8 = 0;
         while (index < self.relay_count) : (index += 1) {
             const candidate = self.entry(index) orelse continue;
@@ -487,39 +487,39 @@ pub const RuntimePlan = struct {
         return first_match;
     }
 
-    pub fn nextReceiveStep(self: *const RuntimePlan) ?RuntimeStep {
+    pub fn nextReceiveStep(self: *const MailboxRuntimePlan) ?MailboxRuntimeStep {
         const selected_entry = self.nextReceiveEntry() orelse return null;
         return .{ .entry = selected_entry };
     }
 };
 
-pub const ReceiveTurnStorage = struct {
-    runtime: RuntimeStorage = .{},
+pub const MailboxReceiveTurnStorage = struct {
+    runtime: MailboxRuntimeStorage = .{},
 };
 
-pub const ReceiveTurnRequest = struct {
+pub const MailboxReceiveTurnRequest = struct {
     relay_index: u8,
     relay_url: []const u8,
 };
 
-pub const ReceiveTurnResult = struct {
-    request: ReceiveTurnRequest,
+pub const MailboxReceiveTurnResult = struct {
+    request: MailboxReceiveTurnRequest,
     envelope: MailboxEnvelopeOutcome,
 };
 
-pub const SyncTurnStorage = struct {
-    workflow: WorkflowStorage = .{},
+pub const MailboxSyncTurnStorage = struct {
+    workflow: MailboxWorkflowStorage = .{},
 };
 
-pub const SyncTurnRequest = union(enum) {
-    connect: WorkflowEntry,
-    authenticate: WorkflowEntry,
-    publish: DeliveryStep,
-    receive: ReceiveTurnRequest,
+pub const MailboxSyncTurnRequest = union(enum) {
+    connect: MailboxWorkflowEntry,
+    authenticate: MailboxWorkflowEntry,
+    publish: MailboxDeliveryStep,
+    receive: MailboxReceiveTurnRequest,
 };
 
-pub const SyncTurnResult = union(enum) {
-    received: ReceiveTurnResult,
+pub const MailboxSyncTurnResult = union(enum) {
+    received: MailboxReceiveTurnResult,
 };
 
 pub const MailboxSession = struct {
@@ -571,7 +571,7 @@ pub const MailboxSession = struct {
 
     pub fn exportRelayPool(
         self: *const MailboxSession,
-        storage: *RelayPoolStorage,
+        storage: *MailboxRelayPoolStorage,
     ) shared_runtime.RelayPool {
         storage.* = .{};
         storage.relay_pool_storage.pool = self._state.pool;
@@ -582,7 +582,7 @@ pub const MailboxSession = struct {
         self: *const MailboxSession,
         storage: *shared_runtime.RelayPoolMemberStorage,
     ) shared_runtime.RelayPoolMemberSet {
-        var relay_pool_storage = RelayPoolStorage{};
+        var relay_pool_storage = MailboxRelayPoolStorage{};
         var relay_pool_view = self.exportRelayPool(&relay_pool_storage);
         return relay_pool_view.exportMembers(storage) catch unreachable;
     }
@@ -608,7 +608,7 @@ pub const MailboxSession = struct {
 
     pub fn inspectRelayPoolRuntime(
         self: *const MailboxSession,
-        storage: *RelayPoolRuntimeStorage,
+        storage: *MailboxRelayPoolRuntimeStorage,
     ) shared_runtime.RelayPoolPlan {
         var relay_pool_view = self.exportRelayPool(&storage.relay_pool_storage);
         return relay_pool_view.inspectRuntime(&storage.plan_storage);
@@ -616,8 +616,8 @@ pub const MailboxSession = struct {
 
     pub fn inspectRuntime(
         self: *const MailboxSession,
-        runtime_storage: *RuntimeStorage,
-    ) MailboxError!RuntimePlan {
+        runtime_storage: *MailboxRuntimeStorage,
+    ) MailboxError!MailboxRuntimePlan {
         if (self._state.pool.count == 0) return error.NoRelays;
 
         runtime_storage.clear();
@@ -657,8 +657,8 @@ pub const MailboxSession = struct {
 
     pub fn inspectWorkflow(
         self: *const MailboxSession,
-        request: WorkflowRequest,
-    ) MailboxError!WorkflowPlan {
+        request: MailboxWorkflowRequest,
+    ) MailboxError!MailboxWorkflowPlan {
         request.storage.clear();
         const runtime = try self.inspectRuntime(&request.storage.runtime);
 
@@ -671,7 +671,7 @@ pub const MailboxSession = struct {
             }
         }
 
-        var plan: WorkflowPlan = .{
+        var plan: MailboxWorkflowPlan = .{
             .relay_count = runtime.relay_count,
             ._session = self,
             ._runtime = runtime,
@@ -685,7 +685,7 @@ pub const MailboxSession = struct {
             const delivery_role = if (request.pending_delivery) |delivery|
                 self.deliveryRoleForRelay(delivery, runtime_entry.relay_url)
             else
-                DeliveryRole{};
+                MailboxDeliveryRole{};
             request.storage.recipient_targets[index] = delivery_role.recipient;
             request.storage.sender_copy_targets[index] = delivery_role.sender_copy;
             request.storage.actions[index] = switch (runtime_entry.action) {
@@ -833,15 +833,15 @@ pub const MailboxSession = struct {
 
     pub fn selectWorkflowRelay(
         self: *MailboxSession,
-        step: WorkflowStep,
+        step: MailboxWorkflowStep,
     ) MailboxError![]const u8 {
         return self.selectRelay(step.entry.relay_index);
     }
 
     pub fn beginReceiveTurn(
         self: *MailboxSession,
-        storage: *ReceiveTurnStorage,
-    ) MailboxError!ReceiveTurnRequest {
+        storage: *MailboxReceiveTurnStorage,
+    ) MailboxError!MailboxReceiveTurnRequest {
         const runtime = try self.inspectRuntime(&storage.runtime);
         const entry = runtime.nextReceiveEntry() orelse return error.NoReceiveRelay;
         const relay_url_text = try self.selectRelay(entry.relay_index);
@@ -853,13 +853,13 @@ pub const MailboxSession = struct {
 
     pub fn acceptReceiveEnvelopeJson(
         self: *MailboxSession,
-        request: *const ReceiveTurnRequest,
+        request: *const MailboxReceiveTurnRequest,
         wrap_event_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxError!ReceiveTurnResult {
+    ) MailboxError!MailboxReceiveTurnResult {
         try self.requireCurrentReceiveTurn(request);
         return .{
             .request = request.*,
@@ -875,8 +875,8 @@ pub const MailboxSession = struct {
 
     pub fn beginSyncTurn(
         self: *MailboxSession,
-        request: WorkflowRequest,
-    ) MailboxError!SyncTurnRequest {
+        request: MailboxWorkflowRequest,
+    ) MailboxError!MailboxSyncTurnRequest {
         const workflow = try self.inspectWorkflow(request);
         const step = workflow.nextStep() orelse return error.NoSyncStep;
         const relay_url_text = try self.selectWorkflowRelay(step);
@@ -904,13 +904,13 @@ pub const MailboxSession = struct {
 
     pub fn acceptSyncEnvelopeJson(
         self: *MailboxSession,
-        request: *const SyncTurnRequest,
+        request: *const MailboxSyncTurnRequest,
         wrap_event_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxError!SyncTurnResult {
+    ) MailboxError!MailboxSyncTurnResult {
         return switch (request.*) {
             .receive => |receive| .{
                 .received = try self.acceptReceiveEnvelopeJson(
@@ -1056,10 +1056,10 @@ pub const MailboxSession = struct {
 
     pub fn beginDirectMessage(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        request: *const DirectMessageRequest,
+        buffer: *MailboxOutboundBuffer,
+        request: *const MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxError!OutboundMessage {
+    ) MailboxError!MailboxOutboundMessage {
         try self.requireCurrentRelayReady();
 
         const built = try self.buildDirectMessageWrap(buffer, request, scratch);
@@ -1072,10 +1072,10 @@ pub const MailboxSession = struct {
 
     pub fn beginFileMessage(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        request: *const FileMessageRequest,
+        buffer: *MailboxOutboundBuffer,
+        request: *const MailboxFileMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxError!OutboundMessage {
+    ) MailboxError!MailboxOutboundMessage {
         try self.requireCurrentRelayReady();
 
         const built = try self.buildFileMessageWrap(buffer, request, scratch);
@@ -1088,12 +1088,12 @@ pub const MailboxSession = struct {
 
     pub fn planDirectMessageRelayFanout(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        delivery_storage: *DeliveryStorage,
+        buffer: *MailboxOutboundBuffer,
+        delivery_storage: *MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
-        request: *const DirectMessageRequest,
+        request: *const MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxError!DeliveryPlan {
+    ) MailboxError!MailboxDeliveryPlan {
         return self.planDirectMessageDelivery(
             buffer,
             delivery_storage,
@@ -1106,13 +1106,13 @@ pub const MailboxSession = struct {
 
     pub fn planDirectMessageDelivery(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        delivery_storage: *DeliveryStorage,
+        buffer: *MailboxOutboundBuffer,
+        delivery_storage: *MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
         sender_relay_list_event_json: ?[]const u8,
-        request: *const DirectMessageRequest,
+        request: *const MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxError!DeliveryPlan {
+    ) MailboxError!MailboxDeliveryPlan {
         const built = try self.buildDirectMessageWrap(buffer, request, scratch);
         return self.buildDeliveryPlan(
             delivery_storage,
@@ -1128,12 +1128,12 @@ pub const MailboxSession = struct {
 
     pub fn planFileMessageRelayFanout(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        delivery_storage: *DeliveryStorage,
+        buffer: *MailboxOutboundBuffer,
+        delivery_storage: *MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
-        request: *const FileMessageRequest,
+        request: *const MailboxFileMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxError!DeliveryPlan {
+    ) MailboxError!MailboxDeliveryPlan {
         return self.planFileMessageDelivery(
             buffer,
             delivery_storage,
@@ -1146,13 +1146,13 @@ pub const MailboxSession = struct {
 
     pub fn planFileMessageDelivery(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        delivery_storage: *DeliveryStorage,
+        buffer: *MailboxOutboundBuffer,
+        delivery_storage: *MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
         sender_relay_list_event_json: ?[]const u8,
-        request: *const FileMessageRequest,
+        request: *const MailboxFileMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxError!DeliveryPlan {
+    ) MailboxError!MailboxDeliveryPlan {
         const built = try self.buildFileMessageWrap(buffer, request, scratch);
         return self.buildDeliveryPlan(
             delivery_storage,
@@ -1183,11 +1183,11 @@ pub const MailboxSession = struct {
 
     fn deliveryRoleForRelay(
         self: *const MailboxSession,
-        delivery: *const DeliveryPlan,
+        delivery: *const MailboxDeliveryPlan,
         relay_url_text: []const u8,
-    ) DeliveryRole {
+    ) MailboxDeliveryRole {
         _ = self;
-        var role = DeliveryRole{};
+        var role = MailboxDeliveryRole{};
         var index: u8 = 0;
         while (index < delivery.relay_count) : (index += 1) {
             const delivery_relay_url = delivery.relayUrl(index) orelse continue;
@@ -1201,8 +1201,8 @@ pub const MailboxSession = struct {
 
     fn buildDirectMessageWrap(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        request: *const DirectMessageRequest,
+        buffer: *MailboxOutboundBuffer,
+        request: *const MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
     ) MailboxError!struct { wrap_event_id: [32]u8, wrap_event_json: []const u8 } {
         const sender_pubkey = try self.actorPubkey();
@@ -1286,8 +1286,8 @@ pub const MailboxSession = struct {
 
     fn buildFileMessageWrap(
         self: *MailboxSession,
-        buffer: *OutboundBuffer,
-        request: *const FileMessageRequest,
+        buffer: *MailboxOutboundBuffer,
+        request: *const MailboxFileMessageRequest,
         scratch: std.mem.Allocator,
     ) MailboxError!struct { wrap_event_id: [32]u8, wrap_event_json: []const u8 } {
         const sender_pubkey = try self.actorPubkey();
@@ -1489,7 +1489,7 @@ pub const MailboxSession = struct {
 
     fn buildDeliveryPlan(
         self: *MailboxSession,
-        delivery_storage: *DeliveryStorage,
+        delivery_storage: *MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
         sender_relay_list_event_json: ?[]const u8,
         recipient_pubkey: *const [32]u8,
@@ -1497,7 +1497,7 @@ pub const MailboxSession = struct {
         wrap_event_id: [32]u8,
         wrap_event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxError!DeliveryPlan {
+    ) MailboxError!MailboxDeliveryPlan {
         const relay_list_event = try noztr.nip01_event.event_parse_json(
             recipient_relay_list_event_json,
             scratch,
@@ -1582,7 +1582,7 @@ pub const MailboxSession = struct {
 
     fn requireCurrentReceiveTurn(
         self: *const MailboxSession,
-        request: *const ReceiveTurnRequest,
+        request: *const MailboxReceiveTurnRequest,
     ) MailboxError!void {
         const current = self.currentRelayConst() orelse return error.NoRelays;
         if (self._state.current_relay_index != request.relay_index) return error.StaleReceiveTurn;
@@ -1634,7 +1634,7 @@ fn relayListContainsEquivalent(relays: []const []const u8, candidate: []const u8
 }
 
 fn rememberPublishRelay(
-    storage: *DeliveryStorage,
+    storage: *MailboxDeliveryStorage,
     relay: []const u8,
 ) MailboxError!u8 {
     var used: u8 = 0;
@@ -2013,7 +2013,7 @@ test "mailbox session runtime inspection classifies relay actions and marks curr
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var runtime_storage = RuntimeStorage{};
+    var runtime_storage = MailboxRuntimeStorage{};
     const runtime = try session.inspectRuntime(&runtime_storage);
     try std.testing.expectEqual(@as(u8, 3), runtime.relay_count);
     try std.testing.expectEqual(@as(u8, 1), runtime.connect_count);
@@ -2022,15 +2022,15 @@ test "mailbox session runtime inspection classifies relay actions and marks curr
 
     const first = runtime.entry(0).?;
     try std.testing.expectEqual(@as(u8, 0), first.relay_index);
-    try std.testing.expectEqual(RuntimeAction.authenticate, first.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.authenticate, first.action);
     try std.testing.expect(!first.is_current);
     const second = runtime.entry(1).?;
     try std.testing.expectEqual(@as(u8, 1), second.relay_index);
-    try std.testing.expectEqual(RuntimeAction.receive, second.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.receive, second.action);
     try std.testing.expect(second.is_current);
     const third = runtime.entry(2).?;
     try std.testing.expectEqual(@as(u8, 2), third.relay_index);
-    try std.testing.expectEqual(RuntimeAction.connect, third.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.connect, third.action);
     try std.testing.expect(!third.is_current);
 }
 
@@ -2056,10 +2056,10 @@ test "mailbox session explicit relay selection switches current relay without mu
     try std.testing.expectEqualStrings("wss://relay.three", session.currentRelayUrl().?);
     try std.testing.expect(!session.currentRelayCanReceive());
 
-    var runtime_storage = RuntimeStorage{};
+    var runtime_storage = MailboxRuntimeStorage{};
     const runtime = try session.inspectRuntime(&runtime_storage);
     try std.testing.expect(runtime.entry(0).?.relay_index == 0);
-    try std.testing.expectEqual(RuntimeAction.authenticate, runtime.entry(0).?.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.authenticate, runtime.entry(0).?.action);
     try std.testing.expect(runtime.entry(2).?.is_current);
 
     try std.testing.expectError(error.InvalidRelayIndex, session.selectRelay(3));
@@ -2086,11 +2086,11 @@ test "mailbox runtime next step prefers receive then authenticate then connect" 
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var runtime_storage = RuntimeStorage{};
+    var runtime_storage = MailboxRuntimeStorage{};
     const runtime = try session.inspectRuntime(&runtime_storage);
     const next = runtime.nextEntry().?;
     const next_step = runtime.nextStep().?;
-    try std.testing.expectEqual(RuntimeAction.receive, next.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.receive, next.action);
     try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
     try std.testing.expect(next.is_current);
     try std.testing.expectEqual(next.action, next_step.entry.action);
@@ -2117,11 +2117,11 @@ test "mailbox runtime next step falls back to authenticate before connect" {
     try session.markCurrentRelayConnected();
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var runtime_storage = RuntimeStorage{};
+    var runtime_storage = MailboxRuntimeStorage{};
     const auth_runtime = try session.inspectRuntime(&runtime_storage);
     const auth_next = auth_runtime.nextEntry().?;
     const auth_step = auth_runtime.nextStep().?;
-    try std.testing.expectEqual(RuntimeAction.authenticate, auth_next.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.authenticate, auth_next.action);
     try std.testing.expectEqualStrings("wss://relay.one", auth_next.relay_url);
     try std.testing.expectEqual(auth_next.action, auth_step.entry.action);
     try std.testing.expectEqualStrings(auth_next.relay_url, auth_step.entry.relay_url);
@@ -2145,11 +2145,11 @@ test "mailbox runtime next step falls back to connect when no relay can receive 
     _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
     try std.testing.expectEqualStrings("wss://relay.two", try session.selectRelay(1));
 
-    var runtime_storage = RuntimeStorage{};
+    var runtime_storage = MailboxRuntimeStorage{};
     const runtime = try session.inspectRuntime(&runtime_storage);
     const next = runtime.nextEntry().?;
     const next_step = runtime.nextStep().?;
-    try std.testing.expectEqual(RuntimeAction.connect, next.action);
+    try std.testing.expectEqual(MailboxRuntimeAction.connect, next.action);
     try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
     try std.testing.expect(next.is_current);
     try std.testing.expectEqual(next.action, next_step.entry.action);
@@ -2160,8 +2160,8 @@ test "mailbox runtime next step falls back to connect when no relay can receive 
 test "mailbox runtime next step returns null for an empty plan" {
     const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
     var session = MailboxSession.init(&recipient_private_key);
-    var runtime_storage = RuntimeStorage{};
-    const runtime = RuntimePlan{
+    var runtime_storage = MailboxRuntimeStorage{};
+    const runtime = MailboxRuntimePlan{
         .relay_count = 0,
         .connect_count = 0,
         .authenticate_count = 0,
@@ -2193,7 +2193,7 @@ test "mailbox receive turn selects one ready relay and accepts one wrapped envel
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var receive_storage = ReceiveTurnStorage{};
+    var receive_storage = MailboxReceiveTurnStorage{};
     const request = try session.beginReceiveTurn(&receive_storage);
     try std.testing.expectEqual(@as(u8, 1), request.relay_index);
     try std.testing.expectEqualStrings("wss://relay.two", request.relay_url);
@@ -2233,7 +2233,7 @@ test "mailbox receive turn rejects stale relay selection explicitly" {
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var receive_storage = ReceiveTurnStorage{};
+    var receive_storage = MailboxReceiveTurnStorage{};
     const request = try session.beginReceiveTurn(&receive_storage);
     try std.testing.expectEqualStrings("wss://relay.one", try session.selectRelay(0));
 
@@ -2284,8 +2284,8 @@ test "mailbox sync turn promotes pending delivery into one explicit publish step
         1_710_000_042,
         &recipient_secret,
     );
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
     const delivery = try sender_session.planDirectMessageDelivery(
         &outbound_buffer,
         &delivery_storage,
@@ -2303,7 +2303,7 @@ test "mailbox sync turn promotes pending delivery into one explicit publish step
         arena.allocator(),
     );
 
-    var sync_storage = SyncTurnStorage{};
+    var sync_storage = MailboxSyncTurnStorage{};
     const sync_request = try sender_session.beginSyncTurn(.{
         .pending_delivery = &delivery,
         .storage = &sync_storage.workflow,
@@ -2328,7 +2328,7 @@ test "mailbox sync turn falls back to receive and reuses the receive turn floor"
     _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
     try session.markCurrentRelayConnected();
 
-    var sync_storage = SyncTurnStorage{};
+    var sync_storage = MailboxSyncTurnStorage{};
     const sync_request = try session.beginSyncTurn(.{
         .storage = &sync_storage.workflow,
     });
@@ -2372,17 +2372,17 @@ test "mailbox workflow inspection keeps only the current connected relay on rece
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var workflow_storage = WorkflowStorage{};
+    var workflow_storage = MailboxWorkflowStorage{};
     const workflow = try session.inspectWorkflow(.{
         .storage = &workflow_storage,
     });
     try std.testing.expectEqual(@as(u8, 1), workflow.receive_count);
     try std.testing.expectEqual(@as(u8, 1), workflow.idle_count);
     try std.testing.expectEqual(@as(u8, 1), workflow.connect_count);
-    try std.testing.expectEqual(WorkflowAction.idle, workflow.entry(0).?.action);
-    try std.testing.expectEqual(WorkflowAction.receive, workflow.entry(1).?.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.idle, workflow.entry(0).?.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.receive, workflow.entry(1).?.action);
     try std.testing.expect(workflow.entry(1).?.is_current);
-    try std.testing.expectEqual(WorkflowAction.connect, workflow.entry(2).?.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.connect, workflow.entry(2).?.action);
 }
 
 test "mailbox workflow inspection promotes pending direct-message delivery relays into publish actions" {
@@ -2410,8 +2410,8 @@ test "mailbox workflow inspection promotes pending direct-message delivery relay
     try std.testing.expectEqualStrings("wss://relay.three", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
     var recipient_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonTwo(
         recipient_relay_list_storage[0..],
@@ -2437,7 +2437,7 @@ test "mailbox workflow inspection promotes pending direct-message delivery relay
         arena.allocator(),
     );
 
-    var workflow_storage = WorkflowStorage{};
+    var workflow_storage = MailboxWorkflowStorage{};
     const workflow = try session.inspectWorkflow(.{
         .pending_delivery = &delivery,
         .storage = &workflow_storage,
@@ -2446,16 +2446,16 @@ test "mailbox workflow inspection promotes pending direct-message delivery relay
     try std.testing.expectEqual(@as(u8, 1), workflow.publish_sender_copy_count);
     try std.testing.expectEqual(@as(u8, 0), workflow.receive_count);
     const first = workflow.entry(0).?;
-    try std.testing.expectEqual(WorkflowAction.publish_recipient, first.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.publish_recipient, first.action);
     try std.testing.expect(first.role.recipient);
     try std.testing.expect(first.role.sender_copy);
     try std.testing.expect(first.wrap_event_json != null);
     const second = workflow.entry(1).?;
-    try std.testing.expectEqual(WorkflowAction.publish_recipient, second.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.publish_recipient, second.action);
     try std.testing.expect(second.role.recipient);
     try std.testing.expect(second.role.sender_copy);
     const third = workflow.entry(2).?;
-    try std.testing.expectEqual(WorkflowAction.publish_sender_copy, third.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.publish_sender_copy, third.action);
     try std.testing.expect(!third.role.recipient);
     try std.testing.expect(third.role.sender_copy);
 }
@@ -2484,8 +2484,8 @@ test "mailbox workflow next entry follows delivery order while preserving relay 
     try session.markCurrentRelayConnected();
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
     var recipient_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonTwo(
         recipient_relay_list_storage[0..],
@@ -2511,13 +2511,13 @@ test "mailbox workflow next entry follows delivery order while preserving relay 
         arena.allocator(),
     );
 
-    var workflow_storage = WorkflowStorage{};
+    var workflow_storage = MailboxWorkflowStorage{};
     const workflow = try session.inspectWorkflow(.{
         .pending_delivery = &delivery,
         .storage = &workflow_storage,
     });
     const next = workflow.nextEntry().?;
-    try std.testing.expectEqual(WorkflowAction.authenticate, next.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.authenticate, next.action);
     try std.testing.expectEqualStrings("wss://relay.two/inbox", next.relay_url);
     try std.testing.expect(next.role.recipient);
     try std.testing.expect(next.role.sender_copy);
@@ -2543,12 +2543,12 @@ test "mailbox workflow next entry falls back to current receive when no delivery
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var workflow_storage = WorkflowStorage{};
+    var workflow_storage = MailboxWorkflowStorage{};
     const workflow = try session.inspectWorkflow(.{
         .storage = &workflow_storage,
     });
     const next = workflow.nextEntry().?;
-    try std.testing.expectEqual(WorkflowAction.receive, next.action);
+    try std.testing.expectEqual(MailboxWorkflowAction.receive, next.action);
     try std.testing.expectEqualStrings("wss://relay.two", next.relay_url);
     try std.testing.expect(next.is_current);
 }
@@ -2573,7 +2573,7 @@ test "mailbox workflow next step packages the selected workflow entry" {
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var workflow_storage = WorkflowStorage{};
+    var workflow_storage = MailboxWorkflowStorage{};
     const workflow = try session.inspectWorkflow(.{
         .storage = &workflow_storage,
     });
@@ -2588,9 +2588,9 @@ test "mailbox workflow next step packages the selected workflow entry" {
 test "mailbox workflow next step returns null for an empty plan" {
     const recipient_private_key = [_]u8{0} ** 31 ++ [_]u8{5};
     var session = MailboxSession.init(&recipient_private_key);
-    var workflow_storage = WorkflowStorage{};
-    var runtime_storage = RuntimeStorage{};
-    const workflow = WorkflowPlan{
+    var workflow_storage = MailboxWorkflowStorage{};
+    var runtime_storage = MailboxRuntimeStorage{};
+    const workflow = MailboxWorkflowPlan{
         .relay_count = 0,
         ._session = &session,
         ._runtime = .{
@@ -2628,7 +2628,7 @@ test "mailbox workflow relay selection follows the typed workflow step" {
     try std.testing.expectEqualStrings("wss://relay.two", try session.advanceRelay());
     try session.markCurrentRelayConnected();
 
-    var workflow_storage = WorkflowStorage{};
+    var workflow_storage = MailboxWorkflowStorage{};
     const workflow = try session.inspectWorkflow(.{
         .storage = &workflow_storage,
     });
@@ -2796,7 +2796,7 @@ test "mailbox session builds one outbound direct message that recipient session 
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{
@@ -2864,7 +2864,7 @@ test "mailbox session builds one outbound file message that recipient session ca
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = MailboxOutboundBuffer{};
     const outbound = try sender_session.beginFileMessage(
         &outbound_buffer,
         &testFileMessageRequest(recipient_pubkey),
@@ -2942,8 +2942,8 @@ test "mailbox session outbound direct message uses current relay target and bloc
     );
     _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
 
-    var outbound_buffer = OutboundBuffer{};
-    const request: DirectMessageRequest = .{
+    var outbound_buffer = MailboxOutboundBuffer{};
+    const request: MailboxDirectMessageRequest = .{
         .recipient_pubkey = recipient_pubkey,
         .content = "hello outbound",
         .created_at = 1_710_000_100,
@@ -2980,7 +2980,7 @@ test "mailbox session outbound direct message rejects invalid recipient pubkeys"
     _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
     try session.markCurrentRelayConnected();
 
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = MailboxOutboundBuffer{};
     try std.testing.expectError(
         error.InvalidRecipientPubkey,
         session.beginDirectMessage(
@@ -3007,8 +3007,8 @@ test "mailbox session plans relay fanout against recipient relay list" {
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
 
     var sender_session = MailboxSession.init(&sender_private_key);
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
     var recipient_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonTwo(
         recipient_relay_list_storage[0..],
@@ -3072,8 +3072,8 @@ test "mailbox session plans sender copy delivery without duplicating equivalent 
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
 
     var sender_session = MailboxSession.init(&sender_private_key);
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
 
     var recipient_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonTwo(
@@ -3145,8 +3145,8 @@ test "mailbox session plans file-message delivery without duplicating equivalent
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
 
     var sender_session = MailboxSession.init(&sender_private_key);
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
 
     var recipient_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonTwo(
@@ -3200,14 +3200,14 @@ test "mailbox session plans file-message delivery without duplicating equivalent
 }
 
 test "mailbox delivery next relay prefers recipient targets before sender copy only relays" {
-    var storage = DeliveryStorage{};
+    var storage = MailboxDeliveryStorage{};
     std.mem.copyForwards(u8, storage.relay_urls[0][0.."wss://sender-copy".len], "wss://sender-copy");
     storage.relay_url_lens[0] = "wss://sender-copy".len;
     storage.sender_copy_targets[0] = true;
     std.mem.copyForwards(u8, storage.relay_urls[1][0.."wss://recipient".len], "wss://recipient");
     storage.relay_url_lens[1] = "wss://recipient".len;
     storage.recipient_targets[1] = true;
-    const plan = DeliveryPlan{
+    const plan = MailboxDeliveryPlan{
         .relay_count = 2,
         .wrap_event_id = [_]u8{0} ** 32,
         .wrap_event_json = "",
@@ -3228,11 +3228,11 @@ test "mailbox delivery next relay prefers recipient targets before sender copy o
 }
 
 test "mailbox delivery next relay falls back to sender copy when no recipient relay exists" {
-    var storage = DeliveryStorage{};
+    var storage = MailboxDeliveryStorage{};
     std.mem.copyForwards(u8, storage.relay_urls[0][0.."wss://sender-copy".len], "wss://sender-copy");
     storage.relay_url_lens[0] = "wss://sender-copy".len;
     storage.sender_copy_targets[0] = true;
-    const plan = DeliveryPlan{
+    const plan = MailboxDeliveryPlan{
         .relay_count = 1,
         .wrap_event_id = [_]u8{0} ** 32,
         .wrap_event_json = "",
@@ -3252,8 +3252,8 @@ test "mailbox delivery next relay falls back to sender copy when no recipient re
 }
 
 test "mailbox delivery next relay returns null for an empty delivery plan" {
-    var storage = DeliveryStorage{};
-    const plan = DeliveryPlan{
+    var storage = MailboxDeliveryStorage{};
+    const plan = MailboxDeliveryPlan{
         .relay_count = 0,
         .wrap_event_id = [_]u8{0} ** 32,
         .wrap_event_json = "",
@@ -3286,7 +3286,7 @@ test "mailbox session outbound file message rejects malformed metadata with type
     _ = try session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
     try session.markCurrentRelayConnected();
 
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = MailboxOutboundBuffer{};
     var request = testFileMessageRequest(recipient_pubkey);
     request.file_url = "not-a-url";
     try std.testing.expectError(
@@ -3305,8 +3305,8 @@ test "mailbox session rejects relay fanout plans when relay list author does not
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
 
     var sender_session = MailboxSession.init(&sender_private_key);
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
     var wrong_relay_list_storage: [2048]u8 = undefined;
     const wrong_relay_list_json = try buildRelayListEventJsonOne(
         wrong_relay_list_storage[0..],
@@ -3344,8 +3344,8 @@ test "mailbox session rejects sender-copy delivery when sender relay list author
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_private_key);
 
     var sender_session = MailboxSession.init(&sender_private_key);
-    var outbound_buffer = OutboundBuffer{};
-    var delivery_storage = DeliveryStorage{};
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
 
     var recipient_relay_list_storage: [2048]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonOne(
@@ -3420,8 +3420,8 @@ test "mailbox session evicts oldest seen wrap when duplicate table fills" {
 }
 
 test "mailbox session exposes caller-owned relay-pool adapter storage" {
-    var relay_pool_storage = RelayPoolStorage{};
-    var runtime_storage = RelayPoolRuntimeStorage{};
+    var relay_pool_storage = MailboxRelayPoolStorage{};
+    var runtime_storage = MailboxRelayPoolRuntimeStorage{};
     _ = &relay_pool_storage;
     _ = &runtime_storage;
 }
@@ -3434,7 +3434,7 @@ test "mailbox session exports the shared relay-pool runtime floor" {
     try session.markCurrentRelayConnected();
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var relay_pool_storage = RelayPoolStorage{};
+    var relay_pool_storage = MailboxRelayPoolStorage{};
     var relay_pool_view = session.exportRelayPool(&relay_pool_storage);
     try std.testing.expectEqual(@as(u8, 2), relay_pool_view.relayCount());
 
@@ -3452,7 +3452,7 @@ test "mailbox session inspects shared relay-pool runtime through caller-owned st
     try session.markCurrentRelayConnected();
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var relay_pool_runtime = RelayPoolRuntimeStorage{};
+    var relay_pool_runtime = MailboxRelayPoolRuntimeStorage{};
     const plan = session.inspectRelayPoolRuntime(&relay_pool_runtime);
     try std.testing.expectEqual(@as(u8, 2), plan.relay_count);
     try std.testing.expectEqual(@as(u8, 1), plan.authenticate_count);
@@ -3466,7 +3466,7 @@ test "mailbox session selects a shared relay-pool step back onto the mailbox ses
     _ = try session._state.pool.addRelay("wss://relay.one");
     _ = try session._state.pool.addRelay("wss://relay.two");
 
-    var relay_pool_runtime = RelayPoolRuntimeStorage{};
+    var relay_pool_runtime = MailboxRelayPoolRuntimeStorage{};
     const plan = session.inspectRelayPoolRuntime(&relay_pool_runtime);
     const second = plan.entry(1).?;
     const selected_url = try session.selectRelayPoolStep(&.{ .entry = second });
@@ -3506,7 +3506,7 @@ const test_wrap_signer_pubkey = [_]u8{
     0x86, 0x01, 0xF1, 0x13, 0xBC, 0xE0, 0x36, 0xF9,
 };
 
-fn testFileMessageRequest(recipient_pubkey: [32]u8) FileMessageRequest {
+fn testFileMessageRequest(recipient_pubkey: [32]u8) MailboxFileMessageRequest {
     return .{
         .recipient_pubkey = recipient_pubkey,
         .recipient_relay_hint = "wss://relay.two/inbox",
