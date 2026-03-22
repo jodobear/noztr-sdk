@@ -4,10 +4,9 @@ const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
 // Prepare one command-ready NIP-39 profile-verify job over caller-owned buffers, run it over the
-// explicit public HTTP seam, then inspect one bounded stored watched-target long-lived planning
-// route through the client surface: refresh cadence, refresh batch, turn policy, and one bundled
-// orchestration view above those same store-backed helpers.
-test "recipe: nip39 verify client verifies and inspects stored watched target long-lived planning and orchestration" {
+// explicit public HTTP seam, then inspect both bounded remembered-identity strategy helpers and
+// one stored watched-target long-lived planning route through the client surface.
+test "recipe: nip39 verify client verifies and inspects remembered identity strategy plus stored watched target planning" {
     const claim = noztr.nip39_external_identities.IdentityClaim{
         .provider = .github,
         .identity = "alice",
@@ -301,4 +300,83 @@ test "recipe: nip39 verify client verifies and inspects stored watched target lo
     try std.testing.expectEqualStrings("carol", orchestration.nextWorkStep().?.entry.target.identity);
     try std.testing.expectEqualStrings("alice", orchestration.useCachedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", orchestration.deferredEntries()[0].target.identity);
+
+    var remembered_records: [2]noztr_sdk.client.Nip39StoredProfilePlanning.RememberedIdentityRecord = undefined;
+    var remembered_targets: [2]noztr_sdk.client.Nip39StoredProfilePlanning.Target = undefined;
+    var remembered_matches: [1]noztr_sdk.client.Nip39StoredProfilePlanning.ProfileMatch = undefined;
+    var remembered_latest_entries: [2]noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessEntry = undefined;
+    var remembered_cadence_entries: [2]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceEntry = undefined;
+    var remembered_cadence_groups: [5]noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceGroup = undefined;
+
+    const remembered_freshness = try client.inspectRememberedIdentityLatestFreshness(
+        profile_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.RememberedIdentityLatestFreshnessStorage.init(
+                remembered_records[0..],
+                remembered_targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetLatestFreshnessStorage.init(
+                    remembered_matches[0..],
+                    remembered_latest_entries[0..],
+                ),
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 2), remembered_freshness.remembered_identity_count);
+    try std.testing.expectEqual(@as(u32, 1), remembered_freshness.freshness.fresh_count);
+    try std.testing.expectEqual(@as(u32, 1), remembered_freshness.freshness.stale_count);
+    try std.testing.expectEqualStrings("bob", remembered_freshness.nextEntry().?.target.identity);
+
+    const remembered_cadence = try client.inspectRememberedIdentityRefreshCadence(
+        profile_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .fallback_policy = .allow_stale_latest,
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.RememberedIdentityRefreshCadenceStorage.init(
+                remembered_records[0..],
+                remembered_targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshCadenceStorage.init(
+                    remembered_matches[0..],
+                    remembered_latest_entries[0..],
+                    remembered_cadence_entries[0..],
+                    remembered_cadence_groups[0..],
+                ),
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 2), remembered_cadence.remembered_identity_count);
+    try std.testing.expectEqual(@as(u32, 0), remembered_cadence.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), remembered_cadence.cadence.refresh_now_count);
+    try std.testing.expectEqual(@as(u32, 1), remembered_cadence.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 0), remembered_cadence.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), remembered_cadence.cadence.stable_count);
+    try std.testing.expectEqualStrings("bob", remembered_cadence.nextDueEntry().?.target.identity);
+
+    const remembered_batch = try client.inspectRememberedIdentityRefreshBatch(
+        profile_store.asStore(),
+        .{
+            .now_unix_seconds = 50,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 1,
+            .fallback_policy = .allow_stale_latest,
+            .storage = noztr_sdk.client.Nip39StoredProfilePlanning.RememberedIdentityRefreshBatchStorage.init(
+                remembered_records[0..],
+                remembered_targets[0..],
+                noztr_sdk.client.Nip39StoredProfilePlanning.TargetRefreshBatchStorage.init(
+                    remembered_matches[0..],
+                    remembered_latest_entries[0..],
+                    remembered_cadence_entries[0..],
+                    remembered_cadence_groups[0..],
+                ),
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 2), remembered_batch.remembered_identity_count);
+    try std.testing.expectEqual(@as(u32, 1), remembered_batch.batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 0), remembered_batch.batch.deferred_count);
+    try std.testing.expectEqualStrings("bob", remembered_batch.selectedEntries()[0].target.identity);
 }
