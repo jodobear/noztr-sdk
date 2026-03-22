@@ -1,6 +1,7 @@
 const std = @import("std");
 
 pub const ClockError = error{
+    InvalidClient,
     ClockUnavailable,
     SleepUnavailable,
 };
@@ -12,24 +13,24 @@ pub const RetryBackoffPolicy = struct {
 };
 
 pub const Clock = struct {
-    ctx: *anyopaque,
+    ctx: ?*anyopaque,
     unix_seconds_fn: *const fn (ctx: *anyopaque) ClockError!u64,
     monotonic_ns_fn: *const fn (ctx: *anyopaque) ClockError!u64,
     sleep_until_ns_fn: *const fn (ctx: *anyopaque, deadline_ns: u64) ClockError!void,
 
     pub fn unixSeconds(self: Clock) ClockError!u64 {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        return self.unix_seconds_fn(self.ctx);
+        if (self.ctx == null) return error.InvalidClient;
+        return self.unix_seconds_fn(self.ctx.?);
     }
 
     pub fn monotonicNs(self: Clock) ClockError!u64 {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        return self.monotonic_ns_fn(self.ctx);
+        if (self.ctx == null) return error.InvalidClient;
+        return self.monotonic_ns_fn(self.ctx.?);
     }
 
     pub fn sleepUntilNs(self: Clock, deadline_ns: u64) ClockError!void {
-        std.debug.assert(@intFromPtr(self.ctx) != 0);
-        return self.sleep_until_ns_fn(self.ctx, deadline_ns);
+        if (self.ctx == null) return error.InvalidClient;
+        return self.sleep_until_ns_fn(self.ctx.?, deadline_ns);
     }
 };
 
@@ -84,4 +85,29 @@ test "clock forwards time access and sleep while backoff saturates at max" {
     try std.testing.expectEqual(@as(u32, 400), nextBackoffDelayMs(policy, 2));
     try std.testing.expectEqual(@as(u32, 700), nextBackoffDelayMs(policy, 3));
     try std.testing.expectEqual(@as(u32, 700), nextBackoffDelayMs(policy, 7));
+}
+
+test "clock rejects invalid caller inputs with typed errors" {
+    const FakeClock = struct {
+        fn unixSeconds(_: *anyopaque) ClockError!u64 {
+            return 0;
+        }
+
+        fn monotonicNs(_: *anyopaque) ClockError!u64 {
+            return 0;
+        }
+
+        fn sleepUntilNs(_: *anyopaque, _: u64) ClockError!void {}
+    };
+
+    const clock = Clock{
+        .ctx = null,
+        .unix_seconds_fn = FakeClock.unixSeconds,
+        .monotonic_ns_fn = FakeClock.monotonicNs,
+        .sleep_until_ns_fn = FakeClock.sleepUntilNs,
+    };
+
+    try std.testing.expectError(error.InvalidClient, clock.unixSeconds());
+    try std.testing.expectError(error.InvalidClient, clock.monotonicNs());
+    try std.testing.expectError(error.InvalidClient, clock.sleepUntilNs(123));
 }
