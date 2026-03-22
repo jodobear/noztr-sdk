@@ -29,6 +29,32 @@ It gives you:
 
 It does not try to hide ownership, background runtime, or network side effects behind global magic.
 
+## Public Namespace Shape
+
+Use these as the stable top-level public namespaces:
+- `noztr_sdk.workflows`
+- `noztr_sdk.client`
+- `noztr_sdk.store`
+- `noztr_sdk.runtime`
+- `noztr_sdk.transport`
+
+Inside `workflows` and `client`, prefer the grouped routes when choosing a public symbol:
+- `workflows.groups.*`
+- `workflows.identity.*`
+- `workflows.dm.*`
+- `workflows.proof.*`
+- `workflows.signer.*`
+- `client.local.*`
+- `client.relay.*`
+- `client.signer.*`
+- `client.dm.*`
+- `client.identity.*`
+- `client.proof.*`
+- `client.groups.*`
+
+The older flat exports still exist for compatibility, but the grouped routes are the canonical
+public discovery shape going forward.
+
 ## If You Are Building Another Zig SDK Layer
 
 `noztr-sdk` is intended to be reusable from another Zig SDK layer, not only from end-user apps.

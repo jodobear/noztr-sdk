@@ -72,6 +72,32 @@ That means:
 - `noztr-sdk` does not currently promise a generic public websocket framework or hidden background
   runtime.
 
+## Public Namespace Shape
+
+The stable top-level public namespaces are still:
+- `noztr_sdk.workflows`
+- `noztr_sdk.client`
+- `noztr_sdk.store`
+- `noztr_sdk.runtime`
+- `noztr_sdk.transport`
+
+Within `workflows` and `client`, the canonical grouped routes are now:
+- `workflows.groups.*`
+- `workflows.identity.*`
+- `workflows.dm.*`
+- `workflows.proof.*`
+- `workflows.signer.*`
+- `client.local.*`
+- `client.relay.*`
+- `client.signer.*`
+- `client.dm.*`
+- `client.identity.*`
+- `client.proof.*`
+- `client.groups.*`
+
+Older flat exports still exist for compatibility, but new public teaching and new downstream code
+should prefer the grouped routes.
+
 ## Build
 
 ```bash

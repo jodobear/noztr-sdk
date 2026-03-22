@@ -412,3 +412,27 @@ pub const RemoteSignerSessionCadenceWaitReason = remote_signer.RemoteSignerSessi
 pub const RemoteSignerSessionCadenceWait = remote_signer.RemoteSignerSessionCadenceWait;
 pub const RemoteSignerSessionCadenceStep = remote_signer.RemoteSignerSessionCadenceStep;
 pub const RemoteSignerSessionCadencePlan = remote_signer.RemoteSignerSessionCadencePlan;
+
+pub const groups = struct {
+    pub const local = group_client;
+    pub const session = group_session;
+    pub const fleet = group_fleet;
+};
+
+pub const identity = struct {
+    pub const verify = identity_verifier;
+    pub const nip05 = nip05_resolver;
+};
+
+pub const dm = struct {
+    pub const legacy = legacy_dm;
+    pub const mailbox = @import("mailbox.zig");
+};
+
+pub const proof = struct {
+    pub const nip03 = opentimestamps_verifier;
+};
+
+pub const signer = struct {
+    pub const remote = remote_signer;
+};

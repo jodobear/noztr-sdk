@@ -17,6 +17,28 @@ This is the public task-to-symbol map for the main `noztr-sdk` workflow surfaces
 Use it when you know the job you want to do, but do not yet know which workflow type or example to
 open.
 
+## Namespace Note
+
+The stable top-level public namespaces remain `noztr_sdk.workflows`, `noztr_sdk.client`,
+`noztr_sdk.store`, `noztr_sdk.runtime`, and `noztr_sdk.transport`.
+
+Within `workflows` and `client`, the canonical grouped discovery route is now:
+- `workflows.groups.*`
+- `workflows.identity.*`
+- `workflows.dm.*`
+- `workflows.proof.*`
+- `workflows.signer.*`
+- `client.local.*`
+- `client.relay.*`
+- `client.signer.*`
+- `client.dm.*`
+- `client.identity.*`
+- `client.proof.*`
+- `client.groups.*`
+
+Flat exports still exist for compatibility, but this map now treats the grouped routes as the
+preferred public discovery shape.
+
 ## Downstream SDK Foundation
 
 If you are building another Zig SDK layer above `noztr-sdk`, the public foundation to target today
@@ -55,7 +77,7 @@ depending on `noztr-sdk` to act like a generic socket framework.
 
 | Job | Primary public symbols | Start here | Example |
 | --- | --- | --- | --- |
-| Build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | `noztr_sdk.transport.HttpClient`, `noztr_sdk.runtime`, `RelayPool`, `RelayPoolPlan`, `RelayPoolSubscriptionPlan`, `RelayPoolReplayPlan`, `RelayPoolPublishPlan`, `noztr_sdk.client`, `RelaySessionClient`, `RelayAuthClient`, `RelayQueryClient`, `RelayExchangeClient`, `RelayReplayClient`, `RelayResponseClient`, `PublishClient`, `LocalStateClient`, `RelayWorkspaceClient`, `noztr_sdk.workflows.RemoteSignerSession`, `noztr_sdk.client.SignerClient`, `noztr_sdk.store.RelayCheckpointArchive` | `noztr_sdk.client.RelaySessionClient` | [relay_session_client_recipe.zig](../../examples/relay_session_client_recipe.zig) |
+| Build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | `noztr_sdk.transport.HttpClient`, `noztr_sdk.runtime`, `RelayPool`, `RelayPoolPlan`, `RelayPoolSubscriptionPlan`, `RelayPoolReplayPlan`, `RelayPoolPublishPlan`, `noztr_sdk.client.relay.session`, `noztr_sdk.client.relay.auth`, `noztr_sdk.client.relay.query`, `noztr_sdk.client.relay.exchange`, `noztr_sdk.client.relay.replay`, `noztr_sdk.client.relay.response`, `noztr_sdk.client.relay.publish`, `noztr_sdk.client.local.state`, `noztr_sdk.client.relay.workspace`, `noztr_sdk.workflows.signer.remote`, `noztr_sdk.client.signer.session`, `noztr_sdk.store.RelayCheckpointArchive` | `noztr_sdk.client.relay.session.RelaySessionClient` | [relay_session_client_recipe.zig](../../examples/relay_session_client_recipe.zig) |
 | Command-ready local `NIP-19` entity encode-decode over the local operator floor | `noztr_sdk.client`, `LocalEntityJobClient`, `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult` | `noztr_sdk.client.LocalEntityJobClient` | [local_entity_job_client_recipe.zig](../../examples/local_entity_job_client_recipe.zig) |
 | Command-ready local event inspect plus draft-sign-verify over the local operator floor | `noztr_sdk.client`, `LocalEventJobClient`, `LocalEventJobClientStorage`, `LocalEventJobRequest`, `LocalEventJobResult` | `noztr_sdk.client.LocalEventJobClient` | [local_event_job_client_recipe.zig](../../examples/local_event_job_client_recipe.zig) |
 | Command-ready local key generation and public-key derivation over the local operator floor | `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`, `LocalKeyJobRequest`, `LocalKeyJobResult` | `noztr_sdk.client.LocalKeyJobClient` | [local_key_job_client_recipe.zig](../../examples/local_key_job_client_recipe.zig) |

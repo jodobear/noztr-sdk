@@ -24,12 +24,19 @@ Use these docs when you need public routing or contract context before opening a
 
 - public client-composition imports come from `@import("noztr_sdk").client`
 - public SDK imports come from `@import("noztr_sdk").workflows`
+- grouped routes inside those namespaces are now canonical:
+  - `client.local.*`, `client.relay.*`, `client.signer.*`, `client.dm.*`, `client.identity.*`,
+    `client.proof.*`, `client.groups.*`
+  - `workflows.groups.*`, `workflows.identity.*`, `workflows.dm.*`, `workflows.proof.*`,
+    `workflows.signer.*`
 - shared store/query imports come from `@import("noztr_sdk").store`
 - shared relay-pool/runtime imports come from `@import("noztr_sdk").runtime`
 - HTTP-backed workflow recipes also use `@import("noztr_sdk").transport`
 - protocol fixture construction stays on `noztr` kernel helpers
 - examples are compile-verified recipes, not hidden runtimes or framework demos
 - deferred seams are named explicitly instead of being smuggled into example code
+- older flat exports still exist for compatibility, but new examples should prefer grouped routes
+  when the example is touching a mature public surface
 
 ## If You Are Building Another Zig SDK
 

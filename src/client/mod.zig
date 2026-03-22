@@ -627,3 +627,73 @@ pub const SubscriptionTurnIntake = subscription_turn_client.SubscriptionTurnInta
 pub const SubscriptionTurnCompletion = subscription_turn_client.SubscriptionTurnCompletion;
 pub const SubscriptionTurnResult = subscription_turn_client.SubscriptionTurnResult;
 pub const SubscriptionTurnClient = subscription_turn_client.SubscriptionTurnClient;
+
+pub const local = struct {
+    pub const archive = cli_archive_client;
+    pub const state = local_state_client;
+    pub const operator = local_operator_client;
+    pub const keys = local_key_job_client;
+    pub const entities = local_entity_job_client;
+    pub const events = local_event_job_client;
+    pub const nip44 = local_nip44_job_client;
+};
+
+pub const relay = struct {
+    pub const session = relay_session_client;
+    pub const auth = relay_auth_client;
+    pub const query = relay_query_client;
+    pub const exchange = relay_exchange_client;
+    pub const response = relay_response_client;
+    pub const replay = relay_replay_client;
+    pub const replay_turn = relay_replay_turn_client;
+    pub const replay_job = replay_job_client;
+    pub const subscription_turn = subscription_turn_client;
+    pub const subscription_job = subscription_job_client;
+    pub const count_turn = count_turn_client;
+    pub const count_job = count_job_client;
+    pub const publish = publish_client;
+    pub const publish_turn = publish_turn_client;
+    pub const publish_job = publish_job_client;
+    pub const workspace = relay_workspace_client;
+    pub const directory = relay_directory_job_client;
+};
+
+pub const signer = struct {
+    pub const session = signer_client;
+    pub const connect_job = signer_connect_job_client;
+    pub const pubkey_job = signer_pubkey_job_client;
+    pub const nip44_encrypt_job = signer_nip44_encrypt_job_client;
+};
+
+pub const dm = struct {
+    pub const legacy = struct {
+        pub const publish_job = legacy_dm_publish_job_client;
+        pub const replay_turn = legacy_dm_replay_turn_client;
+        pub const replay_job = legacy_dm_replay_job_client;
+        pub const subscription_turn = legacy_dm_subscription_turn_client;
+        pub const subscription_job = legacy_dm_subscription_job_client;
+        pub const sync_runtime = legacy_dm_sync_runtime_client;
+    };
+
+    pub const mailbox = struct {
+        pub const job = mailbox_job_client;
+        pub const subscription_turn = mailbox_subscription_turn_client;
+        pub const subscription_job = mailbox_subscription_job_client;
+        pub const replay_turn = mailbox_replay_turn_client;
+        pub const replay_job = mailbox_replay_job_client;
+        pub const sync_runtime = mailbox_sync_runtime_client;
+    };
+};
+
+pub const identity = struct {
+    pub const nip05 = nip05_verify_client;
+    pub const nip39 = nip39_verify_client;
+};
+
+pub const proof = struct {
+    pub const nip03 = nip03_verify_client;
+};
+
+pub const groups = struct {
+    pub const fleet = group_fleet_client;
+};
