@@ -680,9 +680,9 @@ Use these docs when you need public routing or contract context before opening a
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
     entries for freshness, inspect one typed remembered runtime step explicitly, drive grouped
-    remembered-target freshness, preferred-selection, refresh-cadence, and refresh policy, plan
-    refresh for stale remembered verifications, and recover the latest remembered verification for
-    the same target event
+    remembered-target freshness, preferred-selection, refresh-cadence, bounded refresh-batch
+    selection, and refresh policy, plan refresh for stale remembered verifications, and recover
+    the latest remembered verification for the same target event
   - public SDK surface: `OpenTimestampsVerifier`, `OpenTimestampsRemoteProofRequest`,
     `OpenTimestampsProofStore`, `MemoryOpenTimestampsProofStore`,
     `OpenTimestampsVerificationStore`, `MemoryOpenTimestampsVerificationStore`,
@@ -693,6 +693,9 @@ Use these docs when you need public routing or contract context before opening a
     `OpenTimestampsStoredVerificationTargetRefreshCadenceStorage`,
     `OpenTimestampsStoredVerificationTargetRefreshCadenceRequest`,
     `OpenTimestampsStoredVerificationTargetRefreshCadencePlan`,
+    `OpenTimestampsStoredVerificationTargetRefreshBatchStorage`,
+    `OpenTimestampsStoredVerificationTargetRefreshBatchRequest`,
+    `OpenTimestampsStoredVerificationTargetRefreshBatchPlan`,
     `OpenTimestampsStoredVerificationTargetRefreshStorage`,
     `OpenTimestampsStoredVerificationRuntimeStorage`,
     `OpenTimestampsStoredVerificationRuntimeAction`,
@@ -706,10 +709,10 @@ Use these docs when you need public routing or contract context before opening a
     latest-verification freshness lookup plus one explicit preferred-verification selection over
     caller-owned freshness storage plus one explicit freshness-classified remembered
     discovery lookup plus one typed remembered runtime-step helper plus one explicit grouped
-    refresh-cadence plan plus one explicit stale-proof refresh plan plus one typed refresh step
-    without hidden Bitcoin refresh policy, and now gets a typed store inconsistency error instead
-    of an invariant-only crash if a custom remembered-verification store reports matches it cannot
-    hydrate
+    refresh-cadence plan plus one explicit bounded refresh-batch plan plus one explicit stale-proof
+    refresh plan plus one typed refresh step without hidden Bitcoin refresh policy, and now gets a
+    typed store inconsistency error instead of an invariant-only crash if a custom remembered-
+    verification store reports matches it cannot hydrate
 - `nip03_verify_client_recipe.zig`
   - goal: prepare and run one command-ready remembered detached-proof `NIP-03` verify job over
     the explicit HTTP, proof-store, and remembered-verification seams, then inspect bounded

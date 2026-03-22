@@ -13,8 +13,8 @@ const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 // Verify one detached OpenTimestamps proof document, remember the verification summary explicitly,
 // classify remembered discovery entries for freshness, inspect one typed remembered runtime step,
-// drive grouped remembered-target refresh cadence and refresh policy passes, then recover the
-// latest remembered verification for the same target event.
+// drive grouped remembered-target refresh cadence, bounded refresh-batch selection, and refresh
+// policy passes, then recover the latest remembered verification for the same target event.
 test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered typed runtime step, and drives grouped remembered proof policy" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try common.derivePublicKey(&signer_secret);
@@ -276,6 +276,40 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         u8,
         &target.id,
         &grouped_cadence.refreshSoonEntries()[0].target.target_event_id,
+    );
+
+    var grouped_batch_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    var grouped_batch_latest: [2]noztr_sdk.workflows.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var grouped_batch_entries: [2]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
+    var grouped_batch_groups: [5]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    const grouped_batch =
+        try noztr_sdk.workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+            verification_store.asStore(),
+            .{
+                .targets = grouped_targets[0..],
+                .now_unix_seconds = 62,
+                .max_age_seconds = 120,
+                .refresh_soon_age_seconds = 50,
+                .max_selected = 1,
+                .storage = .init(
+                    grouped_batch_matches[0..],
+                    grouped_batch_latest[0..],
+                    grouped_batch_entries[0..],
+                    grouped_batch_groups[0..],
+                ),
+            },
+        );
+    try std.testing.expectEqual(@as(u32, 1), grouped_batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), grouped_batch.deferred_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        &grouped_targets[1].target_event_id,
+        &grouped_batch.nextBatchEntry().?.target.target_event_id,
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        &target.id,
+        &grouped_batch.deferredEntries()[0].target.target_event_id,
     );
 
     var grouped_refresh_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
