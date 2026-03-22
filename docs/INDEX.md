@@ -34,6 +34,8 @@ current public workflow contract.
   - task-to-symbol route for the current public workflow surface
 - [remote signer naming migration](./reference/remote-signer-naming-migration.md)
   - short pre-`1.0` migration note for direct `remote_signer` submodule imports
+- [workflow submodule naming migration](./reference/workflow-submodule-naming-migration.md)
+  - short pre-`1.0` migration note for direct `group_session` and `mailbox` submodule imports
 - [examples/README.md](../examples/README.md)
   - workflow recipes and teaching routes
 
