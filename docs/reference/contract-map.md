@@ -17,10 +17,31 @@ This is the public task-to-symbol map for the main `noztr-sdk` workflow surfaces
 Use it when you know the job you want to do, but do not yet know which workflow type or example to
 open.
 
+## Downstream SDK Floor
+
+If you are building another Zig SDK layer above `noztr-sdk`, the public floor to target today is:
+
+- `noztr_sdk.transport.HttpClient` for explicit HTTP-backed jobs
+- `noztr_sdk.runtime.RelayPool` plus relay specs/plans for shared relay-state inspection and
+  next-step selection
+- the relay auth/query/exchange/replay client family for explicit relay-backed composition
+- caller-owned stores and checkpoints for durable state
+
+This floor is relay-centric, explicit, and caller-driven.
+
+It does not currently include:
+- a generic public websocket transport API
+- hidden connection ownership
+- hidden background runtime or product policy
+
+Downstream SDKs should build their own higher-level contracts above this surface instead of
+depending on `noztr-sdk` to act like a generic socket framework.
+
 ## Routing Table
 
 | Job | Primary public symbols | Start here | Example |
 | --- | --- | --- | --- |
+| Build another Zig SDK above a generic Nostr relay/workflow floor | `noztr_sdk.transport.HttpClient`, `noztr_sdk.runtime`, `RelayPool`, `RelayPoolPlan`, `RelayPoolSubscriptionPlan`, `RelayPoolReplayPlan`, `noztr_sdk.client`, `RelayAuthClient`, `RelayQueryClient`, `RelayExchangeClient`, `RelayReplayClient`, `RelayResponseClient`, `noztr_sdk.store.RelayCheckpointArchive` | `noztr_sdk.runtime.RelayPool` | [relay_pool_recipe.zig](../../examples/relay_pool_recipe.zig) |
 | Command-ready local `NIP-19` entity encode-decode over the local operator floor | `noztr_sdk.client`, `LocalEntityJobClient`, `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult` | `noztr_sdk.client.LocalEntityJobClient` | [local_entity_job_client_recipe.zig](../../examples/local_entity_job_client_recipe.zig) |
 | Command-ready local event inspect plus draft-sign-verify over the local operator floor | `noztr_sdk.client`, `LocalEventJobClient`, `LocalEventJobClientStorage`, `LocalEventJobRequest`, `LocalEventJobResult` | `noztr_sdk.client.LocalEventJobClient` | [local_event_job_client_recipe.zig](../../examples/local_event_job_client_recipe.zig) |
 | Command-ready local key generation and public-key derivation over the local operator floor | `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`, `LocalKeyJobRequest`, `LocalKeyJobResult` | `noztr_sdk.client.LocalKeyJobClient` | [local_key_job_client_recipe.zig](../../examples/local_key_job_client_recipe.zig) |

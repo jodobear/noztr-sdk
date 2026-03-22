@@ -52,6 +52,18 @@ If you are working in a local maintainer clone, use `.private-docs/` when presen
 - Model SDK ergonomics after real downstream usage, while preserving the `noztr` kernel boundary.
 - Use Zig package/import naming via `noztr_sdk`.
 
+`noztr-sdk` is also the generic downstream-targetable Zig Nostr SDK floor for higher-level Zig
+libraries that want to sit above Nostr without rebuilding the same bounded relay/workflow
+substrate locally.
+
+That means:
+- `noztr-sdk` owns generic Nostr-facing transport seams, relay/runtime plans, typed next-step
+  helpers, and reusable bounded orchestration substrate.
+- downstream libraries own their own protocol-specific contracts and product/runtime policy above
+  that floor.
+- `noztr-sdk` does not currently promise a generic public websocket framework or hidden background
+  runtime.
+
 ## Build
 
 ```bash

@@ -31,6 +31,24 @@ Use these docs when you need public routing or contract context before opening a
 - examples are compile-verified recipes, not hidden runtimes or framework demos
 - deferred seams are named explicitly instead of being smuggled into example code
 
+## If You Are Building Another Zig SDK
+
+Use the relay/runtime examples as the reusable downstream floor:
+
+- [relay_pool_recipe.zig](./relay_pool_recipe.zig)
+- [relay_query_client_recipe.zig](./relay_query_client_recipe.zig)
+- [relay_exchange_client_recipe.zig](./relay_exchange_client_recipe.zig)
+- [relay_replay_client_recipe.zig](./relay_replay_client_recipe.zig)
+- [relay_auth_client_recipe.zig](./relay_auth_client_recipe.zig)
+- [relay_response_client_recipe.zig](./relay_response_client_recipe.zig)
+
+These examples show the current public floor another Zig SDK can drive explicitly.
+
+They do not imply:
+- a hidden websocket/runtime framework
+- hidden connection ownership
+- product-specific policy above the relay/Nostr layer
+
 ## Start Here
 
 - `consumer_smoke.zig`
