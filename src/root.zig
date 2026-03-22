@@ -785,6 +785,14 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshRequest) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshPlan) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshStep) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessError) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessAction) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessStep) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetPolicyEntry) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetPolicyGroup) == type);
     try std.testing.expect(@TypeOf(workflows.OpenTimestampsStoredVerificationTargetPolicyStorage) == type);

@@ -1,5 +1,7 @@
 const std = @import("std");
 const noztr = @import("noztr");
+const store_archive = @import("../store/archive.zig");
+const client_store = @import("../store/client_traits.zig");
 const transport = @import("../transport/mod.zig");
 
 pub const OpenTimestampsVerifierError = error{
@@ -481,6 +483,130 @@ pub const OpenTimestampsStoredVerificationTargetRefreshPlan = struct {
 
 pub const OpenTimestampsStoredVerificationTargetRefreshStep = struct {
     entry: OpenTimestampsStoredVerificationTargetRefreshEntry,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessError =
+    OpenTimestampsStoredVerificationDiscoveryError || store_archive.EventArchiveError;
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessAction = enum {
+    ready_refresh,
+    missing_target_event,
+    missing_attestation_event,
+    missing_events,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = struct {
+    target: OpenTimestampsStoredVerificationTarget,
+    latest: OpenTimestampsLatestStoredVerificationFreshness,
+    action: OpenTimestampsStoredVerificationTargetRefreshReadinessAction,
+    target_record_index: ?u32 = null,
+    attestation_record_index: ?u32 = null,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = struct {
+    action: OpenTimestampsStoredVerificationTargetRefreshReadinessAction,
+    entries: []const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessStorage = struct {
+    matches: []OpenTimestampsStoredVerificationMatch,
+    freshness_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
+    refresh_entries: []OpenTimestampsStoredVerificationRefreshEntry,
+    target_refresh_entries: []OpenTimestampsStoredVerificationTargetRefreshEntry,
+    target_records: []client_store.ClientEventRecord,
+    attestation_records: []client_store.ClientEventRecord,
+    entries: []OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
+    groups: []OpenTimestampsStoredVerificationTargetRefreshReadinessGroup,
+
+    pub fn init(
+        matches: []OpenTimestampsStoredVerificationMatch,
+        freshness_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
+        refresh_entries: []OpenTimestampsStoredVerificationRefreshEntry,
+        target_refresh_entries: []OpenTimestampsStoredVerificationTargetRefreshEntry,
+        target_records: []client_store.ClientEventRecord,
+        attestation_records: []client_store.ClientEventRecord,
+        entries: []OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
+        groups: []OpenTimestampsStoredVerificationTargetRefreshReadinessGroup,
+    ) OpenTimestampsStoredVerificationTargetRefreshReadinessStorage {
+        return .{
+            .matches = matches,
+            .freshness_entries = freshness_entries,
+            .refresh_entries = refresh_entries,
+            .target_refresh_entries = target_refresh_entries,
+            .target_records = target_records,
+            .attestation_records = attestation_records,
+            .entries = entries,
+            .groups = groups,
+        };
+    }
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessRequest = struct {
+    targets: []const OpenTimestampsStoredVerificationTarget,
+    now_unix_seconds: u64,
+    max_age_seconds: u64,
+    storage: OpenTimestampsStoredVerificationTargetRefreshReadinessStorage,
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan = struct {
+    entries: []const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
+    groups: []const OpenTimestampsStoredVerificationTargetRefreshReadinessGroup,
+    target_records: []const client_store.ClientEventRecord,
+    attestation_records: []const client_store.ClientEventRecord,
+    ready_count: u32 = 0,
+    missing_target_event_count: u32 = 0,
+    missing_attestation_event_count: u32 = 0,
+    missing_events_count: u32 = 0,
+
+    pub fn nextReadyEntry(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan,
+    ) ?*const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry {
+        if (self.ready_count == 0) return null;
+        return &self.entries[0];
+    }
+
+    pub fn nextReadyStep(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan,
+    ) ?OpenTimestampsStoredVerificationTargetRefreshReadinessStep {
+        const entry = self.nextReadyEntry() orelse return null;
+        return .{
+            .action = .ready_refresh,
+            .entry = entry.*,
+        };
+    }
+
+    pub fn readyEntries(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan,
+    ) []const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry {
+        return self.entries[0..@as(usize, @intCast(self.ready_count))];
+    }
+
+    pub fn blockedEntries(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan,
+    ) []const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry {
+        return self.entries[@as(usize, @intCast(self.ready_count))..];
+    }
+
+    pub fn targetRecord(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan,
+        entry: *const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
+    ) ?*const client_store.ClientEventRecord {
+        const index = entry.target_record_index orelse return null;
+        return &self.target_records[index];
+    }
+
+    pub fn attestationRecord(
+        self: *const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan,
+        entry: *const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
+    ) ?*const client_store.ClientEventRecord {
+        const index = entry.attestation_record_index orelse return null;
+        return &self.attestation_records[index];
+    }
+};
+
+pub const OpenTimestampsStoredVerificationTargetRefreshReadinessStep = struct {
+    action: OpenTimestampsStoredVerificationTargetRefreshReadinessAction,
+    entry: OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
 };
 
 pub const OpenTimestampsStoredVerificationTargetPolicyEntry = struct {
@@ -2227,6 +2353,146 @@ pub const OpenTimestampsVerifier = struct {
             .missing_count = missing_count,
         };
     }
+
+    pub fn inspectStoredVerificationRefreshReadinessForTargets(
+        verification_store: OpenTimestampsVerificationStore,
+        event_archive: store_archive.EventArchive,
+        request: OpenTimestampsStoredVerificationTargetRefreshReadinessRequest,
+    ) OpenTimestampsStoredVerificationTargetRefreshReadinessError!OpenTimestampsStoredVerificationTargetRefreshReadinessPlan {
+        if (request.storage.groups.len < 4) return error.BufferTooSmall;
+
+        const refresh = try planStoredVerificationRefreshForTargets(
+            verification_store,
+            .{
+                .targets = request.targets,
+                .now_unix_seconds = request.now_unix_seconds,
+                .max_age_seconds = request.max_age_seconds,
+                .storage = .init(
+                    request.storage.matches,
+                    request.storage.freshness_entries,
+                    request.storage.refresh_entries,
+                    request.storage.target_refresh_entries,
+                ),
+            },
+        );
+
+        var ready_count: usize = 0;
+        var missing_target_event_count: usize = 0;
+        var missing_attestation_event_count: usize = 0;
+        var missing_events_count: usize = 0;
+
+        for (refresh.entries) |entry| {
+            const target_event_id_hex = std.fmt.bytesToHex(entry.target.target_event_id, .lower);
+            const attestation_event_id_hex =
+                std.fmt.bytesToHex(entry.latest.latest.match.attestation_event_id, .lower);
+            const target_record = try event_archive.getEventById(target_event_id_hex[0..]);
+            const attestation_record = try event_archive.getEventById(attestation_event_id_hex[0..]);
+            const action = classifyStoredVerificationTargetRefreshReadiness(
+                target_record != null,
+                attestation_record != null,
+            );
+
+            switch (action) {
+                .ready_refresh => ready_count += 1,
+                .missing_target_event => missing_target_event_count += 1,
+                .missing_attestation_event => missing_attestation_event_count += 1,
+                .missing_events => missing_events_count += 1,
+            }
+        }
+
+        const ready_start: usize = 0;
+        const missing_target_event_start = ready_start + ready_count;
+        const missing_attestation_event_start =
+            missing_target_event_start + missing_target_event_count;
+        const missing_events_start =
+            missing_attestation_event_start + missing_attestation_event_count;
+
+        var next_ready = ready_start;
+        var next_missing_target_event = missing_target_event_start;
+        var next_missing_attestation_event = missing_attestation_event_start;
+        var next_missing_events = missing_events_start;
+        var target_record_count: usize = 0;
+        var attestation_record_count: usize = 0;
+
+        for (refresh.entries) |entry| {
+            const target_event_id_hex = std.fmt.bytesToHex(entry.target.target_event_id, .lower);
+            const attestation_event_id_hex =
+                std.fmt.bytesToHex(entry.latest.latest.match.attestation_event_id, .lower);
+            const target_record = try event_archive.getEventById(target_event_id_hex[0..]);
+            const attestation_record = try event_archive.getEventById(attestation_event_id_hex[0..]);
+            const action = classifyStoredVerificationTargetRefreshReadiness(
+                target_record != null,
+                attestation_record != null,
+            );
+
+            const insert_index = switch (action) {
+                .ready_refresh => blk: {
+                    defer next_ready += 1;
+                    break :blk next_ready;
+                },
+                .missing_target_event => blk: {
+                    defer next_missing_target_event += 1;
+                    break :blk next_missing_target_event;
+                },
+                .missing_attestation_event => blk: {
+                    defer next_missing_attestation_event += 1;
+                    break :blk next_missing_attestation_event;
+                },
+                .missing_events => blk: {
+                    defer next_missing_events += 1;
+                    break :blk next_missing_events;
+                },
+            };
+
+            var readiness_entry = OpenTimestampsStoredVerificationTargetRefreshReadinessEntry{
+                .target = entry.target,
+                .latest = entry.latest,
+                .action = action,
+            };
+            if (target_record) |record| {
+                if (target_record_count == request.storage.target_records.len) return error.BufferTooSmall;
+                request.storage.target_records[target_record_count] = record;
+                readiness_entry.target_record_index = @intCast(target_record_count);
+                target_record_count += 1;
+            }
+            if (attestation_record) |record| {
+                if (attestation_record_count == request.storage.attestation_records.len) return error.BufferTooSmall;
+                request.storage.attestation_records[attestation_record_count] = record;
+                readiness_entry.attestation_record_index = @intCast(attestation_record_count);
+                attestation_record_count += 1;
+            }
+            request.storage.entries[insert_index] = readiness_entry;
+        }
+
+        const total_entries = refresh.entries.len;
+        request.storage.groups[0] = .{
+            .action = .ready_refresh,
+            .entries = request.storage.entries[ready_start..missing_target_event_start],
+        };
+        request.storage.groups[1] = .{
+            .action = .missing_target_event,
+            .entries = request.storage.entries[missing_target_event_start..missing_attestation_event_start],
+        };
+        request.storage.groups[2] = .{
+            .action = .missing_attestation_event,
+            .entries = request.storage.entries[missing_attestation_event_start..missing_events_start],
+        };
+        request.storage.groups[3] = .{
+            .action = .missing_events,
+            .entries = request.storage.entries[missing_events_start..total_entries],
+        };
+
+        return .{
+            .entries = request.storage.entries[0..total_entries],
+            .groups = request.storage.groups[0..4],
+            .target_records = request.storage.target_records[0..target_record_count],
+            .attestation_records = request.storage.attestation_records[0..attestation_record_count],
+            .ready_count = @intCast(ready_count),
+            .missing_target_event_count = @intCast(missing_target_event_count),
+            .missing_attestation_event_count = @intCast(missing_attestation_event_count),
+            .missing_events_count = @intCast(missing_events_count),
+        };
+    }
 };
 
 fn containsStoredVerificationTarget(
@@ -2237,6 +2503,16 @@ fn containsStoredVerificationTarget(
         if (std.mem.eql(u8, &entry.target.target_event_id, &target.target_event_id)) return true;
     }
     return false;
+}
+
+fn classifyStoredVerificationTargetRefreshReadiness(
+    has_target_event: bool,
+    has_attestation_event: bool,
+) OpenTimestampsStoredVerificationTargetRefreshReadinessAction {
+    if (has_target_event and has_attestation_event) return .ready_refresh;
+    if (!has_target_event and has_attestation_event) return .missing_target_event;
+    if (has_target_event and !has_attestation_event) return .missing_attestation_event;
+    return .missing_events;
 }
 
 fn verifyFetchedProof(
@@ -5278,6 +5554,330 @@ test "opentimestamps verifier target-set refresh plan returns empty for fresh or
     try std.testing.expect(plan.nextStep() == null);
 }
 
+test "opentimestamps verifier refresh readiness groups stale targets by archive availability" {
+    var ready_target = try testTargetEvent(1, "ready");
+    ready_target.id = [_]u8{0xd1} ** 32;
+    var missing_target_target = try testTargetEvent(1, "missing target");
+    missing_target_target.id = [_]u8{0xd2} ** 32;
+    var missing_attestation_target = try testTargetEvent(1, "missing attestation");
+    missing_attestation_target.id = [_]u8{0xd3} ** 32;
+    var missing_events_target = try testTargetEvent(1, "missing both");
+    missing_events_target.id = [_]u8{0xd4} ** 32;
+
+    var verification_store_records: [4]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{.{}} ** 4;
+    var verification_store =
+        MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+
+    const ready_attestation = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &ready_target,
+        0xe1,
+        30,
+        0x71,
+        "https://proof.example/ready.ots",
+    );
+    const missing_target_attestation = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &missing_target_target,
+        0xe2,
+        25,
+        0x72,
+        "https://proof.example/missing-target.ots",
+    );
+    _ = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &missing_attestation_target,
+        0xe3,
+        20,
+        0x73,
+        "https://proof.example/missing-attestation.ots",
+    );
+    _ = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &missing_events_target,
+        0xe4,
+        15,
+        0x74,
+        "https://proof.example/missing-both.ots",
+    );
+
+    var archive_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const archive = store_archive.EventArchive.init(archive_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var ready_target_json_storage: [512]u8 = undefined;
+    const ready_target_json = try noztr.nip01_event.event_serialize_json_object(
+        ready_target_json_storage[0..],
+        &ready_target,
+    );
+    try archive.ingestEventJson(ready_target_json, arena.allocator());
+
+    var ready_attestation_json_storage: [1024]u8 = undefined;
+    var ready_attestation_archive_event = ready_attestation.event;
+    ready_attestation_archive_event.tags = &.{};
+    const ready_attestation_json = try noztr.nip01_event.event_serialize_json_object(
+        ready_attestation_json_storage[0..],
+        &ready_attestation_archive_event,
+    );
+    try archive.ingestEventJson(ready_attestation_json, arena.allocator());
+
+    var missing_target_attestation_json_storage: [1024]u8 = undefined;
+    var missing_target_attestation_archive_event = missing_target_attestation.event;
+    missing_target_attestation_archive_event.tags = &.{};
+    const missing_target_attestation_json = try noztr.nip01_event.event_serialize_json_object(
+        missing_target_attestation_json_storage[0..],
+        &missing_target_attestation_archive_event,
+    );
+    try archive.ingestEventJson(missing_target_attestation_json, arena.allocator());
+
+    var missing_attestation_target_json_storage: [512]u8 = undefined;
+    const missing_attestation_target_json = try noztr.nip01_event.event_serialize_json_object(
+        missing_attestation_target_json_storage[0..],
+        &missing_attestation_target,
+    );
+    try archive.ingestEventJson(missing_attestation_target_json, arena.allocator());
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = ready_target.id },
+        .{ .target_event_id = missing_target_target.id },
+        .{ .target_event_id = missing_attestation_target.id },
+        .{ .target_event_id = missing_events_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var freshness_entries: [4]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    const refresh_detail_entries = [_]OpenTimestampsStoredVerificationRefreshEntry{};
+    var target_refresh_entries: [4]OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    var target_records: [2]client_store.ClientEventRecord = undefined;
+    var attestation_records: [2]client_store.ClientEventRecord = undefined;
+    var readiness_entries: [4]OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = undefined;
+    var readiness_groups: [4]OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        verification_store.asStore(),
+        archive,
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 10,
+            .storage = .init(
+                matches_storage[0..],
+                freshness_entries[0..],
+                refresh_detail_entries[0..],
+                target_refresh_entries[0..],
+                target_records[0..],
+                attestation_records[0..],
+                readiness_entries[0..],
+                readiness_groups[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 1), plan.ready_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_target_event_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_attestation_event_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_events_count);
+    try std.testing.expectEqual(@as(usize, 4), plan.entries.len);
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshReadinessAction.ready_refresh,
+        plan.groups[0].action,
+    );
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshReadinessAction.missing_target_event,
+        plan.groups[1].action,
+    );
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshReadinessAction.missing_attestation_event,
+        plan.groups[2].action,
+    );
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshReadinessAction.missing_events,
+        plan.groups[3].action,
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        &ready_target.id,
+        &plan.nextReadyEntry().?.target.target_event_id,
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        &ready_target.id,
+        &plan.nextReadyStep().?.entry.target.target_event_id,
+    );
+    try std.testing.expectEqual(@as(usize, 1), plan.readyEntries().len);
+    try std.testing.expectEqual(@as(usize, 3), plan.blockedEntries().len);
+    try std.testing.expect(plan.targetRecord(plan.nextReadyEntry().?) != null);
+    try std.testing.expect(plan.attestationRecord(plan.nextReadyEntry().?) != null);
+    try std.testing.expect(plan.targetRecord(&plan.groups[1].entries[0]) == null);
+    try std.testing.expect(plan.attestationRecord(&plan.groups[1].entries[0]) != null);
+    try std.testing.expect(plan.targetRecord(&plan.groups[2].entries[0]) != null);
+    try std.testing.expect(plan.attestationRecord(&plan.groups[2].entries[0]) == null);
+    try std.testing.expect(plan.targetRecord(&plan.groups[3].entries[0]) == null);
+    try std.testing.expect(plan.attestationRecord(&plan.groups[3].entries[0]) == null);
+}
+
+test "opentimestamps verifier refresh readiness stays bounded by caller-owned archive record storage" {
+    var target = try testTargetEvent(1, "ready");
+    target.id = [_]u8{0xd5} ** 32;
+
+    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store =
+        MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    const attestation = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &target,
+        0xe5,
+        30,
+        0x75,
+        "https://proof.example/ready.ots",
+    );
+
+    var archive_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const archive = store_archive.EventArchive.init(archive_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var target_json_storage: [512]u8 = undefined;
+    const target_json = try noztr.nip01_event.event_serialize_json_object(
+        target_json_storage[0..],
+        &target,
+    );
+    try archive.ingestEventJson(target_json, arena.allocator());
+
+    var attestation_json_storage: [1024]u8 = undefined;
+    var attestation_archive_event = attestation.event;
+    attestation_archive_event.tags = &.{};
+    const attestation_json = try noztr.nip01_event.event_serialize_json_object(
+        attestation_json_storage[0..],
+        &attestation_archive_event,
+    );
+    try archive.ingestEventJson(attestation_json, arena.allocator());
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var freshness_entries: [1]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    const refresh_detail_entries = [_]OpenTimestampsStoredVerificationRefreshEntry{};
+    var target_refresh_entries: [1]OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    const target_records = [_]client_store.ClientEventRecord{};
+    var attestation_records: [1]client_store.ClientEventRecord = undefined;
+    var readiness_entries: [1]OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = undefined;
+    var readiness_groups: [4]OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = undefined;
+
+    try std.testing.expectError(
+        error.BufferTooSmall,
+        OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+            verification_store.asStore(),
+            archive,
+            .{
+                .targets = targets[0..],
+                .now_unix_seconds = 50,
+                .max_age_seconds = 10,
+                .storage = .init(
+                    matches_storage[0..],
+                    freshness_entries[0..],
+                    refresh_detail_entries[0..],
+                    target_refresh_entries[0..],
+                    target_records[0..],
+                    attestation_records[0..],
+                    readiness_entries[0..],
+                    readiness_groups[0..],
+                ),
+            },
+        ),
+    );
+}
+
+test "opentimestamps verifier refresh readiness exposes blocked stale targets explicitly" {
+    var ready_target = try testTargetEvent(1, "ready");
+    ready_target.id = [_]u8{0xd6} ** 32;
+    var blocked_target = try testTargetEvent(1, "blocked");
+    blocked_target.id = [_]u8{0xd7} ** 32;
+
+    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
+        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store =
+        MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    const ready_attestation = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &ready_target,
+        0xe6,
+        30,
+        0x76,
+        "https://proof.example/ready.ots",
+    );
+    _ = try rememberTestRemoteVerificationFixture(
+        &verification_store,
+        &blocked_target,
+        0xe7,
+        20,
+        0x77,
+        "https://proof.example/blocked.ots",
+    );
+
+    var archive_store = @import("../store/client_memory.zig").MemoryClientStore{};
+    const archive = store_archive.EventArchive.init(archive_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var ready_target_json_storage: [512]u8 = undefined;
+    const ready_target_json = try noztr.nip01_event.event_serialize_json_object(
+        ready_target_json_storage[0..],
+        &ready_target,
+    );
+    try archive.ingestEventJson(ready_target_json, arena.allocator());
+
+    var ready_attestation_json_storage: [1024]u8 = undefined;
+    var ready_attestation_archive_event = ready_attestation.event;
+    ready_attestation_archive_event.tags = &.{};
+    const ready_attestation_json = try noztr.nip01_event.event_serialize_json_object(
+        ready_attestation_json_storage[0..],
+        &ready_attestation_archive_event,
+    );
+    try archive.ingestEventJson(ready_attestation_json, arena.allocator());
+
+    const targets = [_]OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = ready_target.id },
+        .{ .target_event_id = blocked_target.id },
+    };
+    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var freshness_entries: [2]OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    const refresh_detail_entries = [_]OpenTimestampsStoredVerificationRefreshEntry{};
+    var target_refresh_entries: [2]OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    var target_records: [1]client_store.ClientEventRecord = undefined;
+    var attestation_records: [1]client_store.ClientEventRecord = undefined;
+    var readiness_entries: [2]OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = undefined;
+    var readiness_groups: [4]OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = undefined;
+    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        verification_store.asStore(),
+        archive,
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 50,
+            .max_age_seconds = 10,
+            .storage = .init(
+                matches_storage[0..],
+                freshness_entries[0..],
+                refresh_detail_entries[0..],
+                target_refresh_entries[0..],
+                target_records[0..],
+                attestation_records[0..],
+                readiness_entries[0..],
+                readiness_groups[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(usize, 1), plan.readyEntries().len);
+    try std.testing.expectEqual(@as(usize, 1), plan.blockedEntries().len);
+    try std.testing.expectEqual(
+        OpenTimestampsStoredVerificationTargetRefreshReadinessAction.missing_events,
+        plan.blockedEntries()[0].action,
+    );
+}
+
 const ots_header_magic = [_]u8{
     0x00, 0x4f, 0x70, 0x65, 0x6e, 0x54, 0x69, 0x6d, 0x65,
     0x73, 0x74, 0x61, 0x6d, 0x70, 0x73, 0x00, 0x00, 0x50,
@@ -5302,14 +5902,14 @@ fn testTargetEvent(kind: u32, content: []const u8) !noztr.nip01_event.Event {
     return event;
 }
 
-fn rememberTestRemoteVerification(
+fn rememberTestRemoteVerificationFixture(
     verification_store: *MemoryOpenTimestampsVerificationStore,
     target: *const noztr.nip01_event.Event,
     attestation_id_fill: u8,
     attestation_created_at: u64,
     proof_marker: u8,
     proof_url: []const u8,
-) !void {
+) !TestAttestationFixture {
     const proof = testLocalProof(target.id, bitcoin_attestation_tag, &.{proof_marker});
     var proof_base64_storage: [128]u8 = undefined;
     var attestation_fixture = try testAttestationEvent(
@@ -5339,6 +5939,25 @@ fn rememberTestRemoteVerification(
         target,
         &attestation_fixture.event,
         &verification,
+    );
+    return attestation_fixture;
+}
+
+fn rememberTestRemoteVerification(
+    verification_store: *MemoryOpenTimestampsVerificationStore,
+    target: *const noztr.nip01_event.Event,
+    attestation_id_fill: u8,
+    attestation_created_at: u64,
+    proof_marker: u8,
+    proof_url: []const u8,
+) !void {
+    _ = try rememberTestRemoteVerificationFixture(
+        verification_store,
+        target,
+        attestation_id_fill,
+        attestation_created_at,
+        proof_marker,
+        proof_url,
     );
 }
 
