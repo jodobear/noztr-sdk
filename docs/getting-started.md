@@ -54,11 +54,12 @@ Today, the downstream-targetable foundation is relay-centric:
 - shared relay runtime planning starts from `noztr_sdk.runtime.RelayPool`
 - explicit relay-session composition starts from `noztr_sdk.client.RelaySessionClient`
 - explicit relay-backed composition extends through the relay auth/query/exchange/replay/publish,
-  workspace, and remote-signer client/workflow families
+  local-state, workspace, and remote-signer client/workflow families
 - inbound relay message ownership and transcript validation start from
   `noztr_sdk.client.RelayResponseClient`
-- remembered relay workspace, checkpoint restore, and replay planning start from
-  `noztr_sdk.client.RelayWorkspaceClient`
+- neutral local archive/checkpoint/remembered-relay/runtime composition starts from
+  `noztr_sdk.client.LocalStateClient`
+- narrower remembered relay workspace composition starts from `noztr_sdk.client.RelayWorkspaceClient`
 
 If you are building another Zig SDK above `noztr-sdk`, start with the public contract map and the
 relay/runtime examples rather than expecting a generic socket ownership layer.
@@ -110,7 +111,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
 | build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |
 | build group flows | [public contract map](./reference/contract-map.md) | [group_session_recipe.zig](../examples/group_session_recipe.zig), [group_fleet_recipe.zig](../examples/group_fleet_recipe.zig) |
-| build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | [public contract map](./reference/contract-map.md) | [relay_session_client_recipe.zig](../examples/relay_session_client_recipe.zig), [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig), [relay_workspace_client_recipe.zig](../examples/relay_workspace_client_recipe.zig), [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
+| build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | [public contract map](./reference/contract-map.md) | [relay_session_client_recipe.zig](../examples/relay_session_client_recipe.zig), [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig), [local_state_client_recipe.zig](../examples/local_state_client_recipe.zig), [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
 
 ## Best First Examples
 

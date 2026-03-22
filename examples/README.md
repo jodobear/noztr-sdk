@@ -42,6 +42,7 @@ Use the relay/runtime examples as the reusable downstream foundation:
 - [relay_auth_client_recipe.zig](./relay_auth_client_recipe.zig)
 - [relay_response_client_recipe.zig](./relay_response_client_recipe.zig)
 - [relay_session_client_recipe.zig](./relay_session_client_recipe.zig)
+- [local_state_client_recipe.zig](./local_state_client_recipe.zig)
 - [relay_workspace_client_recipe.zig](./relay_workspace_client_recipe.zig)
 - [remote_signer_recipe.zig](./remote_signer_recipe.zig)
 
@@ -442,6 +443,17 @@ They do not imply:
     client storage and replay specs, relay runtime and replay planning remain explicit and
     side-effect free, and the recipe proves the future CLI repo can sit above one SDK client
     surface instead of rebuilding store/runtime glue ad hoc
+- `local_state_client_recipe.zig`
+  - goal: compose one neutral local-state client over the shared archive, relay-registry,
+    checkpoint, and relay-runtime seams: archive local events, remember one explicit relay set,
+    restore it into runtime, and derive one bounded replay plan
+  - public SDK surface: `noztr_sdk.client`, `LocalStateClient`, `LocalStateClientStorage`,
+    `LocalStateRestoreResult`, `noztr_sdk.store`, `noztr_sdk.runtime`
+  - kernel fixture help: none beyond the shared store/runtime surfaces
+  - control points: caller still owns stores, replay specs, and remembered relay state, runtime
+    restore stays explicit, and the recipe proves there is now one neutral local-state route above
+    the shared archive/checkpoint/runtime seams instead of forcing apps to start from a CLI-shaped
+    client
 - `relay_checkpoint_recipe.zig`
   - goal: persist one named cursor per relay and scope on top of the shared checkpoint seam
   - public SDK surface: `noztr_sdk.store`, `RelayCheckpointArchive`, `MemoryClientStore`
@@ -468,8 +480,8 @@ They do not imply:
     `noztr_sdk.runtime.RelayPoolReplayPlan`
   - kernel fixture help: none beyond the shared relay runtime and relay URL seams
   - control points: remembered relay state stays explicit, runtime restore stays a separate step
-    instead of hidden bootstrap, and replay/checkpoint inspection reuse the shared SDK seams
-    instead of forcing `znk` to rebuild another local relay workspace model
+    instead of hidden bootstrap, and this narrower workspace route now sits on top of the neutral
+    local-state client instead of forcing apps to start from a CLI-shaped archive composition
 - `relay_local_group_archive_recipe.zig`
   - goal: archive one relay-local `NIP-29` snapshot through the shared event store seam and
     restore it into a fresh group client in explicit oldest-to-newest replay order

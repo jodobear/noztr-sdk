@@ -36,6 +36,9 @@ current public workflow contract.
   - short pre-`1.0` migration note for direct `remote_signer` submodule imports
 - [workflow submodule naming migration](./reference/workflow-submodule-naming-migration.md)
   - short pre-`1.0` migration note for direct `group_session` and `mailbox` submodule imports
+- [local state client migration](./reference/local-state-client-migration.md)
+  - short pre-`1.0` migration note for `RelayWorkspaceClientConfig` and the new canonical
+    local-state route
 - [examples/README.md](../examples/README.md)
   - workflow recipes and teaching routes
 
@@ -44,6 +47,8 @@ current public workflow contract.
 The current public workflow floor includes:
 
 - one minimal CLI-facing client composition surface above the shared store and runtime floors
+- one neutral local-state client composition route above shared archive, registry, checkpoint, and
+  relay-runtime seams
 - shared bounded store/query/checkpoint reference surfaces
 - one minimal CLI-facing archive helper over that shared store seam
 - one relay-local checkpoint helper over that shared checkpoint seam
