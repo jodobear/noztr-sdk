@@ -395,14 +395,16 @@ They do not imply:
     session foundation without stitching query/auth/response/checkpoint helpers together ad hoc
 - `signer_client_recipe.zig`
   - goal: use one first signer-tooling client surface to drive explicit `NIP-46` connect,
-    `get_public_key`, one `nip44_encrypt` request, and one shared relay-runtime inspect/select step
+    `get_public_key`, one `nip44_encrypt` request, one shared relay-runtime inspect/select step,
+    and one durable resume plus reconnect-cadence check
   - public SDK surface: `noztr_sdk.client`, `SignerClient`, `SignerClientStorage`,
-    `noztr_sdk.runtime.RelayPoolStep`
+    `SignerClientResumeStorage`, `SignerClientSessionCadenceRequest`, `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip46_remote_signing`
   - control points: the client composes the existing remote-signer workflow instead of replacing
     it, caller still owns request storage and transport send/receive, sequential request ids are
-    generated from bounded caller-owned storage instead of hidden global state, and shared relay
-    runtime inspection remains explicit rather than turning into signer-daemon policy
+    generated from bounded caller-owned storage instead of hidden global state, durable resume does
+    not pretend a live signer session survived restart, and shared relay/session policy remains
+    explicit rather than turning into signer-daemon ownership
 - `store_query_recipe.zig`
   - goal: persist bounded event records, query them with one explicit cursor/page surface, and
     remember one named checkpoint

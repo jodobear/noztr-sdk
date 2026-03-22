@@ -39,6 +39,17 @@ pub const SignerClientStorage = struct {
     relay_runtime: workflows.RemoteSignerRelayPoolRuntimeStorage = .{},
 };
 
+pub const SignerClientResumeStorage = workflows.RemoteSignerResumeStorage;
+pub const SignerClientResumeState = workflows.RemoteSignerResumeState;
+pub const SignerClientSessionPolicyAction = workflows.RemoteSignerSessionPolicyAction;
+pub const SignerClientSessionPolicyStep = workflows.RemoteSignerSessionPolicyStep;
+pub const SignerClientSessionPolicyPlan = workflows.RemoteSignerSessionPolicyPlan;
+pub const SignerClientSessionCadenceRequest = workflows.RemoteSignerSessionCadenceRequest;
+pub const SignerClientSessionCadenceWaitReason = workflows.RemoteSignerSessionCadenceWaitReason;
+pub const SignerClientSessionCadenceWait = workflows.RemoteSignerSessionCadenceWait;
+pub const SignerClientSessionCadenceStep = workflows.RemoteSignerSessionCadenceStep;
+pub const SignerClientSessionCadencePlan = workflows.RemoteSignerSessionCadencePlan;
+
 pub const SignerClient = struct {
     config: SignerClientConfig,
     session: workflows.RemoteSignerSession,
@@ -127,6 +138,31 @@ pub const SignerClient = struct {
         storage: *SignerClientStorage,
     ) runtime.RelayPoolPlan {
         return self.session.inspectRelayPoolRuntime(&storage.relay_runtime);
+    }
+
+    pub fn exportResumeState(
+        self: *const SignerClient,
+        storage: *SignerClientResumeStorage,
+    ) SignerClientError!SignerClientResumeState {
+        return self.session.exportResumeState(storage);
+    }
+
+    pub fn restoreResumeState(
+        self: *SignerClient,
+        state: *const SignerClientResumeState,
+    ) SignerClientError!void {
+        return self.session.restoreResumeState(state);
+    }
+
+    pub fn inspectSessionPolicy(self: *const SignerClient) SignerClientSessionPolicyPlan {
+        return self.session.inspectSessionPolicy();
+    }
+
+    pub fn inspectSessionCadence(
+        self: *const SignerClient,
+        request: SignerClientSessionCadenceRequest,
+    ) SignerClientSessionCadencePlan {
+        return self.session.inspectSessionCadence(request);
     }
 
     pub fn selectRelayRuntimeStep(
@@ -365,6 +401,81 @@ test "signer client keeps relay runtime inspection explicit" {
     try std.testing.expectEqualStrings("wss://relay.two", selected);
     try std.testing.expectEqualStrings("wss://relay.two", client.currentRelayUrl());
     try std.testing.expect(!client.isConnected());
+}
+
+test "signer client restores durable resume state" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const bunker_uri =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
+    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    client.markCurrentRelayConnected();
+    var storage = SignerClientStorage{};
+
+    var connect_scratch_bytes: [1024]u8 = undefined;
+    var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_bytes);
+    _ = try client.beginConnect(&storage, connect_scratch.allocator(), &.{});
+
+    var connect_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var connect_response_scratch_bytes: [2048]u8 = undefined;
+    var connect_response_scratch = std.heap.FixedBufferAllocator.init(&connect_response_scratch_bytes);
+    _ = try client.acceptResponseJson(
+        try serializeResponseJson(connect_response_json[0..], .{
+            .id = "signer-1",
+            .result = .{ .value = .{ .text = "ack" } },
+        }),
+        connect_response_scratch.allocator(),
+    );
+
+    var switch_scratch_bytes: [1024]u8 = undefined;
+    var switch_scratch = std.heap.FixedBufferAllocator.init(&switch_scratch_bytes);
+    _ = try client.beginSwitchRelays(&storage, switch_scratch.allocator());
+
+    const next_relays = [_][]const u8{ "wss://relay.three", "wss://relay.four" };
+    var switch_response_json: [@import("noztr").limits.nip46_message_json_bytes_max]u8 = undefined;
+    var switch_response_scratch_bytes: [2048]u8 = undefined;
+    var switch_response_scratch = std.heap.FixedBufferAllocator.init(&switch_response_scratch_bytes);
+    _ = try client.acceptResponseJson(
+        try serializeResponseJson(switch_response_json[0..], .{
+            .id = "signer-2",
+            .result = .{ .value = .{ .relay_list = next_relays[0..] } },
+        }),
+        switch_response_scratch.allocator(),
+    );
+
+    var resume_storage = SignerClientResumeStorage{};
+    const resume_state = try client.exportResumeState(&resume_storage);
+
+    var restored = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    try restored.restoreResumeState(&resume_state);
+    try std.testing.expectEqualStrings("wss://relay.three", restored.currentRelayUrl());
+    try std.testing.expect(!restored.isConnected());
+    try std.testing.expectEqual(
+        SignerClientSessionPolicyAction.connect_relay,
+        restored.inspectSessionPolicy().action,
+    );
+}
+
+test "signer client exposes session cadence parity" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const bunker_uri =
+        "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
+        "?relay=wss%3A%2F%2Frelay.one";
+    const client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+
+    const cadence = client.inspectSessionCadence(.{
+        .now_unix_seconds = 10,
+        .reconnect_not_before_unix_seconds = 20,
+    });
+    try std.testing.expect(cadence.nextStep() == .wait);
+    try std.testing.expectEqual(
+        SignerClientSessionCadenceWaitReason.reconnect_backoff,
+        cadence.nextStep().wait.reason,
+    );
 }
 
 fn textResponse(

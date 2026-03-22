@@ -2,8 +2,8 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-// Explicit client-layer `NIP-46` flow: connect, later signer requests, and explicit shared relay
-// runtime inspection all stay caller-driven.
+// Explicit client-layer `NIP-46` flow: connect, later signer requests, durable resume export, and
+// explicit shared relay/session policy all stay caller-driven.
 test "recipe: signer client stays explicit from connect to get_public_key and nip44_encrypt" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -105,6 +105,23 @@ test "recipe: signer client stays explicit from connect to get_public_key and ni
     try std.testing.expectEqualStrings("wss://relay.two", selected_relay);
     try std.testing.expectEqualStrings("wss://relay.two", client.currentRelayUrl());
     try std.testing.expect(!client.isConnected());
+
+    var resume_storage = noztr_sdk.client.SignerClientResumeStorage{};
+    const resume_state = try client.exportResumeState(&resume_storage);
+
+    var restored = try noztr_sdk.client.SignerClient.initFromBunkerUriText(
+        .{},
+        bunker_uri,
+        arena.allocator(),
+    );
+    try restored.restoreResumeState(&resume_state);
+    try std.testing.expectEqualStrings("wss://relay.two", restored.currentRelayUrl());
+
+    const cadence = restored.inspectSessionCadence(.{
+        .now_unix_seconds = 10,
+        .reconnect_not_before_unix_seconds = 20,
+    });
+    try std.testing.expect(cadence.nextStep() == .wait);
 }
 
 fn textResponse(

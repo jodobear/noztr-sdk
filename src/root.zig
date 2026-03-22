@@ -315,6 +315,16 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.SignerClientConfig) == type);
     try std.testing.expect(@TypeOf(client.SignerClientRequestStorage) == type);
     try std.testing.expect(@TypeOf(client.SignerClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientResumeStorage) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientResumeState) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionPolicyAction) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionPolicyStep) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionPolicyPlan) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionCadenceRequest) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionCadenceWaitReason) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionCadenceWait) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionCadenceStep) == type);
+    try std.testing.expect(@TypeOf(client.SignerClientSessionCadencePlan) == type);
     try std.testing.expect(@TypeOf(client.SignerClient) == type);
     try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobClientError) == type);
     try std.testing.expect(@TypeOf(client.SignerNip44EncryptJobClientConfig) == type);

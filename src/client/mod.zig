@@ -561,6 +561,17 @@ pub const SignerClientError = signer_client.SignerClientError;
 pub const SignerClientConfig = signer_client.SignerClientConfig;
 pub const SignerClientRequestStorage = signer_client.SignerClientRequestStorage;
 pub const SignerClientStorage = signer_client.SignerClientStorage;
+pub const SignerClientResumeStorage = signer_client.SignerClientResumeStorage;
+pub const SignerClientResumeState = signer_client.SignerClientResumeState;
+pub const SignerClientSessionPolicyAction = signer_client.SignerClientSessionPolicyAction;
+pub const SignerClientSessionPolicyStep = signer_client.SignerClientSessionPolicyStep;
+pub const SignerClientSessionPolicyPlan = signer_client.SignerClientSessionPolicyPlan;
+pub const SignerClientSessionCadenceRequest = signer_client.SignerClientSessionCadenceRequest;
+pub const SignerClientSessionCadenceWaitReason =
+    signer_client.SignerClientSessionCadenceWaitReason;
+pub const SignerClientSessionCadenceWait = signer_client.SignerClientSessionCadenceWait;
+pub const SignerClientSessionCadenceStep = signer_client.SignerClientSessionCadenceStep;
+pub const SignerClientSessionCadencePlan = signer_client.SignerClientSessionCadencePlan;
 pub const SignerClient = signer_client.SignerClient;
 pub const SignerNip44EncryptJobClientError =
     signer_nip44_encrypt_job_client.SignerNip44EncryptJobClientError;
