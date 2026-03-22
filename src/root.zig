@@ -746,6 +746,18 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetTurnPolicyRequest) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetTurnPolicyPlan) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredProfileTargetTurnPolicyStep) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetPolicyError) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetPolicyStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetPolicyRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetPolicyPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshCadenceError) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshCadenceStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshCadenceRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshCadencePlan) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshBatchError) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshBatchStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshBatchRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetRefreshBatchPlan) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetTurnPolicyError) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetTurnPolicyStorage) == type);
     try std.testing.expect(@TypeOf(workflows.IdentityStoredWatchedTargetTurnPolicyRequest) == type);
