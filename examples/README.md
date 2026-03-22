@@ -774,13 +774,15 @@ They do not imply:
     turn-policy, and refresh planning stay bounded instead of inventing background refresh or
     output policy
 - `nip05_verify_client_recipe.zig`
-  - goal: prepare and run one command-ready `NIP-05` verify job over the public HTTP seam
+  - goal: prepare and run one command-ready `NIP-05` verify job, remember the verified
+    resolution, and inspect one bounded refresh plan over the public HTTP seam
   - public SDK surface: `noztr_sdk.client`, `Nip05VerifyClient`, `Nip05VerifyClientStorage`,
-    `Nip05VerifyJob`, `Nip05VerifyJobResult`
+    `Nip05VerifyJob`, `Nip05VerifyJobResult`, `Nip05RememberedResolutionPlanning`
   - kernel fixture help: none beyond the SDK result surface
-  - control points: the client only assembles command-ready lookup storage and request posture
-    above the existing resolver workflow, transport stays explicit, caller-owned buffers and
-    scratch stay explicit, and this layer avoids inventing retry or output policy
+  - control points: the client assembles command-ready lookup storage plus remembered successful
+    resolution and bounded refresh planning above the existing resolver workflow, transport stays
+    explicit, caller-owned buffers/scratch/store state stay explicit, and this layer still avoids
+    inventing hidden retry or output policy
 - `nip39_verify_client_recipe.zig`
   - goal: prepare and run one command-ready remembered `NIP-39` profile verify job over the
     public HTTP seam with explicit cache and profile-store seams, then inspect one bounded
@@ -851,11 +853,15 @@ They do not imply:
     stale-profile refresh plan plus one typed refresh step, and one explicit freshness check
     without hidden background policy
 - `nip05_resolution_recipe.zig`
-  - goal: resolve and verify one `NIP-05` address over the public HTTP seam
-  - public SDK surface: `Nip05Resolver`, `transport.HttpClient`
+  - goal: resolve and verify one `NIP-05` address, remember the successful resolution, and inspect
+    one bounded refresh plan over the public HTTP seam
+  - public SDK surface: `Nip05Resolver`, `Nip05RememberedResolutionStore`,
+    `MemoryNip05RememberedResolutionStore`, `Nip05LatestRememberedResolutionTargetRequest`,
+    `Nip05RememberedResolutionRefreshRequest`, `transport.HttpClient`
   - kernel fixture help: none beyond the SDK result surface
-  - control points: caller provides the HTTP client, one caller-owned lookup storage wrapper, and
-    the scratch allocator
+  - control points: caller provides the HTTP client, one caller-owned lookup storage wrapper, one
+    explicit remembered-resolution store, and the scratch allocator; refresh work remains explicit
+    typed planning rather than hidden retry behavior
 - `group_session_recipe.zig`
   - goal: author a canonical `NIP-29` snapshot, export one checkpoint, restore it into a receiver
     client, select valid `previous` refs, build one outbound moderation event, then replay it

@@ -412,6 +412,7 @@ pub const Nip05LookupJob = nip05_verify_client.Nip05LookupJob;
 pub const Nip05VerifyJob = nip05_verify_client.Nip05VerifyJob;
 pub const Nip05LookupJobResult = nip05_verify_client.Nip05LookupJobResult;
 pub const Nip05VerifyJobResult = nip05_verify_client.Nip05VerifyJobResult;
+pub const Nip05RememberedResolutionPlanning = nip05_verify_client.Nip05RememberedResolutionPlanning;
 pub const Nip05VerifyClient = nip05_verify_client.Nip05VerifyClient;
 pub const Nip39VerifyClientError = nip39_verify_client.Nip39VerifyClientError;
 pub const Nip39VerifyClientConfig = nip39_verify_client.Nip39VerifyClientConfig;

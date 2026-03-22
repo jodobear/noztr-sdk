@@ -2,9 +2,9 @@ const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
-// Prepare one command-ready NIP-05 verify job over caller-owned buffers, then run it over the
-// explicit public HTTP seam.
-test "recipe: nip05 verify client prepares and runs one command-ready verify job" {
+// Prepare one command-ready NIP-05 verify job over caller-owned buffers, remember the verified
+// resolution, then inspect one bounded refresh plan over explicit caller-owned state.
+test "recipe: nip05 verify client remembers verified resolution and plans refresh explicitly" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -28,6 +28,10 @@ test "recipe: nip05 verify client prepares and runs one command-ready verify job
         lookup_url_buffer[0..],
         body_buffer[0..],
     );
+    var remembered_records: [2]noztr_sdk.workflows.Nip05RememberedResolutionRecord = undefined;
+    var remembered_store = noztr_sdk.workflows.MemoryNip05RememberedResolutionStore.init(
+        remembered_records[0..],
+    );
     const job = client.prepareVerifyJob(
         &storage,
         "alice@example.com",
@@ -37,11 +41,42 @@ test "recipe: nip05 verify client prepares and runs one command-ready verify job
     const result = try client.verify(fake_http.client(), job);
 
     try std.testing.expect(result == .verified);
+    try std.testing.expectEqual(
+        noztr_sdk.client.Nip05RememberedResolutionPlanning.StorePutOutcome.stored,
+        (try client.rememberVerifyOutcome(
+            remembered_store.asStore(),
+            &result,
+            100,
+        )).?,
+    );
     try std.testing.expectEqualStrings(
         "https://example.com/.well-known/nostr.json?name=alice",
         result.verified.lookup_url,
     );
     try std.testing.expectEqual(@as(usize, 1), result.verified.profile.relays.len);
+
+    const targets = [_]noztr_sdk.client.Nip05RememberedResolutionPlanning.Target{
+        .{ .address_text = "alice@example.com" },
+        .{ .address_text = "bob@example.com" },
+    };
+    var latest_entries: [2]noztr_sdk.client.Nip05RememberedResolutionPlanning.LatestTargetEntry = undefined;
+    var refresh_entries: [2]noztr_sdk.client.Nip05RememberedResolutionPlanning.RefreshEntry = undefined;
+    const plan = try client.planRememberedResolutionRefreshForTargets(
+        remembered_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 110,
+            .max_age_seconds = 20,
+            .storage = noztr_sdk.client.Nip05RememberedResolutionPlanning.RefreshStorage.init(
+                latest_entries[0..],
+                refresh_entries[0..],
+            ),
+            .scratch = arena.allocator(),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), plan.lookup_now_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.stable_count);
+    try std.testing.expectEqual(.lookup_now, plan.nextStep().?.action);
 }
 
 fn parsePubkey(hex: []const u8) ![32]u8 {

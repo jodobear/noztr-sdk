@@ -2,8 +2,9 @@ const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
-// Resolve and verify one NIP-05 address over the public SDK HTTP seam.
-test "recipe: nip05 resolver uses the public http seam explicitly" {
+// Resolve and verify one NIP-05 address over the public SDK HTTP seam, then remember the
+// successful resolution and inspect one bounded refresh plan over explicit caller-owned state.
+test "recipe: nip05 resolver uses the public http seam and remembered resolution planning explicitly" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -21,6 +22,10 @@ test "recipe: nip05 resolver uses the public http seam explicitly" {
     fake_http.expected_accept = "application/json";
     var lookup_url_buffer: [128]u8 = undefined;
     var body_buffer: [384]u8 = undefined;
+    var remembered_records: [2]noztr_sdk.workflows.Nip05RememberedResolutionRecord = undefined;
+    var remembered_store = noztr_sdk.workflows.MemoryNip05RememberedResolutionStore.init(
+        remembered_records[0..],
+    );
 
     const outcome = try noztr_sdk.workflows.Nip05Resolver.verify(
         fake_http.client(),
@@ -36,11 +41,41 @@ test "recipe: nip05 resolver uses the public http seam explicitly" {
     );
 
     try std.testing.expect(outcome == .verified);
+    try std.testing.expectEqual(
+        noztr_sdk.workflows.Nip05RememberedResolutionStorePutOutcome.stored,
+        try noztr_sdk.workflows.Nip05Resolver.rememberResolution(
+            remembered_store.asStore(),
+            &outcome.verified,
+            100,
+        ),
+    );
     try std.testing.expectEqualStrings(
         "https://example.com/.well-known/nostr.json?name=alice",
         outcome.verified.lookup_url,
     );
     try std.testing.expectEqual(@as(usize, 1), outcome.verified.profile.relays.len);
+
+    const targets = [_]noztr_sdk.workflows.Nip05RememberedResolutionTarget{
+        .{ .address_text = "alice@example.com" },
+        .{ .address_text = "bob@example.com" },
+    };
+    var latest_entries: [2]noztr_sdk.workflows.Nip05LatestRememberedResolutionTargetEntry = undefined;
+    var refresh_entries: [2]noztr_sdk.workflows.Nip05RememberedResolutionRefreshEntry = undefined;
+    const refresh_plan = try noztr_sdk.workflows.Nip05Resolver.planRememberedResolutionRefreshForTargets(
+        remembered_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 110,
+            .max_age_seconds = 20,
+            .storage = noztr_sdk.workflows.Nip05RememberedResolutionRefreshStorage.init(
+                latest_entries[0..],
+                refresh_entries[0..],
+            ),
+            .scratch = arena.allocator(),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), refresh_plan.lookup_now_count);
+    try std.testing.expectEqual(@as(u32, 1), refresh_plan.stable_count);
 }
 
 fn parsePubkey(hex: []const u8) ![32]u8 {

@@ -180,6 +180,7 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.Nip05VerifyJob) == type);
     try std.testing.expect(@TypeOf(client.Nip05LookupJobResult) == type);
     try std.testing.expect(@TypeOf(client.Nip05VerifyJobResult) == type);
+    try std.testing.expect(@TypeOf(client.Nip05RememberedResolutionPlanning) == type);
     try std.testing.expect(@TypeOf(client.Nip05VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.Nip39VerifyClientError) == type);
     try std.testing.expect(@TypeOf(client.Nip39VerifyClientConfig) == type);
@@ -838,6 +839,10 @@ test "phase8 exposes the nip05 resolver workflow surface" {
     try std.testing.expect(@TypeOf(workflows.Nip05LookupStorage) == type);
     try std.testing.expect(@TypeOf(workflows.Nip05LookupRequest) == type);
     try std.testing.expect(@TypeOf(workflows.Nip05VerificationRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.Nip05RememberedResolutionStore) == type);
+    try std.testing.expect(@TypeOf(workflows.MemoryNip05RememberedResolutionStore) == type);
+    try std.testing.expect(@TypeOf(workflows.Nip05LatestRememberedResolutionTargetRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.Nip05RememberedResolutionRefreshRequest) == type);
 }
 
 test "phase9 exposes the group session workflow surface" {
