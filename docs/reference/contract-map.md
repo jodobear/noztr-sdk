@@ -41,9 +41,18 @@ namespace cleanup. This map uses only the grouped public discovery shape.
 
 ## Downstream SDK Foundation
 
-If you are building another Zig SDK layer above `noztr-sdk`, the public foundation to target today
-is:
+If you are building another Zig SDK layer above Nostr, the accepted route is mixed:
 
+- keep the true protocol-kernel floor in `noztr`
+- use `noztr-sdk` for the production-ready non-kernel relay/runtime/workflow layer above it
+
+Use [downstream-sdk-boundary.md](./downstream-sdk-boundary.md) when you need the explicit line
+between those two layers.
+
+The public `noztr-sdk` foundation to target today is:
+
+- `noztr_sdk.client.local.operator.LocalOperatorClient` for SDK-owned local operator composition
+  above kernel event, entity, key, and local crypto helpers
 - `noztr_sdk.transport.HttpClient` for explicit HTTP-backed jobs
 - `noztr_sdk.runtime.RelayPool` plus relay specs/plans for shared relay-state inspection and
   next-step selection
@@ -62,6 +71,11 @@ is:
 
 This foundation is relay-centric, explicit, and caller-driven.
 
+For arbitrary downstream event kinds and tags, the intended route is:
+- keep deterministic kernel event and tag shaping in `noztr`
+- use the local-operator floor when you want SDK-owned local composition above that kernel floor
+- hand signed events into the publish, relay-session, replay, or subscription surfaces here
+
 It should absorb broadly reusable Nostr-facing heavy lifting so downstream apps and SDKs do not
 have to restitch the same relay/runtime substrate above `noztr-sdk`.
 
@@ -73,9 +87,17 @@ It does not currently include:
 Downstream SDKs should build their own higher-level contracts above this surface instead of
 depending on `noztr-sdk` to act like a generic socket framework.
 
+They also should not build a third parallel generic Nostr relay/runtime layer locally unless they
+find a real missing generic gap in `noztr-sdk`.
+
 ## Routing Table
 
-| Job | Primary public symbols | Start here | Example |
+Use the `Start here` column as the canonical grouped public route.
+
+Treat `Related public symbols` as the supporting symbol inventory around that canonical route, not
+as an alternative flat discovery shape.
+
+| Job | Related public symbols | Start here | Example |
 | --- | --- | --- | --- |
 | Build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | `noztr_sdk.transport.HttpClient`, `noztr_sdk.runtime`, `RelayPool`, `RelayPoolPlan`, `RelayPoolSubscriptionPlan`, `RelayPoolReplayPlan`, `RelayPoolPublishPlan`, `noztr_sdk.client.relay.session`, `noztr_sdk.client.relay.auth`, `noztr_sdk.client.relay.query`, `noztr_sdk.client.relay.exchange`, `noztr_sdk.client.relay.replay`, `noztr_sdk.client.relay.response`, `noztr_sdk.client.relay.publish`, `noztr_sdk.client.local.state`, `noztr_sdk.client.relay.workspace`, `noztr_sdk.workflows.signer.remote`, `noztr_sdk.client.signer.session`, `noztr_sdk.store.RelayCheckpointArchive` | `noztr_sdk.client.relay.session.RelaySessionClient` | [relay_session_client_recipe.zig](../../examples/relay_session_client_recipe.zig) |
 | Command-ready local `NIP-19` entity encode-decode over the local operator floor | `noztr_sdk.client`, `LocalEntityJobClient`, `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult` | `noztr_sdk.client.local.entities.LocalEntityJobClient` | [local_entity_job_client_recipe.zig](../../examples/local_entity_job_client_recipe.zig) |

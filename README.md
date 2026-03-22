@@ -60,6 +60,14 @@ If you are working in a local maintainer clone, use `.private-docs/` when presen
 Zig libraries that want to sit above Nostr without rebuilding the same bounded relay/workflow
 substrate locally.
 
+The accepted downstream shape is mixed on purpose:
+- `noztr` remains the true protocol-kernel floor
+- `noztr-sdk` is the production-ready non-kernel layer above it
+- downstream SDKs should not build a third parallel generic Nostr relay/runtime layer locally
+
+Use `docs/reference/downstream-sdk-boundary.md` when you need the explicit line between what stays
+in `noztr` and what should start in `noztr-sdk`.
+
 That means:
 - `noztr-sdk` owns generic Nostr-facing transport seams, relay/runtime plans, typed next-step
   helpers, and reusable bounded orchestration substrate.

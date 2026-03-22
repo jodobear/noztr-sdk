@@ -22,6 +22,11 @@ current public workflow contract.
 - `noztr` owns deterministic protocol-kernel behavior
 - `noztr-sdk` owns higher-level workflow, transport, store, and application-facing composition
 
+If you are evaluating `noztr-sdk` for another Zig SDK, read the downstream boundary guide early:
+- what stays in `noztr`
+- what should start in `noztr-sdk`
+- why downstream libraries should not rebuild a parallel generic Nostr relay/runtime layer locally
+
 ## Start Here
 
 - [README.md](../README.md)
@@ -32,6 +37,8 @@ current public workflow contract.
   - shortest public route from install/import to first workflow examples
 - [public contract map](./reference/contract-map.md)
   - task-to-symbol route for the current public workflow surface
+- [downstream SDK boundary](./reference/downstream-sdk-boundary.md)
+  - explicit `noztr` versus `noztr-sdk` split for another Zig SDK
 - [release process](./reference/release-process.md)
   - project versioning, RC criteria, tagging guidance, and first-release framing
 - [CHANGELOG.md](../CHANGELOG.md)
@@ -51,23 +58,34 @@ current public workflow contract.
 
 ## Current Public Scope
 
-The current public workflow floor includes:
+The current public floor is grouped and broad:
 
-- one minimal CLI-facing client composition surface above the shared store and runtime floors
-- one neutral local-state client composition route above shared archive, registry, checkpoint, and
-  relay-runtime seams
-- shared bounded store/query/checkpoint reference surfaces
-- one minimal CLI-facing archive helper over that shared store seam
-- one relay-local checkpoint helper over that shared checkpoint seam
-- one relay-local `NIP-29` replay helper over that shared event seam
-- one shared relay-pool runtime floor over bounded relay-local sessions
-- one shared relay-pool checkpoint composition path over the shared checkpoint seam
-- `NIP-46` remote signer workflow
-- `NIP-17` mailbox workflow
-- `NIP-39` identity verification workflow
-- `NIP-03` OpenTimestamps verification workflow
-- `NIP-05` identity resolution workflow
-- `NIP-29` group workflow
+- `client.local.*`
+  - local operator, local jobs, local state, and CLI-shaped local composition
+- `client.relay.*`
+  - relay auth, query, exchange, replay, publish, response, workspace, and session composition
+- `client.signer.*`
+  - signer session and signer job composition above the remote-signer workflow
+- `client.dm.*`
+  - mailbox and legacy-DM runtime, replay, subscription, and orchestration composition
+- `client.identity.*`
+  - `NIP-05` and `NIP-39` client-facing identity flows
+- `client.proof.*`
+  - `NIP-03` proof verification and remembered-proof planning
+- `client.groups.*`
+  - multi-relay `NIP-29` group client composition
+- `workflows.signer.*`
+  - `NIP-46` remote signer workflow
+- `workflows.dm.*`
+  - `NIP-17` mailbox and legacy `NIP-04` private-message workflows
+- `workflows.identity.*`
+  - `NIP-05` and `NIP-39` identity workflows
+- `workflows.proof.*`
+  - `NIP-03` OpenTimestamps verification workflow
+- `workflows.groups.*`
+  - relay-local and multi-relay `NIP-29` group workflows
+- `store`, `runtime`, and `transport`
+  - shared bounded storage, relay runtime, and HTTP seam foundations
 
 ## Important Note On Internal Docs
 
