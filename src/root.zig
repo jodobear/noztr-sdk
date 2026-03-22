@@ -504,6 +504,16 @@ test "phase4 exposes the remote signer workflow surface" {
     try std.testing.expect(@TypeOf(workflows.RemoteSignerTextResponse) == type);
     try std.testing.expect(@TypeOf(workflows.RemoteSignerRelayPoolStorage) == type);
     try std.testing.expect(@TypeOf(workflows.RemoteSignerRelayPoolRuntimeStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerResumeStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerResumeState) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionPolicyAction) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionPolicyStep) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionPolicyPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionCadenceRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionCadenceWaitReason) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionCadenceWait) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionCadenceStep) == type);
+    try std.testing.expect(@TypeOf(workflows.RemoteSignerSessionCadencePlan) == type);
 }
 
 test "phase4b exposes the legacy dm workflow surface" {
