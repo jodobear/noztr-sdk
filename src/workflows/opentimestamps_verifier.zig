@@ -5617,6 +5617,7 @@ test "opentimestamps verifier refresh readiness groups stale targets by archive 
     var ready_attestation_json_storage: [1024]u8 = undefined;
     var ready_attestation_archive_event = ready_attestation.event;
     ready_attestation_archive_event.tags = &.{};
+    ready_attestation_archive_event.content = "archive";
     const ready_attestation_json = try noztr.nip01_event.event_serialize_json_object(
         ready_attestation_json_storage[0..],
         &ready_attestation_archive_event,
@@ -5626,6 +5627,7 @@ test "opentimestamps verifier refresh readiness groups stale targets by archive 
     var missing_target_attestation_json_storage: [1024]u8 = undefined;
     var missing_target_attestation_archive_event = missing_target_attestation.event;
     missing_target_attestation_archive_event.tags = &.{};
+    missing_target_attestation_archive_event.content = "archive";
     const missing_target_attestation_json = try noztr.nip01_event.event_serialize_json_object(
         missing_target_attestation_json_storage[0..],
         &missing_target_attestation_archive_event,
@@ -5748,6 +5750,7 @@ test "opentimestamps verifier refresh readiness stays bounded by caller-owned ar
     var attestation_json_storage: [1024]u8 = undefined;
     var attestation_archive_event = attestation.event;
     attestation_archive_event.tags = &.{};
+    attestation_archive_event.content = "archive";
     const attestation_json = try noztr.nip01_event.event_serialize_json_object(
         attestation_json_storage[0..],
         &attestation_archive_event,
@@ -5832,6 +5835,7 @@ test "opentimestamps verifier refresh readiness exposes blocked stale targets ex
     var ready_attestation_json_storage: [1024]u8 = undefined;
     var ready_attestation_archive_event = ready_attestation.event;
     ready_attestation_archive_event.tags = &.{};
+    ready_attestation_archive_event.content = "archive";
     const ready_attestation_json = try noztr.nip01_event.event_serialize_json_object(
         ready_attestation_json_storage[0..],
         &ready_attestation_archive_event,

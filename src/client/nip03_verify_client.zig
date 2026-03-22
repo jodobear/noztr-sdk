@@ -1,6 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const noztr = @import("noztr");
+const store = @import("../store/mod.zig");
 const transport = @import("../transport/mod.zig");
 const workflows = @import("../workflows/mod.zig");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
@@ -15,6 +16,8 @@ const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 pub const Nip03VerifyClientError =
     workflows.OpenTimestampsRememberedRemoteVerificationError ||
     workflows.OpenTimestampsStoredVerificationDiscoveryError;
+pub const Nip03StoredVerificationRefreshReadinessError =
+    workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessError;
 
 pub const Nip03VerifyClientConfig = struct {};
 
@@ -67,6 +70,20 @@ pub const Nip03StoredVerificationPlanning = struct {
     pub const TargetRefreshRequest = workflows.OpenTimestampsStoredVerificationTargetRefreshRequest;
     pub const TargetRefreshPlan = workflows.OpenTimestampsStoredVerificationTargetRefreshPlan;
     pub const TargetRefreshStep = workflows.OpenTimestampsStoredVerificationTargetRefreshStep;
+    pub const TargetRefreshReadinessAction =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessAction;
+    pub const TargetRefreshReadinessEntry =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry;
+    pub const TargetRefreshReadinessGroup =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup;
+    pub const TargetRefreshReadinessStorage =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessStorage;
+    pub const TargetRefreshReadinessRequest =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessRequest;
+    pub const TargetRefreshReadinessPlan =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessPlan;
+    pub const TargetRefreshReadinessStep =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessStep;
     pub const TargetPolicyEntry = workflows.OpenTimestampsStoredVerificationTargetPolicyEntry;
     pub const TargetPolicyGroup = workflows.OpenTimestampsStoredVerificationTargetPolicyGroup;
     pub const TargetPolicyStorage = workflows.OpenTimestampsStoredVerificationTargetPolicyStorage;
@@ -249,6 +266,20 @@ pub const Nip03VerifyClient = struct {
         _ = self;
         return workflows.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
             verification_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredVerificationRefreshReadinessForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        event_archive: store.EventArchive,
+        request: Nip03StoredVerificationPlanning.TargetRefreshReadinessRequest,
+    ) Nip03StoredVerificationRefreshReadinessError!Nip03StoredVerificationPlanning.TargetRefreshReadinessPlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+            verification_store,
+            event_archive,
             request,
         );
     }
@@ -677,6 +708,108 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
     );
 }
 
+test "nip03 verify client lifts stored verification refresh readiness into the client surface" {
+    const ready_target = try buildSignedTextEvent(0x31, 1, "ready");
+    const blocked_target = try buildSignedTextEvent(0x32, 2, "blocked");
+
+    var verification_store_records: [2]workflows.OpenTimestampsStoredVerificationRecord =
+        [_]workflows.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store =
+        workflows.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+
+    var ready_proof_bytes: [96]u8 = undefined;
+    const ready_proof = buildLocalBitcoinProof(ready_proof_bytes[0..], &ready_target.id);
+    const ready_attestation = try rememberVerificationForTargetAndReturnAttestation(
+        verification_store.asStore(),
+        &ready_target,
+        30,
+        "https://proof.example/ready.ots",
+        ready_proof,
+    );
+
+    var blocked_proof_bytes: [96]u8 = undefined;
+    const blocked_proof = buildLocalBitcoinProof(blocked_proof_bytes[0..], &blocked_target.id);
+    _ = try rememberVerificationForTargetAndReturnAttestation(
+        verification_store.asStore(),
+        &blocked_target,
+        20,
+        "https://proof.example/blocked.ots",
+        blocked_proof,
+    );
+
+    var backing_store = store.MemoryClientStore{};
+    const archive = store.EventArchive.init(backing_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var ready_target_json_storage: [512]u8 = undefined;
+    const ready_target_json = try noztr.nip01_event.event_serialize_json_object(
+        ready_target_json_storage[0..],
+        &ready_target,
+    );
+    try archive.ingestEventJson(ready_target_json, arena.allocator());
+
+    var ready_attestation_archive_event = ready_attestation;
+    ready_attestation_archive_event.tags = &.{};
+    ready_attestation_archive_event.content = "archive";
+    var ready_attestation_json_storage: [1024]u8 = undefined;
+    const ready_attestation_json = try noztr.nip01_event.event_serialize_json_object(
+        ready_attestation_json_storage[0..],
+        &ready_attestation_archive_event,
+    );
+    try archive.ingestEventJson(ready_attestation_json, arena.allocator());
+
+    const client = Nip03VerifyClient.init(.{});
+    const targets = [_]Nip03StoredVerificationPlanning.Target{
+        .{ .target_event_id = ready_target.id },
+        .{ .target_event_id = blocked_target.id },
+    };
+    var matches: [1]Nip03StoredVerificationPlanning.Match = undefined;
+    var latest_entries: [2]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    const refresh_entries = [_]Nip03StoredVerificationPlanning.RefreshEntry{};
+    var target_refresh_entries: [2]Nip03StoredVerificationPlanning.TargetRefreshEntry = undefined;
+    var target_records: [1]store.ClientEventRecord = undefined;
+    var attestation_records: [1]store.ClientEventRecord = undefined;
+    var readiness_entries: [2]Nip03StoredVerificationPlanning.TargetRefreshReadinessEntry = undefined;
+    var readiness_groups: [4]Nip03StoredVerificationPlanning.TargetRefreshReadinessGroup = undefined;
+    const plan = try client.inspectStoredVerificationRefreshReadinessForTargets(
+        verification_store.asStore(),
+        archive,
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 10,
+            .storage = Nip03StoredVerificationPlanning.TargetRefreshReadinessStorage.init(
+                matches[0..],
+                latest_entries[0..],
+                refresh_entries[0..],
+                target_refresh_entries[0..],
+                target_records[0..],
+                attestation_records[0..],
+                readiness_entries[0..],
+                readiness_groups[0..],
+            ),
+        },
+    );
+
+    try std.testing.expectEqual(@as(u32, 1), plan.ready_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.missing_target_event_count);
+    try std.testing.expectEqual(@as(u32, 0), plan.missing_attestation_event_count);
+    try std.testing.expectEqual(@as(u32, 1), plan.missing_events_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        ready_target.id[0..],
+        plan.nextReadyStep().?.entry.target.target_event_id[0..],
+    );
+    try std.testing.expect(plan.targetRecord(plan.nextReadyEntry().?) != null);
+    try std.testing.expect(plan.attestationRecord(plan.nextReadyEntry().?) != null);
+    try std.testing.expectEqual(@as(usize, 1), plan.blockedEntries().len);
+    try std.testing.expectEqual(
+        Nip03StoredVerificationPlanning.TargetRefreshReadinessAction.missing_events,
+        plan.blockedEntries()[0].action,
+    );
+}
+
 fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !noztr.nip01_event.Event {
     const signer_secret = [_]u8{secret_byte} ** 32;
     const signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&signer_secret);
@@ -693,13 +826,13 @@ fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !
     return event;
 }
 
-fn rememberVerificationForTarget(
+fn rememberVerificationForTargetAndReturnAttestation(
     verification_store: workflows.OpenTimestampsVerificationStore,
     target_event: *const noztr.nip01_event.Event,
     attestation_created_at: u64,
     proof_url: []const u8,
     proof: []const u8,
-) !void {
+) !noztr.nip01_event.Event {
     var proof_b64_storage: [256]u8 = undefined;
     const encoded = std.base64.standard.Encoder.encode(proof_b64_storage[0..], proof);
     const event_id_hex = std.fmt.bytesToHex(target_event.id, .lower);
@@ -731,6 +864,23 @@ fn rememberVerificationForTarget(
         target_event,
         &stored_attestation,
         &.{ .proof_url = proof_url, .verification = local.verified },
+    );
+    return stored_attestation;
+}
+
+fn rememberVerificationForTarget(
+    verification_store: workflows.OpenTimestampsVerificationStore,
+    target_event: *const noztr.nip01_event.Event,
+    attestation_created_at: u64,
+    proof_url: []const u8,
+    proof: []const u8,
+) !void {
+    _ = try rememberVerificationForTargetAndReturnAttestation(
+        verification_store,
+        target_event,
+        attestation_created_at,
+        proof_url,
+        proof,
     );
 }
 

@@ -14,8 +14,8 @@ const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 // Verify one detached OpenTimestamps proof document, remember the verification summary explicitly,
 // classify remembered discovery entries for freshness, inspect one typed remembered runtime step,
 // drive grouped remembered-target policy, refresh cadence, bounded refresh-batch selection,
-// turn-policy, and refresh policy passes, then recover the latest remembered verification for the
-// same target event.
+// refresh readiness over the explicit archive seam, turn-policy, and refresh policy passes, then
+// recover the latest remembered verification for the same target event.
 test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered typed runtime step, and drives grouped remembered proof policy" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try common.derivePublicKey(&signer_secret);
@@ -404,6 +404,59 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expectEqual(@as(usize, 1), grouped_refresh.entries.len);
     try std.testing.expectEqualSlices(u8, &target.id, &grouped_refresh.nextEntry().?.target.target_event_id);
     try std.testing.expectEqualSlices(u8, &target.id, &grouped_refresh.nextStep().?.entry.target.target_event_id);
+
+    var archive_store = noztr_sdk.store.MemoryClientStore{};
+    const archive = noztr_sdk.store.EventArchive.init(archive_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var target_json_storage: [512]u8 = undefined;
+    const target_json = try common.serializeEventJson(target_json_storage[0..], &target);
+    try archive.ingestEventJson(target_json, arena.allocator());
+
+    var attestation_archive_event = attestation_event;
+    attestation_archive_event.tags = &.{};
+    attestation_archive_event.content = "archive";
+    var attestation_json_storage: [1024]u8 = undefined;
+    const attestation_json = try common.serializeEventJson(
+        attestation_json_storage[0..],
+        &attestation_archive_event,
+    );
+    try archive.ingestEventJson(attestation_json, arena.allocator());
+
+    const readiness_targets = [_]noztr_sdk.workflows.OpenTimestampsStoredVerificationTarget{
+        .{ .target_event_id = target.id },
+    };
+    var readiness_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    var readiness_latest_entries: [1]noztr_sdk.workflows.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    const readiness_refresh_entries = [_]noztr_sdk.workflows.OpenTimestampsStoredVerificationRefreshEntry{};
+    var readiness_target_refresh_entries: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    var readiness_target_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
+    var readiness_attestation_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
+    var readiness_entries: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = undefined;
+    var readiness_groups: [4]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = undefined;
+    const readiness =
+        try noztr_sdk.workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+            verification_store.asStore(),
+            archive,
+            .{
+                .targets = readiness_targets[0..],
+                .now_unix_seconds = 200,
+                .max_age_seconds = 120,
+                .storage = .init(
+                    readiness_matches[0..],
+                    readiness_latest_entries[0..],
+                    readiness_refresh_entries[0..],
+                    readiness_target_refresh_entries[0..],
+                    readiness_target_records[0..],
+                    readiness_attestation_records[0..],
+                    readiness_entries[0..],
+                    readiness_groups[0..],
+                ),
+            },
+        );
+    try std.testing.expectEqual(@as(u32, 1), readiness.ready_count);
+    try std.testing.expectEqualSlices(u8, &target.id, &readiness.nextReadyEntry().?.target.target_event_id);
 }
 
 fn buildLocalBitcoinProof(output: []u8, digest: *const [32]u8) []const u8 {

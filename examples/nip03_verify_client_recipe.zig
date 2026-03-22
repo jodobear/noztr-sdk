@@ -12,8 +12,8 @@ const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 // Prepare one command-ready NIP-03 detached-proof verify job, run it over the explicit HTTP,
 // proof-store, and remembered-verification seams, then inspect bounded remembered-proof runtime,
-// grouped target policy, refresh cadence, refresh-batch selection, turn-policy, and refresh
-// planning through the client route.
+// grouped target policy, refresh cadence, refresh-batch selection, refresh readiness over the
+// explicit archive seam, turn-policy, and refresh planning through the client route.
 test "recipe: nip03 verify client prepares, remembers, and inspects proof planning" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&signer_secret);
@@ -254,6 +254,65 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
     try std.testing.expectEqual(@as(usize, 1), refresh_plan.entries.len);
     try std.testing.expectEqualSlices(u8, stale_target.id[0..], refresh_plan.nextStep().?.entry.target.target_event_id[0..]);
+
+    var archive_store = noztr_sdk.store.MemoryClientStore{};
+    const archive = noztr_sdk.store.EventArchive.init(archive_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var target_json_storage: [512]u8 = undefined;
+    const target_json = try noztr.nip01_event.event_serialize_json_object(
+        target_json_storage[0..],
+        &target,
+    );
+    try archive.ingestEventJson(target_json, arena.allocator());
+
+    var attestation_archive_event = attestation_event;
+    attestation_archive_event.tags = &.{};
+    attestation_archive_event.content = "archive";
+    var attestation_json_storage: [1024]u8 = undefined;
+    const attestation_json = try noztr.nip01_event.event_serialize_json_object(
+        attestation_json_storage[0..],
+        &attestation_archive_event,
+    );
+    try archive.ingestEventJson(attestation_json, arena.allocator());
+
+    const refresh_readiness_targets = [_]noztr_sdk.client.Nip03StoredVerificationPlanning.Target{
+        .{ .target_event_id = target.id },
+    };
+    var readiness_matches: [1]noztr_sdk.client.Nip03StoredVerificationPlanning.Match = undefined;
+    var readiness_latest_entries: [1]noztr_sdk.client.Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    const readiness_refresh_entries = [_]noztr_sdk.client.Nip03StoredVerificationPlanning.RefreshEntry{};
+    var readiness_target_refresh_entries: [1]noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshEntry = undefined;
+    var readiness_target_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
+    var readiness_attestation_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
+    var readiness_entries: [1]noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshReadinessEntry = undefined;
+    var readiness_groups: [4]noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshReadinessGroup = undefined;
+    const readiness_plan = try client.inspectStoredVerificationRefreshReadinessForTargets(
+        verification_store.asStore(),
+        archive,
+        .{
+            .targets = refresh_readiness_targets[0..],
+            .now_unix_seconds = 200,
+            .max_age_seconds = 20,
+            .storage = noztr_sdk.client.Nip03StoredVerificationPlanning.TargetRefreshReadinessStorage.init(
+                readiness_matches[0..],
+                readiness_latest_entries[0..],
+                readiness_refresh_entries[0..],
+                readiness_target_refresh_entries[0..],
+                readiness_target_records[0..],
+                readiness_attestation_records[0..],
+                readiness_entries[0..],
+                readiness_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), readiness_plan.ready_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        target.id[0..],
+        readiness_plan.nextReadyStep().?.entry.target.target_event_id[0..],
+    );
 }
 
 fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !noztr.nip01_event.Event {
