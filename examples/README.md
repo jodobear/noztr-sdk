@@ -108,6 +108,14 @@ They do not imply:
   - control points: capability reporting stays honest about unsupported operations, shared request
     and result vocabulary stays bounded, local and remote clients can both drive the route
     honestly, and the surface is reusable before any `NIP-07` adapter exists
+- `nip07_browser_signer_recipe.zig`
+  - goal: project thin browser signer presence and supported-method reporting onto the shared
+    signer capability route without claiming extension or browser-product ownership
+  - related SDK symbols: `noztr_sdk.client.signer.browser`, `Nip07BrowserProvider`,
+    `Nip07BrowserSupport`, `noztr_sdk.client.signer.capability.SignerCapabilityProfile`
+  - control points: browser support stays explicit about absence and partial method coverage, the
+    adapter remains caller-driven, and the SDK still stops at the reusable browser seam instead of
+    expanding into extension packaging or approval UI
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

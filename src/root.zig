@@ -20,6 +20,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.relay) == type);
     try std.testing.expect(@TypeOf(client.relay.session.RelaySessionClient) == type);
     try std.testing.expect(@TypeOf(client.signer) == type);
+    try std.testing.expect(@TypeOf(client.signer.browser.Nip07BrowserProvider) == type);
     try std.testing.expect(@TypeOf(client.signer.capability.SignerCapabilityProfile) == type);
     try std.testing.expect(@TypeOf(client.signer.session.SignerClient) == type);
     try std.testing.expect(@TypeOf(client.dm) == type);
