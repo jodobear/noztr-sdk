@@ -13,7 +13,7 @@ test "recipe: mailbox sync turn surfaces publish and receive work explicitly" {
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJsonTwo(
         sender_relay_list_storage[0..],
@@ -27,8 +27,8 @@ test "recipe: mailbox sync turn surfaces publish and receive work explicitly" {
     try std.testing.expectEqualStrings("wss://relay.two", try sender_session.advanceRelay());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
-    var delivery_storage = noztr_sdk.workflows.MailboxDeliveryStorage{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
+    var delivery_storage = noztr_sdk.workflows.dm.mailbox.MailboxDeliveryStorage{};
     var recipient_relay_list_storage: [1024]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJson(
         recipient_relay_list_storage[0..],
@@ -53,7 +53,7 @@ test "recipe: mailbox sync turn surfaces publish and receive work explicitly" {
         arena.allocator(),
     );
 
-    var sender_sync_storage = noztr_sdk.workflows.MailboxSyncTurnStorage{};
+    var sender_sync_storage = noztr_sdk.workflows.dm.mailbox.MailboxSyncTurnStorage{};
     const publish_turn = try sender_session.beginSyncTurn(.{
         .pending_delivery = &delivery,
         .storage = &sender_sync_storage.workflow,
@@ -61,11 +61,11 @@ test "recipe: mailbox sync turn surfaces publish and receive work explicitly" {
     try std.testing.expect(publish_turn == .publish);
     try std.testing.expectEqualStrings("wss://relay.two", publish_turn.publish.relay_url);
 
-    var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
+    var recipient_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
     try recipient_session.markCurrentRelayConnected();
 
-    var recipient_sync_storage = noztr_sdk.workflows.MailboxSyncTurnStorage{};
+    var recipient_sync_storage = noztr_sdk.workflows.dm.mailbox.MailboxSyncTurnStorage{};
     const receive_turn = try recipient_session.beginSyncTurn(.{
         .storage = &recipient_sync_storage.workflow,
     });

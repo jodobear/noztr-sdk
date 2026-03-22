@@ -2,18 +2,21 @@ const std = @import("std");
 const noztr = @import("noztr");
 const relay_pool = @import("../relay/pool.zig");
 const workflows = @import("../workflows/mod.zig");
+const group_fleet = workflows.groups.fleet;
+const group_local = workflows.groups.local;
+const group_session = workflows.groups.session;
 
-pub const GroupFleetClientError = workflows.GroupFleetError;
+pub const GroupFleetClientError = group_fleet.GroupFleetError;
 
 pub const GroupFleetClientConfig = struct {};
 
 pub const GroupFleetClientBackgroundRequest = struct {
     baseline_relay_url: ?[]const u8 = null,
-    pending_merged_checkpoint: ?*const workflows.GroupFleetMergedCheckpoint = null,
-    publish_events: []const workflows.GroupOutboundEvent = &.{},
+    pending_merged_checkpoint: ?*const group_fleet.GroupFleetMergedCheckpoint = null,
+    publish_events: []const group_session.GroupOutboundEvent = &.{},
 };
 
-pub const GroupFleetClientCheckpointStorage = workflows.GroupFleetCheckpointStorage;
+pub const GroupFleetClientCheckpointStorage = group_fleet.GroupFleetCheckpointStorage;
 
 pub const GroupFleetClientCheckpointRequest = struct {
     created_at_base: u64,
@@ -33,7 +36,7 @@ pub const GroupFleetClientCheckpointRequest = struct {
     fn checkpointContext(
         self: *const GroupFleetClientCheckpointRequest,
         storage: *GroupFleetClientCheckpointStorage,
-    ) workflows.GroupFleetCheckpointContext {
+    ) group_fleet.GroupFleetCheckpointContext {
         return .{
             .created_at_base = self.created_at_base,
             .created_at_stride = self.created_at_stride,
@@ -43,11 +46,11 @@ pub const GroupFleetClientCheckpointRequest = struct {
     }
 };
 
-pub const GroupFleetClientMergeSelection = workflows.GroupFleetMergeSelection;
-pub const GroupFleetClientMergeStorage = workflows.GroupFleetMergeStorage;
-pub const GroupFleetClientPublishStorage = workflows.GroupFleetPublishStorage;
-pub const GroupFleetClientPutUserDraft = workflows.GroupFleetPutUserDraft;
-pub const GroupFleetClientRemoveUserDraft = workflows.GroupFleetRemoveUserDraft;
+pub const GroupFleetClientMergeSelection = group_fleet.GroupFleetMergeSelection;
+pub const GroupFleetClientMergeStorage = group_fleet.GroupFleetMergeStorage;
+pub const GroupFleetClientPublishStorage = group_fleet.GroupFleetPublishStorage;
+pub const GroupFleetClientPutUserDraft = group_fleet.GroupFleetPutUserDraft;
+pub const GroupFleetClientRemoveUserDraft = group_fleet.GroupFleetRemoveUserDraft;
 
 pub const GroupFleetClientMergeRequest = struct {
     created_at_base: u64,
@@ -66,7 +69,7 @@ pub const GroupFleetClientMergeRequest = struct {
     fn mergeContext(
         self: *const GroupFleetClientMergeRequest,
         storage: *GroupFleetClientMergeStorage,
-    ) workflows.GroupFleetMergeContext {
+    ) group_fleet.GroupFleetMergeContext {
         return .{
             .created_at_base = self.created_at_base,
             .author_secret_key = self.author_secret_key,
@@ -93,7 +96,7 @@ pub const GroupFleetClientPublishRequest = struct {
     fn publishContext(
         self: *const GroupFleetClientPublishRequest,
         storage: *GroupFleetClientPublishStorage,
-    ) workflows.GroupFleetPublishContext {
+    ) group_fleet.GroupFleetPublishContext {
         return .{
             .created_at_base = self.created_at_base,
             .created_at_stride = self.created_at_stride,
@@ -104,19 +107,19 @@ pub const GroupFleetClientPublishRequest = struct {
 };
 
 pub const GroupFleetClientStorage = struct {
-    runtime: workflows.GroupFleetRuntimeStorage = .{},
-    background: workflows.GroupFleetBackgroundRuntimeStorage = .{},
-    divergences: [relay_pool.pool_capacity]workflows.GroupFleetRelayDivergence =
-        [_]workflows.GroupFleetRelayDivergence{.{ .relay_url = "" }} ** relay_pool.pool_capacity,
+    runtime: group_fleet.GroupFleetRuntimeStorage = .{},
+    background: group_fleet.GroupFleetBackgroundRuntimeStorage = .{},
+    divergences: [relay_pool.pool_capacity]group_fleet.GroupFleetRelayDivergence =
+        [_]group_fleet.GroupFleetRelayDivergence{.{ .relay_url = "" }} ** relay_pool.pool_capacity,
 };
 
 pub const GroupFleetClient = struct {
     config: GroupFleetClientConfig,
-    fleet: workflows.GroupFleet,
+    fleet: group_fleet.GroupFleet,
 
     pub fn init(
         config: GroupFleetClientConfig,
-        fleet: workflows.GroupFleet,
+        fleet: group_fleet.GroupFleet,
     ) GroupFleetClient {
         return .{
             .config = config,
@@ -134,8 +137,8 @@ pub const GroupFleetClient = struct {
 
     pub fn relayStatuses(
         self: *const GroupFleetClient,
-        out: []workflows.GroupFleetRelayStatus,
-    ) []const workflows.GroupFleetRelayStatus {
+        out: []group_fleet.GroupFleetRelayStatus,
+    ) []const group_fleet.GroupFleetRelayStatus {
         return self.fleet.relayStatuses(out);
     }
 
@@ -143,7 +146,7 @@ pub const GroupFleetClient = struct {
         self: *const GroupFleetClient,
         storage: *GroupFleetClientStorage,
         baseline_relay_url: ?[]const u8,
-    ) GroupFleetClientError!workflows.GroupFleetRuntimePlan {
+    ) GroupFleetClientError!group_fleet.GroupFleetRuntimePlan {
         return self.fleet.inspectRuntime(baseline_relay_url, &storage.runtime);
     }
 
@@ -151,7 +154,7 @@ pub const GroupFleetClient = struct {
         self: *const GroupFleetClient,
         storage: *GroupFleetClientStorage,
         baseline_relay_url: ?[]const u8,
-    ) GroupFleetClientError!workflows.GroupFleetConsistencyReport {
+    ) GroupFleetClientError!group_fleet.GroupFleetConsistencyReport {
         const max_divergences = if (self.relayCount() == 0) 0 else self.relayCount() - 1;
         return self.fleet.inspectConsistency(
             baseline_relay_url,
@@ -163,7 +166,7 @@ pub const GroupFleetClient = struct {
         self: *const GroupFleetClient,
         storage: *GroupFleetClientStorage,
         request: GroupFleetClientBackgroundRequest,
-    ) GroupFleetClientError!workflows.GroupFleetBackgroundRuntimePlan {
+    ) GroupFleetClientError!group_fleet.GroupFleetBackgroundRuntimePlan {
         return self.fleet.inspectBackgroundRuntime(.{
             .baseline_relay_url = request.baseline_relay_url,
             .pending_merged_checkpoint = request.pending_merged_checkpoint,
@@ -174,7 +177,7 @@ pub const GroupFleetClient = struct {
 
     pub fn selectBackgroundRelay(
         self: *GroupFleetClient,
-        step: workflows.GroupFleetBackgroundRuntimeStep,
+        step: group_fleet.GroupFleetBackgroundRuntimeStep,
     ) GroupFleetClientError![]const u8 {
         return self.fleet.selectBackgroundRelay(step);
     }
@@ -184,7 +187,7 @@ pub const GroupFleetClient = struct {
         relay_url_text: []const u8,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) GroupFleetClientError!workflows.GroupFleetEventOutcome {
+    ) GroupFleetClientError!group_fleet.GroupFleetEventOutcome {
         return self.fleet.consumeRelayEventJson(relay_url_text, event_json, scratch);
     }
 
@@ -193,7 +196,7 @@ pub const GroupFleetClient = struct {
         relay_url_text: []const u8,
         event_jsons: []const []const u8,
         scratch: std.mem.Allocator,
-    ) GroupFleetClientError!workflows.GroupFleetBatchOutcome {
+    ) GroupFleetClientError!group_fleet.GroupFleetBatchOutcome {
         return self.fleet.consumeRelayEventJsons(relay_url_text, event_jsons, scratch);
     }
 
@@ -201,7 +204,7 @@ pub const GroupFleetClient = struct {
         self: *GroupFleetClient,
         relay_url_text: []const u8,
         event: *const noztr.nip01_event.Event,
-    ) GroupFleetClientError!workflows.GroupFleetEventOutcome {
+    ) GroupFleetClientError!group_fleet.GroupFleetEventOutcome {
         return self.fleet.consumeRelayEvent(relay_url_text, event);
     }
 
@@ -209,17 +212,17 @@ pub const GroupFleetClient = struct {
         self: *GroupFleetClient,
         checkpoint_storage: *GroupFleetClientCheckpointStorage,
         request: *const GroupFleetClientCheckpointRequest,
-        store: workflows.GroupFleetCheckpointStore,
-    ) (GroupFleetClientError || workflows.GroupFleetCheckpointStoreError)!workflows.GroupFleetStorePersistOutcome {
+        store: group_fleet.GroupFleetCheckpointStore,
+    ) (GroupFleetClientError || group_fleet.GroupFleetCheckpointStoreError)!group_fleet.GroupFleetStorePersistOutcome {
         var context = request.checkpointContext(checkpoint_storage);
         return self.fleet.persistCheckpointStore(store, &context);
     }
 
     pub fn restoreCheckpointStore(
         self: *GroupFleetClient,
-        store: workflows.GroupFleetCheckpointStore,
+        store: group_fleet.GroupFleetCheckpointStore,
         scratch: std.mem.Allocator,
-    ) (GroupFleetClientError || workflows.GroupFleetCheckpointStoreError)!workflows.GroupFleetStoreRestoreOutcome {
+    ) (GroupFleetClientError || group_fleet.GroupFleetCheckpointStoreError)!group_fleet.GroupFleetStoreRestoreOutcome {
         return self.fleet.restoreCheckpointStore(store, scratch);
     }
 
@@ -230,7 +233,7 @@ pub const GroupFleetClient = struct {
         baseline_relay_url: ?[]const u8,
         target_relay_url: []const u8,
         scratch: std.mem.Allocator,
-    ) GroupFleetClientError!workflows.GroupFleetTargetReconcileOutcome {
+    ) GroupFleetClientError!group_fleet.GroupFleetTargetReconcileOutcome {
         var context = request.checkpointContext(checkpoint_storage);
         return self.fleet.reconcileRelayFromBaseline(
             baseline_relay_url,
@@ -245,16 +248,16 @@ pub const GroupFleetClient = struct {
         merge_storage: *GroupFleetClientMergeStorage,
         request: *const GroupFleetClientMergeRequest,
         selection: *const GroupFleetClientMergeSelection,
-    ) GroupFleetClientError!workflows.GroupFleetMergedCheckpoint {
+    ) GroupFleetClientError!group_fleet.GroupFleetMergedCheckpoint {
         var context = request.mergeContext(merge_storage);
         return self.fleet.buildMergedCheckpoint(selection, &context);
     }
 
     pub fn applyMergedCheckpointToAll(
         self: *GroupFleetClient,
-        merged_checkpoint: *const workflows.GroupFleetMergedCheckpoint,
+        merged_checkpoint: *const group_fleet.GroupFleetMergedCheckpoint,
         scratch: std.mem.Allocator,
-    ) GroupFleetClientError!workflows.GroupFleetMergeApplyOutcome {
+    ) GroupFleetClientError!group_fleet.GroupFleetMergeApplyOutcome {
         return self.fleet.applyMergedCheckpointToAll(merged_checkpoint, scratch);
     }
 
@@ -263,7 +266,7 @@ pub const GroupFleetClient = struct {
         publish_storage: *GroupFleetClientPublishStorage,
         request: *const GroupFleetClientPublishRequest,
         draft: *const GroupFleetClientPutUserDraft,
-    ) GroupFleetClientError![]const workflows.GroupOutboundEvent {
+    ) GroupFleetClientError![]const group_session.GroupOutboundEvent {
         var context = request.publishContext(publish_storage);
         return self.fleet.beginPutUserForAll(&context, draft);
     }
@@ -273,25 +276,25 @@ pub const GroupFleetClient = struct {
         publish_storage: *GroupFleetClientPublishStorage,
         request: *const GroupFleetClientPublishRequest,
         draft: *const GroupFleetClientRemoveUserDraft,
-    ) GroupFleetClientError![]const workflows.GroupOutboundEvent {
+    ) GroupFleetClientError![]const group_session.GroupOutboundEvent {
         var context = request.publishContext(publish_storage);
         return self.fleet.beginRemoveUserForAll(&context, draft);
     }
 
     pub fn nextPublishEvent(
         self: *const GroupFleetClient,
-        events: []const workflows.GroupOutboundEvent,
-    ) ?*const workflows.GroupOutboundEvent {
+        events: []const group_session.GroupOutboundEvent,
+    ) ?*const group_session.GroupOutboundEvent {
         _ = self;
-        return workflows.GroupFleet.nextPublishEvent(events);
+        return group_fleet.GroupFleet.nextPublishEvent(events);
     }
 
     pub fn nextPublishStep(
         self: *const GroupFleetClient,
-        events: []const workflows.GroupOutboundEvent,
-    ) ?workflows.GroupFleetPublishStep {
+        events: []const group_session.GroupOutboundEvent,
+    ) ?group_fleet.GroupFleetPublishStep {
         _ = self;
-        return workflows.GroupFleet.nextPublishStep(events);
+        return group_fleet.GroupFleet.nextPublishStep(events);
     }
 };
 
@@ -301,7 +304,7 @@ test "group fleet client composes runtime consistency and background inspection 
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var client_a = try workflows.GroupClient.init(.{
+    var client_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -315,7 +318,7 @@ test "group fleet client composes runtime consistency and background inspection 
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var client_b = try workflows.GroupClient.init(.{
+    var client_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -326,12 +329,12 @@ test "group fleet client composes runtime consistency and background inspection 
     client_a.markCurrentRelayConnected();
     client_b.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &client_a, &client_b };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
     const first = try client_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -342,7 +345,7 @@ test "group fleet client composes runtime consistency and background inspection 
     _ = try groups.consumeRelayEventJson("wss://relay.one", first.event_json, arena.allocator());
     _ = try groups.consumeRelayEventJson("wss://relay.one:444", first.event_json, arena.allocator());
 
-    var changed_buffer = workflows.GroupOutboundBuffer{};
+    var changed_buffer = group_session.GroupOutboundBuffer{};
     const changed = try client_a.beginMetadataSnapshot(
         .init(2, &author_secret, &changed_buffer),
         &.{ .name = "Updated Pizza Lovers" },
@@ -353,7 +356,7 @@ test "group fleet client composes runtime consistency and background inspection 
     const runtime = try groups.inspectRuntime(&storage, "wss://relay.one:444");
     try std.testing.expectEqual(@as(u8, 1), runtime.reconcile_count);
     try std.testing.expectEqual(
-        workflows.GroupFleetRuntimeAction.reconcile,
+        group_fleet.GroupFleetRuntimeAction.reconcile,
         runtime.nextStep().?.entry.action,
     );
 
@@ -367,7 +370,7 @@ test "group fleet client composes runtime consistency and background inspection 
     try std.testing.expectEqual(@as(u8, 1), background.reconcile_count);
     const next_background = background.nextStep().?;
     try std.testing.expectEqual(
-        workflows.GroupFleetBackgroundAction.reconcile,
+        group_fleet.GroupFleetBackgroundAction.reconcile,
         next_background.entry.action,
     );
     try std.testing.expectEqualStrings(
@@ -382,7 +385,7 @@ test "group fleet client reports relay statuses and routes batch intake through 
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var client_a = try workflows.GroupClient.init(.{
+    var client_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -396,7 +399,7 @@ test "group fleet client reports relay statuses and routes batch intake through 
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var client_b = try workflows.GroupClient.init(.{
+    var client_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -406,13 +409,13 @@ test "group fleet client reports relay statuses and routes batch intake through 
     });
     client_a.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &client_a, &client_b };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
-    var roles_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
+    var roles_buffer = group_session.GroupOutboundBuffer{};
     const metadata = try client_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -439,7 +442,7 @@ test "group fleet client reports relay statuses and routes batch intake through 
     try std.testing.expectEqual(@as(usize, 2), batch.summary.total);
     try std.testing.expectEqual(@as(usize, 2), batch.summary.state_events);
 
-    var statuses: [2]workflows.GroupFleetRelayStatus = undefined;
+    var statuses: [2]group_fleet.GroupFleetRelayStatus = undefined;
     const relay_statuses = groups.relayStatuses(statuses[0..]);
     try std.testing.expectEqual(@as(usize, 2), relay_statuses.len);
     try std.testing.expectEqualStrings("wss://relay.one", relay_statuses[0].relay_url);
@@ -454,7 +457,7 @@ test "group fleet client composes checkpoint-store persistence and restore throu
     var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_a: [8][]const u8 = undefined;
-    var source_a = try workflows.GroupClient.init(.{
+    var source_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -469,7 +472,7 @@ test "group fleet client composes checkpoint-store persistence and restore throu
     var source_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_b: [8][]const u8 = undefined;
-    var source_b = try workflows.GroupClient.init(.{
+    var source_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -479,14 +482,14 @@ test "group fleet client composes checkpoint-store persistence and restore throu
     });
     source_b.markCurrentRelayConnected();
 
-    var source_members = [_]*workflows.GroupClient{ &source_a, &source_b };
-    const source_fleet = try workflows.GroupFleet.init(source_members[0..]);
+    var source_members = [_]*group_local.GroupClient{ &source_a, &source_b };
+    const source_fleet = try group_fleet.GroupFleet.init(source_members[0..]);
     var source_groups = GroupFleetClient.init(.{}, source_fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
-    var role_buffer = workflows.GroupOutboundBuffer{};
-    var member_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
+    var role_buffer = group_session.GroupOutboundBuffer{};
+    var member_buffer = group_session.GroupOutboundBuffer{};
     const metadata = try source_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -529,7 +532,7 @@ test "group fleet client composes checkpoint-store persistence and restore throu
 
     var previous_refs: [1][]const u8 = undefined;
     const selected = source_b.selectPreviousRefs(null, previous_refs[0..]);
-    var put_user_buffer = workflows.GroupOutboundBuffer{};
+    var put_user_buffer = group_session.GroupOutboundBuffer{};
     const put_user = try source_b.beginPutUser(
         .init(4, &author_secret, &put_user_buffer),
         &.{
@@ -547,9 +550,9 @@ test "group fleet client composes checkpoint-store persistence and restore throu
 
     var source_checkpoint_storage = GroupFleetClientCheckpointStorage{};
     const checkpoint_request = GroupFleetClientCheckpointRequest.init(10, &author_secret);
-    var records: [2]workflows.GroupFleetCheckpointRecord =
-        [_]workflows.GroupFleetCheckpointRecord{.{}, .{}};
-    var memory_store = workflows.MemoryGroupFleetCheckpointStore.init(records[0..]);
+    var records: [2]group_fleet.GroupFleetCheckpointRecord =
+        [_]group_fleet.GroupFleetCheckpointRecord{.{}, .{}};
+    var memory_store = group_fleet.MemoryGroupFleetCheckpointStore.init(records[0..]);
     const persisted = try source_groups.persistCheckpointStore(
         &source_checkpoint_storage,
         &checkpoint_request,
@@ -562,7 +565,7 @@ test "group fleet client composes checkpoint-store persistence and restore throu
     var target_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var target_previous_refs_a: [8][]const u8 = undefined;
-    var target_a = try workflows.GroupClient.init(.{
+    var target_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -576,7 +579,7 @@ test "group fleet client composes checkpoint-store persistence and restore throu
     var target_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var target_previous_refs_b: [8][]const u8 = undefined;
-    var target_b = try workflows.GroupClient.init(.{
+    var target_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -585,8 +588,8 @@ test "group fleet client composes checkpoint-store persistence and restore throu
         ),
     });
 
-    var target_members = [_]*workflows.GroupClient{ &target_a, &target_b };
-    const target_fleet = try workflows.GroupFleet.init(target_members[0..]);
+    var target_members = [_]*group_local.GroupClient{ &target_a, &target_b };
+    const target_fleet = try group_fleet.GroupFleet.init(target_members[0..]);
     var target_groups = GroupFleetClient.init(.{}, target_fleet);
 
     const restored = try target_groups.restoreCheckpointStore(memory_store.asStore(), arena.allocator());
@@ -603,7 +606,7 @@ test "group fleet client composes targeted reconcile from an explicit baseline r
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var baseline = try workflows.GroupClient.init(.{
+    var baseline = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -618,7 +621,7 @@ test "group fleet client composes targeted reconcile from an explicit baseline r
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var target = try workflows.GroupClient.init(.{
+    var target = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -628,12 +631,12 @@ test "group fleet client composes targeted reconcile from an explicit baseline r
     });
     target.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &baseline, &target };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &baseline, &target };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
     const first = try baseline.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -650,7 +653,7 @@ test "group fleet client composes targeted reconcile from an explicit baseline r
     var storage = GroupFleetClientStorage{};
     const before = try groups.inspectRuntime(&storage, "wss://relay.one");
     try std.testing.expectEqual(@as(u8, 1), before.reconcile_count);
-    try std.testing.expectEqual(workflows.GroupFleetRuntimeAction.reconcile, before.entry(1).?.action);
+    try std.testing.expectEqual(group_fleet.GroupFleetRuntimeAction.reconcile, before.entry(1).?.action);
 
     var checkpoint_storage = GroupFleetClientCheckpointStorage{};
     const checkpoint_request = GroupFleetClientCheckpointRequest.init(20, &author_secret);
@@ -668,8 +671,8 @@ test "group fleet client composes targeted reconcile from an explicit baseline r
     const after = try groups.inspectRuntime(&storage, "wss://relay.one");
     try std.testing.expectEqual(@as(u8, 0), after.reconcile_count);
     try std.testing.expectEqual(@as(u8, 2), after.ready_count);
-    try std.testing.expectEqual(workflows.GroupFleetRuntimeAction.ready, after.entry(0).?.action);
-    try std.testing.expectEqual(workflows.GroupFleetRuntimeAction.ready, after.entry(1).?.action);
+    try std.testing.expectEqual(group_fleet.GroupFleetRuntimeAction.ready, after.entry(0).?.action);
+    try std.testing.expectEqual(group_fleet.GroupFleetRuntimeAction.ready, after.entry(1).?.action);
 }
 
 test "group fleet client propagates targeted reconcile errors for invalid relay choices" {
@@ -678,7 +681,7 @@ test "group fleet client propagates targeted reconcile errors for invalid relay 
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var baseline = try workflows.GroupClient.init(.{
+    var baseline = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -692,7 +695,7 @@ test "group fleet client propagates targeted reconcile errors for invalid relay 
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var target = try workflows.GroupClient.init(.{
+    var target = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -701,8 +704,8 @@ test "group fleet client propagates targeted reconcile errors for invalid relay 
         ),
     });
 
-    var fleet_clients = [_]*workflows.GroupClient{ &baseline, &target };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &baseline, &target };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
@@ -739,7 +742,7 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_a: [8][]const u8 = undefined;
-    var source_a = try workflows.GroupClient.init(.{
+    var source_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -754,7 +757,7 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     var source_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_b: [8][]const u8 = undefined;
-    var source_b = try workflows.GroupClient.init(.{
+    var source_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -764,12 +767,12 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     });
     source_b.markCurrentRelayConnected();
 
-    var source_members = [_]*workflows.GroupClient{ &source_a, &source_b };
-    const source_fleet = try workflows.GroupFleet.init(source_members[0..]);
+    var source_members = [_]*group_local.GroupClient{ &source_a, &source_b };
+    const source_fleet = try group_fleet.GroupFleet.init(source_members[0..]);
     var source_groups = GroupFleetClient.init(.{}, source_fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
     const metadata = try source_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -790,8 +793,8 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
 
     var checkpoint_storage = GroupFleetClientCheckpointStorage{};
     const checkpoint_request = GroupFleetClientCheckpointRequest.init(30, &author_secret);
-    var short_records: [1]workflows.GroupFleetCheckpointRecord = [_]workflows.GroupFleetCheckpointRecord{.{}} ** 1;
-    var short_store = workflows.MemoryGroupFleetCheckpointStore.init(short_records[0..]);
+    var short_records: [1]group_fleet.GroupFleetCheckpointRecord = [_]group_fleet.GroupFleetCheckpointRecord{.{}} ** 1;
+    var short_store = group_fleet.MemoryGroupFleetCheckpointStore.init(short_records[0..]);
     try std.testing.expectError(
         error.StoreFull,
         source_groups.persistCheckpointStore(
@@ -801,8 +804,8 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
         ),
     );
 
-    var full_records: [2]workflows.GroupFleetCheckpointRecord = [_]workflows.GroupFleetCheckpointRecord{.{}, .{}};
-    var full_store = workflows.MemoryGroupFleetCheckpointStore.init(full_records[0..]);
+    var full_records: [2]group_fleet.GroupFleetCheckpointRecord = [_]group_fleet.GroupFleetCheckpointRecord{.{}, .{}};
+    var full_store = group_fleet.MemoryGroupFleetCheckpointStore.init(full_records[0..]);
     _ = try source_groups.persistCheckpointStore(
         &checkpoint_storage,
         &checkpoint_request,
@@ -814,7 +817,7 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     var target_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var target_previous_refs_a: [8][]const u8 = undefined;
-    var target_a = try workflows.GroupClient.init(.{
+    var target_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -828,7 +831,7 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     var target_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var target_previous_refs_b: [8][]const u8 = undefined;
-    var target_b = try workflows.GroupClient.init(.{
+    var target_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -837,15 +840,15 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
         ),
     });
 
-    var target_members = [_]*workflows.GroupClient{ &target_a, &target_b };
-    const target_fleet = try workflows.GroupFleet.init(target_members[0..]);
+    var target_members = [_]*group_local.GroupClient{ &target_a, &target_b };
+    const target_fleet = try group_fleet.GroupFleet.init(target_members[0..]);
     var target_groups = GroupFleetClient.init(.{}, target_fleet);
 
-    var one_records: [1]workflows.GroupFleetCheckpointRecord = [_]workflows.GroupFleetCheckpointRecord{.{}} ** 1;
-    var one_store = workflows.MemoryGroupFleetCheckpointStore.init(one_records[0..]);
-    var checkpoint_buffers = workflows.GroupCheckpointBuffers{};
+    var one_records: [1]group_fleet.GroupFleetCheckpointRecord = [_]group_fleet.GroupFleetCheckpointRecord{.{}} ** 1;
+    var one_store = group_fleet.MemoryGroupFleetCheckpointStore.init(one_records[0..]);
+    var checkpoint_buffers = group_local.GroupCheckpointBuffers{};
     const source_checkpoint = try source_a.exportCheckpoint(
-        workflows.GroupCheckpointContext.init(40, &author_secret, &checkpoint_buffers),
+        group_local.GroupCheckpointContext.init(40, &author_secret, &checkpoint_buffers),
     );
     _ = try one_store.putCheckpoint(&source_checkpoint);
 
@@ -861,7 +864,7 @@ test "group fleet client composes merged checkpoint build and apply from explici
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var client_a = try workflows.GroupClient.init(.{
+    var client_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -876,7 +879,7 @@ test "group fleet client composes merged checkpoint build and apply from explici
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var client_b = try workflows.GroupClient.init(.{
+    var client_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -886,15 +889,15 @@ test "group fleet client composes merged checkpoint build and apply from explici
     });
     client_b.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &client_a, &client_b };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var metadata_buffer_a = workflows.GroupOutboundBuffer{};
+    var metadata_buffer_a = group_session.GroupOutboundBuffer{};
     const metadata_event_a = try client_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer_a),
         &.{ .name = "Pizza Lovers" },
@@ -905,7 +908,7 @@ test "group fleet client composes merged checkpoint build and apply from explici
         arena.allocator(),
     );
 
-    var members_buffer_a = workflows.GroupOutboundBuffer{};
+    var members_buffer_a = group_session.GroupOutboundBuffer{};
     const members_event_a = try client_a.beginMembersSnapshot(
         .init(2, &author_secret, &members_buffer_a),
         &.{
@@ -923,7 +926,7 @@ test "group fleet client composes merged checkpoint build and apply from explici
         arena.allocator(),
     );
 
-    var metadata_buffer_b = workflows.GroupOutboundBuffer{};
+    var metadata_buffer_b = group_session.GroupOutboundBuffer{};
     const metadata_event_b = try client_b.beginMetadataSnapshot(
         .init(3, &author_secret, &metadata_buffer_b),
         &.{ .name = "Pizza Lovers Relay Two" },
@@ -934,7 +937,7 @@ test "group fleet client composes merged checkpoint build and apply from explici
         arena.allocator(),
     );
 
-    var members_buffer_b = workflows.GroupOutboundBuffer{};
+    var members_buffer_b = group_session.GroupOutboundBuffer{};
     const members_event_b = try client_b.beginMembersSnapshot(
         .init(4, &author_secret, &members_buffer_b),
         &.{
@@ -987,7 +990,7 @@ test "group fleet client merge composition falls back to baseline and rejects un
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var client_a = try workflows.GroupClient.init(.{
+    var client_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -1002,7 +1005,7 @@ test "group fleet client merge composition falls back to baseline and rejects un
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var client_b = try workflows.GroupClient.init(.{
+    var client_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -1012,12 +1015,12 @@ test "group fleet client merge composition falls back to baseline and rejects un
     });
     client_b.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &client_a, &client_b };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer_a = workflows.GroupOutboundBuffer{};
+    var metadata_buffer_a = group_session.GroupOutboundBuffer{};
     const metadata_event_a = try client_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer_a),
         &.{ .name = "Pizza Lovers" },
@@ -1065,7 +1068,7 @@ test "group fleet client composes one put-user publish fanout and next-step sele
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var client_a = try workflows.GroupClient.init(.{
+    var client_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -1080,7 +1083,7 @@ test "group fleet client composes one put-user publish fanout and next-step sele
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var client_b = try workflows.GroupClient.init(.{
+    var client_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -1090,14 +1093,14 @@ test "group fleet client composes one put-user publish fanout and next-step sele
     });
     client_b.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &client_a, &client_b };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
-    var roles_buffer = workflows.GroupOutboundBuffer{};
-    var members_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
+    var roles_buffer = group_session.GroupOutboundBuffer{};
+    var members_buffer = group_session.GroupOutboundBuffer{};
     const metadata = try client_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -1137,11 +1140,11 @@ test "group fleet client composes one put-user publish fanout and next-step sele
         arena.allocator(),
     );
 
-    var publish_buffers: [2]workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]group_session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_ref_buf_a: [8][]const u8 = undefined;
     var previous_ref_buf_b: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{ previous_ref_buf_a[0..], previous_ref_buf_b[0..] };
-    var outbound_events: [2]workflows.GroupOutboundEvent = undefined;
+    var outbound_events: [2]group_session.GroupOutboundEvent = undefined;
     var publish_storage = GroupFleetClientPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
@@ -1181,7 +1184,7 @@ test "group fleet client publish composition surfaces background publish and buf
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var client_a = try workflows.GroupClient.init(.{
+    var client_a = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -1196,7 +1199,7 @@ test "group fleet client publish composition surfaces background publish and buf
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var client_b = try workflows.GroupClient.init(.{
+    var client_b = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -1206,14 +1209,14 @@ test "group fleet client publish composition surfaces background publish and buf
     });
     client_b.markCurrentRelayConnected();
 
-    var fleet_clients = [_]*workflows.GroupClient{ &client_a, &client_b };
-    const fleet = try workflows.GroupFleet.init(fleet_clients[0..]);
+    var fleet_clients = [_]*group_local.GroupClient{ &client_a, &client_b };
+    const fleet = try group_fleet.GroupFleet.init(fleet_clients[0..]);
     var groups = GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
-    var roles_buffer = workflows.GroupOutboundBuffer{};
-    var members_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
+    var roles_buffer = group_session.GroupOutboundBuffer{};
+    var members_buffer = group_session.GroupOutboundBuffer{};
     const metadata = try client_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -1253,11 +1256,11 @@ test "group fleet client publish composition surfaces background publish and buf
         arena.allocator(),
     );
 
-    var publish_buffers: [2]workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]group_session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_ref_buf_a: [8][]const u8 = undefined;
     var previous_ref_buf_b: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{ previous_ref_buf_a[0..], previous_ref_buf_b[0..] };
-    var outbound_events: [2]workflows.GroupOutboundEvent = undefined;
+    var outbound_events: [2]group_session.GroupOutboundEvent = undefined;
     var publish_storage = GroupFleetClientPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
@@ -1280,13 +1283,13 @@ test "group fleet client publish composition surfaces background publish and buf
     });
     try std.testing.expectEqual(@as(u8, 1), background.publish_count);
     const next_step = background.nextStep().?;
-    try std.testing.expectEqual(workflows.GroupFleetBackgroundAction.publish, next_step.entry.action);
+    try std.testing.expectEqual(group_fleet.GroupFleetBackgroundAction.publish, next_step.entry.action);
     try std.testing.expectEqualStrings("wss://relay.one", try groups.selectBackgroundRelay(next_step));
 
-    var small_buffers: [1]workflows.GroupOutboundBuffer = .{.{}};
+    var small_buffers: [1]group_session.GroupOutboundBuffer = .{.{}};
     var small_previous_refs_a: [8][]const u8 = undefined;
     var small_previous_refs = [_][][]const u8{small_previous_refs_a[0..]};
-    var small_events: [1]workflows.GroupOutboundEvent = undefined;
+    var small_events: [1]group_session.GroupOutboundEvent = undefined;
     var small_publish_storage = GroupFleetClientPublishStorage.init(
         small_buffers[0..],
         small_previous_refs[0..],

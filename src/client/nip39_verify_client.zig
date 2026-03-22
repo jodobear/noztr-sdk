@@ -6,23 +6,23 @@ const workflows = @import("../workflows/mod.zig");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
 
 pub const Nip39VerifyClientError =
-    workflows.IdentityRememberedProfileVerificationError ||
-    workflows.IdentityRememberedIdentityPlanningError ||
-    workflows.IdentityStoredProfileDiscoveryError ||
-    workflows.IdentityStoredWatchedTargetTurnPolicyError ||
-    workflows.IdentityStoredWatchedTargetOrchestrationError;
+    workflows.identity.verify.IdentityRememberedProfileVerificationError ||
+    workflows.identity.verify.IdentityRememberedIdentityPlanningError ||
+    workflows.identity.verify.IdentityStoredProfileDiscoveryError ||
+    workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyError ||
+    workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationError;
 
 pub const Nip39VerifyClientConfig = struct {};
 
 pub const Nip39VerifyClientStorage = struct {
     claims: []noztr.nip39_external_identities.IdentityClaim,
-    verification: []workflows.IdentityVerificationStorage,
-    results: []workflows.IdentityClaimVerification,
+    verification: []workflows.identity.verify.IdentityVerificationStorage,
+    results: []workflows.identity.verify.IdentityClaimVerification,
 
     pub fn init(
         claims: []noztr.nip39_external_identities.IdentityClaim,
-        verification: []workflows.IdentityVerificationStorage,
-        results: []workflows.IdentityClaimVerification,
+        verification: []workflows.identity.verify.IdentityVerificationStorage,
+        results: []workflows.identity.verify.IdentityClaimVerification,
     ) Nip39VerifyClientStorage {
         return .{
             .claims = claims,
@@ -33,8 +33,8 @@ pub const Nip39VerifyClientStorage = struct {
 
     pub fn asWorkflowStorage(
         self: *const Nip39VerifyClientStorage,
-    ) workflows.IdentityProfileVerificationStorage {
-        return workflows.IdentityProfileVerificationStorage.init(
+    ) workflows.identity.verify.IdentityProfileVerificationStorage {
+        return workflows.identity.verify.IdentityProfileVerificationStorage.init(
             self.claims,
             self.verification,
             self.results,
@@ -42,138 +42,138 @@ pub const Nip39VerifyClientStorage = struct {
     }
 };
 
-pub const Nip39VerifyJob = workflows.IdentityProfileVerificationRequest;
-pub const Nip39VerifySummary = workflows.IdentityProfileVerificationSummary;
-pub const Nip39VerifyJobResult = workflows.IdentityRememberedProfileVerification;
+pub const Nip39VerifyJob = workflows.identity.verify.IdentityProfileVerificationRequest;
+pub const Nip39VerifySummary = workflows.identity.verify.IdentityProfileVerificationSummary;
+pub const Nip39VerifyJobResult = workflows.identity.verify.IdentityRememberedProfileVerification;
 
 pub const Nip39StoredProfilePlanning = struct {
-    pub const ProfileMatch = workflows.IdentityProfileMatch;
-    pub const RememberedIdentityRecord = workflows.IdentityRememberedIdentityRecord;
-    pub const WatchedTargetRecord = workflows.IdentityWatchedTargetRecord;
-    pub const StoredProfileDiscoveryEntry = workflows.IdentityStoredProfileDiscoveryEntry;
-    pub const StoredProfileFreshness = workflows.IdentityStoredProfileFreshness;
-    pub const StoredProfileFallbackPolicy = workflows.IdentityStoredProfileFallbackPolicy;
+    pub const ProfileMatch = workflows.identity.verify.IdentityProfileMatch;
+    pub const RememberedIdentityRecord = workflows.identity.verify.IdentityRememberedIdentityRecord;
+    pub const WatchedTargetRecord = workflows.identity.verify.IdentityWatchedTargetRecord;
+    pub const StoredProfileDiscoveryEntry = workflows.identity.verify.IdentityStoredProfileDiscoveryEntry;
+    pub const StoredProfileFreshness = workflows.identity.verify.IdentityStoredProfileFreshness;
+    pub const StoredProfileFallbackPolicy = workflows.identity.verify.IdentityStoredProfileFallbackPolicy;
     pub const StoredProfileDiscoveryFreshnessEntry =
-        workflows.IdentityStoredProfileDiscoveryFreshnessEntry;
-    pub const Target = workflows.IdentityStoredProfileTarget;
-    pub const TargetDiscoveryGroup = workflows.IdentityStoredProfileTargetDiscoveryGroup;
-    pub const TargetDiscoveryStorage = workflows.IdentityStoredProfileTargetDiscoveryStorage;
-    pub const TargetDiscoveryRequest = workflows.IdentityStoredProfileTargetDiscoveryRequest;
+        workflows.identity.verify.IdentityStoredProfileDiscoveryFreshnessEntry;
+    pub const Target = workflows.identity.verify.IdentityStoredProfileTarget;
+    pub const TargetDiscoveryGroup = workflows.identity.verify.IdentityStoredProfileTargetDiscoveryGroup;
+    pub const TargetDiscoveryStorage = workflows.identity.verify.IdentityStoredProfileTargetDiscoveryStorage;
+    pub const TargetDiscoveryRequest = workflows.identity.verify.IdentityStoredProfileTargetDiscoveryRequest;
     pub const TargetDiscoveryFreshnessGroup =
-        workflows.IdentityStoredProfileTargetDiscoveryFreshnessGroup;
+        workflows.identity.verify.IdentityStoredProfileTargetDiscoveryFreshnessGroup;
     pub const TargetDiscoveryFreshnessStorage =
-        workflows.IdentityStoredProfileTargetDiscoveryFreshnessStorage;
+        workflows.identity.verify.IdentityStoredProfileTargetDiscoveryFreshnessStorage;
     pub const TargetDiscoveryFreshnessRequest =
-        workflows.IdentityStoredProfileTargetDiscoveryFreshnessRequest;
-    pub const PreferredTargetEntry = workflows.IdentityPreferredStoredProfileTargetEntry;
-    pub const PreferredTargetStorage = workflows.IdentityPreferredStoredProfileTargetStorage;
+        workflows.identity.verify.IdentityStoredProfileTargetDiscoveryFreshnessRequest;
+    pub const PreferredTargetEntry = workflows.identity.verify.IdentityPreferredStoredProfileTargetEntry;
+    pub const PreferredTargetStorage = workflows.identity.verify.IdentityPreferredStoredProfileTargetStorage;
     pub const PreferredTargetSelectionRequest =
-        workflows.IdentityPreferredStoredProfileTargetSelectionRequest;
+        workflows.identity.verify.IdentityPreferredStoredProfileTargetSelectionRequest;
     pub const TargetLatestFreshnessEntry =
-        workflows.IdentityStoredProfileTargetLatestFreshnessEntry;
+        workflows.identity.verify.IdentityStoredProfileTargetLatestFreshnessEntry;
     pub const TargetLatestFreshnessStorage =
-        workflows.IdentityStoredProfileTargetLatestFreshnessStorage;
+        workflows.identity.verify.IdentityStoredProfileTargetLatestFreshnessStorage;
     pub const TargetLatestFreshnessRequest =
-        workflows.IdentityStoredProfileTargetLatestFreshnessRequest;
+        workflows.identity.verify.IdentityStoredProfileTargetLatestFreshnessRequest;
     pub const RememberedIdentityLatestFreshnessStorage =
-        workflows.IdentityRememberedIdentityLatestFreshnessStorage;
+        workflows.identity.verify.IdentityRememberedIdentityLatestFreshnessStorage;
     pub const RememberedIdentityLatestFreshnessRequest =
-        workflows.IdentityRememberedIdentityLatestFreshnessRequest;
+        workflows.identity.verify.IdentityRememberedIdentityLatestFreshnessRequest;
     pub const RememberedIdentityLatestFreshnessPlan =
-        workflows.IdentityRememberedIdentityLatestFreshnessPlan;
-    pub const PreferredTargetRequest = workflows.IdentityPreferredStoredProfileTargetRequest;
-    pub const PreferredTarget = workflows.IdentityPreferredStoredProfileTarget;
-    pub const TargetRefreshEntry = workflows.IdentityStoredProfileTargetRefreshEntry;
-    pub const TargetRefreshStorage = workflows.IdentityStoredProfileTargetRefreshStorage;
-    pub const TargetRefreshRequest = workflows.IdentityStoredProfileTargetRefreshRequest;
-    pub const TargetRefreshPlan = workflows.IdentityStoredProfileTargetRefreshPlan;
-    pub const TargetRefreshStep = workflows.IdentityStoredProfileTargetRefreshStep;
-    pub const TargetRuntimeAction = workflows.IdentityStoredProfileTargetRuntimeAction;
-    pub const TargetRuntimeRequest = workflows.IdentityStoredProfileTargetRuntimeRequest;
-    pub const TargetRuntimePlan = workflows.IdentityStoredProfileTargetRuntimePlan;
-    pub const TargetRuntimeStep = workflows.IdentityStoredProfileTargetRuntimeStep;
-    pub const TargetPolicyEntry = workflows.IdentityStoredProfileTargetPolicyEntry;
-    pub const TargetPolicyGroup = workflows.IdentityStoredProfileTargetPolicyGroup;
-    pub const TargetPolicyStorage = workflows.IdentityStoredProfileTargetPolicyStorage;
-    pub const TargetPolicyRequest = workflows.IdentityStoredProfileTargetPolicyRequest;
-    pub const TargetPolicyPlan = workflows.IdentityStoredProfileTargetPolicyPlan;
+        workflows.identity.verify.IdentityRememberedIdentityLatestFreshnessPlan;
+    pub const PreferredTargetRequest = workflows.identity.verify.IdentityPreferredStoredProfileTargetRequest;
+    pub const PreferredTarget = workflows.identity.verify.IdentityPreferredStoredProfileTarget;
+    pub const TargetRefreshEntry = workflows.identity.verify.IdentityStoredProfileTargetRefreshEntry;
+    pub const TargetRefreshStorage = workflows.identity.verify.IdentityStoredProfileTargetRefreshStorage;
+    pub const TargetRefreshRequest = workflows.identity.verify.IdentityStoredProfileTargetRefreshRequest;
+    pub const TargetRefreshPlan = workflows.identity.verify.IdentityStoredProfileTargetRefreshPlan;
+    pub const TargetRefreshStep = workflows.identity.verify.IdentityStoredProfileTargetRefreshStep;
+    pub const TargetRuntimeAction = workflows.identity.verify.IdentityStoredProfileTargetRuntimeAction;
+    pub const TargetRuntimeRequest = workflows.identity.verify.IdentityStoredProfileTargetRuntimeRequest;
+    pub const TargetRuntimePlan = workflows.identity.verify.IdentityStoredProfileTargetRuntimePlan;
+    pub const TargetRuntimeStep = workflows.identity.verify.IdentityStoredProfileTargetRuntimeStep;
+    pub const TargetPolicyEntry = workflows.identity.verify.IdentityStoredProfileTargetPolicyEntry;
+    pub const TargetPolicyGroup = workflows.identity.verify.IdentityStoredProfileTargetPolicyGroup;
+    pub const TargetPolicyStorage = workflows.identity.verify.IdentityStoredProfileTargetPolicyStorage;
+    pub const TargetPolicyRequest = workflows.identity.verify.IdentityStoredProfileTargetPolicyRequest;
+    pub const TargetPolicyPlan = workflows.identity.verify.IdentityStoredProfileTargetPolicyPlan;
     pub const TargetRefreshCadenceAction =
-        workflows.IdentityStoredProfileTargetRefreshCadenceAction;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadenceAction;
     pub const TargetRefreshCadenceEntry =
-        workflows.IdentityStoredProfileTargetRefreshCadenceEntry;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadenceEntry;
     pub const TargetRefreshCadenceGroup =
-        workflows.IdentityStoredProfileTargetRefreshCadenceGroup;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadenceGroup;
     pub const TargetRefreshCadenceStorage =
-        workflows.IdentityStoredProfileTargetRefreshCadenceStorage;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadenceStorage;
     pub const TargetRefreshCadenceRequest =
-        workflows.IdentityStoredProfileTargetRefreshCadenceRequest;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadenceRequest;
     pub const TargetRefreshCadencePlan =
-        workflows.IdentityStoredProfileTargetRefreshCadencePlan;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadencePlan;
     pub const TargetRefreshCadenceStep =
-        workflows.IdentityStoredProfileTargetRefreshCadenceStep;
+        workflows.identity.verify.IdentityStoredProfileTargetRefreshCadenceStep;
     pub const RememberedIdentityRefreshCadenceStorage =
-        workflows.IdentityRememberedIdentityRefreshCadenceStorage;
+        workflows.identity.verify.IdentityRememberedIdentityRefreshCadenceStorage;
     pub const RememberedIdentityRefreshCadenceRequest =
-        workflows.IdentityRememberedIdentityRefreshCadenceRequest;
+        workflows.identity.verify.IdentityRememberedIdentityRefreshCadenceRequest;
     pub const RememberedIdentityRefreshCadencePlan =
-        workflows.IdentityRememberedIdentityRefreshCadencePlan;
-    pub const TargetRefreshBatchStorage = workflows.IdentityStoredProfileTargetRefreshBatchStorage;
-    pub const TargetRefreshBatchRequest = workflows.IdentityStoredProfileTargetRefreshBatchRequest;
-    pub const TargetRefreshBatchPlan = workflows.IdentityStoredProfileTargetRefreshBatchPlan;
-    pub const TargetRefreshBatchStep = workflows.IdentityStoredProfileTargetRefreshBatchStep;
+        workflows.identity.verify.IdentityRememberedIdentityRefreshCadencePlan;
+    pub const TargetRefreshBatchStorage = workflows.identity.verify.IdentityStoredProfileTargetRefreshBatchStorage;
+    pub const TargetRefreshBatchRequest = workflows.identity.verify.IdentityStoredProfileTargetRefreshBatchRequest;
+    pub const TargetRefreshBatchPlan = workflows.identity.verify.IdentityStoredProfileTargetRefreshBatchPlan;
+    pub const TargetRefreshBatchStep = workflows.identity.verify.IdentityStoredProfileTargetRefreshBatchStep;
     pub const RememberedIdentityRefreshBatchStorage =
-        workflows.IdentityRememberedIdentityRefreshBatchStorage;
+        workflows.identity.verify.IdentityRememberedIdentityRefreshBatchStorage;
     pub const RememberedIdentityRefreshBatchRequest =
-        workflows.IdentityRememberedIdentityRefreshBatchRequest;
+        workflows.identity.verify.IdentityRememberedIdentityRefreshBatchRequest;
     pub const RememberedIdentityRefreshBatchPlan =
-        workflows.IdentityRememberedIdentityRefreshBatchPlan;
-    pub const TargetTurnPolicyAction = workflows.IdentityStoredProfileTargetTurnPolicyAction;
-    pub const TargetTurnPolicyEntry = workflows.IdentityStoredProfileTargetTurnPolicyEntry;
-    pub const TargetTurnPolicyGroup = workflows.IdentityStoredProfileTargetTurnPolicyGroup;
-    pub const TargetTurnPolicyStorage = workflows.IdentityStoredProfileTargetTurnPolicyStorage;
-    pub const TargetTurnPolicyRequest = workflows.IdentityStoredProfileTargetTurnPolicyRequest;
-    pub const TargetTurnPolicyPlan = workflows.IdentityStoredProfileTargetTurnPolicyPlan;
-    pub const TargetTurnPolicyStep = workflows.IdentityStoredProfileTargetTurnPolicyStep;
+        workflows.identity.verify.IdentityRememberedIdentityRefreshBatchPlan;
+    pub const TargetTurnPolicyAction = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyAction;
+    pub const TargetTurnPolicyEntry = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyEntry;
+    pub const TargetTurnPolicyGroup = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyGroup;
+    pub const TargetTurnPolicyStorage = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyStorage;
+    pub const TargetTurnPolicyRequest = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyRequest;
+    pub const TargetTurnPolicyPlan = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyPlan;
+    pub const TargetTurnPolicyStep = workflows.identity.verify.IdentityStoredProfileTargetTurnPolicyStep;
     pub const StoredWatchedTargetPolicyError =
-        workflows.IdentityStoredWatchedTargetPolicyError;
+        workflows.identity.verify.IdentityStoredWatchedTargetPolicyError;
     pub const StoredWatchedTargetPolicyStorage =
-        workflows.IdentityStoredWatchedTargetPolicyStorage;
+        workflows.identity.verify.IdentityStoredWatchedTargetPolicyStorage;
     pub const StoredWatchedTargetPolicyRequest =
-        workflows.IdentityStoredWatchedTargetPolicyRequest;
+        workflows.identity.verify.IdentityStoredWatchedTargetPolicyRequest;
     pub const StoredWatchedTargetPolicyPlan =
-        workflows.IdentityStoredWatchedTargetPolicyPlan;
+        workflows.identity.verify.IdentityStoredWatchedTargetPolicyPlan;
     pub const StoredWatchedTargetRefreshCadenceError =
-        workflows.IdentityStoredWatchedTargetRefreshCadenceError;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshCadenceError;
     pub const StoredWatchedTargetRefreshCadenceStorage =
-        workflows.IdentityStoredWatchedTargetRefreshCadenceStorage;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshCadenceStorage;
     pub const StoredWatchedTargetRefreshCadenceRequest =
-        workflows.IdentityStoredWatchedTargetRefreshCadenceRequest;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshCadenceRequest;
     pub const StoredWatchedTargetRefreshCadencePlan =
-        workflows.IdentityStoredWatchedTargetRefreshCadencePlan;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshCadencePlan;
     pub const StoredWatchedTargetRefreshBatchError =
-        workflows.IdentityStoredWatchedTargetRefreshBatchError;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchError;
     pub const StoredWatchedTargetRefreshBatchStorage =
-        workflows.IdentityStoredWatchedTargetRefreshBatchStorage;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchStorage;
     pub const StoredWatchedTargetRefreshBatchRequest =
-        workflows.IdentityStoredWatchedTargetRefreshBatchRequest;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchRequest;
     pub const StoredWatchedTargetRefreshBatchPlan =
-        workflows.IdentityStoredWatchedTargetRefreshBatchPlan;
+        workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchPlan;
     pub const StoredWatchedTargetOrchestrationError =
-        workflows.IdentityStoredWatchedTargetOrchestrationError;
+        workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationError;
     pub const StoredWatchedTargetOrchestrationStorage =
-        workflows.IdentityStoredWatchedTargetOrchestrationStorage;
+        workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationStorage;
     pub const StoredWatchedTargetOrchestrationRequest =
-        workflows.IdentityStoredWatchedTargetOrchestrationRequest;
+        workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationRequest;
     pub const StoredWatchedTargetOrchestrationPlan =
-        workflows.IdentityStoredWatchedTargetOrchestrationPlan;
+        workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationPlan;
     pub const StoredWatchedTargetTurnPolicyError =
-        workflows.IdentityStoredWatchedTargetTurnPolicyError;
+        workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyError;
     pub const StoredWatchedTargetTurnPolicyStorage =
-        workflows.IdentityStoredWatchedTargetTurnPolicyStorage;
+        workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyStorage;
     pub const StoredWatchedTargetTurnPolicyRequest =
-        workflows.IdentityStoredWatchedTargetTurnPolicyRequest;
+        workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyRequest;
     pub const StoredWatchedTargetTurnPolicyPlan =
-        workflows.IdentityStoredWatchedTargetTurnPolicyPlan;
+        workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyPlan;
 };
 
 pub const Nip39VerifyClient = struct {
@@ -203,28 +203,28 @@ pub const Nip39VerifyClient = struct {
         job: Nip39VerifyJob,
     ) Nip39VerifyClientError!Nip39VerifySummary {
         _ = self;
-        return workflows.IdentityVerifier.verifyProfile(http_client, job);
+        return workflows.identity.verify.IdentityVerifier.verifyProfile(http_client, job);
     }
 
     pub fn verifyProfileCached(
         self: *const Nip39VerifyClient,
         http_client: transport.HttpClient,
-        cache: workflows.IdentityVerificationCache,
+        cache: workflows.identity.verify.IdentityVerificationCache,
         job: Nip39VerifyJob,
     ) Nip39VerifyClientError!Nip39VerifySummary {
         _ = self;
-        return workflows.IdentityVerifier.verifyProfileCached(http_client, cache, job);
+        return workflows.identity.verify.IdentityVerifier.verifyProfileCached(http_client, cache, job);
     }
 
     pub fn verifyProfileCachedAndRemember(
         self: *const Nip39VerifyClient,
         http_client: transport.HttpClient,
-        cache: workflows.IdentityVerificationCache,
-        store: workflows.IdentityProfileStore,
+        cache: workflows.identity.verify.IdentityVerificationCache,
+        store: workflows.identity.verify.IdentityProfileStore,
         job: Nip39VerifyJob,
     ) Nip39VerifyClientError!Nip39VerifyJobResult {
         _ = self;
-        return workflows.IdentityVerifier.verifyProfileCachedAndRemember(
+        return workflows.identity.verify.IdentityVerifier.verifyProfileCachedAndRemember(
             http_client,
             cache,
             store,
@@ -234,20 +234,20 @@ pub const Nip39VerifyClient = struct {
 
     pub fn discoverStoredProfileEntriesForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetDiscoveryRequest,
     ) Nip39VerifyClientError![]const Nip39StoredProfilePlanning.TargetDiscoveryGroup {
         _ = self;
-        return workflows.IdentityVerifier.discoverStoredProfileEntriesForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.discoverStoredProfileEntriesForTargets(store, request);
     }
 
     pub fn discoverStoredProfileEntriesWithFreshnessForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetDiscoveryFreshnessRequest,
     ) Nip39VerifyClientError![]const Nip39StoredProfilePlanning.TargetDiscoveryFreshnessGroup {
         _ = self;
-        return workflows.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
+        return workflows.identity.verify.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
             store,
             request,
         );
@@ -255,11 +255,11 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectLatestStoredProfileFreshnessForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetLatestFreshnessRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetLatestFreshnessPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
+        return workflows.identity.verify.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
             store,
             request,
         );
@@ -267,65 +267,65 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectRememberedIdentityLatestFreshness(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.RememberedIdentityLatestFreshnessRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.RememberedIdentityLatestFreshnessPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectRememberedIdentityLatestFreshness(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityLatestFreshness(store, request);
     }
 
     pub fn getPreferredStoredProfilesForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.PreferredTargetSelectionRequest,
     ) Nip39VerifyClientError![]const Nip39StoredProfilePlanning.PreferredTargetEntry {
         _ = self;
-        return workflows.IdentityVerifier.getPreferredStoredProfilesForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.getPreferredStoredProfilesForTargets(store, request);
     }
 
     pub fn getPreferredStoredProfileForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.PreferredTargetRequest,
     ) Nip39VerifyClientError!?Nip39StoredProfilePlanning.PreferredTarget {
         _ = self;
-        return workflows.IdentityVerifier.getPreferredStoredProfileForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.getPreferredStoredProfileForTargets(store, request);
     }
 
     pub fn planStoredProfileRefreshForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetRefreshRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetRefreshPlan {
         _ = self;
-        return workflows.IdentityVerifier.planStoredProfileRefreshForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.planStoredProfileRefreshForTargets(store, request);
     }
 
     pub fn inspectStoredProfileRuntimeForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetRuntimeRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetRuntimePlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredProfileRuntimeForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRuntimeForTargets(store, request);
     }
 
     pub fn inspectStoredProfilePolicyForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetPolicyRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetPolicyPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredProfilePolicyForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectStoredProfilePolicyForTargets(store, request);
     }
 
     pub fn inspectStoredProfileRefreshCadenceForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetRefreshCadenceRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetRefreshCadencePlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
             store,
             request,
         );
@@ -333,11 +333,11 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectStoredProfileRefreshBatchForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetRefreshBatchRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetRefreshBatchPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
             store,
             request,
         );
@@ -345,21 +345,21 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectStoredProfileTurnPolicyForTargets(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.TargetTurnPolicyRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.TargetTurnPolicyPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(store, request);
     }
 
     pub fn inspectStoredWatchedTargetPolicy(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
-        watched_target_store: workflows.IdentityWatchedTargetStore,
+        store: workflows.identity.verify.IdentityProfileStore,
+        watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
         request: Nip39StoredProfilePlanning.StoredWatchedTargetPolicyRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetPolicyPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredWatchedTargetPolicy(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetPolicy(
             store,
             watched_target_store,
             request,
@@ -368,12 +368,12 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectStoredWatchedTargetRefreshCadence(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
-        watched_target_store: workflows.IdentityWatchedTargetStore,
+        store: workflows.identity.verify.IdentityProfileStore,
+        watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
         request: Nip39StoredProfilePlanning.StoredWatchedTargetRefreshCadenceRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetRefreshCadencePlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredWatchedTargetRefreshCadence(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetRefreshCadence(
             store,
             watched_target_store,
             request,
@@ -382,21 +382,21 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectRememberedIdentityRefreshCadence(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.RememberedIdentityRefreshCadenceRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.RememberedIdentityRefreshCadencePlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectRememberedIdentityRefreshCadence(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityRefreshCadence(store, request);
     }
 
     pub fn inspectStoredWatchedTargetRefreshBatch(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
-        watched_target_store: workflows.IdentityWatchedTargetStore,
+        store: workflows.identity.verify.IdentityProfileStore,
+        watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
         request: Nip39StoredProfilePlanning.StoredWatchedTargetRefreshBatchRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetRefreshBatchPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredWatchedTargetRefreshBatch(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetRefreshBatch(
             store,
             watched_target_store,
             request,
@@ -405,21 +405,21 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectRememberedIdentityRefreshBatch(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
+        store: workflows.identity.verify.IdentityProfileStore,
         request: Nip39StoredProfilePlanning.RememberedIdentityRefreshBatchRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.RememberedIdentityRefreshBatchPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectRememberedIdentityRefreshBatch(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityRefreshBatch(store, request);
     }
 
     pub fn inspectStoredWatchedTargetTurnPolicy(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
-        watched_target_store: workflows.IdentityWatchedTargetStore,
+        store: workflows.identity.verify.IdentityProfileStore,
+        watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
         request: Nip39StoredProfilePlanning.StoredWatchedTargetTurnPolicyRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetTurnPolicyPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredWatchedTargetTurnPolicy(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetTurnPolicy(
             store,
             watched_target_store,
             request,
@@ -428,12 +428,12 @@ pub const Nip39VerifyClient = struct {
 
     pub fn inspectStoredWatchedTargetOrchestration(
         self: *const Nip39VerifyClient,
-        store: workflows.IdentityProfileStore,
-        watched_target_store: workflows.IdentityWatchedTargetStore,
+        store: workflows.identity.verify.IdentityProfileStore,
+        watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
         request: Nip39StoredProfilePlanning.StoredWatchedTargetOrchestrationRequest,
     ) Nip39VerifyClientError!Nip39StoredProfilePlanning.StoredWatchedTargetOrchestrationPlan {
         _ = self;
-        return workflows.IdentityVerifier.inspectStoredWatchedTargetOrchestration(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetOrchestration(
             store,
             watched_target_store,
             request,
@@ -443,8 +443,8 @@ pub const Nip39VerifyClient = struct {
 
 test "nip39 verify client exposes caller-owned profile verification storage" {
     var claims: [2]noztr.nip39_external_identities.IdentityClaim = undefined;
-    var verification: [2]workflows.IdentityVerificationStorage = undefined;
-    var results: [2]workflows.IdentityClaimVerification = undefined;
+    var verification: [2]workflows.identity.verify.IdentityVerificationStorage = undefined;
+    var results: [2]workflows.identity.verify.IdentityClaimVerification = undefined;
     const storage = Nip39VerifyClientStorage.init(
         claims[0..],
         verification[0..],
@@ -498,17 +498,17 @@ test "nip39 verify client drives cached remembered profile verification through 
     var url_buffers: [1][256]u8 = undefined;
     var expected_buffers: [1][256]u8 = undefined;
     var body_buffers: [1][512]u8 = undefined;
-    var verification: [1]workflows.IdentityVerificationStorage = undefined;
-    verification[0] = workflows.IdentityVerificationStorage.init(
+    var verification: [1]workflows.identity.verify.IdentityVerificationStorage = undefined;
+    verification[0] = workflows.identity.verify.IdentityVerificationStorage.init(
         url_buffers[0][0..],
         expected_buffers[0][0..],
         body_buffers[0][0..],
     );
-    var results: [1]workflows.IdentityClaimVerification = undefined;
-    var cache_records: [1]workflows.IdentityVerificationCacheRecord = undefined;
-    var cache = workflows.MemoryIdentityVerificationCache.init(cache_records[0..]);
-    var profile_records: [1]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
+    var results: [1]workflows.identity.verify.IdentityClaimVerification = undefined;
+    var cache_records: [1]workflows.identity.verify.IdentityVerificationCacheRecord = undefined;
+    var cache = workflows.identity.verify.MemoryIdentityVerificationCache.init(cache_records[0..]);
+    var profile_records: [1]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
 
     var storage = Nip39VerifyClientStorage.init(
         claims[0..],
@@ -529,7 +529,7 @@ test "nip39 verify client drives cached remembered profile verification through 
     try std.testing.expectEqual(@as(usize, 1), remembered.summary.network_fetch_count);
     try std.testing.expectEqual(@as(usize, 0), remembered.summary.cache_hit_count);
     try std.testing.expectEqual(
-        workflows.IdentityProfileStorePutOutcome.stored,
+        workflows.identity.verify.IdentityProfileStorePutOutcome.stored,
         remembered.store_outcome,
     );
 
@@ -546,8 +546,8 @@ test "nip39 verify client drives cached remembered profile verification through 
 test "nip39 verify client lifts remembered target turn policy into the client surface" {
     const alice_pubkey = [_]u8{0xc1} ** 32;
     const stale_pubkey = [_]u8{0xc2} ** 32;
-    const stable_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stable_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{
                     .provider = .github,
@@ -564,8 +564,8 @@ test "nip39 verify client lifts remembered target turn policy into the client su
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{
                     .provider = .github,
@@ -583,15 +583,15 @@ test "nip39 verify client lifts remembered target turn policy into the client su
         .verified_count = 1,
     };
 
-    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(
+    var profile_records: [2]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(
         profile_store.asStore(),
         &alice_pubkey,
         45,
         &stable_summary,
     );
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(
         profile_store.asStore(),
         &stale_pubkey,
         5,
@@ -647,8 +647,8 @@ test "nip39 verify client lifts remembered target turn policy into the client su
 test "nip39 verify client inspects stored watched target turn policy through the client surface" {
     const stable_pubkey = [_]u8{0xc1} ** 32;
     const stale_pubkey = [_]u8{0xc2} ** 32;
-    const stable_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stable_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-alice" },
                 .outcome = .{ .verified = .{
@@ -659,8 +659,8 @@ test "nip39 verify client inspects stored watched target turn policy through the
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-bob" },
                 .outcome = .{ .verified = .{
@@ -672,23 +672,23 @@ test "nip39 verify client inspects stored watched target turn policy through the
         .verified_count = 1,
     };
 
-    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(
+    var profile_records: [2]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(
         profile_store.asStore(),
         &stable_pubkey,
         45,
         &stable_summary,
     );
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(
         profile_store.asStore(),
         &stale_pubkey,
         5,
         &stale_summary,
     );
 
-    var watched_records: [4]workflows.IdentityWatchedTargetRecord = undefined;
-    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    var watched_records: [4]workflows.identity.verify.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.identity.verify.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
@@ -746,8 +746,8 @@ test "nip39 verify client inspects stored watched target turn policy through the
 test "nip39 verify client inspects stored watched target policy through the client surface" {
     const fresh_pubkey = [_]u8{0xb1} ** 32;
     const stale_pubkey = [_]u8{0xb2} ** 32;
-    const fresh_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const fresh_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-fresh" },
                 .outcome = .{ .verified = .{
@@ -758,8 +758,8 @@ test "nip39 verify client inspects stored watched target policy through the clie
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-stale" },
                 .outcome = .{ .verified = .{
@@ -771,13 +771,13 @@ test "nip39 verify client inspects stored watched target policy through the clie
         .verified_count = 1,
     };
 
-    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &fresh_pubkey, 45, &fresh_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+    var profile_records: [2]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &fresh_pubkey, 45, &fresh_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
-    var watched_records: [3]workflows.IdentityWatchedTargetRecord = undefined;
-    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    var watched_records: [3]workflows.identity.verify.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.identity.verify.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
@@ -824,8 +824,8 @@ test "nip39 verify client inspects stored watched target refresh cadence through
     const stable_pubkey = [_]u8{0xa1} ** 32;
     const soon_pubkey = [_]u8{0xa2} ** 32;
     const stale_pubkey = [_]u8{0xa3} ** 32;
-    const stable_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stable_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
                 .outcome = .{ .verified = .{
@@ -836,8 +836,8 @@ test "nip39 verify client inspects stored watched target refresh cadence through
         },
         .verified_count = 1,
     };
-    const soon_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const soon_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
                 .outcome = .{ .verified = .{
@@ -848,8 +848,8 @@ test "nip39 verify client inspects stored watched target refresh cadence through
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
                 .outcome = .{ .verified = .{
@@ -861,14 +861,14 @@ test "nip39 verify client inspects stored watched target refresh cadence through
         .verified_count = 1,
     };
 
-    var profile_records: [3]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+    var profile_records: [3]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
-    var watched_records: [4]workflows.IdentityWatchedTargetRecord = undefined;
-    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    var watched_records: [4]workflows.identity.verify.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.identity.verify.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
@@ -917,8 +917,8 @@ test "nip39 verify client inspects stored watched target refresh cadence through
 test "nip39 verify client inspects stored watched target refresh batch through the client surface" {
     const soon_pubkey = [_]u8{0xa2} ** 32;
     const stale_pubkey = [_]u8{0xa3} ** 32;
-    const soon_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const soon_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
                 .outcome = .{ .verified = .{
@@ -929,8 +929,8 @@ test "nip39 verify client inspects stored watched target refresh batch through t
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
                 .outcome = .{ .verified = .{
@@ -942,13 +942,13 @@ test "nip39 verify client inspects stored watched target refresh batch through t
         .verified_count = 1,
     };
 
-    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+    var profile_records: [2]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
-    var watched_records: [3]workflows.IdentityWatchedTargetRecord = undefined;
-    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    var watched_records: [3]workflows.identity.verify.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.identity.verify.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
@@ -995,8 +995,8 @@ test "nip39 verify client inspects stored watched target orchestration through t
     const stable_pubkey = [_]u8{0xa1} ** 32;
     const soon_pubkey = [_]u8{0xa2} ** 32;
     const stale_pubkey = [_]u8{0xa3} ** 32;
-    const stable_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stable_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
                 .outcome = .{ .verified = .{
@@ -1007,8 +1007,8 @@ test "nip39 verify client inspects stored watched target orchestration through t
         },
         .verified_count = 1,
     };
-    const soon_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const soon_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
                 .outcome = .{ .verified = .{
@@ -1019,8 +1019,8 @@ test "nip39 verify client inspects stored watched target orchestration through t
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
                 .outcome = .{ .verified = .{
@@ -1032,14 +1032,14 @@ test "nip39 verify client inspects stored watched target orchestration through t
         .verified_count = 1,
     };
 
-    var profile_records: [3]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+    var profile_records: [3]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
-    var watched_records: [4]workflows.IdentityWatchedTargetRecord = undefined;
-    var watched_store = workflows.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
+    var watched_records: [4]workflows.identity.verify.IdentityWatchedTargetRecord = undefined;
+    var watched_store = workflows.identity.verify.MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
@@ -1142,8 +1142,8 @@ test "nip39 verify client inspects remembered identity latest freshness through 
     const alice_pubkey_a = [_]u8{0xf1} ** 32;
     const alice_pubkey_b = [_]u8{0xf2} ** 32;
     const bob_pubkey = [_]u8{0xf3} ** 32;
-    const alice_stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const alice_stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-alice-stale" },
                 .outcome = .{ .verified = .{
@@ -1154,8 +1154,8 @@ test "nip39 verify client inspects remembered identity latest freshness through 
         },
         .verified_count = 1,
     };
-    const alice_fresh_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const alice_fresh_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-alice-fresh" },
                 .outcome = .{ .verified = .{
@@ -1166,8 +1166,8 @@ test "nip39 verify client inspects remembered identity latest freshness through 
         },
         .verified_count = 1,
     };
-    const bob_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const bob_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-bob" },
                 .outcome = .{ .verified = .{
@@ -1179,11 +1179,11 @@ test "nip39 verify client inspects remembered identity latest freshness through 
         .verified_count = 1,
     };
 
-    var profile_records: [3]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &alice_pubkey_a, 10, &alice_stale_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &alice_pubkey_b, 45, &alice_fresh_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &bob_pubkey, 5, &bob_summary);
+    var profile_records: [3]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &alice_pubkey_a, 10, &alice_stale_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &alice_pubkey_b, 45, &alice_fresh_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &bob_pubkey, 5, &bob_summary);
 
     var remembered_records: [2]Nip39StoredProfilePlanning.RememberedIdentityRecord = undefined;
     var targets: [2]Nip39StoredProfilePlanning.Target = undefined;
@@ -1216,8 +1216,8 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
     const stable_pubkey = [_]u8{0xf6} ** 32;
     const soon_pubkey = [_]u8{0xf7} ** 32;
     const stale_pubkey = [_]u8{0xf8} ** 32;
-    const stable_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stable_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "alice", .proof = "gist-stable" },
                 .outcome = .{ .verified = .{
@@ -1228,8 +1228,8 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
         },
         .verified_count = 1,
     };
-    const soon_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const soon_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
                 .outcome = .{ .verified = .{
@@ -1240,8 +1240,8 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
                 .outcome = .{ .verified = .{
@@ -1253,11 +1253,11 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
         .verified_count = 1,
     };
 
-    var profile_records: [3]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+    var profile_records: [3]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stable_pubkey, 45, &stable_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
     var remembered_records: [3]Nip39StoredProfilePlanning.RememberedIdentityRecord = undefined;
     var targets: [3]Nip39StoredProfilePlanning.Target = undefined;
@@ -1301,8 +1301,8 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
 test "nip39 verify client inspects remembered identity refresh batch through the client surface" {
     const soon_pubkey = [_]u8{0xf9} ** 32;
     const stale_pubkey = [_]u8{0xfa} ** 32;
-    const soon_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const soon_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "bob", .proof = "gist-soon" },
                 .outcome = .{ .verified = .{
@@ -1313,8 +1313,8 @@ test "nip39 verify client inspects remembered identity refresh batch through the
         },
         .verified_count = 1,
     };
-    const stale_summary = workflows.IdentityProfileVerificationSummary{
-        .claims = &[_]workflows.IdentityClaimVerification{
+    const stale_summary = workflows.identity.verify.IdentityProfileVerificationSummary{
+        .claims = &[_]workflows.identity.verify.IdentityClaimVerification{
             .{
                 .claim = .{ .provider = .github, .identity = "carol", .proof = "gist-stale" },
                 .outcome = .{ .verified = .{
@@ -1326,10 +1326,10 @@ test "nip39 verify client inspects remembered identity refresh batch through the
         .verified_count = 1,
     };
 
-    var profile_records: [2]workflows.IdentityProfileRecord = undefined;
-    var profile_store = workflows.MemoryIdentityProfileStore.init(profile_records[0..]);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
-    _ = try workflows.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
+    var profile_records: [2]workflows.identity.verify.IdentityProfileRecord = undefined;
+    var profile_store = workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
+    _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
     var remembered_records: [2]Nip39StoredProfilePlanning.RememberedIdentityRecord = undefined;
     var targets: [2]Nip39StoredProfilePlanning.Target = undefined;

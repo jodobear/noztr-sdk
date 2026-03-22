@@ -52,8 +52,8 @@ Inside `workflows` and `client`, prefer the grouped routes when choosing a publi
 - `client.proof.*`
 - `client.groups.*`
 
-The older flat exports still exist for compatibility, but the grouped routes are the canonical
-public discovery shape going forward.
+The older flat `client.*Type` and `workflows.*Type` routes were removed in the current pre-`1.0`
+namespace cleanup. Use the grouped routes as the canonical public discovery shape.
 
 ## If You Are Building Another Zig SDK Layer
 
@@ -78,14 +78,14 @@ substrate again.
 Today, the downstream-targetable foundation is relay-centric:
 - HTTP-backed work starts from `noztr_sdk.transport.HttpClient`
 - shared relay runtime planning starts from `noztr_sdk.runtime.RelayPool`
-- explicit relay-session composition starts from `noztr_sdk.client.RelaySessionClient`
+- explicit relay-session composition starts from `noztr_sdk.client.relay.session.RelaySessionClient`
 - explicit relay-backed composition extends through the relay auth/query/exchange/replay/publish,
   local-state, workspace, and remote-signer client/workflow families
 - inbound relay message ownership and transcript validation start from
-  `noztr_sdk.client.RelayResponseClient`
+  `noztr_sdk.client.relay.response.RelayResponseClient`
 - neutral local archive/checkpoint/remembered-relay/runtime composition starts from
-  `noztr_sdk.client.LocalStateClient`
-- narrower remembered relay workspace composition starts from `noztr_sdk.client.RelayWorkspaceClient`
+  `noztr_sdk.client.local.state.LocalStateClient`
+- narrower remembered relay workspace composition starts from `noztr_sdk.client.relay.workspace.RelayWorkspaceClient`
 
 If you are building another Zig SDK above `noztr-sdk`, start with the public contract map and the
 relay/runtime examples rather than expecting a generic socket ownership layer.

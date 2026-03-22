@@ -10,8 +10,8 @@ test "recipe: auth replay turn client authenticates then resumes one bounded rep
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
     const checkpoint_archive = noztr_sdk.store.RelayCheckpointArchive.init(memory_store.asClientStore());
 
-    var storage = noztr_sdk.client.AuthReplayTurnClientStorage{};
-    var client = noztr_sdk.client.AuthReplayTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.auth_replay_turn.AuthReplayTurnClientStorage{};
+    var client = noztr_sdk.client.relay.auth_replay_turn.AuthReplayTurnClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
@@ -34,7 +34,7 @@ test "recipe: auth replay turn client authenticates then resumes one bounded rep
     )).?.authenticate;
 
     const secret_key = [_]u8{0x55} ** 32;
-    var auth_event_storage = noztr_sdk.client.AuthReplayEventStorage{};
+    var auth_event_storage = noztr_sdk.client.relay.auth_replay_turn.AuthReplayEventStorage{};
     var auth_event_json: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_json: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared_auth = try client.prepareAuthEvent(

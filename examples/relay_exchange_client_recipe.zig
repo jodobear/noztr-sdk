@@ -6,13 +6,13 @@ test "recipe: relay exchange client composes publish count and subscription exch
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.RelayExchangeClientStorage{};
-    var client = noztr_sdk.client.RelayExchangeClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.exchange.RelayExchangeClientStorage{};
+    var client = noztr_sdk.client.relay.exchange.RelayExchangeClient.init(.{}, &storage);
     const ready = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(ready.relay_index);
 
     const secret_key = [_]u8{0x11} ** 32;
-    const publish_draft = noztr_sdk.client.LocalEventDraft{
+    const publish_draft = noztr_sdk.client.local.operator.LocalEventDraft{
         .kind = 1,
         .created_at = 7,
         .content = "hello relay exchange",
@@ -61,7 +61,7 @@ test "recipe: relay exchange client composes publish count and subscription exch
     const subscription_specs = [_]noztr_sdk.runtime.RelaySubscriptionSpec{
         .{ .subscription_id = "feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
-    var transcript = noztr_sdk.client.RelaySubscriptionTranscriptStorage{};
+    var transcript = noztr_sdk.client.relay.response.RelaySubscriptionTranscriptStorage{};
     const subscription_request = try client.beginSubscription(
         &transcript,
         request_output[0..],

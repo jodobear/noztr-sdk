@@ -663,7 +663,7 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
     try client.noteRelayAuthChallenge(0, "challenge-1");
     try checkpoint_archive.saveRelayCheckpoint("mailbox", "wss://relay.one", .{ .offset = 7 });
 
-    var sender_session = @import("../workflows/mod.zig").MailboxSession.init(&sender_secret);
+    var sender_session = @import("../workflows/mod.zig").dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -674,7 +674,7 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var replay_outbound_buffer = @import("../workflows/mod.zig").MailboxOutboundBuffer{};
+    var replay_outbound_buffer = @import("../workflows/mod.zig").dm.mailbox.MailboxOutboundBuffer{};
     const replay_outbound = try sender_session.beginDirectMessage(
         &replay_outbound_buffer,
         &.{
@@ -689,7 +689,7 @@ test "mailbox sync runtime client plans authenticate replay subscribe and receiv
         arena.allocator(),
     );
 
-    var live_outbound_buffer = @import("../workflows/mod.zig").MailboxOutboundBuffer{};
+    var live_outbound_buffer = @import("../workflows/mod.zig").dm.mailbox.MailboxOutboundBuffer{};
     const live_outbound = try sender_session.beginDirectMessage(
         &live_outbound_buffer,
         &.{

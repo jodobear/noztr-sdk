@@ -6,8 +6,8 @@ const noztr_sdk = @import("noztr_sdk");
 test "recipe: relay workspace client composes remembered relay state with runtime and replay inspection" {
     var client_store = noztr_sdk.store.MemoryClientStore{};
     var relay_info_store = noztr_sdk.store.MemoryRelayInfoStore{};
-    var storage = noztr_sdk.client.RelayWorkspaceClientStorage{};
-    var client = noztr_sdk.client.RelayWorkspaceClient.init(
+    var storage = noztr_sdk.client.relay.workspace.RelayWorkspaceClientStorage{};
+    var client = noztr_sdk.client.relay.workspace.RelayWorkspaceClient.init(
         .{ .local_state = .{ .relay_checkpoint_scope = "tooling" } },
         client_store.asClientStore(),
         relay_info_store.asRelayInfoStore(),

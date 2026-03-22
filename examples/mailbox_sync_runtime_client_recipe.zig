@@ -19,8 +19,8 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.MailboxSyncRuntimeClientStorage{};
-    var client = noztr_sdk.client.MailboxSyncRuntimeClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClientStorage{};
+    var client = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -36,7 +36,7 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
     try client.noteRelayAuthChallenge(0, "challenge-1");
     try checkpoint_archive.saveRelayCheckpoint("mailbox", "wss://relay.one", .{ .offset = 7 });
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -47,7 +47,7 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var replay_outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var replay_outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const replay_outbound = try sender_session.beginDirectMessage(
         &replay_outbound_buffer,
         &.{
@@ -62,7 +62,7 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
         arena.allocator(),
     );
 
-    var live_outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var live_outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const live_outbound = try sender_session.beginDirectMessage(
         &live_outbound_buffer,
         &.{
@@ -91,7 +91,7 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
         .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var orchestration_storage = noztr_sdk.client.MailboxDmOrchestrationStorage{};
+    var orchestration_storage = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxDmOrchestrationStorage{};
     const auth_policy = try client.inspectDmOrchestration(
         checkpoint_store,
         replay_specs[0..],
@@ -101,7 +101,7 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
     try std.testing.expect(auth_policy.needs_auth_progress);
     try std.testing.expect(auth_policy.nextStep() == .authenticate);
 
-    var auth_storage = noztr_sdk.client.MailboxSyncRuntimeAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxSyncRuntimeAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const auth_event = try client.prepareAuthEvent(
@@ -165,16 +165,16 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
     try client.saveReplayTurnResult(checkpoint_archive, &replay_result.replayed);
     client.markReplayCatchupComplete();
 
-    var resume_storage = noztr_sdk.client.MailboxSyncRuntimeResumeStorage{};
+    var resume_storage = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxSyncRuntimeResumeStorage{};
     const resume_state = client.exportResumeState(&resume_storage);
 
-    var resumed_storage = noztr_sdk.client.MailboxSyncRuntimeClientStorage{};
-    var resumed = noztr_sdk.client.MailboxSyncRuntimeClient.init(.{
+    var resumed_storage = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClientStorage{};
+    var resumed = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
 
-    var cadence_storage = noztr_sdk.client.MailboxDmRuntimeCadenceStorage{};
+    var cadence_storage = noztr_sdk.client.dm.mailbox.sync_runtime.MailboxDmRuntimeCadenceStorage{};
     const reconnect_wait = try resumed.inspectDmRuntimeCadence(
         checkpoint_store,
         &.{},
@@ -188,7 +188,7 @@ test "recipe: mailbox sync runtime client inspects dm cadence before live resubs
     try std.testing.expect(reconnect_wait.blocked_by_reconnect_backoff);
     try std.testing.expect(reconnect_wait.nextStep() == .wait);
     try std.testing.expectEqual(
-        noztr_sdk.client.MailboxDmRuntimeCadenceWaitReason.reconnect_backoff,
+        noztr_sdk.client.dm.mailbox.sync_runtime.MailboxDmRuntimeCadenceWaitReason.reconnect_backoff,
         reconnect_wait.nextStep().wait.reason,
     );
 

@@ -13,8 +13,8 @@ test "recipe: mailbox subscription job client authenticates then subscribes expl
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.MailboxSubscriptionJobClientStorage{};
-    var client = noztr_sdk.client.MailboxSubscriptionJobClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.subscription_job.MailboxSubscriptionJobClientStorage{};
+    var client = noztr_sdk.client.dm.mailbox.subscription_job.MailboxSubscriptionJobClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -29,7 +29,7 @@ test "recipe: mailbox subscription job client authenticates then subscribes expl
     try client.markRelayConnected(0);
     try client.noteRelayAuthChallenge(0, "challenge-1");
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -40,7 +40,7 @@ test "recipe: mailbox subscription job client authenticates then subscribes expl
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{
@@ -63,7 +63,7 @@ test "recipe: mailbox subscription job client authenticates then subscribes expl
         .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var auth_storage = noztr_sdk.client.MailboxSubscriptionJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.subscription_job.MailboxSubscriptionJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

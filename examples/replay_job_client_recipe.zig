@@ -10,8 +10,8 @@ test "recipe: replay job client authenticates when needed then returns one comma
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
     const checkpoint_archive = noztr_sdk.store.RelayCheckpointArchive.init(memory_store.asClientStore());
 
-    var storage = noztr_sdk.client.ReplayJobClientStorage{};
-    var client = noztr_sdk.client.ReplayJobClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.replay_job.ReplayJobClientStorage{};
+    var client = noztr_sdk.client.relay.replay_job.ReplayJobClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
@@ -25,7 +25,7 @@ test "recipe: replay job client authenticates when needed then returns one comma
     };
 
     const secret_key = [_]u8{0x33} ** 32;
-    var auth_storage = noztr_sdk.client.ReplayJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.relay.replay_job.ReplayJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

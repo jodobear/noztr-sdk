@@ -36,6 +36,9 @@ current public workflow contract.
   - short pre-`1.0` migration note for direct `remote_signer` submodule imports
 - [workflow submodule naming migration](./reference/workflow-submodule-naming-migration.md)
   - short pre-`1.0` migration note for direct `group_session` and `mailbox` submodule imports
+- [grouped public namespace migration](./reference/grouped-public-namespace-migration.md)
+  - short pre-`1.0` migration note for the breaking grouped-route cleanup in `client` and
+    `workflows`
 - [local state client migration](./reference/local-state-client-migration.md)
   - short pre-`1.0` migration note for `RelayWorkspaceClientConfig` and the new canonical
     local-state route

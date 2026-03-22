@@ -10,8 +10,8 @@ test "recipe: relay replay exchange client composes replay intake and close expl
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
     const checkpoint_archive = noztr_sdk.store.RelayCheckpointArchive.init(memory_store.asClientStore());
 
-    var storage = noztr_sdk.client.RelayReplayExchangeClientStorage{};
-    var client = noztr_sdk.client.RelayReplayExchangeClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.replay_exchange.RelayReplayExchangeClientStorage{};
+    var client = noztr_sdk.client.relay.replay_exchange.RelayReplayExchangeClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try checkpoint_archive.saveRelayCheckpoint("tooling", relay.relay_url, .{ .offset = 7 });
@@ -23,7 +23,7 @@ test "recipe: relay replay exchange client composes replay intake and close expl
         },
     };
 
-    var transcript = noztr_sdk.client.RelaySubscriptionTranscriptStorage{};
+    var transcript = noztr_sdk.client.relay.response.RelaySubscriptionTranscriptStorage{};
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const replay_request = try client.beginReplay(
         checkpoint_store,

@@ -13,7 +13,7 @@ test "recipe: mailbox receive turn selects one ready relay and accepts one wrapp
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -24,7 +24,7 @@ test "recipe: mailbox receive turn selects one ready relay and accepts one wrapp
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
+    var recipient_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&recipient_secret);
     var relay_list_storage: [1024]u8 = undefined;
     const relay_list_json = try buildRelayListEventJsonTwo(
         relay_list_storage[0..],
@@ -38,7 +38,7 @@ test "recipe: mailbox receive turn selects one ready relay and accepts one wrapp
     try std.testing.expectEqualStrings("wss://relay.two", try recipient_session.advanceRelay());
     try recipient_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{
@@ -53,7 +53,7 @@ test "recipe: mailbox receive turn selects one ready relay and accepts one wrapp
         arena.allocator(),
     );
 
-    var receive_storage = noztr_sdk.workflows.MailboxReceiveTurnStorage{};
+    var receive_storage = noztr_sdk.workflows.dm.mailbox.MailboxReceiveTurnStorage{};
     const receive_request = try recipient_session.beginReceiveTurn(&receive_storage);
     try std.testing.expectEqualStrings("wss://relay.two", receive_request.relay_url);
 

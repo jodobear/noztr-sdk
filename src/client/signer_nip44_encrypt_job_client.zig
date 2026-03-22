@@ -22,7 +22,7 @@ pub const SignerNip44EncryptJobClientStorage = struct {
 
 pub const SignerNip44EncryptJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
 pub const PreparedSignerNip44EncryptJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
-pub const SignerNip44EncryptJobRequest = workflows.RemoteSignerOutboundRequest;
+pub const SignerNip44EncryptJobRequest = workflows.signer.remote.RemoteSignerOutboundRequest;
 
 pub const SignerNip44EncryptJobReady = union(enum) {
     authenticate: PreparedSignerNip44EncryptJobAuthEvent,
@@ -156,7 +156,7 @@ pub const SignerNip44EncryptJobClient = struct {
         auth_message_output: []u8,
         scratch: std.mem.Allocator,
         secret_key: *const [local_operator.secret_key_bytes]u8,
-        request: *const workflows.RemoteSignerPubkeyTextRequest,
+        request: *const workflows.signer.remote.RemoteSignerPubkeyTextRequest,
         created_at: u64,
     ) SignerNip44EncryptJobClientError!SignerNip44EncryptJobReady {
         if (self.signer.currentRelayCanSendRequests()) {
@@ -371,7 +371,7 @@ fn establishSignerSession(
     storage: *signer_client.SignerClientStorage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
-) workflows.RemoteSignerError!void {
+) workflows.signer.remote.RemoteSignerError!void {
     signer.markCurrentRelayConnected();
 
     var request_scratch_bytes: [1024]u8 = undefined;
@@ -392,7 +392,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) workflows.RemoteSignerError![]const u8 {
+) workflows.signer.remote.RemoteSignerError![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },
@@ -402,7 +402,7 @@ fn textResponse(
 fn serializeResponseJson(
     output: []u8,
     response: @import("noztr").nip46_remote_signing.Response,
-) workflows.RemoteSignerError![]const u8 {
+) workflows.signer.remote.RemoteSignerError![]const u8 {
     return @import("noztr").nip46_remote_signing.message_serialize_json(
         output,
         .{ .response = response },

@@ -15,13 +15,13 @@ Pre-`1.0` local archive/workspace route update.
 ## What Changed
 
 - the new canonical neutral local archive/workspace surface is
-  `noztr_sdk.client.LocalStateClient`
+  `noztr_sdk.client.local.state.LocalStateClient`
 - `RelayWorkspaceClientConfig` now uses `.local_state` instead of `.cli_archive`
 
 ## Before
 
 ```zig
-var client = noztr_sdk.client.RelayWorkspaceClient.init(
+var client = noztr_sdk.client.relay.workspace.RelayWorkspaceClient.init(
     .{ .cli_archive = .{ .relay_checkpoint_scope = "tooling" } },
     client_store.asClientStore(),
     relay_info_store.asRelayInfoStore(),
@@ -32,7 +32,7 @@ var client = noztr_sdk.client.RelayWorkspaceClient.init(
 ## After
 
 ```zig
-var client = noztr_sdk.client.RelayWorkspaceClient.init(
+var client = noztr_sdk.client.relay.workspace.RelayWorkspaceClient.init(
     .{ .local_state = .{ .relay_checkpoint_scope = "tooling" } },
     client_store.asClientStore(),
     relay_info_store.asRelayInfoStore(),
@@ -41,4 +41,4 @@ var client = noztr_sdk.client.RelayWorkspaceClient.init(
 ```
 
 If you do not specifically need the narrower remembered-relay workspace view, prefer
-`noztr_sdk.client.LocalStateClient` as the canonical public route.
+`noztr_sdk.client.local.state.LocalStateClient` as the canonical public route.

@@ -10,8 +10,8 @@ test "recipe: relay replay client composes one replay req from checkpoint-backed
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
     const checkpoint_archive = noztr_sdk.store.RelayCheckpointArchive.init(memory_store.asClientStore());
 
-    var storage = noztr_sdk.client.RelayReplayClientStorage{};
-    var client = noztr_sdk.client.RelayReplayClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.replay.RelayReplayClientStorage{};
+    var client = noztr_sdk.client.relay.replay.RelayReplayClient.init(.{}, &storage);
     _ = try client.addRelay("wss://relay.one");
     const second = try client.addRelay("wss://relay.two");
     try client.markRelayConnected(0);

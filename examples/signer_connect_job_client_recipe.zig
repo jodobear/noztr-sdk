@@ -11,8 +11,8 @@ test "recipe: signer connect job stays explicit across auth and connect" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = noztr_sdk.client.SignerConnectJobClientStorage{};
-    var client = try noztr_sdk.client.SignerConnectJobClient.initFromBunkerUriText(
+    var storage = noztr_sdk.client.signer.connect_job.SignerConnectJobClientStorage{};
+    var client = try noztr_sdk.client.signer.connect_job.SignerConnectJobClient.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -22,7 +22,7 @@ test "recipe: signer connect job stays explicit across auth and connect" {
     try client.noteCurrentRelayAuthChallenge(&storage, "challenge-1");
 
     const secret_key = [_]u8{0x41} ** 32;
-    var auth_storage = noztr_sdk.client.SignerConnectJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.signer.connect_job.SignerConnectJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var connect_scratch_storage: [1024]u8 = undefined;

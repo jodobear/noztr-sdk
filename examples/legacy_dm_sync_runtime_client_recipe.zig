@@ -18,8 +18,8 @@ test "recipe: legacy dm sync runtime client inspects dm cadence before live resu
     const recipient_secret = [_]u8{0x22} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var storage = noztr_sdk.client.LegacyDmSyncRuntimeClientStorage{};
-    var client = noztr_sdk.client.LegacyDmSyncRuntimeClient.init(.{
+    var storage = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmSyncRuntimeClientStorage{};
+    var client = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmSyncRuntimeClient.init(.{
         .owner_private_key = recipient_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");
@@ -41,7 +41,7 @@ test "recipe: legacy dm sync runtime client inspects dm cadence before live resu
         .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var orchestration_storage = noztr_sdk.client.LegacyDmOrchestrationStorage{};
+    var orchestration_storage = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmOrchestrationStorage{};
     const first_policy = try client.inspectDmOrchestration(
         checkpoint_store,
         replay_specs[0..],
@@ -51,7 +51,7 @@ test "recipe: legacy dm sync runtime client inspects dm cadence before live resu
     try std.testing.expect(first_policy.needs_auth_progress);
     try std.testing.expect(first_policy.nextStep() == .authenticate);
 
-    var auth_storage = noztr_sdk.client.LegacyDmSyncRuntimeAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmSyncRuntimeAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared_auth = try client.prepareAuthEvent(
@@ -63,8 +63,8 @@ test "recipe: legacy dm sync runtime client inspects dm cadence before live resu
     );
     _ = try client.acceptPreparedAuthEvent(&prepared_auth, 71, 60);
 
-    const sender = noztr_sdk.workflows.LegacyDmSession.init(&sender_secret);
-    var outbound = noztr_sdk.workflows.LegacyDmOutboundStorage{};
+    const sender = noztr_sdk.workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
+    var outbound = noztr_sdk.workflows.dm.legacy.LegacyDmOutboundStorage{};
     const replay_event = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy replay runtime",
@@ -118,11 +118,11 @@ test "recipe: legacy dm sync runtime client inspects dm cadence before live resu
     try client.saveReplayTurnResult(checkpoint_archive, &replay_result.replayed);
     client.markReplayCatchupComplete();
 
-    var resume_storage = noztr_sdk.client.LegacyDmSyncRuntimeResumeStorage{};
+    var resume_storage = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmSyncRuntimeResumeStorage{};
     const resume_state = try client.exportResumeState(&resume_storage);
 
-    var resumed_storage = noztr_sdk.client.LegacyDmSyncRuntimeClientStorage{};
-    var resumed = noztr_sdk.client.LegacyDmSyncRuntimeClient.init(.{
+    var resumed_storage = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmSyncRuntimeClientStorage{};
+    var resumed = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmSyncRuntimeClient.init(.{
         .owner_private_key = recipient_secret,
     }, &resumed_storage);
     try resumed.restoreResumeState(&resume_state);
@@ -137,7 +137,7 @@ test "recipe: legacy dm sync runtime client inspects dm cadence before live resu
     try std.testing.expect(reconnect_policy.nextStep() == .reconnect);
     try resumed.markRelayConnected(reconnect_policy.nextStep().reconnect.entry.descriptor.relay_index);
 
-    var cadence_storage = noztr_sdk.client.LegacyDmRuntimeCadenceStorage{};
+    var cadence_storage = noztr_sdk.client.dm.legacy.sync_runtime.LegacyDmRuntimeCadenceStorage{};
     const refresh_policy = try resumed.inspectDmRuntimeCadence(
         checkpoint_store,
         replay_specs[0..],

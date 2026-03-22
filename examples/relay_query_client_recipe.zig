@@ -6,8 +6,8 @@ test "recipe: relay query client composes one req count and close payload over r
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.RelayQueryClientStorage{};
-    var client = noztr_sdk.client.RelayQueryClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.query.RelayQueryClientStorage{};
+    var client = noztr_sdk.client.relay.query.RelayQueryClient.init(.{}, &storage);
     const ready = try client.addRelay("wss://relay.one");
     const gated = try client.addRelay("wss://relay.two");
     try client.markRelayConnected(ready.relay_index);

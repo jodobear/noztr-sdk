@@ -13,8 +13,8 @@ test "recipe: mailbox subscription turn client accepts live transcript events an
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.MailboxSubscriptionTurnClientStorage{};
-    var client = noztr_sdk.client.MailboxSubscriptionTurnClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClientStorage{};
+    var client = noztr_sdk.client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -28,7 +28,7 @@ test "recipe: mailbox subscription turn client accepts live transcript events an
     _ = try client.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
     try client.markRelayConnected(0);
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -39,7 +39,7 @@ test "recipe: mailbox subscription turn client accepts live transcript events an
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

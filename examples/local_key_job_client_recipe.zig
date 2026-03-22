@@ -4,8 +4,8 @@ const noztr_sdk = @import("noztr_sdk");
 // Command-ready local key flow: derive one deterministic public key and generate one fresh
 // keypair without dropping to raw kernel modules or CLI-owned key plumbing.
 test "recipe: local key job client keeps key generation and pubkey derivation command-ready" {
-    var storage = noztr_sdk.client.LocalKeyJobClientStorage{};
-    const client = noztr_sdk.client.LocalKeyJobClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.local.keys.LocalKeyJobClientStorage{};
+    const client = noztr_sdk.client.local.keys.LocalKeyJobClient.init(.{}, &storage);
     const author_secret = [_]u8{0x11} ** 32;
 
     const derived = try client.runJob(&.{ .derive_pubkey = author_secret });

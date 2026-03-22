@@ -6,8 +6,8 @@ test "recipe: count turn client closes one bounded count turn explicitly" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.CountTurnClientStorage{};
-    var client = noztr_sdk.client.CountTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.count_turn.CountTurnClientStorage{};
+    var client = noztr_sdk.client.relay.count_turn.CountTurnClient.init(.{}, &storage);
     const ready = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(ready.relay_index);
 

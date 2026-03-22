@@ -6,8 +6,8 @@ test "recipe: auth publish turn client authenticates then resumes one bounded pu
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.AuthPublishTurnClientStorage{};
-    var client = noztr_sdk.client.AuthPublishTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.auth_publish_turn.AuthPublishTurnClientStorage{};
+    var client = noztr_sdk.client.relay.auth_publish_turn.AuthPublishTurnClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
@@ -17,7 +17,7 @@ test "recipe: auth publish turn client authenticates then resumes one bounded pu
     const auth_step = client.nextStep(&auth_plan_storage, &publish_plan_storage).?.authenticate;
 
     const secret_key = [_]u8{0x25} ** 32;
-    var auth_event_storage = noztr_sdk.client.AuthPublishEventStorage{};
+    var auth_event_storage = noztr_sdk.client.relay.auth_publish_turn.AuthPublishEventStorage{};
     var auth_event_json: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_json: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared_auth = try client.prepareAuthEvent(
@@ -31,7 +31,7 @@ test "recipe: auth publish turn client authenticates then resumes one bounded pu
     const auth_result = try client.acceptPreparedAuthEvent(&prepared_auth, 95, 60);
     try std.testing.expect(auth_result == .authenticated);
 
-    const draft = noztr_sdk.client.LocalEventDraft{
+    const draft = noztr_sdk.client.local.operator.LocalEventDraft{
         .kind = 1,
         .created_at = 91,
         .content = "hello auth publish turn recipe",

@@ -13,8 +13,8 @@ test "recipe: legacy dm subscription turn client classifies live events through 
     const recipient_secret = [_]u8{0x42} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    const sender = noztr_sdk.workflows.LegacyDmSession.init(&sender_secret);
-    var outbound = noztr_sdk.workflows.LegacyDmOutboundStorage{};
+    const sender = noztr_sdk.workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
+    var outbound = noztr_sdk.workflows.dm.legacy.LegacyDmOutboundStorage{};
     const prepared = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy live recipe",
@@ -22,8 +22,8 @@ test "recipe: legacy dm subscription turn client classifies live events through 
         .iv = [_]u8{0x44} ** noztr.limits.nip04_iv_bytes,
     });
 
-    var storage = noztr_sdk.client.LegacyDmSubscriptionTurnClientStorage{};
-    var client = noztr_sdk.client.LegacyDmSubscriptionTurnClient.init(.{
+    var storage = noztr_sdk.client.dm.legacy.subscription_turn.LegacyDmSubscriptionTurnClientStorage{};
+    var client = noztr_sdk.client.dm.legacy.subscription_turn.LegacyDmSubscriptionTurnClient.init(.{
         .owner_private_key = recipient_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");

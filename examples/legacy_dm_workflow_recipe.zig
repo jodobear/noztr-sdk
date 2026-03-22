@@ -12,8 +12,8 @@ test "recipe: legacy dm workflow builds and accepts one signed kind4 message" {
     const recipient_secret = [_]u8{0x22} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    const sender = noztr_sdk.workflows.LegacyDmSession.init(&sender_secret);
-    var outbound_storage = noztr_sdk.workflows.LegacyDmOutboundStorage{};
+    const sender = noztr_sdk.workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
+    var outbound_storage = noztr_sdk.workflows.dm.legacy.LegacyDmOutboundStorage{};
     const prepared = try sender.buildDirectMessageEvent(&outbound_storage, &.{
         .recipient_pubkey = recipient_pubkey,
         .recipient_relay_hint = "wss://dm.example",
@@ -28,7 +28,7 @@ test "recipe: legacy dm workflow builds and accepts one signed kind4 message" {
         &prepared.event,
     );
 
-    const recipient = noztr_sdk.workflows.LegacyDmSession.init(&recipient_secret);
+    const recipient = noztr_sdk.workflows.dm.legacy.LegacyDmSession.init(&recipient_secret);
     var plaintext_output: [4096]u8 = undefined;
     const outcome = try recipient.acceptDirectMessageEventJson(
         event_json,

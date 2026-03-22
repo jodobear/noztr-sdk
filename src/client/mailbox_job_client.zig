@@ -7,7 +7,7 @@ const runtime = @import("../runtime/mod.zig");
 const noztr = @import("noztr");
 
 pub const MailboxJobClientError =
-    workflows.MailboxError ||
+    workflows.dm.mailbox.MailboxError ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -21,8 +21,8 @@ pub const MailboxJobClientConfig = struct {
 };
 
 pub const MailboxJobClientStorage = struct {
-    session: workflows.MailboxSession = undefined,
-    sync: workflows.MailboxSyncTurnStorage = .{},
+    session: workflows.dm.mailbox.MailboxSession = undefined,
+    sync: workflows.dm.mailbox.MailboxSyncTurnStorage = .{},
 };
 
 pub const MailboxJobAuthEventStorage = relay_auth.RelayAuthEventStorage;
@@ -37,15 +37,15 @@ pub const PreparedMailboxJobAuthEvent = struct {
 };
 
 pub const MailboxJobReady = union(enum) {
-    connect: workflows.MailboxWorkflowEntry,
+    connect: workflows.dm.mailbox.MailboxWorkflowEntry,
     authenticate: PreparedMailboxJobAuthEvent,
-    publish: workflows.MailboxDeliveryStep,
-    receive: workflows.MailboxReceiveTurnRequest,
+    publish: workflows.dm.mailbox.MailboxDeliveryStep,
+    receive: workflows.dm.mailbox.MailboxReceiveTurnRequest,
 };
 
 pub const MailboxJobResult = union(enum) {
-    authenticated: workflows.MailboxWorkflowEntry,
-    received: workflows.MailboxReceiveTurnResult,
+    authenticated: workflows.dm.mailbox.MailboxWorkflowEntry,
+    received: workflows.dm.mailbox.MailboxReceiveTurnResult,
 };
 
 pub const MailboxJobClient = struct {
@@ -58,7 +58,7 @@ pub const MailboxJobClient = struct {
         storage: *MailboxJobClientStorage,
     ) MailboxJobClient {
         storage.* = .{
-            .session = workflows.MailboxSession.init(&config.recipient_private_key),
+            .session = workflows.dm.mailbox.MailboxSession.init(&config.recipient_private_key),
         };
         return .{
             .config = config,
@@ -122,43 +122,43 @@ pub const MailboxJobClient = struct {
 
     pub fn inspectRelayPoolRuntime(
         self: *const MailboxJobClient,
-        storage: *workflows.MailboxRelayPoolRuntimeStorage,
+        storage: *workflows.dm.mailbox.MailboxRelayPoolRuntimeStorage,
     ) runtime.RelayPoolPlan {
         return self.storage.session.inspectRelayPoolRuntime(storage);
     }
 
     pub fn inspectRuntime(
         self: *const MailboxJobClient,
-        storage: *workflows.MailboxRuntimeStorage,
-    ) MailboxJobClientError!workflows.MailboxRuntimePlan {
+        storage: *workflows.dm.mailbox.MailboxRuntimeStorage,
+    ) MailboxJobClientError!workflows.dm.mailbox.MailboxRuntimePlan {
         return self.storage.session.inspectRuntime(storage);
     }
 
     pub fn inspectWorkflow(
         self: *const MailboxJobClient,
-        request: workflows.MailboxWorkflowRequest,
-    ) MailboxJobClientError!workflows.MailboxWorkflowPlan {
+        request: workflows.dm.mailbox.MailboxWorkflowRequest,
+    ) MailboxJobClientError!workflows.dm.mailbox.MailboxWorkflowPlan {
         return self.storage.session.inspectWorkflow(request);
     }
 
     pub fn beginDirectMessage(
         self: *MailboxJobClient,
-        buffer: *workflows.MailboxOutboundBuffer,
-        request: *const workflows.MailboxDirectMessageRequest,
+        buffer: *workflows.dm.mailbox.MailboxOutboundBuffer,
+        request: *const workflows.dm.mailbox.MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxJobClientError!workflows.MailboxOutboundMessage {
+    ) MailboxJobClientError!workflows.dm.mailbox.MailboxOutboundMessage {
         return self.storage.session.beginDirectMessage(buffer, request, scratch);
     }
 
     pub fn planDirectMessageDelivery(
         self: *MailboxJobClient,
-        buffer: *workflows.MailboxOutboundBuffer,
-        delivery_storage: *workflows.MailboxDeliveryStorage,
+        buffer: *workflows.dm.mailbox.MailboxOutboundBuffer,
+        delivery_storage: *workflows.dm.mailbox.MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
         sender_relay_list_event_json: ?[]const u8,
-        request: *const workflows.MailboxDirectMessageRequest,
+        request: *const workflows.dm.mailbox.MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxJobClientError!workflows.MailboxDeliveryPlan {
+    ) MailboxJobClientError!workflows.dm.mailbox.MailboxDeliveryPlan {
         return self.storage.session.planDirectMessageDelivery(
             buffer,
             delivery_storage,
@@ -174,7 +174,7 @@ pub const MailboxJobClient = struct {
         auth_storage: *MailboxJobAuthEventStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
-        pending_delivery: ?*const workflows.MailboxDeliveryPlan,
+        pending_delivery: ?*const workflows.dm.mailbox.MailboxDeliveryPlan,
         created_at: u64,
     ) MailboxJobClientError!MailboxJobReady {
         const sync_request = try self.storage.session.beginSyncTurn(.{
@@ -225,7 +225,7 @@ pub const MailboxJobClient = struct {
 
     pub fn acceptReceiveEnvelopeJson(
         self: *MailboxJobClient,
-        request: *const workflows.MailboxReceiveTurnRequest,
+        request: *const workflows.dm.mailbox.MailboxReceiveTurnRequest,
         wrap_event_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
@@ -248,7 +248,7 @@ pub const MailboxJobClient = struct {
         auth_storage: *MailboxJobAuthEventStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
-        entry: *const workflows.MailboxWorkflowEntry,
+        entry: *const workflows.dm.mailbox.MailboxWorkflowEntry,
         created_at: u64,
     ) MailboxJobClientError!PreparedMailboxJobAuthEvent {
         if (entry.action != .authenticate) return error.RelayNotReady;
@@ -325,7 +325,7 @@ test "mailbox job client prepares auth and receive work through one job surface"
     const auth_result = try client.acceptPreparedAuthEvent(&first_ready.authenticate, 95, 60);
     try std.testing.expect(auth_result == .authenticated);
 
-    var sender_session = workflows.MailboxSession.init(&sender_secret);
+    var sender_session = workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -335,7 +335,7 @@ test "mailbox job client prepares auth and receive work through one job surface"
     );
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
-    var outbound_buffer = workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{
@@ -407,8 +407,8 @@ test "mailbox job client surfaces pending delivery as one publish job" {
         41,
         &recipient_secret,
     );
-    var outbound_buffer = workflows.MailboxOutboundBuffer{};
-    var delivery_storage = workflows.MailboxDeliveryStorage{};
+    var outbound_buffer = workflows.dm.mailbox.MailboxOutboundBuffer{};
+    var delivery_storage = workflows.dm.mailbox.MailboxDeliveryStorage{};
     const delivery = try client.planDirectMessageDelivery(
         &outbound_buffer,
         &delivery_storage,

@@ -6,8 +6,8 @@ test "recipe: subscription turn client closes one bounded transcript turn explic
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.SubscriptionTurnClientStorage{};
-    var client = noztr_sdk.client.SubscriptionTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.subscription_turn.SubscriptionTurnClientStorage{};
+    var client = noztr_sdk.client.relay.subscription_turn.SubscriptionTurnClient.init(.{}, &storage);
     const ready = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(ready.relay_index);
 

@@ -14,7 +14,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_a: [8][]const u8 = undefined;
-    var source_a = try noztr_sdk.workflows.GroupClient.init(.{
+    var source_a = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -29,7 +29,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     var source_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_b: [8][]const u8 = undefined;
-    var source_b = try noztr_sdk.workflows.GroupClient.init(.{
+    var source_b = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -39,13 +39,13 @@ test "recipe: group fleet persists restores inspects runtime and background work
     });
     source_b.markCurrentRelayConnected();
 
-    var source_clients = [_]*noztr_sdk.workflows.GroupClient{ &source_a, &source_b };
-    var source_fleet = try noztr_sdk.workflows.GroupFleet.init(source_clients[0..]);
+    var source_clients = [_]*noztr_sdk.workflows.groups.local.GroupClient{ &source_a, &source_b };
+    var source_fleet = try noztr_sdk.workflows.groups.fleet.GroupFleet.init(source_clients[0..]);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var role_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var member_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var role_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var member_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const metadata_event = try source_a.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -93,7 +93,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
 
     var previous_refs: [1][]const u8 = undefined;
     const selected = source_b.selectPreviousRefs(null, previous_refs[0..]);
-    var put_user_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var put_user_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const put_user = try source_b.beginPutUser(
         .init(4, &author_secret, &put_user_buffer),
         &.{
@@ -105,15 +105,15 @@ test "recipe: group fleet persists restores inspects runtime and background work
     );
     _ = try source_fleet.consumeRelayEventJson("wss://relay.one:444", put_user.event_json, arena.allocator());
 
-    var checkpoint_storage = noztr_sdk.workflows.GroupFleetCheckpointStorage{};
-    var checkpoint_context = noztr_sdk.workflows.GroupFleetCheckpointContext.init(
+    var checkpoint_storage = noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointStorage{};
+    var checkpoint_context = noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointContext.init(
         20,
         &author_secret,
         &checkpoint_storage,
     );
-    var store_records: [2]noztr_sdk.workflows.GroupFleetCheckpointRecord =
-        [_]noztr_sdk.workflows.GroupFleetCheckpointRecord{ .{}, .{} };
-    var checkpoint_store = noztr_sdk.workflows.MemoryGroupFleetCheckpointStore.init(store_records[0..]);
+    var store_records: [2]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord =
+        [_]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord{ .{}, .{} };
+    var checkpoint_store = noztr_sdk.workflows.groups.fleet.MemoryGroupFleetCheckpointStore.init(store_records[0..]);
     const persisted = try source_fleet.persistCheckpointStore(
         checkpoint_store.asStore(),
         &checkpoint_context,
@@ -126,7 +126,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     var target_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var target_previous_refs_a: [8][]const u8 = undefined;
-    var target_a = try noztr_sdk.workflows.GroupClient.init(.{
+    var target_a = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -140,7 +140,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     var target_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var target_previous_refs_b: [8][]const u8 = undefined;
-    var target_b = try noztr_sdk.workflows.GroupClient.init(.{
+    var target_b = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -149,8 +149,8 @@ test "recipe: group fleet persists restores inspects runtime and background work
         ),
     });
 
-    var target_clients = [_]*noztr_sdk.workflows.GroupClient{ &target_a, &target_b };
-    var target_fleet = try noztr_sdk.workflows.GroupFleet.init(target_clients[0..]);
+    var target_clients = [_]*noztr_sdk.workflows.groups.local.GroupClient{ &target_a, &target_b };
+    var target_fleet = try noztr_sdk.workflows.groups.fleet.GroupFleet.init(target_clients[0..]);
     const restored = try target_fleet.restoreCheckpointStore(
         checkpoint_store.asStore(),
         arena.allocator(),
@@ -164,7 +164,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
 
     target_a.markCurrentRelayConnected();
     target_b.markCurrentRelayConnected();
-    var merge_metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var merge_metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const merged_metadata_event = try target_a.beginMetadataSnapshot(
         .init(30, &author_secret, &merge_metadata_buffer),
         &.{ .name = "Merged Pizza Lovers" },
@@ -175,32 +175,32 @@ test "recipe: group fleet persists restores inspects runtime and background work
         arena.allocator(),
     );
 
-    var runtime_storage = noztr_sdk.workflows.GroupFleetRuntimeStorage{};
+    var runtime_storage = noztr_sdk.workflows.groups.fleet.GroupFleetRuntimeStorage{};
     const runtime = try target_fleet.inspectRuntime("wss://relay.one:444", &runtime_storage);
     try std.testing.expectEqual(@as(u8, 2), runtime.relay_count);
     try std.testing.expectEqual(@as(u8, 1), runtime.ready_count);
     try std.testing.expectEqual(@as(u8, 1), runtime.reconcile_count);
     try std.testing.expectEqualStrings("wss://relay.one:444", runtime.baseline_relay_url);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetRuntimeAction.reconcile,
+        noztr_sdk.workflows.groups.fleet.GroupFleetRuntimeAction.reconcile,
         runtime.entry(0).?.action,
     );
     try std.testing.expect(runtime.entry(0).?.metadata_divergent);
     const next_runtime = runtime.nextStep().?;
     try std.testing.expectEqualStrings("wss://relay.one:444", next_runtime.baseline_relay_url);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetRuntimeAction.reconcile,
+        noztr_sdk.workflows.groups.fleet.GroupFleetRuntimeAction.reconcile,
         next_runtime.entry.action,
     );
     try std.testing.expectEqualStrings("wss://relay.one", next_runtime.entry.relay_url);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetRuntimeAction.ready,
+        noztr_sdk.workflows.groups.fleet.GroupFleetRuntimeAction.ready,
         runtime.entry(1).?.action,
     );
     try std.testing.expect(runtime.entry(1).?.is_baseline);
 
-    var merge_storage = noztr_sdk.workflows.GroupFleetMergeStorage{};
-    var merge_context = noztr_sdk.workflows.GroupFleetMergeContext.init(
+    var merge_storage = noztr_sdk.workflows.groups.fleet.GroupFleetMergeStorage{};
+    var merge_context = noztr_sdk.workflows.groups.fleet.GroupFleetMergeContext.init(
         35,
         &author_secret,
         &merge_storage,
@@ -224,7 +224,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     try std.testing.expectEqual(@as(usize, 2), target_a.view().users.len);
     try std.testing.expectEqual(@as(usize, 2), target_b.view().users.len);
 
-    var targeted_metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var targeted_metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const targeted_metadata_event = try target_a.beginMetadataSnapshot(
         .init(40, &author_secret, &targeted_metadata_buffer),
         &.{ .name = "Needs Reconcile Again" },
@@ -238,10 +238,10 @@ test "recipe: group fleet persists restores inspects runtime and background work
     const targeted_runtime = try target_fleet.inspectRuntime("wss://relay.one:444", &runtime_storage);
     try std.testing.expectEqual(@as(u8, 1), targeted_runtime.reconcile_count);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetRuntimeAction.reconcile,
+        noztr_sdk.workflows.groups.fleet.GroupFleetRuntimeAction.reconcile,
         targeted_runtime.entry(0).?.action,
     );
-    var divergences: [2]noztr_sdk.workflows.GroupFleetRelayDivergence = undefined;
+    var divergences: [2]noztr_sdk.workflows.groups.fleet.GroupFleetRelayDivergence = undefined;
     const consistency = try target_fleet.inspectConsistency("wss://relay.one:444", divergences[0..]);
     try std.testing.expectEqual(@as(usize, 1), consistency.divergent_relays.len);
     const next_consistency = consistency.nextStep().?;
@@ -262,7 +262,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     const ready_runtime = try target_fleet.inspectRuntime("wss://relay.one:444", &runtime_storage);
     try std.testing.expectEqual(@as(u8, 0), ready_runtime.reconcile_count);
     try std.testing.expectEqual(@as(u8, 2), ready_runtime.ready_count);
-    var background_storage = noztr_sdk.workflows.GroupFleetBackgroundRuntimeStorage{};
+    var background_storage = noztr_sdk.workflows.groups.fleet.GroupFleetBackgroundRuntimeStorage{};
     const merge_background = try target_fleet.inspectBackgroundRuntime(.{
         .baseline_relay_url = "wss://relay.one:444",
         .pending_merged_checkpoint = &merged_checkpoint,
@@ -272,7 +272,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     try std.testing.expectEqualStrings("wss://relay.one:444", next_merge_background.baseline_relay_url);
     try std.testing.expectEqualStrings("wss://relay.one:444", next_merge_background.entry.relay_url.?);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetBackgroundAction.merge_apply,
+        noztr_sdk.workflows.groups.fleet.GroupFleetBackgroundAction.merge_apply,
         next_merge_background.entry.action,
     );
     try std.testing.expectEqualStrings(
@@ -280,21 +280,21 @@ test "recipe: group fleet persists restores inspects runtime and background work
         try target_fleet.selectBackgroundRelay(next_merge_background),
     );
 
-    var publish_buffers: [2]noztr_sdk.workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]noztr_sdk.workflows.groups.session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_refs_a: [8][]const u8 = undefined;
     var previous_refs_b: [8][]const u8 = undefined;
     var fanout_previous_refs = [_][][]const u8{
         previous_refs_a[0..],
         previous_refs_b[0..],
     };
-    var fanout_events: [2]noztr_sdk.workflows.GroupOutboundEvent = undefined;
-    var publish_storage = noztr_sdk.workflows.GroupFleetPublishStorage.init(
+    var fanout_events: [2]noztr_sdk.workflows.groups.session.GroupOutboundEvent = undefined;
+    var publish_storage = noztr_sdk.workflows.groups.fleet.GroupFleetPublishStorage.init(
         publish_buffers[0..],
         fanout_previous_refs[0..],
         fanout_events[0..],
     );
     var publish_context =
-        noztr_sdk.workflows.GroupFleetPublishContext.init(50, &author_secret, &publish_storage);
+        noztr_sdk.workflows.groups.fleet.GroupFleetPublishContext.init(50, &author_secret, &publish_storage);
     const fanout = try target_fleet.beginPutUserForAll(
         &publish_context,
         &.{
@@ -306,7 +306,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     try std.testing.expectEqual(@as(usize, 2), fanout.len);
     try std.testing.expectEqualStrings("wss://relay.one", fanout[0].relay_url);
     try std.testing.expectEqualStrings("wss://relay.one:444", fanout[1].relay_url);
-    const next_publish = noztr_sdk.workflows.GroupFleet.nextPublishStep(fanout).?;
+    const next_publish = noztr_sdk.workflows.groups.fleet.GroupFleet.nextPublishStep(fanout).?;
     try std.testing.expectEqual(@as(usize, 2), next_publish.fanout_count);
     try std.testing.expectEqualStrings("wss://relay.one", next_publish.event.relay_url);
     const publish_background = try target_fleet.inspectBackgroundRuntime(.{
@@ -318,7 +318,7 @@ test "recipe: group fleet persists restores inspects runtime and background work
     try std.testing.expectEqualStrings("wss://relay.one", next_publish_background.baseline_relay_url);
     try std.testing.expectEqualStrings("wss://relay.one", next_publish_background.entry.relay_url.?);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetBackgroundAction.publish,
+        noztr_sdk.workflows.groups.fleet.GroupFleetBackgroundAction.publish,
         next_publish_background.entry.action,
     );
     try std.testing.expectEqualStrings(

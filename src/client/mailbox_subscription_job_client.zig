@@ -306,7 +306,7 @@ test "mailbox subscription job client drives auth-gated live mailbox intake" {
     try client.markRelayConnected(0);
     try client.noteRelayAuthChallenge(0, "challenge-1");
 
-    var sender_session = @import("../workflows/mod.zig").MailboxSession.init(&sender_secret);
+    var sender_session = @import("../workflows/mod.zig").dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -317,7 +317,7 @@ test "mailbox subscription job client drives auth-gated live mailbox intake" {
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = @import("../workflows/mod.zig").MailboxOutboundBuffer{};
+    var outbound_buffer = @import("../workflows/mod.zig").dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

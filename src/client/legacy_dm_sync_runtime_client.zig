@@ -617,8 +617,8 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
     try checkpoint_archive.saveRelayCheckpoint("legacy-dm", relay.relay_url, .{ .offset = 7 });
 
-    const sender = workflows.LegacyDmSession.init(&sender_secret);
-    var replay_outbound = workflows.LegacyDmOutboundStorage{};
+    const sender = workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
+    var replay_outbound = workflows.dm.legacy.LegacyDmOutboundStorage{};
     const replay_prepared = try sender.buildDirectMessageEvent(&replay_outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy dm sync runtime replay payload",
@@ -626,7 +626,7 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
         .iv = [_]u8{0x55} ** noztr.limits.nip04_iv_bytes,
     });
 
-    var live_outbound = workflows.LegacyDmOutboundStorage{};
+    var live_outbound = workflows.dm.legacy.LegacyDmOutboundStorage{};
     const live_prepared = try sender.buildDirectMessageEvent(&live_outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy dm sync runtime live payload",

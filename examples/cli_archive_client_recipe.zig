@@ -6,8 +6,8 @@ const noztr_sdk = @import("noztr_sdk");
 // explicitly, inspect relay runtime, then derive one bounded replay step without hidden runtime.
 test "recipe: cli archive client composes shared store and runtime floors" {
     var memory_store = noztr_sdk.store.MemoryClientStore{};
-    var client_storage = noztr_sdk.client.CliArchiveClientStorage{};
-    var client = noztr_sdk.client.CliArchiveClient.init(
+    var client_storage = noztr_sdk.client.local.archive.CliArchiveClientStorage{};
+    var client = noztr_sdk.client.local.archive.CliArchiveClient.init(
         .{ .relay_checkpoint_scope = "tooling" },
         memory_store.asClientStore(),
         &client_storage,

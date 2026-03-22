@@ -6,8 +6,8 @@ test "recipe: auth subscription turn client authenticates then resumes one bound
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.AuthSubscriptionTurnClientStorage{};
-    var client = noztr_sdk.client.AuthSubscriptionTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.auth_subscription_turn.AuthSubscriptionTurnClientStorage{};
+    var client = noztr_sdk.client.relay.auth_subscription_turn.AuthSubscriptionTurnClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
@@ -29,7 +29,7 @@ test "recipe: auth subscription turn client authenticates then resumes one bound
     )).?.authenticate;
 
     const secret_key = [_]u8{0x51} ** 32;
-    var auth_event_storage = noztr_sdk.client.AuthSubscriptionEventStorage{};
+    var auth_event_storage = noztr_sdk.client.relay.auth_subscription_turn.AuthSubscriptionEventStorage{};
     var auth_event_json: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_json: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared_auth = try client.prepareAuthEvent(

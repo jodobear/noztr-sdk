@@ -21,15 +21,15 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
     );
     fake_http.expected_accept = "application/json";
 
-    const client = noztr_sdk.client.Nip05VerifyClient.init(.{});
+    const client = noztr_sdk.client.identity.nip05.Nip05VerifyClient.init(.{});
     var lookup_url_buffer: [128]u8 = undefined;
     var body_buffer: [384]u8 = undefined;
-    var storage = noztr_sdk.client.Nip05VerifyClientStorage.init(
+    var storage = noztr_sdk.client.identity.nip05.Nip05VerifyClientStorage.init(
         lookup_url_buffer[0..],
         body_buffer[0..],
     );
-    var remembered_records: [2]noztr_sdk.workflows.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = noztr_sdk.workflows.MemoryNip05RememberedResolutionStore.init(
+    var remembered_records: [2]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
+    var remembered_store = noztr_sdk.workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(
         remembered_records[0..],
     );
     const job = client.prepareVerifyJob(
@@ -42,7 +42,7 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
 
     try std.testing.expect(result == .verified);
     try std.testing.expectEqual(
-        noztr_sdk.client.Nip05RememberedResolutionPlanning.StorePutOutcome.stored,
+        noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.StorePutOutcome.stored,
         (try client.rememberVerifyOutcome(
             remembered_store.asStore(),
             &result,
@@ -55,19 +55,19 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
     );
     try std.testing.expectEqual(@as(usize, 1), result.verified.profile.relays.len);
 
-    const targets = [_]noztr_sdk.client.Nip05RememberedResolutionPlanning.Target{
+    const targets = [_]noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.Target{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]noztr_sdk.client.Nip05RememberedResolutionPlanning.LatestTargetEntry = undefined;
-    var refresh_entries: [2]noztr_sdk.client.Nip05RememberedResolutionPlanning.RefreshEntry = undefined;
+    var latest_entries: [2]noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.LatestTargetEntry = undefined;
+    var refresh_entries: [2]noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.RefreshEntry = undefined;
     const plan = try client.planRememberedResolutionRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.Nip05RememberedResolutionPlanning.RefreshStorage.init(
+            .storage = noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.RefreshStorage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

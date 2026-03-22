@@ -8,7 +8,7 @@ const workflows = @import("../workflows/mod.zig");
 
 pub const LegacyDmSubscriptionTurnClientError =
     subscription_turn.SubscriptionTurnClientError ||
-    workflows.LegacyDmError;
+    workflows.dm.legacy.LegacyDmError;
 
 pub const LegacyDmSubscriptionTurnClientConfig = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
@@ -16,7 +16,7 @@ pub const LegacyDmSubscriptionTurnClientConfig = struct {
 };
 
 pub const LegacyDmSubscriptionTurnClientStorage = struct {
-    session: workflows.LegacyDmSession = undefined,
+    session: workflows.dm.legacy.LegacyDmSession = undefined,
     subscription_turn: subscription_turn.SubscriptionTurnClientStorage = .{},
 };
 
@@ -25,7 +25,7 @@ pub const LegacyDmSubscriptionTurnResult = subscription_turn.SubscriptionTurnRes
 
 pub const LegacyDmSubscriptionTurnIntake = struct {
     subscription: subscription_turn.SubscriptionTurnIntake,
-    message: ?workflows.LegacyDmMessageOutcome,
+    message: ?workflows.dm.legacy.LegacyDmMessageOutcome,
 };
 
 pub const LegacyDmSubscriptionTurnClient = struct {
@@ -38,7 +38,7 @@ pub const LegacyDmSubscriptionTurnClient = struct {
         storage: *LegacyDmSubscriptionTurnClientStorage,
     ) LegacyDmSubscriptionTurnClient {
         storage.* = .{
-            .session = workflows.LegacyDmSession.init(&config.owner_private_key),
+            .session = workflows.dm.legacy.LegacyDmSession.init(&config.owner_private_key),
         };
         return .{
             .config = config,
@@ -164,7 +164,7 @@ pub const LegacyDmSubscriptionTurnClient = struct {
             scratch,
         );
 
-        var message: ?workflows.LegacyDmMessageOutcome = null;
+        var message: ?workflows.dm.legacy.LegacyDmMessageOutcome = null;
         if (subscription.subscription.message == .event and
             subscription.subscription.message.event.event.kind == noztr.nip04.dm_kind)
         {
@@ -197,8 +197,8 @@ test "legacy dm subscription turn client accepts live transcript events through 
     const recipient_secret = [_]u8{0x42} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var outbound = workflows.LegacyDmOutboundStorage{};
-    const sender = workflows.LegacyDmSession.init(&sender_secret);
+    var outbound = workflows.dm.legacy.LegacyDmOutboundStorage{};
+    const sender = workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
     const prepared = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy live intake",

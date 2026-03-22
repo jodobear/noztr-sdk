@@ -17,8 +17,8 @@ test "recipe: mailbox replay turn client accepts wrapped replay events and retur
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.MailboxReplayTurnClientStorage{};
-    var client = noztr_sdk.client.MailboxReplayTurnClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.replay_turn.MailboxReplayTurnClientStorage{};
+    var client = noztr_sdk.client.dm.mailbox.replay_turn.MailboxReplayTurnClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -33,7 +33,7 @@ test "recipe: mailbox replay turn client accepts wrapped replay events and retur
     try client.markRelayConnected(0);
     try checkpoint_archive.saveRelayCheckpoint("mailbox", "wss://relay.one", .{ .offset = 7 });
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -44,7 +44,7 @@ test "recipe: mailbox replay turn client accepts wrapped replay events and retur
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

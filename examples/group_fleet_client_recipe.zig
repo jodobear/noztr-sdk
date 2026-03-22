@@ -12,7 +12,7 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     var source_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_a: [8][]const u8 = undefined;
-    var relay_one = try noztr_sdk.workflows.GroupClient.init(.{
+    var relay_one = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -26,7 +26,7 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     var source_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var source_previous_refs_b: [8][]const u8 = undefined;
-    var relay_two = try noztr_sdk.workflows.GroupClient.init(.{
+    var relay_two = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -37,12 +37,12 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     relay_one.markCurrentRelayConnected();
     relay_two.markCurrentRelayConnected();
 
-    var fleet_members = [_]*noztr_sdk.workflows.GroupClient{ &relay_one, &relay_two };
-    const fleet = try noztr_sdk.workflows.GroupFleet.init(fleet_members[0..]);
-    var groups = noztr_sdk.client.GroupFleetClient.init(.{}, fleet);
+    var fleet_members = [_]*noztr_sdk.workflows.groups.local.GroupClient{ &relay_one, &relay_two };
+    const fleet = try noztr_sdk.workflows.groups.fleet.GroupFleet.init(fleet_members[0..]);
+    var groups = noztr_sdk.client.groups.fleet.GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const first = try relay_one.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -56,7 +56,7 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
         arena.allocator(),
     );
 
-    var storage = noztr_sdk.client.GroupFleetClientStorage{};
+    var storage = noztr_sdk.client.groups.fleet.GroupFleetClientStorage{};
     const runtime = try groups.inspectRuntime(&storage, "wss://relay.one");
     try std.testing.expectEqual(@as(u8, 1), runtime.reconcile_count);
     const consistency = try groups.inspectConsistency(&storage, "wss://relay.one");
@@ -67,13 +67,13 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     });
     const next_step = background.nextStep().?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetBackgroundAction.reconcile,
+        noztr_sdk.workflows.groups.fleet.GroupFleetBackgroundAction.reconcile,
         next_step.entry.action,
     );
     try std.testing.expectEqualStrings("wss://relay.one:444", try groups.selectBackgroundRelay(next_step));
 
-    var checkpoint_storage = noztr_sdk.client.GroupFleetClientCheckpointStorage{};
-    const checkpoint_request = noztr_sdk.client.GroupFleetClientCheckpointRequest.init(10, &author_secret);
+    var checkpoint_storage = noztr_sdk.client.groups.fleet.GroupFleetClientCheckpointStorage{};
+    const checkpoint_request = noztr_sdk.client.groups.fleet.GroupFleetClientCheckpointRequest.init(10, &author_secret);
     const reconciled = try groups.reconcileRelayFromBaseline(
         &checkpoint_storage,
         &checkpoint_request,
@@ -85,9 +85,9 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     try std.testing.expectEqualStrings("wss://relay.one:444", reconciled.target_relay_url);
     try std.testing.expectEqualStrings("Pizza Lovers", relay_two.view().metadata.name.?);
 
-    var records: [2]noztr_sdk.workflows.GroupFleetCheckpointRecord =
-        [_]noztr_sdk.workflows.GroupFleetCheckpointRecord{.{}, .{}};
-    var memory_store = noztr_sdk.workflows.MemoryGroupFleetCheckpointStore.init(records[0..]);
+    var records: [2]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord =
+        [_]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord{.{}, .{}};
+    var memory_store = noztr_sdk.workflows.groups.fleet.MemoryGroupFleetCheckpointStore.init(records[0..]);
     const persisted = try groups.persistCheckpointStore(
         &checkpoint_storage,
         &checkpoint_request,
@@ -100,7 +100,7 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     var restored_user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var restored_previous_refs_a: [8][]const u8 = undefined;
-    var restored_one = try noztr_sdk.workflows.GroupClient.init(.{
+    var restored_one = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -114,7 +114,7 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     var restored_user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var restored_previous_refs_b: [8][]const u8 = undefined;
-    var restored_two = try noztr_sdk.workflows.GroupClient.init(.{
+    var restored_two = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -123,9 +123,9 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
         ),
     });
 
-    var restored_members = [_]*noztr_sdk.workflows.GroupClient{ &restored_one, &restored_two };
-    const restored_fleet = try noztr_sdk.workflows.GroupFleet.init(restored_members[0..]);
-    var restored_groups = noztr_sdk.client.GroupFleetClient.init(.{}, restored_fleet);
+    var restored_members = [_]*noztr_sdk.workflows.groups.local.GroupClient{ &restored_one, &restored_two };
+    const restored_fleet = try noztr_sdk.workflows.groups.fleet.GroupFleet.init(restored_members[0..]);
+    var restored_groups = noztr_sdk.client.groups.fleet.GroupFleetClient.init(.{}, restored_fleet);
     const restored = try restored_groups.restoreCheckpointStore(memory_store.asStore(), arena.allocator());
     try std.testing.expectEqual(@as(u8, 2), restored.restored_relays);
     try std.testing.expectEqualStrings("Pizza Lovers", restored_one.view().metadata.name.?);
@@ -141,7 +141,7 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var relay_one = try noztr_sdk.workflows.GroupClient.init(.{
+    var relay_one = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -155,7 +155,7 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var relay_two = try noztr_sdk.workflows.GroupClient.init(.{
+    var relay_two = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -166,15 +166,15 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
     relay_one.markCurrentRelayConnected();
     relay_two.markCurrentRelayConnected();
 
-    var fleet_members = [_]*noztr_sdk.workflows.GroupClient{ &relay_one, &relay_two };
-    const fleet = try noztr_sdk.workflows.GroupFleet.init(fleet_members[0..]);
-    var groups = noztr_sdk.client.GroupFleetClient.init(.{}, fleet);
+    var fleet_members = [_]*noztr_sdk.workflows.groups.local.GroupClient{ &relay_one, &relay_two };
+    const fleet = try noztr_sdk.workflows.groups.fleet.GroupFleet.init(fleet_members[0..]);
+    var groups = noztr_sdk.client.groups.fleet.GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var metadata_buffer_one = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer_one = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const metadata_one = try relay_one.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer_one),
         &.{ .name = "Pizza Lovers" },
@@ -185,7 +185,7 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
         arena.allocator(),
     );
 
-    var members_buffer_one = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var members_buffer_one = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const members_one = try relay_one.beginMembersSnapshot(
         .init(2, &author_secret, &members_buffer_one),
         &.{
@@ -203,7 +203,7 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
         arena.allocator(),
     );
 
-    var metadata_buffer_two = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer_two = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const metadata_two = try relay_two.beginMetadataSnapshot(
         .init(3, &author_secret, &metadata_buffer_two),
         &.{ .name = "Pizza Lovers Relay Two" },
@@ -214,7 +214,7 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
         arena.allocator(),
     );
 
-    var members_buffer_two = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var members_buffer_two = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const members_two = try relay_two.beginMembersSnapshot(
         .init(4, &author_secret, &members_buffer_two),
         &.{
@@ -236,8 +236,8 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
         arena.allocator(),
     );
 
-    var merge_storage = noztr_sdk.client.GroupFleetClientMergeStorage{};
-    const merge_request = noztr_sdk.client.GroupFleetClientMergeRequest.init(20, &author_secret);
+    var merge_storage = noztr_sdk.client.groups.fleet.GroupFleetClientMergeStorage{};
+    const merge_request = noztr_sdk.client.groups.fleet.GroupFleetClientMergeRequest.init(20, &author_secret);
     const merged = try groups.buildMergedCheckpoint(
         &merge_storage,
         &merge_request,
@@ -247,14 +247,14 @@ test "recipe: group fleet client builds and applies one merged checkpoint" {
         },
     );
 
-    var storage = noztr_sdk.client.GroupFleetClientStorage{};
+    var storage = noztr_sdk.client.groups.fleet.GroupFleetClientStorage{};
     const background = try groups.inspectBackgroundRuntime(&storage, .{
         .baseline_relay_url = "wss://relay.one",
         .pending_merged_checkpoint = &merged,
     });
     const next_step = background.nextStep().?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetBackgroundAction.merge_apply,
+        noztr_sdk.workflows.groups.fleet.GroupFleetBackgroundAction.merge_apply,
         next_step.entry.action,
     );
     try std.testing.expectEqualStrings("wss://relay.one", try groups.selectBackgroundRelay(next_step));
@@ -277,7 +277,7 @@ test "recipe: group fleet client builds one publish fanout and surfaces the next
     var user_roles_a: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_a: [8][]const u8 = undefined;
-    var relay_one = try noztr_sdk.workflows.GroupClient.init(.{
+    var relay_one = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -291,7 +291,7 @@ test "recipe: group fleet client builds one publish fanout and surfaces the next
     var user_roles_b: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var previous_refs_b: [8][]const u8 = undefined;
-    var relay_two = try noztr_sdk.workflows.GroupClient.init(.{
+    var relay_two = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one:444",
         .storage = .init(
@@ -302,14 +302,14 @@ test "recipe: group fleet client builds one publish fanout and surfaces the next
     relay_one.markCurrentRelayConnected();
     relay_two.markCurrentRelayConnected();
 
-    var fleet_members = [_]*noztr_sdk.workflows.GroupClient{ &relay_one, &relay_two };
-    const fleet = try noztr_sdk.workflows.GroupFleet.init(fleet_members[0..]);
-    var groups = noztr_sdk.client.GroupFleetClient.init(.{}, fleet);
+    var fleet_members = [_]*noztr_sdk.workflows.groups.local.GroupClient{ &relay_one, &relay_two };
+    const fleet = try noztr_sdk.workflows.groups.fleet.GroupFleet.init(fleet_members[0..]);
+    var groups = noztr_sdk.client.groups.fleet.GroupFleetClient.init(.{}, fleet);
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var roles_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var members_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var roles_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var members_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const metadata = try relay_one.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -350,17 +350,17 @@ test "recipe: group fleet client builds one publish fanout and surfaces the next
         arena.allocator(),
     );
 
-    var publish_buffers: [2]noztr_sdk.workflows.GroupOutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]noztr_sdk.workflows.groups.session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_ref_buf_a: [8][]const u8 = undefined;
     var previous_ref_buf_b: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{ previous_ref_buf_a[0..], previous_ref_buf_b[0..] };
-    var outbound_events: [2]noztr_sdk.workflows.GroupOutboundEvent = undefined;
-    var publish_storage = noztr_sdk.client.GroupFleetClientPublishStorage.init(
+    var outbound_events: [2]noztr_sdk.workflows.groups.session.GroupOutboundEvent = undefined;
+    var publish_storage = noztr_sdk.client.groups.fleet.GroupFleetClientPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
         outbound_events[0..],
     );
-    const publish_request = noztr_sdk.client.GroupFleetClientPublishRequest.init(90, &author_secret);
+    const publish_request = noztr_sdk.client.groups.fleet.GroupFleetClientPublishRequest.init(90, &author_secret);
     const fanout = try groups.beginPutUserForAll(
         &publish_storage,
         &publish_request,
@@ -373,13 +373,13 @@ test "recipe: group fleet client builds one publish fanout and surfaces the next
     const next_publish = groups.nextPublishEvent(fanout).?;
     try std.testing.expectEqualStrings("wss://relay.one", next_publish.relay_url);
 
-    var storage = noztr_sdk.client.GroupFleetClientStorage{};
+    var storage = noztr_sdk.client.groups.fleet.GroupFleetClientStorage{};
     const background = try groups.inspectBackgroundRuntime(&storage, .{
         .publish_events = fanout[0..1],
     });
     const next_step = background.nextStep().?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.GroupFleetBackgroundAction.publish,
+        noztr_sdk.workflows.groups.fleet.GroupFleetBackgroundAction.publish,
         next_step.entry.action,
     );
     try std.testing.expectEqualStrings("wss://relay.one", try groups.selectBackgroundRelay(next_step));

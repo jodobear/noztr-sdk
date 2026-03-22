@@ -7,8 +7,8 @@ const noztr_sdk = @import("noztr_sdk");
 test "recipe: local state client composes archive registry checkpoint and replay seams" {
     var client_store = noztr_sdk.store.MemoryClientStore{};
     var relay_info_store = noztr_sdk.store.MemoryRelayInfoStore{};
-    var storage = noztr_sdk.client.LocalStateClientStorage{};
-    var client = noztr_sdk.client.LocalStateClient.init(
+    var storage = noztr_sdk.client.local.state.LocalStateClientStorage{};
+    var client = noztr_sdk.client.local.state.LocalStateClient.init(
         .{ .relay_checkpoint_scope = "workspace" },
         client_store.asClientStore(),
         relay_info_store.asRelayInfoStore(),

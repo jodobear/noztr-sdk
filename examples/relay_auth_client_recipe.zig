@@ -3,8 +3,8 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
 test "recipe: relay auth client composes one auth event and returns the relay to ready" {
-    var storage = noztr_sdk.client.RelayAuthClientStorage{};
-    var client = noztr_sdk.client.RelayAuthClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.auth.RelayAuthClientStorage{};
+    var client = noztr_sdk.client.relay.auth.RelayAuthClient.init(.{}, &storage);
 
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
@@ -17,7 +17,7 @@ test "recipe: relay auth client composes one auth event and returns the relay to
     try std.testing.expectEqualStrings("challenge-1", step.entry.challenge);
 
     const secret_key = [_]u8{0x51} ** 32;
-    var event_storage = noztr_sdk.client.RelayAuthEventStorage{};
+    var event_storage = noztr_sdk.client.relay.auth.RelayAuthEventStorage{};
     var event_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_buffer: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared = try client.prepareAuthEvent(

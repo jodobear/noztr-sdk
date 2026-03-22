@@ -13,10 +13,10 @@ test "recipe: mailbox session inspects workflow, inspects shared relay-pool runt
     const sender_secret = [_]u8{0x11} ** 32;
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
-    var delivery_storage = noztr_sdk.workflows.MailboxDeliveryStorage{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
+    var delivery_storage = noztr_sdk.workflows.dm.mailbox.MailboxDeliveryStorage{};
     var recipient_relay_list_storage: [4096]u8 = undefined;
     var sender_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJsonThree(
@@ -99,7 +99,7 @@ test "recipe: mailbox session inspects workflow, inspects shared relay-pool runt
     try std.testing.expectEqualStrings("wss://sender-copy", try sender_session.advanceRelay());
     try sender_session.markCurrentRelayConnected();
 
-    var sender_workflow_storage = noztr_sdk.workflows.MailboxWorkflowStorage{};
+    var sender_workflow_storage = noztr_sdk.workflows.dm.mailbox.MailboxWorkflowStorage{};
     const sender_workflow = try sender_session.inspectWorkflow(.{
         .pending_delivery = &delivery,
         .storage = &sender_workflow_storage,
@@ -108,7 +108,7 @@ test "recipe: mailbox session inspects workflow, inspects shared relay-pool runt
     try std.testing.expectEqual(@as(u8, 1), sender_workflow.publish_sender_copy_count);
     const next_workflow = sender_workflow.nextStep().?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.MailboxWorkflowAction.publish_recipient,
+        noztr_sdk.workflows.dm.mailbox.MailboxWorkflowAction.publish_recipient,
         next_workflow.entry.action,
     );
     try std.testing.expectEqualStrings(
@@ -116,7 +116,7 @@ test "recipe: mailbox session inspects workflow, inspects shared relay-pool runt
         try sender_session.selectWorkflowRelay(next_workflow),
     );
 
-    var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
+    var recipient_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(
         recipient_relay_list_json,
         arena.allocator(),
@@ -129,18 +129,18 @@ test "recipe: mailbox session inspects workflow, inspects shared relay-pool runt
     );
     try recipient_session.markCurrentRelayConnected();
 
-    var runtime_storage = noztr_sdk.workflows.MailboxRuntimeStorage{};
+    var runtime_storage = noztr_sdk.workflows.dm.mailbox.MailboxRuntimeStorage{};
     const runtime = try recipient_session.inspectRuntime(&runtime_storage);
     try std.testing.expectEqual(@as(u8, 3), runtime.relay_count);
     try std.testing.expectEqual(@as(u8, 1), runtime.authenticate_count);
     try std.testing.expectEqual(@as(u8, 1), runtime.receive_count);
     try std.testing.expectEqual(@as(u8, 1), runtime.connect_count);
-    try std.testing.expectEqual(noztr_sdk.workflows.MailboxRuntimeAction.authenticate, runtime.entry(0).?.action);
-    try std.testing.expectEqual(noztr_sdk.workflows.MailboxRuntimeAction.receive, runtime.entry(1).?.action);
+    try std.testing.expectEqual(noztr_sdk.workflows.dm.mailbox.MailboxRuntimeAction.authenticate, runtime.entry(0).?.action);
+    try std.testing.expectEqual(noztr_sdk.workflows.dm.mailbox.MailboxRuntimeAction.receive, runtime.entry(1).?.action);
     try std.testing.expect(runtime.entry(1).?.is_current);
     const next_runtime = runtime.nextStep().?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.MailboxRuntimeAction.receive,
+        noztr_sdk.workflows.dm.mailbox.MailboxRuntimeAction.receive,
         next_runtime.entry.action,
     );
     try std.testing.expectEqualStrings(
@@ -148,7 +148,7 @@ test "recipe: mailbox session inspects workflow, inspects shared relay-pool runt
         next_runtime.entry.relay_url,
     );
 
-    var relay_pool_runtime = noztr_sdk.workflows.MailboxRelayPoolRuntimeStorage{};
+    var relay_pool_runtime = noztr_sdk.workflows.dm.mailbox.MailboxRelayPoolRuntimeStorage{};
     const shared_plan = recipient_session.inspectRelayPoolRuntime(&relay_pool_runtime);
     try std.testing.expectEqual(@as(u8, 1), shared_plan.authenticate_count);
     try std.testing.expectEqual(@as(u8, 1), shared_plan.ready_count);
@@ -184,9 +184,9 @@ test "recipe: mailbox session selects the next workflow relay, plans, and unwrap
     const sender_secret = [_]u8{0x11} ** 32;
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
-    var delivery_storage = noztr_sdk.workflows.MailboxDeliveryStorage{};
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
+    var delivery_storage = noztr_sdk.workflows.dm.mailbox.MailboxDeliveryStorage{};
     var recipient_relay_list_storage: [4096]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJson(
         recipient_relay_list_storage[0..],
@@ -246,14 +246,14 @@ test "recipe: mailbox session selects the next workflow relay, plans, and unwrap
     );
     try sender_session.markCurrentRelayConnected();
 
-    var sender_workflow_storage = noztr_sdk.workflows.MailboxWorkflowStorage{};
+    var sender_workflow_storage = noztr_sdk.workflows.dm.mailbox.MailboxWorkflowStorage{};
     const sender_workflow = try sender_session.inspectWorkflow(.{
         .pending_delivery = &delivery,
         .storage = &sender_workflow_storage,
     });
     const next_workflow = sender_workflow.nextStep().?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.MailboxWorkflowAction.publish_recipient,
+        noztr_sdk.workflows.dm.mailbox.MailboxWorkflowAction.publish_recipient,
         next_workflow.entry.action,
     );
     try std.testing.expectEqualStrings(
@@ -261,7 +261,7 @@ test "recipe: mailbox session selects the next workflow relay, plans, and unwrap
         try sender_session.selectWorkflowRelay(next_workflow),
     );
 
-    var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
+    var recipient_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&recipient_secret);
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
     try recipient_session.markCurrentRelayConnected();
 

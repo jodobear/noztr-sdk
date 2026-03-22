@@ -12,12 +12,12 @@ read_when:
 This is a narrow pre-`1.0` naming cleanup for direct workflow submodule imports.
 
 Canonical public names now match the prefixed names already used by the root workflow surface for:
-- `noztr_sdk.workflows.group_session`
-- `noztr_sdk.workflows.mailbox`
+- `noztr_sdk.workflows.groups.session`
+- `noztr_sdk.workflows.dm.mailbox`
 
 If you already import the canonical root workflow symbols such as
-`noztr_sdk.workflows.GroupPublishContext` or `noztr_sdk.workflows.MailboxWorkflowRequest`, nothing
-changes.
+`noztr_sdk.workflows.groups.session.GroupPublishContext` or
+`noztr_sdk.workflows.dm.mailbox.MailboxWorkflowRequest`, nothing changes.
 
 ## Group Session Renames
 
@@ -68,7 +68,7 @@ changes.
 Before:
 
 ```zig
-const mailbox = noztr_sdk.workflows.mailbox;
+const mailbox = noztr_sdk.workflows.dm.mailbox;
 var buffer = mailbox.OutboundBuffer{};
 const request = mailbox.WorkflowRequest{
     .pending_delivery = null,
@@ -79,7 +79,7 @@ const request = mailbox.WorkflowRequest{
 After:
 
 ```zig
-const mailbox = noztr_sdk.workflows.mailbox;
+const mailbox = noztr_sdk.workflows.dm.mailbox;
 var buffer = mailbox.MailboxOutboundBuffer{};
 const request = mailbox.MailboxWorkflowRequest{
     .pending_delivery = null,

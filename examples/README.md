@@ -35,8 +35,7 @@ Use these docs when you need public routing or contract context before opening a
 - protocol fixture construction stays on `noztr` kernel helpers
 - examples are compile-verified recipes, not hidden runtimes or framework demos
 - deferred seams are named explicitly instead of being smuggled into example code
-- older flat exports still exist for compatibility, but new examples should prefer grouped routes
-  when the example is touching a mature public surface
+- the grouped routes are the only canonical public routes for mature surfaces in this repo
 
 ## If You Are Building Another Zig SDK
 

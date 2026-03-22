@@ -6,7 +6,7 @@ const noztr_sdk = @import("noztr_sdk");
 // keypair, roundtrip one `npub` and `nsec`, sign and inspect one event locally, then perform one
 // explicit `NIP-44` encrypt/decrypt roundtrip without any relay or runtime ownership.
 test "recipe: local operator client composes key, event, entity, and local nip44 helpers" {
-    const client = noztr_sdk.client.LocalOperatorClient.init(.{});
+    const client = noztr_sdk.client.local.operator.LocalOperatorClient.init(.{});
     const author_secret = [_]u8{0x11} ** 32;
     const peer_secret = [_]u8{0x22} ** 32;
     const author_keypair = try client.keypairFromSecretKey(&author_secret);
@@ -23,7 +23,7 @@ test "recipe: local operator client composes key, event, entity, and local nip44
     const decoded_nsec = try client.decodeEntity(nsec, tlv_scratch[0..]);
     try std.testing.expect(decoded_nsec == .nsec);
 
-    const draft = noztr_sdk.client.LocalEventDraft{
+    const draft = noztr_sdk.client.local.operator.LocalEventDraft{
         .kind = 1,
         .created_at = 42,
         .content = "local operator event",

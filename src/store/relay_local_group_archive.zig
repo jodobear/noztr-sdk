@@ -3,8 +3,10 @@ const noztr = @import("noztr");
 const client = @import("client_traits.zig");
 const archive = @import("archive.zig");
 const workflows = @import("../workflows/mod.zig");
+const group_local = workflows.groups.local;
+const group_session = workflows.groups.session;
 
-pub const RelayLocalGroupArchiveError = archive.EventArchiveError || workflows.GroupClientError || error{
+pub const RelayLocalGroupArchiveError = archive.EventArchiveError || group_local.GroupClientError || error{
     BufferTooSmall,
 };
 
@@ -26,7 +28,7 @@ pub const RelayLocalGroupArchive = struct {
         self: RelayLocalGroupArchive,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) RelayLocalGroupArchiveError!workflows.GroupStateEventKind {
+    ) RelayLocalGroupArchiveError!group_session.GroupStateEventKind {
         const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
         try noztr.nip01_event.event_verify(&event);
 
@@ -38,7 +40,7 @@ pub const RelayLocalGroupArchive = struct {
 
     pub fn restoreSnapshot(
         self: RelayLocalGroupArchive,
-        group: *workflows.GroupClient,
+        group: *group_local.GroupClient,
         event_storage: []client.ClientEventRecord,
         scratch: std.mem.Allocator,
     ) RelayLocalGroupArchiveError!usize {
@@ -81,7 +83,7 @@ pub const RelayLocalGroupArchive = struct {
     }
 };
 
-fn classifyStateEventKind(kind: u32) RelayLocalGroupArchiveError!workflows.GroupStateEventKind {
+fn classifyStateEventKind(kind: u32) RelayLocalGroupArchiveError!group_session.GroupStateEventKind {
     return switch (kind) {
         noztr.nip29_relay_groups.group_metadata_kind => .metadata,
         noztr.nip29_relay_groups.group_admins_kind => .admins,
@@ -123,7 +125,7 @@ test "relay-local group archive restores one stored group snapshot through the s
     var sender_user_roles: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var sender_previous_refs: [8][]const u8 = undefined;
-    var sender = try workflows.GroupClient.init(.{
+    var sender = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -134,9 +136,9 @@ test "relay-local group archive restores one stored group snapshot through the s
     sender.markCurrentRelayConnected();
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = workflows.GroupOutboundBuffer{};
-    var roles_buffer = workflows.GroupOutboundBuffer{};
-    var members_buffer = workflows.GroupOutboundBuffer{};
+    var metadata_buffer = group_session.GroupOutboundBuffer{};
+    var roles_buffer = group_session.GroupOutboundBuffer{};
+    var members_buffer = group_session.GroupOutboundBuffer{};
     const metadata_event = try sender.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -175,7 +177,7 @@ test "relay-local group archive restores one stored group snapshot through the s
     var receiver_user_roles: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var receiver_previous_refs: [8][]const u8 = undefined;
-    var receiver = try workflows.GroupClient.init(.{
+    var receiver = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -206,13 +208,13 @@ test "relay-local group archive rejects state events for another group" {
         "relay.one'pizza-lovers",
     );
 
-    var fixture = workflows.GroupOutboundBuffer{};
+    var fixture = group_session.GroupOutboundBuffer{};
     const author_secret = [_]u8{0x09} ** 32;
     var client_users: [0]noztr.nip29_relay_groups.GroupStateUser = .{};
     var client_roles: [0]noztr.nip29_relay_groups.GroupRole = .{};
     var client_user_roles: [0][]const u8 = .{};
     var previous_refs: [0][]const u8 = .{};
-    var client_group = try workflows.GroupClient.init(.{
+    var client_group = try group_local.GroupClient.init(.{
         .reference_text = "relay.one'other-group",
         .relay_url = "wss://relay.one",
         .storage = .init(

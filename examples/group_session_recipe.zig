@@ -10,7 +10,7 @@ test "recipe: group client exports and restores one checkpoint before moderation
     var roles: [1]noztr.nip29_relay_groups.GroupRole = undefined;
     var user_roles: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 = undefined;
     var previous_refs_storage: [8][]const u8 = undefined;
-    var sender = try noztr_sdk.workflows.GroupClient.init(.{
+    var sender = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -20,9 +20,9 @@ test "recipe: group client exports and restores one checkpoint before moderation
     });
     sender.markCurrentRelayConnected();
 
-    var metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var role_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var member_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var role_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var member_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const author_secret = [_]u8{0x09} ** 32;
     const metadata_event = try sender.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
@@ -61,7 +61,7 @@ test "recipe: group client exports and restores one checkpoint before moderation
     defer sender_arena.deinit();
     try sender.applySnapshotEventJsons(snapshot[0..], sender_arena.allocator());
 
-    var checkpoint_buffers = noztr_sdk.workflows.GroupCheckpointBuffers{};
+    var checkpoint_buffers = noztr_sdk.workflows.groups.local.GroupCheckpointBuffers{};
     const checkpoint = try sender.exportCheckpoint(
         .init(10, &author_secret, &checkpoint_buffers),
     );
@@ -71,7 +71,7 @@ test "recipe: group client exports and restores one checkpoint before moderation
     var receiver_user_roles: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var receiver_previous_refs: [8][]const u8 = undefined;
-    var receiver = try noztr_sdk.workflows.GroupClient.init(.{
+    var receiver = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -90,7 +90,7 @@ test "recipe: group client exports and restores one checkpoint before moderation
     var selected_previous: [1][]const u8 = undefined;
     const previous_refs = receiver.selectPreviousRefs(null, selected_previous[0..]);
     receiver.markCurrentRelayConnected();
-    var outbound_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const outbound = try receiver.beginPutUser(
         .init(4, &author_secret, &outbound_buffer),
         &.{

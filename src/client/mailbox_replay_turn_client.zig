@@ -10,7 +10,7 @@ const mailbox_wrap_event_kind: u32 = 1059;
 
 pub const MailboxReplayTurnClientError =
     relay_replay_turn.RelayReplayTurnClientError ||
-    workflows.MailboxError;
+    workflows.dm.mailbox.MailboxError;
 
 pub const MailboxReplayTurnClientConfig = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
@@ -18,7 +18,7 @@ pub const MailboxReplayTurnClientConfig = struct {
 };
 
 pub const MailboxReplayTurnClientStorage = struct {
-    mailbox: workflows.MailboxSession = undefined,
+    mailbox: workflows.dm.mailbox.MailboxSession = undefined,
     replay_turn: relay_replay_turn.RelayReplayTurnClientStorage = .{},
 };
 
@@ -27,7 +27,7 @@ pub const MailboxReplayTurnResult = relay_replay_turn.ReplayTurnResult;
 
 pub const MailboxReplayTurnIntake = struct {
     replay: relay_replay_turn.ReplayTurnIntake,
-    envelope: ?workflows.MailboxEnvelopeOutcome,
+    envelope: ?workflows.dm.mailbox.MailboxEnvelopeOutcome,
 };
 
 pub const MailboxReplayTurnClient = struct {
@@ -40,7 +40,7 @@ pub const MailboxReplayTurnClient = struct {
         storage: *MailboxReplayTurnClientStorage,
     ) MailboxReplayTurnClient {
         storage.* = .{
-            .mailbox = workflows.MailboxSession.init(&config.recipient_private_key),
+            .mailbox = workflows.dm.mailbox.MailboxSession.init(&config.recipient_private_key),
         };
         return .{
             .config = config,
@@ -216,7 +216,7 @@ pub const MailboxReplayTurnClient = struct {
             scratch,
         );
 
-        var envelope: ?workflows.MailboxEnvelopeOutcome = null;
+        var envelope: ?workflows.dm.mailbox.MailboxEnvelopeOutcome = null;
         if (replay.replay.message == .event and
             replay.replay.message.event.event.kind == mailbox_wrap_event_kind)
         {
@@ -289,7 +289,7 @@ test "mailbox replay turn client accepts replay transcript events through mailbo
     try client.markRelayConnected(0);
     try checkpoint_archive.saveRelayCheckpoint("mailbox", "wss://relay.one", .{ .offset = 7 });
 
-    var sender_session = workflows.MailboxSession.init(&sender_secret);
+    var sender_session = workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -300,7 +300,7 @@ test "mailbox replay turn client accepts replay transcript events through mailbo
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

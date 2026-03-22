@@ -12,14 +12,14 @@ test "recipe: relay directory job client refreshes one remembered relay metadata
     fake_http.expected_accept = "application/nostr+json";
 
     var relay_info_store = noztr_sdk.store.MemoryRelayInfoStore{};
-    var client = noztr_sdk.client.RelayDirectoryJobClient.init(
+    var client = noztr_sdk.client.relay.directory.RelayDirectoryJobClient.init(
         .{},
         relay_info_store.asRelayInfoStore(),
     );
     var lookup_url_buffer: [128]u8 = undefined;
     var response_buffer: [256]u8 = undefined;
     var parse_scratch: [4096]u8 = undefined;
-    var storage = noztr_sdk.client.RelayDirectoryJobClientStorage.init(
+    var storage = noztr_sdk.client.relay.directory.RelayDirectoryJobClientStorage.init(
         lookup_url_buffer[0..],
         response_buffer[0..],
         parse_scratch[0..],

@@ -14,10 +14,10 @@ const ots_header_magic = [_]u8{
 const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 pub const Nip03VerifyClientError =
-    workflows.OpenTimestampsRememberedRemoteVerificationError ||
-    workflows.OpenTimestampsStoredVerificationDiscoveryError;
+    workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationError ||
+    workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryError;
 pub const Nip03StoredVerificationRefreshReadinessError =
-    workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessError;
+    workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessError;
 
 pub const Nip03VerifyClientConfig = struct {};
 
@@ -33,98 +33,98 @@ pub const Nip03VerifyClientStorage = struct {
     }
 };
 
-pub const Nip03VerifyJob = workflows.OpenTimestampsRemoteProofRequest;
-pub const Nip03VerifyCachedResult = workflows.OpenTimestampsRemoteVerificationOutcome;
-pub const Nip03VerifyJobResult = workflows.OpenTimestampsRememberedRemoteVerificationOutcome;
+pub const Nip03VerifyJob = workflows.proof.nip03.OpenTimestampsRemoteProofRequest;
+pub const Nip03VerifyCachedResult = workflows.proof.nip03.OpenTimestampsRemoteVerificationOutcome;
+pub const Nip03VerifyJobResult = workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationOutcome;
 
 pub const Nip03StoredVerificationPlanning = struct {
-    pub const Match = workflows.OpenTimestampsStoredVerificationMatch;
-    pub const DiscoveryEntry = workflows.OpenTimestampsStoredVerificationDiscoveryEntry;
-    pub const Freshness = workflows.OpenTimestampsStoredVerificationFreshness;
-    pub const LatestFreshness = workflows.OpenTimestampsLatestStoredVerificationFreshness;
-    pub const DiscoveryFreshnessEntry = workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry;
-    pub const DiscoveryFreshnessStorage = workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessStorage;
-    pub const LatestFreshnessRequest = workflows.OpenTimestampsLatestStoredVerificationFreshnessRequest;
-    pub const Target = workflows.OpenTimestampsStoredVerificationTarget;
-    pub const LatestTargetEntry = workflows.OpenTimestampsLatestStoredVerificationTargetEntry;
-    pub const LatestTargetStorage = workflows.OpenTimestampsLatestStoredVerificationTargetStorage;
-    pub const LatestTargetRequest = workflows.OpenTimestampsLatestStoredVerificationTargetRequest;
-    pub const FallbackPolicy = workflows.OpenTimestampsStoredVerificationFallbackPolicy;
-    pub const PreferredRequest = workflows.OpenTimestampsPreferredStoredVerificationRequest;
-    pub const Preferred = workflows.OpenTimestampsPreferredStoredVerification;
-    pub const PreferredTargetEntry = workflows.OpenTimestampsPreferredStoredVerificationTargetEntry;
-    pub const PreferredTargetStorage = workflows.OpenTimestampsPreferredStoredVerificationTargetStorage;
-    pub const PreferredTargetRequest = workflows.OpenTimestampsPreferredStoredVerificationTargetRequest;
-    pub const RuntimeAction = workflows.OpenTimestampsStoredVerificationRuntimeAction;
-    pub const RuntimeStorage = workflows.OpenTimestampsStoredVerificationRuntimeStorage;
-    pub const RuntimeRequest = workflows.OpenTimestampsStoredVerificationRuntimeRequest;
-    pub const RuntimePlan = workflows.OpenTimestampsStoredVerificationRuntimePlan;
-    pub const RuntimeStep = workflows.OpenTimestampsStoredVerificationRuntimeStep;
-    pub const RefreshEntry = workflows.OpenTimestampsStoredVerificationRefreshEntry;
-    pub const RefreshStorage = workflows.OpenTimestampsStoredVerificationRefreshStorage;
-    pub const RefreshRequest = workflows.OpenTimestampsStoredVerificationRefreshRequest;
-    pub const RefreshPlan = workflows.OpenTimestampsStoredVerificationRefreshPlan;
-    pub const RefreshStep = workflows.OpenTimestampsStoredVerificationRefreshStep;
-    pub const TargetRefreshEntry = workflows.OpenTimestampsStoredVerificationTargetRefreshEntry;
-    pub const TargetRefreshStorage = workflows.OpenTimestampsStoredVerificationTargetRefreshStorage;
-    pub const TargetRefreshRequest = workflows.OpenTimestampsStoredVerificationTargetRefreshRequest;
-    pub const TargetRefreshPlan = workflows.OpenTimestampsStoredVerificationTargetRefreshPlan;
-    pub const TargetRefreshStep = workflows.OpenTimestampsStoredVerificationTargetRefreshStep;
+    pub const Match = workflows.proof.nip03.OpenTimestampsStoredVerificationMatch;
+    pub const DiscoveryEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryEntry;
+    pub const Freshness = workflows.proof.nip03.OpenTimestampsStoredVerificationFreshness;
+    pub const LatestFreshness = workflows.proof.nip03.OpenTimestampsLatestStoredVerificationFreshness;
+    pub const DiscoveryFreshnessEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry;
+    pub const DiscoveryFreshnessStorage = workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessStorage;
+    pub const LatestFreshnessRequest = workflows.proof.nip03.OpenTimestampsLatestStoredVerificationFreshnessRequest;
+    pub const Target = workflows.proof.nip03.OpenTimestampsStoredVerificationTarget;
+    pub const LatestTargetEntry = workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry;
+    pub const LatestTargetStorage = workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetStorage;
+    pub const LatestTargetRequest = workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetRequest;
+    pub const FallbackPolicy = workflows.proof.nip03.OpenTimestampsStoredVerificationFallbackPolicy;
+    pub const PreferredRequest = workflows.proof.nip03.OpenTimestampsPreferredStoredVerificationRequest;
+    pub const Preferred = workflows.proof.nip03.OpenTimestampsPreferredStoredVerification;
+    pub const PreferredTargetEntry = workflows.proof.nip03.OpenTimestampsPreferredStoredVerificationTargetEntry;
+    pub const PreferredTargetStorage = workflows.proof.nip03.OpenTimestampsPreferredStoredVerificationTargetStorage;
+    pub const PreferredTargetRequest = workflows.proof.nip03.OpenTimestampsPreferredStoredVerificationTargetRequest;
+    pub const RuntimeAction = workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeAction;
+    pub const RuntimeStorage = workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeStorage;
+    pub const RuntimeRequest = workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeRequest;
+    pub const RuntimePlan = workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimePlan;
+    pub const RuntimeStep = workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeStep;
+    pub const RefreshEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshEntry;
+    pub const RefreshStorage = workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshStorage;
+    pub const RefreshRequest = workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshRequest;
+    pub const RefreshPlan = workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshPlan;
+    pub const RefreshStep = workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshStep;
+    pub const TargetRefreshEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshEntry;
+    pub const TargetRefreshStorage = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshStorage;
+    pub const TargetRefreshRequest = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshRequest;
+    pub const TargetRefreshPlan = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshPlan;
+    pub const TargetRefreshStep = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshStep;
     pub const TargetRefreshReadinessAction =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessAction;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessAction;
     pub const TargetRefreshReadinessEntry =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry;
     pub const TargetRefreshReadinessGroup =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup;
     pub const TargetRefreshReadinessStorage =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessStorage;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessStorage;
     pub const TargetRefreshReadinessRequest =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessRequest;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessRequest;
     pub const TargetRefreshReadinessPlan =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessPlan;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessPlan;
     pub const TargetRefreshReadinessStep =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshReadinessStep;
-    pub const TargetPolicyEntry = workflows.OpenTimestampsStoredVerificationTargetPolicyEntry;
-    pub const TargetPolicyGroup = workflows.OpenTimestampsStoredVerificationTargetPolicyGroup;
-    pub const TargetPolicyStorage = workflows.OpenTimestampsStoredVerificationTargetPolicyStorage;
-    pub const TargetPolicyRequest = workflows.OpenTimestampsStoredVerificationTargetPolicyRequest;
-    pub const TargetPolicyPlan = workflows.OpenTimestampsStoredVerificationTargetPolicyPlan;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessStep;
+    pub const TargetPolicyEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyEntry;
+    pub const TargetPolicyGroup = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyGroup;
+    pub const TargetPolicyStorage = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyStorage;
+    pub const TargetPolicyRequest = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyRequest;
+    pub const TargetPolicyPlan = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyPlan;
     pub const TargetRefreshCadenceAction =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceAction;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceAction;
     pub const TargetRefreshCadenceEntry =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry;
     pub const TargetRefreshCadenceGroup =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup;
     pub const TargetRefreshCadenceStorage =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceStorage;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceStorage;
     pub const TargetRefreshCadenceRequest =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceRequest;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceRequest;
     pub const TargetRefreshCadencePlan =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadencePlan;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadencePlan;
     pub const TargetRefreshCadenceStep =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceStep;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceStep;
     pub const TargetRefreshBatchStorage =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchStorage;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchStorage;
     pub const TargetRefreshBatchRequest =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchRequest;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchRequest;
     pub const TargetRefreshBatchPlan =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchPlan;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchPlan;
     pub const TargetRefreshBatchStep =
-        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchStep;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchStep;
     pub const TargetTurnPolicyAction =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyAction;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyAction;
     pub const TargetTurnPolicyEntry =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyEntry;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyEntry;
     pub const TargetTurnPolicyGroup =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyGroup;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyGroup;
     pub const TargetTurnPolicyStorage =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyStorage;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyStorage;
     pub const TargetTurnPolicyRequest =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyRequest;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyRequest;
     pub const TargetTurnPolicyPlan =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyPlan;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyPlan;
     pub const TargetTurnPolicyStep =
-        workflows.OpenTimestampsStoredVerificationTargetTurnPolicyStep;
+        workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyStep;
 };
 
 pub const Nip03VerifyClient = struct {
@@ -157,28 +157,28 @@ pub const Nip03VerifyClient = struct {
         job: *const Nip03VerifyJob,
     ) Nip03VerifyClientError!Nip03VerifyCachedResult {
         _ = self;
-        return workflows.OpenTimestampsVerifier.verifyRemote(http_client, job);
+        return workflows.proof.nip03.OpenTimestampsVerifier.verifyRemote(http_client, job);
     }
 
     pub fn verifyRemoteCached(
         self: *const Nip03VerifyClient,
         http_client: transport.HttpClient,
-        proof_store: workflows.OpenTimestampsProofStore,
+        proof_store: workflows.proof.nip03.OpenTimestampsProofStore,
         job: *const Nip03VerifyJob,
     ) Nip03VerifyClientError!Nip03VerifyCachedResult {
         _ = self;
-        return workflows.OpenTimestampsVerifier.verifyRemoteCached(http_client, proof_store, job);
+        return workflows.proof.nip03.OpenTimestampsVerifier.verifyRemoteCached(http_client, proof_store, job);
     }
 
     pub fn verifyRemoteCachedAndRemember(
         self: *const Nip03VerifyClient,
         http_client: transport.HttpClient,
-        proof_store: workflows.OpenTimestampsProofStore,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        proof_store: workflows.proof.nip03.OpenTimestampsProofStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         job: *const Nip03VerifyJob,
     ) Nip03VerifyClientError!Nip03VerifyJobResult {
         _ = self;
-        return workflows.OpenTimestampsVerifier.verifyRemoteCachedAndRemember(
+        return workflows.proof.nip03.OpenTimestampsVerifier.verifyRemoteCachedAndRemember(
             http_client,
             proof_store,
             verification_store,
@@ -188,11 +188,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn getLatestStoredVerificationFreshness(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.LatestFreshnessRequest,
     ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.LatestFreshness {
         _ = self;
-        return workflows.OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
+        return workflows.proof.nip03.OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
             verification_store,
             request,
         );
@@ -200,11 +200,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn discoverLatestStoredVerificationFreshnessForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.LatestTargetRequest,
     ) Nip03VerifyClientError![]const Nip03StoredVerificationPlanning.LatestTargetEntry {
         _ = self;
-        return workflows.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
             verification_store,
             request,
         );
@@ -212,11 +212,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn getPreferredStoredVerification(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.PreferredRequest,
     ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.Preferred {
         _ = self;
-        return workflows.OpenTimestampsVerifier.getPreferredStoredVerification(
+        return workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerification(
             verification_store,
             request,
         );
@@ -224,11 +224,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn getPreferredStoredVerificationForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.PreferredTargetRequest,
     ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.PreferredTargetEntry {
         _ = self;
-        return workflows.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
             verification_store,
             request,
         );
@@ -236,11 +236,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectStoredVerificationRuntime(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.RuntimeRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.RuntimePlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
             verification_store,
             request,
         );
@@ -248,11 +248,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn planStoredVerificationRefresh(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.RefreshRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.RefreshPlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.planStoredVerificationRefresh(
+        return workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefresh(
             verification_store,
             request,
         );
@@ -260,11 +260,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn planStoredVerificationRefreshForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.TargetRefreshRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshPlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
             verification_store,
             request,
         );
@@ -272,12 +272,12 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectStoredVerificationRefreshReadinessForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         event_archive: store.EventArchive,
         request: Nip03StoredVerificationPlanning.TargetRefreshReadinessRequest,
     ) Nip03StoredVerificationRefreshReadinessError!Nip03StoredVerificationPlanning.TargetRefreshReadinessPlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
             verification_store,
             event_archive,
             request,
@@ -286,11 +286,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectStoredVerificationPolicyForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.TargetPolicyRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetPolicyPlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
             verification_store,
             request,
         );
@@ -298,11 +298,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectStoredVerificationRefreshCadenceForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.TargetRefreshCadenceRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshCadencePlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
             verification_store,
             request,
         );
@@ -310,11 +310,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectStoredVerificationRefreshBatchForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.TargetRefreshBatchRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshBatchPlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
             verification_store,
             request,
         );
@@ -322,11 +322,11 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectStoredVerificationTurnPolicyForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         request: Nip03StoredVerificationPlanning.TargetTurnPolicyRequest,
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetTurnPolicyPlan {
         _ = self;
-        return workflows.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
             verification_store,
             request,
         );
@@ -380,13 +380,13 @@ test "nip03 verify client drives remembered remote verification through one comm
     var fake_http = workflow_testing.FakeHttp.init("https://proof.example/hello.ots", proof);
     var fetched_proof: [128]u8 = undefined;
     var storage = Nip03VerifyClientStorage.init(fetched_proof[0..]);
-    var proof_store_records: [1]workflows.OpenTimestampsProofRecord =
-        [_]workflows.OpenTimestampsProofRecord{.{}} ** 1;
-    var proof_store = workflows.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [1]workflows.OpenTimestampsStoredVerificationRecord =
-        [_]workflows.OpenTimestampsStoredVerificationRecord{.{}} ** 1;
+    var proof_store_records: [1]workflows.proof.nip03.OpenTimestampsProofRecord =
+        [_]workflows.proof.nip03.OpenTimestampsProofRecord{.{}} ** 1;
+    var proof_store = workflows.proof.nip03.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
+    var verification_store_records: [1]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
+        [_]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{.{}} ** 1;
     var verification_store =
-        workflows.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     const client = Nip03VerifyClient.init(.{});
     const job = client.prepareVerifyJob(
@@ -403,7 +403,7 @@ test "nip03 verify client drives remembered remote verification through one comm
     );
     try std.testing.expect(remembered == .verified);
     try std.testing.expectEqual(
-        workflows.OpenTimestampsVerificationStorePutOutcome.stored,
+        workflows.proof.nip03.OpenTimestampsVerificationStorePutOutcome.stored,
         remembered.verified.store_outcome,
     );
 
@@ -426,10 +426,10 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         .target_event_id = [_]u8{0x99} ** 32,
     };
 
-    var verification_store_records: [2]workflows.OpenTimestampsStoredVerificationRecord =
-        [_]workflows.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
+    var verification_store_records: [2]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
+        [_]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
     var verification_store =
-        workflows.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     var fresh_proof_bytes: [96]u8 = undefined;
     const fresh_proof = buildLocalBitcoinProof(fresh_proof_bytes[0..], &fresh_target.id);
@@ -712,10 +712,10 @@ test "nip03 verify client lifts stored verification refresh readiness into the c
     const ready_target = try buildSignedTextEvent(0x31, 1, "ready");
     const blocked_target = try buildSignedTextEvent(0x32, 2, "blocked");
 
-    var verification_store_records: [2]workflows.OpenTimestampsStoredVerificationRecord =
-        [_]workflows.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
+        [_]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
     var verification_store =
-        workflows.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     var ready_proof_bytes: [96]u8 = undefined;
     const ready_proof = buildLocalBitcoinProof(ready_proof_bytes[0..], &ready_target.id);
@@ -827,7 +827,7 @@ fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !
 }
 
 fn rememberVerificationForTargetAndReturnAttestation(
-    verification_store: workflows.OpenTimestampsVerificationStore,
+    verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
     target_event: *const noztr.nip01_event.Event,
     attestation_created_at: u64,
     proof_url: []const u8,
@@ -853,13 +853,13 @@ fn rememberVerificationForTargetAndReturnAttestation(
     stored_attestation.id[30] = @as(u8, @truncate(attestation_created_at));
     stored_attestation.id[31] = @as(u8, @truncate(proof_url.len));
     var proof_buffer: [128]u8 = undefined;
-    const local = try workflows.OpenTimestampsVerifier.verifyLocal(
+    const local = try workflows.proof.nip03.OpenTimestampsVerifier.verifyLocal(
         target_event,
         &stored_attestation,
         proof_buffer[0..],
     );
     try std.testing.expect(local == .verified);
-    _ = try workflows.OpenTimestampsVerifier.rememberRemoteVerification(
+    _ = try workflows.proof.nip03.OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store,
         target_event,
         &stored_attestation,
@@ -869,7 +869,7 @@ fn rememberVerificationForTargetAndReturnAttestation(
 }
 
 fn rememberVerificationForTarget(
-    verification_store: workflows.OpenTimestampsVerificationStore,
+    verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
     target_event: *const noztr.nip01_event.Event,
     attestation_created_at: u64,
     proof_url: []const u8,

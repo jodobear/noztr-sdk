@@ -16,7 +16,7 @@ test "recipe: relay-local group archive restores one group snapshot over shared 
     var sender_user_roles: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var sender_previous_refs: [8][]const u8 = undefined;
-    var sender = try noztr_sdk.workflows.GroupClient.init(.{
+    var sender = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(
@@ -27,9 +27,9 @@ test "recipe: relay-local group archive restores one group snapshot over shared 
     sender.markCurrentRelayConnected();
 
     const author_secret = [_]u8{0x09} ** 32;
-    var metadata_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var roles_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
-    var members_buffer = noztr_sdk.workflows.GroupOutboundBuffer{};
+    var metadata_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var roles_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
+    var members_buffer = noztr_sdk.workflows.groups.session.GroupOutboundBuffer{};
     const metadata = try sender.beginMetadataSnapshot(
         .init(1, &author_secret, &metadata_buffer),
         &.{ .name = "Pizza Lovers" },
@@ -68,7 +68,7 @@ test "recipe: relay-local group archive restores one group snapshot over shared 
     var receiver_user_roles: [2 * noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 =
         undefined;
     var receiver_previous_refs: [8][]const u8 = undefined;
-    var receiver = try noztr_sdk.workflows.GroupClient.init(.{
+    var receiver = try noztr_sdk.workflows.groups.local.GroupClient.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
         .storage = .init(

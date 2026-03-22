@@ -13,7 +13,7 @@ test "recipe: mailbox session accepts one parsed wrapped envelope event directly
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -24,7 +24,7 @@ test "recipe: mailbox session accepts one parsed wrapped envelope event directly
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var recipient_session = noztr_sdk.workflows.MailboxSession.init(&recipient_secret);
+    var recipient_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&recipient_secret);
     var recipient_relay_list_storage: [1024]u8 = undefined;
     const recipient_relay_list_json = try buildRelayListEventJson(
         recipient_relay_list_storage[0..],
@@ -35,7 +35,7 @@ test "recipe: mailbox session accepts one parsed wrapped envelope event directly
     _ = try recipient_session.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
     try recipient_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

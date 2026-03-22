@@ -17,8 +17,8 @@ test "recipe: legacy dm replay turn client classifies replay events through dm i
     const recipient_secret = [_]u8{0x22} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    const sender = noztr_sdk.workflows.LegacyDmSession.init(&sender_secret);
-    var outbound = noztr_sdk.workflows.LegacyDmOutboundStorage{};
+    const sender = noztr_sdk.workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
+    var outbound = noztr_sdk.workflows.dm.legacy.LegacyDmOutboundStorage{};
     const prepared = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy replay recipe",
@@ -26,8 +26,8 @@ test "recipe: legacy dm replay turn client classifies replay events through dm i
         .iv = [_]u8{0x55} ** noztr.limits.nip04_iv_bytes,
     });
 
-    var storage = noztr_sdk.client.LegacyDmReplayTurnClientStorage{};
-    var client = noztr_sdk.client.LegacyDmReplayTurnClient.init(.{
+    var storage = noztr_sdk.client.dm.legacy.replay_turn.LegacyDmReplayTurnClientStorage{};
+    var client = noztr_sdk.client.dm.legacy.replay_turn.LegacyDmReplayTurnClient.init(.{
         .owner_private_key = recipient_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");

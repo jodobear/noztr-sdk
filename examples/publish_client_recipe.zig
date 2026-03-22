@@ -3,8 +3,8 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
 test "recipe: publish client signs one local draft and targets one ready relay explicitly" {
-    var storage = noztr_sdk.client.PublishClientStorage{};
-    var client = noztr_sdk.client.PublishClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.publish.PublishClientStorage{};
+    var client = noztr_sdk.client.relay.publish.PublishClient.init(.{}, &storage);
 
     const ready = try client.addRelay("wss://relay.one");
     const gated = try client.addRelay("wss://relay.two");
@@ -20,7 +20,7 @@ test "recipe: publish client signs one local draft and targets one ready relay e
     try std.testing.expectEqual(@as(u8, 1), publish_plan.connect_count);
 
     const secret_key = [_]u8{0x11} ** 32;
-    const draft = noztr_sdk.client.LocalEventDraft{
+    const draft = noztr_sdk.client.local.operator.LocalEventDraft{
         .kind = 1,
         .created_at = 50,
         .content = "hello publish recipe",

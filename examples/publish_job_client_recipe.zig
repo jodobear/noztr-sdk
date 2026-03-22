@@ -6,20 +6,20 @@ test "recipe: publish job client authenticates when needed then returns one comm
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.PublishJobClientStorage{};
-    var client = noztr_sdk.client.PublishJobClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.publish_job.PublishJobClientStorage{};
+    var client = noztr_sdk.client.relay.publish_job.PublishJobClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
 
     const secret_key = [_]u8{0x26} ** 32;
-    const draft = noztr_sdk.client.LocalEventDraft{
+    const draft = noztr_sdk.client.local.operator.LocalEventDraft{
         .kind = 1,
         .created_at = 91,
         .content = "hello publish job recipe",
     };
 
-    var auth_storage = noztr_sdk.client.PublishJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.relay.publish_job.PublishJobAuthEventStorage{};
     var event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const first_ready = try client.prepareJob(

@@ -10,8 +10,8 @@ test "recipe: replay checkpoint advance client derives and persists one replay c
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
     const checkpoint_archive = noztr_sdk.store.RelayCheckpointArchive.init(memory_store.asClientStore());
 
-    var exchange_storage = noztr_sdk.client.RelayReplayExchangeClientStorage{};
-    var exchange_client = noztr_sdk.client.RelayReplayExchangeClient.init(.{}, &exchange_storage);
+    var exchange_storage = noztr_sdk.client.relay.replay_exchange.RelayReplayExchangeClientStorage{};
+    var exchange_client = noztr_sdk.client.relay.replay_exchange.RelayReplayExchangeClient.init(.{}, &exchange_storage);
     const relay = try exchange_client.addRelay("wss://relay.one");
     try exchange_client.markRelayConnected(relay.relay_index);
     try checkpoint_archive.saveRelayCheckpoint("tooling", relay.relay_url, .{ .offset = 7 });
@@ -23,7 +23,7 @@ test "recipe: replay checkpoint advance client derives and persists one replay c
         },
     };
 
-    var transcript = noztr_sdk.client.RelaySubscriptionTranscriptStorage{};
+    var transcript = noztr_sdk.client.relay.response.RelaySubscriptionTranscriptStorage{};
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const replay_request = try exchange_client.beginReplay(
         checkpoint_store,
@@ -33,7 +33,7 @@ test "recipe: replay checkpoint advance client derives and persists one replay c
         replay_specs[0..],
     );
 
-    const advance_client = noztr_sdk.client.ReplayCheckpointAdvanceClient.init(.{});
+    const advance_client = noztr_sdk.client.relay.replay_checkpoint_advance.ReplayCheckpointAdvanceClient.init(.{});
     var advance_state = advance_client.beginAdvance(&replay_request);
 
     const secret_key = [_]u8{0x77} ** 32;

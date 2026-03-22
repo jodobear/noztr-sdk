@@ -5,8 +5,8 @@ const noztr_sdk = @import("noztr_sdk");
 // Command-ready local entity flow: encode one `npub`, encode one `nsec`, and decode one
 // representative entity through one stable job layer above the local operator floor.
 test "recipe: local entity job client keeps nip19 entity work command-ready" {
-    var storage = noztr_sdk.client.LocalEntityJobClientStorage{};
-    const client = noztr_sdk.client.LocalEntityJobClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.local.entities.LocalEntityJobClientStorage{};
+    const client = noztr_sdk.client.local.entities.LocalEntityJobClient.init(.{}, &storage);
     const author_secret = [_]u8{0x11} ** 32;
     const author_pubkey = try client.local_operator.derivePublicKey(&author_secret);
 

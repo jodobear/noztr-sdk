@@ -9,8 +9,8 @@ test "recipe: relay session client composes explicit relay session foundation" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.RelaySessionClientStorage{};
-    var client = noztr_sdk.client.RelaySessionClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.session.RelaySessionClientStorage{};
+    var client = noztr_sdk.client.relay.session.RelaySessionClient.init(.{}, &storage);
     const ready = try client.addRelay("wss://relay.one");
     const gated = try client.addRelay("wss://relay.two");
     try client.markRelayConnected(ready.relay_index);
@@ -28,7 +28,7 @@ test "recipe: relay session client composes explicit relay session foundation" {
     try std.testing.expectEqual(@as(u8, 1), auth_plan.authenticate_count);
 
     const secret_key = [_]u8{0x11} ** 32;
-    var auth_event_storage = noztr_sdk.client.RelayAuthEventStorage{};
+    var auth_event_storage = noztr_sdk.client.relay.auth.RelayAuthEventStorage{};
     var auth_event_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const auth_step = auth_plan.nextStep().?;
@@ -66,7 +66,7 @@ test "recipe: relay session client composes explicit relay session foundation" {
     );
     try std.testing.expectEqualStrings("wss://relay.one", targeted_request.relay.relay_url);
 
-    var transcript = noztr_sdk.client.RelaySubscriptionTranscriptStorage{};
+    var transcript = noztr_sdk.client.relay.response.RelaySubscriptionTranscriptStorage{};
     try client.beginSubscriptionTranscript(&transcript, targeted_request.subscription_id);
 
     const public_key = try noztr.nostr_keys.nostr_derive_public_key(&secret_key);
@@ -112,13 +112,13 @@ test "recipe: relay session client composes explicit relay session foundation" {
     const checkpoints = try client.exportCheckpoints(cursors[0..], &checkpoint_storage);
     try std.testing.expectEqual(@as(u8, 2), checkpoints.relay_count);
 
-    var restored_members_storage = noztr_sdk.client.RelaySessionClientStorage{};
-    var restored_members = noztr_sdk.client.RelaySessionClient.init(.{}, &restored_members_storage);
+    var restored_members_storage = noztr_sdk.client.relay.session.RelaySessionClientStorage{};
+    var restored_members = noztr_sdk.client.relay.session.RelaySessionClient.init(.{}, &restored_members_storage);
     try restored_members.restoreMembers(&members);
     try std.testing.expectEqual(@as(u8, 2), restored_members.relayCount());
 
-    var restored_checkpoint_storage = noztr_sdk.client.RelaySessionClientStorage{};
-    var restored_checkpoints = noztr_sdk.client.RelaySessionClient.init(
+    var restored_checkpoint_storage = noztr_sdk.client.relay.session.RelaySessionClientStorage{};
+    var restored_checkpoints = noztr_sdk.client.relay.session.RelaySessionClient.init(
         .{},
         &restored_checkpoint_storage,
     );

@@ -16,8 +16,8 @@ test "recipe: mailbox replay job client authenticates then replays mailbox intak
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.MailboxReplayJobClientStorage{};
-    var client = noztr_sdk.client.MailboxReplayJobClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.replay_job.MailboxReplayJobClientStorage{};
+    var client = noztr_sdk.client.dm.mailbox.replay_job.MailboxReplayJobClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -32,7 +32,7 @@ test "recipe: mailbox replay job client authenticates then replays mailbox intak
     try client.markRelayConnected(0);
     try client.noteRelayAuthChallenge(0, "challenge-1");
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -43,7 +43,7 @@ test "recipe: mailbox replay job client authenticates then replays mailbox intak
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{
@@ -68,7 +68,7 @@ test "recipe: mailbox replay job client authenticates then replays mailbox intak
         },
     };
 
-    var auth_storage = noztr_sdk.client.MailboxReplayJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.replay_job.MailboxReplayJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

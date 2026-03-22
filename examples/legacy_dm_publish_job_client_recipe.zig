@@ -12,15 +12,15 @@ test "recipe: legacy dm publish job client keeps auth and publish explicit" {
     const recipient_secret = [_]u8{0x52} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var storage = noztr_sdk.client.LegacyDmPublishJobClientStorage{};
-    var client = noztr_sdk.client.LegacyDmPublishJobClient.init(.{
+    var storage = noztr_sdk.client.dm.legacy.publish_job.LegacyDmPublishJobClientStorage{};
+    var client = noztr_sdk.client.dm.legacy.publish_job.LegacyDmPublishJobClient.init(.{
         .owner_private_key = sender_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
 
-    var auth_storage = noztr_sdk.client.LegacyDmPublishJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.legacy.publish_job.LegacyDmPublishJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var event_json_output: [noztr.limits.event_json_max]u8 = undefined;

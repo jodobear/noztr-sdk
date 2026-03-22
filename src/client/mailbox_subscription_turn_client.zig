@@ -9,7 +9,7 @@ const mailbox_wrap_event_kind: u32 = 1059;
 
 pub const MailboxSubscriptionTurnClientError =
     subscription_turn.SubscriptionTurnClientError ||
-    workflows.MailboxError;
+    workflows.dm.mailbox.MailboxError;
 
 pub const MailboxSubscriptionTurnClientConfig = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
@@ -17,7 +17,7 @@ pub const MailboxSubscriptionTurnClientConfig = struct {
 };
 
 pub const MailboxSubscriptionTurnClientStorage = struct {
-    mailbox: workflows.MailboxSession = undefined,
+    mailbox: workflows.dm.mailbox.MailboxSession = undefined,
     subscription_turn: subscription_turn.SubscriptionTurnClientStorage = .{},
 };
 
@@ -26,7 +26,7 @@ pub const MailboxSubscriptionTurnResult = subscription_turn.SubscriptionTurnResu
 
 pub const MailboxSubscriptionTurnIntake = struct {
     subscription: subscription_turn.SubscriptionTurnIntake,
-    envelope: ?workflows.MailboxEnvelopeOutcome,
+    envelope: ?workflows.dm.mailbox.MailboxEnvelopeOutcome,
 };
 
 pub const MailboxSubscriptionTurnClient = struct {
@@ -39,7 +39,7 @@ pub const MailboxSubscriptionTurnClient = struct {
         storage: *MailboxSubscriptionTurnClientStorage,
     ) MailboxSubscriptionTurnClient {
         storage.* = .{
-            .mailbox = workflows.MailboxSession.init(&config.recipient_private_key),
+            .mailbox = workflows.dm.mailbox.MailboxSession.init(&config.recipient_private_key),
         };
         return .{
             .config = config,
@@ -210,7 +210,7 @@ pub const MailboxSubscriptionTurnClient = struct {
             scratch,
         );
 
-        var envelope: ?workflows.MailboxEnvelopeOutcome = null;
+        var envelope: ?workflows.dm.mailbox.MailboxEnvelopeOutcome = null;
         if (subscription.subscription.message == .event and
             subscription.subscription.message.event.event.kind == mailbox_wrap_event_kind)
         {
@@ -274,7 +274,7 @@ test "mailbox subscription turn client accepts live transcript events through ma
     _ = try client.hydrateRelayListEventJson(recipient_relay_list_json, arena.allocator());
     try client.markRelayConnected(0);
 
-    var sender_session = workflows.MailboxSession.init(&sender_secret);
+    var sender_session = workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -285,7 +285,7 @@ test "mailbox subscription turn client accepts live transcript events through ma
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

@@ -11,8 +11,8 @@ test "recipe: signer pubkey job stays explicit after connect and across auth" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = noztr_sdk.client.SignerPubkeyJobClientStorage{};
-    var client = try noztr_sdk.client.SignerPubkeyJobClient.initFromBunkerUriText(
+    var storage = noztr_sdk.client.signer.pubkey_job.SignerPubkeyJobClientStorage{};
+    var client = try noztr_sdk.client.signer.pubkey_job.SignerPubkeyJobClient.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -22,7 +22,7 @@ test "recipe: signer pubkey job stays explicit after connect and across auth" {
     try client.noteCurrentRelayAuthChallenge(&storage, "challenge-2");
 
     const secret_key = [_]u8{0x42} ** 32;
-    var auth_storage = noztr_sdk.client.SignerPubkeyJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.signer.pubkey_job.SignerPubkeyJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_scratch_storage: [1024]u8 = undefined;
@@ -75,11 +75,11 @@ test "recipe: signer pubkey job stays explicit after connect and across auth" {
 }
 
 fn establishSignerSession(
-    signer: *noztr_sdk.client.SignerClient,
-    storage: *noztr_sdk.client.SignerClientStorage,
+    signer: *noztr_sdk.client.signer.session.SignerClient,
+    storage: *noztr_sdk.client.signer.session.SignerClientStorage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
-) noztr_sdk.workflows.RemoteSignerError!void {
+) noztr_sdk.workflows.signer.remote.RemoteSignerError!void {
     signer.markCurrentRelayConnected();
 
     var request_scratch_storage: [1024]u8 = undefined;
@@ -100,7 +100,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) noztr_sdk.workflows.RemoteSignerError![]const u8 {
+) noztr_sdk.workflows.signer.remote.RemoteSignerError![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },

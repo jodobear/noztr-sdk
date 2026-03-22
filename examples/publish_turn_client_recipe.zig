@@ -6,13 +6,13 @@ test "recipe: publish turn client closes one bounded publish turn with explicit 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.PublishTurnClientStorage{};
-    var client = noztr_sdk.client.PublishTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.publish_turn.PublishTurnClientStorage{};
+    var client = noztr_sdk.client.relay.publish_turn.PublishTurnClient.init(.{}, &storage);
     const ready = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(ready.relay_index);
 
     const secret_key = [_]u8{0x15} ** 32;
-    const draft = noztr_sdk.client.LocalEventDraft{
+    const draft = noztr_sdk.client.local.operator.LocalEventDraft{
         .kind = 1,
         .created_at = 73,
         .content = "hello publish turn recipe",

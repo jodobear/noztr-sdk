@@ -5,7 +5,7 @@ const builtin = @import("builtin");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
 
 pub const Nip05VerifyClientError =
-    workflows.Nip05ResolverError || workflows.Nip05RememberedResolutionStoreError;
+    workflows.identity.nip05.Nip05ResolverError || workflows.identity.nip05.Nip05RememberedResolutionStoreError;
 
 pub const Nip05VerifyClientConfig = struct {};
 
@@ -20,38 +20,38 @@ pub const Nip05VerifyClientStorage = struct {
         };
     }
 
-    pub fn asLookupStorage(self: *const Nip05VerifyClientStorage) workflows.Nip05LookupStorage {
-        return workflows.Nip05LookupStorage.init(
+    pub fn asLookupStorage(self: *const Nip05VerifyClientStorage) workflows.identity.nip05.Nip05LookupStorage {
+        return workflows.identity.nip05.Nip05LookupStorage.init(
             self.lookup_url_buffer,
             self.body_buffer,
         );
     }
 };
 
-pub const Nip05LookupJob = workflows.Nip05LookupRequest;
-pub const Nip05VerifyJob = workflows.Nip05VerificationRequest;
-pub const Nip05LookupJobResult = workflows.Nip05LookupOutcome;
-pub const Nip05VerifyJobResult = workflows.Nip05VerificationOutcome;
+pub const Nip05LookupJob = workflows.identity.nip05.Nip05LookupRequest;
+pub const Nip05VerifyJob = workflows.identity.nip05.Nip05VerificationRequest;
+pub const Nip05LookupJobResult = workflows.identity.nip05.Nip05LookupOutcome;
+pub const Nip05VerifyJobResult = workflows.identity.nip05.Nip05VerificationOutcome;
 
 pub const Nip05RememberedResolutionPlanning = struct {
-    pub const StorePutOutcome = workflows.Nip05RememberedResolutionStorePutOutcome;
-    pub const Record = workflows.Nip05RememberedResolutionRecord;
-    pub const Store = workflows.Nip05RememberedResolutionStore;
-    pub const MemoryStore = workflows.MemoryNip05RememberedResolutionStore;
-    pub const Target = workflows.Nip05RememberedResolutionTarget;
-    pub const Freshness = workflows.Nip05RememberedResolutionFreshness;
-    pub const LatestFreshness = workflows.Nip05LatestRememberedResolutionFreshness;
-    pub const LatestTargetEntry = workflows.Nip05LatestRememberedResolutionTargetEntry;
-    pub const LatestTargetStorage = workflows.Nip05LatestRememberedResolutionTargetStorage;
-    pub const LatestTargetRequest = workflows.Nip05LatestRememberedResolutionTargetRequest;
-    pub const LatestTargetPlan = workflows.Nip05LatestRememberedResolutionTargetPlan;
-    pub const LatestTargetStep = workflows.Nip05LatestRememberedResolutionTargetStep;
-    pub const RefreshAction = workflows.Nip05RememberedResolutionRefreshAction;
-    pub const RefreshEntry = workflows.Nip05RememberedResolutionRefreshEntry;
-    pub const RefreshStorage = workflows.Nip05RememberedResolutionRefreshStorage;
-    pub const RefreshRequest = workflows.Nip05RememberedResolutionRefreshRequest;
-    pub const RefreshPlan = workflows.Nip05RememberedResolutionRefreshPlan;
-    pub const RefreshStep = workflows.Nip05RememberedResolutionRefreshStep;
+    pub const StorePutOutcome = workflows.identity.nip05.Nip05RememberedResolutionStorePutOutcome;
+    pub const Record = workflows.identity.nip05.Nip05RememberedResolutionRecord;
+    pub const Store = workflows.identity.nip05.Nip05RememberedResolutionStore;
+    pub const MemoryStore = workflows.identity.nip05.MemoryNip05RememberedResolutionStore;
+    pub const Target = workflows.identity.nip05.Nip05RememberedResolutionTarget;
+    pub const Freshness = workflows.identity.nip05.Nip05RememberedResolutionFreshness;
+    pub const LatestFreshness = workflows.identity.nip05.Nip05LatestRememberedResolutionFreshness;
+    pub const LatestTargetEntry = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetEntry;
+    pub const LatestTargetStorage = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetStorage;
+    pub const LatestTargetRequest = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetRequest;
+    pub const LatestTargetPlan = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetPlan;
+    pub const LatestTargetStep = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetStep;
+    pub const RefreshAction = workflows.identity.nip05.Nip05RememberedResolutionRefreshAction;
+    pub const RefreshEntry = workflows.identity.nip05.Nip05RememberedResolutionRefreshEntry;
+    pub const RefreshStorage = workflows.identity.nip05.Nip05RememberedResolutionRefreshStorage;
+    pub const RefreshRequest = workflows.identity.nip05.Nip05RememberedResolutionRefreshRequest;
+    pub const RefreshPlan = workflows.identity.nip05.Nip05RememberedResolutionRefreshPlan;
+    pub const RefreshStep = workflows.identity.nip05.Nip05RememberedResolutionRefreshStep;
 };
 
 pub const Nip05VerifyClient = struct {
@@ -81,7 +81,7 @@ pub const Nip05VerifyClient = struct {
         job: Nip05LookupJob,
     ) Nip05VerifyClientError!Nip05LookupJobResult {
         _ = self;
-        return workflows.Nip05Resolver.lookup(http_client, job);
+        return workflows.identity.nip05.Nip05Resolver.lookup(http_client, job);
     }
 
     pub fn prepareVerifyJob(
@@ -106,7 +106,7 @@ pub const Nip05VerifyClient = struct {
         job: Nip05VerifyJob,
     ) Nip05VerifyClientError!Nip05VerifyJobResult {
         _ = self;
-        return workflows.Nip05Resolver.verify(http_client, job);
+        return workflows.identity.nip05.Nip05Resolver.verify(http_client, job);
     }
 
     pub fn rememberLookupOutcome(
@@ -117,7 +117,7 @@ pub const Nip05VerifyClient = struct {
     ) Nip05VerifyClientError!?Nip05RememberedResolutionPlanning.StorePutOutcome {
         _ = self;
         return switch (outcome.*) {
-            .resolved => |resolved| try workflows.Nip05Resolver.rememberResolution(
+            .resolved => |resolved| try workflows.identity.nip05.Nip05Resolver.rememberResolution(
                 store,
                 &resolved,
                 resolved_at,
@@ -134,7 +134,7 @@ pub const Nip05VerifyClient = struct {
     ) Nip05VerifyClientError!?Nip05RememberedResolutionPlanning.StorePutOutcome {
         _ = self;
         return switch (outcome.*) {
-            .verified => |verified| try workflows.Nip05Resolver.rememberResolution(
+            .verified => |verified| try workflows.identity.nip05.Nip05Resolver.rememberResolution(
                 store,
                 &verified,
                 resolved_at,
@@ -150,7 +150,7 @@ pub const Nip05VerifyClient = struct {
         scratch: std.mem.Allocator,
     ) Nip05VerifyClientError!?Nip05RememberedResolutionPlanning.Record {
         _ = self;
-        return workflows.Nip05Resolver.getRememberedResolution(store, address_text, scratch);
+        return workflows.identity.nip05.Nip05Resolver.getRememberedResolution(store, address_text, scratch);
     }
 
     pub fn inspectLatestRememberedResolutionFreshnessForTargets(
@@ -159,7 +159,7 @@ pub const Nip05VerifyClient = struct {
         request: Nip05RememberedResolutionPlanning.LatestTargetRequest,
     ) Nip05VerifyClientError!Nip05RememberedResolutionPlanning.LatestTargetPlan {
         _ = self;
-        return workflows.Nip05Resolver.inspectLatestRememberedResolutionFreshnessForTargets(
+        return workflows.identity.nip05.Nip05Resolver.inspectLatestRememberedResolutionFreshnessForTargets(
             store,
             request,
         );
@@ -171,7 +171,7 @@ pub const Nip05VerifyClient = struct {
         request: Nip05RememberedResolutionPlanning.RefreshRequest,
     ) Nip05VerifyClientError!Nip05RememberedResolutionPlanning.RefreshPlan {
         _ = self;
-        return workflows.Nip05Resolver.planRememberedResolutionRefreshForTargets(store, request);
+        return workflows.identity.nip05.Nip05Resolver.planRememberedResolutionRefreshForTargets(store, request);
     }
 };
 
@@ -292,8 +292,8 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
         lookup_url_buffer[0..],
         body_buffer[0..],
     );
-    var store_records: [2]workflows.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = workflows.MemoryNip05RememberedResolutionStore.init(store_records[0..]);
+    var store_records: [2]workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
+    var remembered_store = workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(store_records[0..]);
     const client = Nip05VerifyClient.init(.{});
 
     const verify = client.prepareVerifyJob(
@@ -343,15 +343,15 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
 }
 
 test "nip05 verify client plans remembered refresh work through one client surface" {
-    var store_records: [2]workflows.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = workflows.MemoryNip05RememberedResolutionStore.init(store_records[0..]);
+    var store_records: [2]workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
+    var remembered_store = workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(store_records[0..]);
     const client = Nip05VerifyClient.init(.{});
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
     const address = try @import("noztr").nip05_identity.address_parse("alice@example.com", arena.allocator());
-    const resolution = workflows.Nip05Resolution{
+    const resolution = workflows.identity.nip05.Nip05Resolution{
         .address = address,
         .lookup_url = "https://example.com/.well-known/nostr.json?name=alice",
         .profile = .{
@@ -359,15 +359,15 @@ test "nip05 verify client plans remembered refresh work through one client surfa
         },
     };
     const stale_address = try @import("noztr").nip05_identity.address_parse("bob@example.com", arena.allocator());
-    const stale_resolution = workflows.Nip05Resolution{
+    const stale_resolution = workflows.identity.nip05.Nip05Resolution{
         .address = stale_address,
         .lookup_url = "https://example.com/.well-known/nostr.json?name=bob",
         .profile = .{
             .public_key = [_]u8{0x22} ** 32,
         },
     };
-    _ = try workflows.Nip05Resolver.rememberResolution(remembered_store.asStore(), &resolution, 95);
-    _ = try workflows.Nip05Resolver.rememberResolution(remembered_store.asStore(), &stale_resolution, 10);
+    _ = try workflows.identity.nip05.Nip05Resolver.rememberResolution(remembered_store.asStore(), &resolution, 95);
+    _ = try workflows.identity.nip05.Nip05Resolver.rememberResolution(remembered_store.asStore(), &stale_resolution, 10);
 
     const targets = [_]Nip05RememberedResolutionPlanning.Target{
         .{ .address_text = "carol@example.com" },

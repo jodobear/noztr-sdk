@@ -6,8 +6,8 @@ test "recipe: relay response client validates transcript count ok notice and aut
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    const response_client = noztr_sdk.client.RelayResponseClient.init(.{});
-    var transcript = noztr_sdk.client.RelaySubscriptionTranscriptStorage{};
+    const response_client = noztr_sdk.client.relay.response.RelayResponseClient.init(.{});
+    var transcript = noztr_sdk.client.relay.response.RelaySubscriptionTranscriptStorage{};
     try response_client.beginSubscriptionTranscript(&transcript, "feed");
 
     const secret_key = [_]u8{0x11} ** 32;

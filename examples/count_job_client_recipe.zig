@@ -6,8 +6,8 @@ test "recipe: count job client authenticates when needed then returns one comman
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.CountJobClientStorage{};
-    var client = noztr_sdk.client.CountJobClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.count_job.CountJobClientStorage{};
+    var client = noztr_sdk.client.relay.count_job.CountJobClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
@@ -21,7 +21,7 @@ test "recipe: count job client authenticates when needed then returns one comman
     };
 
     const secret_key = [_]u8{0x31} ** 32;
-    var auth_storage = noztr_sdk.client.CountJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.relay.count_job.CountJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

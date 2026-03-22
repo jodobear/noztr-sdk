@@ -22,17 +22,17 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
     fake_http.expected_accept = "application/json";
     var lookup_url_buffer: [128]u8 = undefined;
     var body_buffer: [384]u8 = undefined;
-    var remembered_records: [2]noztr_sdk.workflows.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = noztr_sdk.workflows.MemoryNip05RememberedResolutionStore.init(
+    var remembered_records: [2]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
+    var remembered_store = noztr_sdk.workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(
         remembered_records[0..],
     );
 
-    const outcome = try noztr_sdk.workflows.Nip05Resolver.verify(
+    const outcome = try noztr_sdk.workflows.identity.nip05.Nip05Resolver.verify(
         fake_http.client(),
         .{
             .address_text = "alice@example.com",
             .expected_pubkey = &expected_pubkey,
-            .storage = noztr_sdk.workflows.Nip05LookupStorage.init(
+            .storage = noztr_sdk.workflows.identity.nip05.Nip05LookupStorage.init(
                 lookup_url_buffer[0..],
                 body_buffer[0..],
             ),
@@ -42,8 +42,8 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
 
     try std.testing.expect(outcome == .verified);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.Nip05RememberedResolutionStorePutOutcome.stored,
-        try noztr_sdk.workflows.Nip05Resolver.rememberResolution(
+        noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionStorePutOutcome.stored,
+        try noztr_sdk.workflows.identity.nip05.Nip05Resolver.rememberResolution(
             remembered_store.asStore(),
             &outcome.verified,
             100,
@@ -55,19 +55,19 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
     );
     try std.testing.expectEqual(@as(usize, 1), outcome.verified.profile.relays.len);
 
-    const targets = [_]noztr_sdk.workflows.Nip05RememberedResolutionTarget{
+    const targets = [_]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionTarget{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]noztr_sdk.workflows.Nip05LatestRememberedResolutionTargetEntry = undefined;
-    var refresh_entries: [2]noztr_sdk.workflows.Nip05RememberedResolutionRefreshEntry = undefined;
-    const refresh_plan = try noztr_sdk.workflows.Nip05Resolver.planRememberedResolutionRefreshForTargets(
+    var latest_entries: [2]noztr_sdk.workflows.identity.nip05.Nip05LatestRememberedResolutionTargetEntry = undefined;
+    var refresh_entries: [2]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRefreshEntry = undefined;
+    const refresh_plan = try noztr_sdk.workflows.identity.nip05.Nip05Resolver.planRememberedResolutionRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.workflows.Nip05RememberedResolutionRefreshStorage.init(
+            .storage = noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRefreshStorage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

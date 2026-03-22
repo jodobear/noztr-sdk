@@ -4,8 +4,8 @@ const noztr_sdk = @import("noztr_sdk");
 // Command-ready local nip44 flow: encrypt one plaintext to a peer and decrypt it again through
 // one stable job layer above the local operator floor.
 test "recipe: local nip44 job client keeps local crypto work command-ready" {
-    var storage = noztr_sdk.client.LocalNip44JobClientStorage{};
-    const client = noztr_sdk.client.LocalNip44JobClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.local.nip44.LocalNip44JobClientStorage{};
+    const client = noztr_sdk.client.local.nip44.LocalNip44JobClient.init(.{}, &storage);
     const sender_secret = [_]u8{0x11} ** 32;
     const recipient_secret = [_]u8{0x22} ** 32;
     const sender_pubkey = try client.local_operator.derivePublicKey(&sender_secret);

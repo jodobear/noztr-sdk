@@ -95,8 +95,8 @@ Within `workflows` and `client`, the canonical grouped routes are now:
 - `client.proof.*`
 - `client.groups.*`
 
-Older flat exports still exist for compatibility, but new public teaching and new downstream code
-should prefer the grouped routes.
+The older flat `client.*Type` and `workflows.*Type` routes are gone. Use the grouped routes as the
+canonical public namespace shape.
 
 ## Build
 

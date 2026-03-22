@@ -13,8 +13,8 @@ test "recipe: mailbox job client prepares auth and receive work explicitly" {
     const sender_secret = [_]u8{0x11} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.MailboxJobClientStorage{};
-    var client = noztr_sdk.client.MailboxJobClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.job.MailboxJobClientStorage{};
+    var client = noztr_sdk.client.dm.mailbox.job.MailboxJobClient.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -29,7 +29,7 @@ test "recipe: mailbox job client prepares auth and receive work explicitly" {
     try client.markCurrentRelayConnected();
     try client.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var auth_storage = noztr_sdk.client.MailboxJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.job.MailboxJobAuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const auth_ready = try client.prepareJob(
@@ -43,7 +43,7 @@ test "recipe: mailbox job client prepares auth and receive work explicitly" {
     const auth_result = try client.acceptPreparedAuthEvent(&auth_ready.authenticate, 95, 60);
     try std.testing.expect(auth_result == .authenticated);
 
-    var sender_session = noztr_sdk.workflows.MailboxSession.init(&sender_secret);
+    var sender_session = noztr_sdk.workflows.dm.mailbox.MailboxSession.init(&sender_secret);
     var sender_relay_list_storage: [1024]u8 = undefined;
     const sender_relay_list_json = try buildRelayListEventJson(
         sender_relay_list_storage[0..],
@@ -54,7 +54,7 @@ test "recipe: mailbox job client prepares auth and receive work explicitly" {
     _ = try sender_session.hydrateRelayListEventJson(sender_relay_list_json, arena.allocator());
     try sender_session.markCurrentRelayConnected();
 
-    var outbound_buffer = noztr_sdk.workflows.MailboxOutboundBuffer{};
+    var outbound_buffer = noztr_sdk.workflows.dm.mailbox.MailboxOutboundBuffer{};
     const outbound = try sender_session.beginDirectMessage(
         &outbound_buffer,
         &.{

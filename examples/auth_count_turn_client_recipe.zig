@@ -6,8 +6,8 @@ test "recipe: auth count turn client authenticates then resumes one bounded coun
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = noztr_sdk.client.AuthCountTurnClientStorage{};
-    var client = noztr_sdk.client.AuthCountTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.auth_count_turn.AuthCountTurnClientStorage{};
+    var client = noztr_sdk.client.relay.auth_count_turn.AuthCountTurnClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try client.noteRelayAuthChallenge(relay.relay_index, "challenge-1");
@@ -29,7 +29,7 @@ test "recipe: auth count turn client authenticates then resumes one bounded coun
     )).?.authenticate;
 
     const secret_key = [_]u8{0x47} ** 32;
-    var auth_event_storage = noztr_sdk.client.AuthCountEventStorage{};
+    var auth_event_storage = noztr_sdk.client.relay.auth_count_turn.AuthCountEventStorage{};
     var auth_event_json: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_json: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared_auth = try client.prepareAuthEvent(

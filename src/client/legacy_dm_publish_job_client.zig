@@ -9,7 +9,7 @@ const runtime = @import("../runtime/mod.zig");
 const workflows = @import("../workflows/mod.zig");
 
 pub const LegacyDmPublishJobClientError =
-    workflows.LegacyDmError ||
+    workflows.dm.legacy.LegacyDmError ||
     local_operator.LocalOperatorClientError ||
     relay_response.RelayResponseClientError ||
     runtime.RelayPoolError ||
@@ -27,8 +27,8 @@ pub const LegacyDmPublishJobClientConfig = struct {
 };
 
 pub const LegacyDmPublishJobClientStorage = struct {
-    session: workflows.LegacyDmSession = undefined,
-    outbound: workflows.LegacyDmOutboundStorage = .{},
+    session: workflows.dm.legacy.LegacyDmSession = undefined,
+    outbound: workflows.dm.legacy.LegacyDmOutboundStorage = .{},
     relay_pool: runtime.RelayPoolStorage = .{},
 };
 
@@ -69,7 +69,7 @@ pub const LegacyDmPublishJobClient = struct {
         storage: *LegacyDmPublishJobClientStorage,
     ) LegacyDmPublishJobClient {
         storage.* = .{
-            .session = workflows.LegacyDmSession.init(&config.owner_private_key),
+            .session = workflows.dm.legacy.LegacyDmSession.init(&config.owner_private_key),
         };
         return .{
             .config = config,
@@ -155,7 +155,7 @@ pub const LegacyDmPublishJobClient = struct {
         auth_message_output: []u8,
         event_json_output: []u8,
         event_message_output: []u8,
-        request: *const workflows.LegacyDmDirectMessageRequest,
+        request: *const workflows.dm.legacy.LegacyDmDirectMessageRequest,
         created_at: u64,
     ) LegacyDmPublishJobClientError!LegacyDmPublishJobReady {
         var auth_plan_storage = runtime.RelayPoolAuthStorage{};

@@ -8,7 +8,7 @@ const workflows = @import("../workflows/mod.zig");
 
 pub const LegacyDmReplayTurnClientError =
     relay_replay_turn.RelayReplayTurnClientError ||
-    workflows.LegacyDmError;
+    workflows.dm.legacy.LegacyDmError;
 
 pub const LegacyDmReplayTurnClientConfig = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
@@ -16,7 +16,7 @@ pub const LegacyDmReplayTurnClientConfig = struct {
 };
 
 pub const LegacyDmReplayTurnClientStorage = struct {
-    session: workflows.LegacyDmSession = undefined,
+    session: workflows.dm.legacy.LegacyDmSession = undefined,
     replay_turn: relay_replay_turn.RelayReplayTurnClientStorage = .{},
 };
 
@@ -25,7 +25,7 @@ pub const LegacyDmReplayTurnResult = relay_replay_turn.ReplayTurnResult;
 
 pub const LegacyDmReplayTurnIntake = struct {
     replay: relay_replay_turn.ReplayTurnIntake,
-    message: ?workflows.LegacyDmMessageOutcome,
+    message: ?workflows.dm.legacy.LegacyDmMessageOutcome,
 };
 
 pub const LegacyDmReplayTurnClient = struct {
@@ -38,7 +38,7 @@ pub const LegacyDmReplayTurnClient = struct {
         storage: *LegacyDmReplayTurnClientStorage,
     ) LegacyDmReplayTurnClient {
         storage.* = .{
-            .session = workflows.LegacyDmSession.init(&config.owner_private_key),
+            .session = workflows.dm.legacy.LegacyDmSession.init(&config.owner_private_key),
         };
         return .{
             .config = config,
@@ -169,7 +169,7 @@ pub const LegacyDmReplayTurnClient = struct {
             scratch,
         );
 
-        var message: ?workflows.LegacyDmMessageOutcome = null;
+        var message: ?workflows.dm.legacy.LegacyDmMessageOutcome = null;
         if (replay.replay.message == .event and
             replay.replay.message.event.event.kind == @import("noztr").nip04.dm_kind)
         {
@@ -222,8 +222,8 @@ test "legacy dm replay turn client accepts replay transcript events through dm i
     try client.markRelayConnected(relay.relay_index);
     try checkpoint_archive.saveRelayCheckpoint("legacy-dm", relay.relay_url, .{ .offset = 7 });
 
-    var outbound = workflows.LegacyDmOutboundStorage{};
-    const sender = workflows.LegacyDmSession.init(&sender_secret);
+    var outbound = workflows.dm.legacy.LegacyDmOutboundStorage{};
+    const sender = workflows.dm.legacy.LegacyDmSession.init(&sender_secret);
     const prepared = try sender.buildDirectMessageEvent(&outbound, &.{
         .recipient_pubkey = recipient_pubkey,
         .content = "legacy replay intake",

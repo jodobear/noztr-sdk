@@ -8,10 +8,10 @@ test "adversarial example: group session rejects wrong-group replay before mutat
     var users: [1]noztr.nip29_relay_groups.GroupStateUser = undefined;
     var roles: [0]noztr.nip29_relay_groups.GroupRole = .{};
     var user_roles: [noztr.nip29_relay_groups.group_state_user_roles_max][]const u8 = undefined;
-    var session = try noztr_sdk.workflows.GroupSession.init(.{
+    var session = try noztr_sdk.workflows.groups.session.GroupSession.init(.{
         .reference_text = "relay.one'pizza-lovers",
         .relay_url = "wss://relay.one",
-        .storage = noztr_sdk.workflows.GroupSessionStorage.init(
+        .storage = noztr_sdk.workflows.groups.session.GroupSessionStorage.init(
             users[0..],
             roles[0..],
             user_roles[0..],

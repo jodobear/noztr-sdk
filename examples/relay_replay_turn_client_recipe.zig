@@ -10,8 +10,8 @@ test "recipe: relay replay turn client closes one replay turn and persists one c
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
     const checkpoint_archive = noztr_sdk.store.RelayCheckpointArchive.init(memory_store.asClientStore());
 
-    var storage = noztr_sdk.client.RelayReplayTurnClientStorage{};
-    var client = noztr_sdk.client.RelayReplayTurnClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.relay.replay_turn.RelayReplayTurnClientStorage{};
+    var client = noztr_sdk.client.relay.replay_turn.RelayReplayTurnClient.init(.{}, &storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     try checkpoint_archive.saveRelayCheckpoint("tooling", relay.relay_url, .{ .offset = 7 });

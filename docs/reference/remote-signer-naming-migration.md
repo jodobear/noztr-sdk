@@ -11,7 +11,7 @@ read_when:
 
 This is a narrow pre-`1.0` naming cleanup for the remote-signer workflow module.
 
-Canonical public names are now domain-prefixed inside `noztr_sdk.workflows.remote_signer`, to
+Canonical public names are now domain-prefixed inside `noztr_sdk.workflows.signer.remote`, to
 match the names already used by the root workflow surface and public docs.
 
 ## Renamed Types
@@ -28,7 +28,7 @@ match the names already used by the root workflow surface and public docs.
 ## Impact
 
 - If you already import the canonical root workflow symbols such as
-  `noztr_sdk.workflows.RemoteSignerRequestContext`, nothing changes.
+  `noztr_sdk.workflows.signer.remote.RemoteSignerRequestContext`, nothing changes.
 - If you import the submodule directly, update those type names to the canonical prefixed forms.
 
 ## Example
@@ -36,7 +36,7 @@ match the names already used by the root workflow surface and public docs.
 Before:
 
 ```zig
-const remote_signer = noztr_sdk.workflows.remote_signer;
+const remote_signer = noztr_sdk.workflows.signer.remote;
 var buffer = remote_signer.RequestBuffer{};
 const ctx = remote_signer.RequestContext.init("req-1", &buffer, scratch);
 ```
@@ -44,7 +44,7 @@ const ctx = remote_signer.RequestContext.init("req-1", &buffer, scratch);
 After:
 
 ```zig
-const remote_signer = noztr_sdk.workflows.remote_signer;
+const remote_signer = noztr_sdk.workflows.signer.remote;
 var buffer = remote_signer.RemoteSignerRequestBuffer{};
 const ctx = remote_signer.RemoteSignerRequestContext.init("req-1", &buffer, scratch);
 ```
