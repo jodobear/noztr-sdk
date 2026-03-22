@@ -105,25 +105,25 @@ pub const GroupSessionView = struct {
 };
 
 /// Caller-owned storage for one outbound `NIP-29` event JSON payload.
-/// `OutboundEvent.event_json` borrows from this buffer until it is overwritten.
-pub const OutboundBuffer = struct {
+/// `GroupOutboundEvent.event_json` borrows from this buffer until it is overwritten.
+pub const GroupOutboundBuffer = struct {
     storage: [noztr.limits.event_json_max]u8 = [_]u8{0} ** noztr.limits.event_json_max,
 
-    fn writable(self: *OutboundBuffer) []u8 {
+    fn writable(self: *GroupOutboundBuffer) []u8 {
         return self.storage[0..];
     }
 };
 
-pub const PublishContext = struct {
+pub const GroupPublishContext = struct {
     created_at: u64,
     author_secret_key: [32]u8,
-    buffer: *OutboundBuffer,
+    buffer: *GroupOutboundBuffer,
 
     pub fn init(
         created_at: u64,
         author_secret_key: *const [32]u8,
-        buffer: *OutboundBuffer,
-    ) PublishContext {
+        buffer: *GroupOutboundBuffer,
+    ) GroupPublishContext {
         return .{
             .created_at = created_at,
             .author_secret_key = author_secret_key.*,
@@ -131,34 +131,34 @@ pub const PublishContext = struct {
         };
     }
 
-    fn writable(self: PublishContext) []u8 {
+    fn writable(self: GroupPublishContext) []u8 {
         return self.buffer.writable();
     }
 };
 
-pub const OutboundEvent = struct {
+pub const GroupOutboundEvent = struct {
     relay_url: []const u8,
     event_id: [32]u8,
     event_json: []const u8,
 };
 
-pub const CheckpointBuffers = struct {
-    metadata: OutboundBuffer = .{},
-    admins: OutboundBuffer = .{},
-    members: OutboundBuffer = .{},
-    roles: OutboundBuffer = .{},
+pub const GroupCheckpointBuffers = struct {
+    metadata: GroupOutboundBuffer = .{},
+    admins: GroupOutboundBuffer = .{},
+    members: GroupOutboundBuffer = .{},
+    roles: GroupOutboundBuffer = .{},
 };
 
-pub const CheckpointContext = struct {
+pub const GroupCheckpointContext = struct {
     created_at_base: u64,
     author_secret_key: [32]u8,
-    buffers: *CheckpointBuffers,
+    buffers: *GroupCheckpointBuffers,
 
     pub fn init(
         created_at_base: u64,
         author_secret_key: *const [32]u8,
-        buffers: *CheckpointBuffers,
-    ) CheckpointContext {
+        buffers: *GroupCheckpointBuffers,
+    ) GroupCheckpointContext {
         return .{
             .created_at_base = created_at_base,
             .author_secret_key = author_secret_key.*,
@@ -166,31 +166,31 @@ pub const CheckpointContext = struct {
         };
     }
 
-    fn metadataContext(self: *const CheckpointContext) PublishContext {
+    fn metadataContext(self: *const GroupCheckpointContext) GroupPublishContext {
         return .init(self.created_at_base, &self.author_secret_key, &self.buffers.metadata);
     }
 
-    fn adminsContext(self: *const CheckpointContext) PublishContext {
+    fn adminsContext(self: *const GroupCheckpointContext) GroupPublishContext {
         return .init(self.created_at_base + 1, &self.author_secret_key, &self.buffers.admins);
     }
 
-    fn membersContext(self: *const CheckpointContext) PublishContext {
+    fn membersContext(self: *const GroupCheckpointContext) GroupPublishContext {
         return .init(self.created_at_base + 2, &self.author_secret_key, &self.buffers.members);
     }
 
-    fn rolesContext(self: *const CheckpointContext) PublishContext {
+    fn rolesContext(self: *const GroupCheckpointContext) GroupPublishContext {
         return .init(self.created_at_base + 3, &self.author_secret_key, &self.buffers.roles);
     }
 };
 
-pub const Checkpoint = struct {
+pub const GroupCheckpoint = struct {
     relay_url: []const u8,
     metadata_event_json: []const u8,
     admins_event_json: []const u8,
     members_event_json: []const u8,
     roles_event_json: []const u8,
 
-    pub fn eventJsons(self: *const Checkpoint, out: *[4][]const u8) []const []const u8 {
+    pub fn eventJsons(self: *const GroupCheckpoint, out: *[4][]const u8) []const []const u8 {
         out.* = .{
             self.metadata_event_json,
             self.admins_event_json,
@@ -524,9 +524,9 @@ pub const GroupSession = struct {
 
     pub fn beginJoinRequest(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupJoinRequestDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         try self.requireKnownPreviousRefs(request.previous_refs);
 
@@ -553,45 +553,45 @@ pub const GroupSession = struct {
 
     pub fn beginMetadataSnapshot(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupMetadataDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         return self.buildMetadataSnapshotEvent(context, request);
     }
 
     pub fn beginAdminsSnapshot(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupAdminsDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         return self.buildAdminsSnapshotEvent(context, request.admins);
     }
 
     pub fn beginMembersSnapshot(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupMembersDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         return self.buildMembersSnapshotEvent(context, request.members);
     }
 
     pub fn beginRolesSnapshot(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupRolesDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         return self.buildRolesSnapshotEvent(context, request.roles);
     }
 
     pub fn beginLeaveRequest(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupLeaveRequestDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         try self.requireKnownPreviousRefs(request.previous_refs);
 
@@ -615,9 +615,9 @@ pub const GroupSession = struct {
 
     pub fn beginPutUser(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupPutUserDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         try self.requireKnownPreviousRefs(request.previous_refs);
 
@@ -645,9 +645,9 @@ pub const GroupSession = struct {
 
     pub fn beginRemoveUser(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupRemoveUserDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         try self.requireRelayReady();
         try self.requireKnownPreviousRefs(request.previous_refs);
 
@@ -683,8 +683,8 @@ pub const GroupSession = struct {
 
     pub fn exportCheckpoint(
         self: *const GroupSession,
-        context: CheckpointContext,
-    ) GroupSessionError!Checkpoint {
+        context: GroupCheckpointContext,
+    ) GroupSessionError!GroupCheckpoint {
         const metadata = self.groupState().metadata;
         var admins_storage: [noztr.limits.tags_max]GroupAdmin = undefined;
         var members_storage: [noztr.limits.tags_max]GroupMember = undefined;
@@ -807,9 +807,9 @@ pub const GroupSession = struct {
 
     fn buildMetadataSnapshotEvent(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         request: *const GroupMetadataDraft,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         var tags: [8]noztr.nip01_event.EventTag = undefined;
         var built_tags: [8]noztr.nip29_relay_groups.BuiltTag = undefined;
         const tag_count = try buildMetadataSnapshotTags(
@@ -828,9 +828,9 @@ pub const GroupSession = struct {
 
     fn buildAdminsSnapshotEvent(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         admins: []const GroupAdmin,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         var tags: [noztr.limits.tags_max]noztr.nip01_event.EventTag = undefined;
         var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.BuiltTag = undefined;
         var pubkey_hexes: [noztr.limits.tags_max][noztr.limits.pubkey_hex_length]u8 = undefined;
@@ -851,9 +851,9 @@ pub const GroupSession = struct {
 
     fn buildMembersSnapshotEvent(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         members: []const GroupMember,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         var tags: [noztr.limits.tags_max]noztr.nip01_event.EventTag = undefined;
         var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.BuiltTag = undefined;
         var pubkey_hexes: [noztr.limits.tags_max][noztr.limits.pubkey_hex_length]u8 = undefined;
@@ -874,9 +874,9 @@ pub const GroupSession = struct {
 
     fn buildRolesSnapshotEvent(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         roles: []const GroupRole,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         var tags: [noztr.limits.tags_max]noztr.nip01_event.EventTag = undefined;
         var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.BuiltTag = undefined;
         const tag_count = try buildRolesSnapshotTags(
@@ -996,11 +996,11 @@ pub const GroupSession = struct {
 
     fn buildOutboundEvent(
         self: *const GroupSession,
-        context: PublishContext,
+        context: GroupPublishContext,
         kind: u32,
         content: []const u8,
         tags: []const noztr.nip01_event.EventTag,
-    ) GroupSessionError!OutboundEvent {
+    ) GroupSessionError!GroupOutboundEvent {
         const author_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&context.author_secret_key);
         var event = noztr.nip01_event.Event{
             .id = [_]u8{0} ** 32,
@@ -1570,10 +1570,10 @@ test "group session builds signed join request json that intake paths accept" {
 
     var selected_previous: [1][]const u8 = undefined;
     const previous_refs = session.selectPreviousRefs(null, selected_previous[0..]);
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = GroupOutboundBuffer{};
     const author_secret = [_]u8{0x21} ** 32;
     const outbound = try session.beginJoinRequest(
-        PublishContext.init(42, &author_secret, &outbound_buffer),
+        GroupPublishContext.init(42, &author_secret, &outbound_buffer),
         &.{
             .invite_code = "invite-123",
             .reason = "please let me in",
@@ -1625,13 +1625,13 @@ test "group session builds authored state snapshot json that another session rep
     sender.markCurrentRelayConnected();
     receiver.markCurrentRelayConnected();
 
-    var metadata_buffer = OutboundBuffer{};
-    var roles_buffer = OutboundBuffer{};
-    var members_buffer = OutboundBuffer{};
-    var admins_buffer = OutboundBuffer{};
+    var metadata_buffer = GroupOutboundBuffer{};
+    var roles_buffer = GroupOutboundBuffer{};
+    var members_buffer = GroupOutboundBuffer{};
+    var admins_buffer = GroupOutboundBuffer{};
     const author_secret = [_]u8{0x20} ** 32;
     const metadata = try sender.beginMetadataSnapshot(
-        PublishContext.init(10, &author_secret, &metadata_buffer),
+        GroupPublishContext.init(10, &author_secret, &metadata_buffer),
         &.{
             .name = "Pizza Lovers",
             .about = "Pizza only",
@@ -1639,7 +1639,7 @@ test "group session builds authored state snapshot json that another session rep
         },
     );
     const roles = try sender.beginRolesSnapshot(
-        PublishContext.init(11, &author_secret, &roles_buffer),
+        GroupPublishContext.init(11, &author_secret, &roles_buffer),
         &.{
             .roles = &.{
                 .{
@@ -1650,7 +1650,7 @@ test "group session builds authored state snapshot json that another session rep
         },
     );
     const members = try sender.beginMembersSnapshot(
-        PublishContext.init(12, &author_secret, &members_buffer),
+        GroupPublishContext.init(12, &author_secret, &members_buffer),
         &.{
             .members = &.{
                 .{
@@ -1661,7 +1661,7 @@ test "group session builds authored state snapshot json that another session rep
         },
     );
     const admins = try sender.beginAdminsSnapshot(
-        PublishContext.init(13, &author_secret, &admins_buffer),
+        GroupPublishContext.init(13, &author_secret, &admins_buffer),
         &.{
             .admins = &.{
                 .{
@@ -1711,10 +1711,10 @@ test "group session builds signed leave request json that intake paths accept" {
 
     var selected_previous: [1][]const u8 = undefined;
     const previous_refs = session.selectPreviousRefs(null, selected_previous[0..]);
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = GroupOutboundBuffer{};
     const author_secret = [_]u8{0x22} ** 32;
     const outbound = try session.beginLeaveRequest(
-        PublishContext.init(43, &author_secret, &outbound_buffer),
+        GroupPublishContext.init(43, &author_secret, &outbound_buffer),
         &.{
             .reason = "goodbye",
             .previous_refs = previous_refs,
@@ -1777,10 +1777,10 @@ test "group session builds put-user moderation json that another session replays
 
     var selected_previous: [1][]const u8 = undefined;
     const previous_refs = sender.selectPreviousRefs(null, selected_previous[0..]);
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = GroupOutboundBuffer{};
     const author_secret = [_]u8{0x23} ** 32;
     const outbound = try sender.beginPutUser(
-        PublishContext.init(44, &author_secret, &outbound_buffer),
+        GroupPublishContext.init(44, &author_secret, &outbound_buffer),
         &.{
             .pubkey = [_]u8{0xaa} ** 32,
             .roles = &.{"moderator"},
@@ -1815,12 +1815,12 @@ test "group session rejects unknown previous refs before outbound moderation pub
     try buildMetadataEvent(&metadata_event, "pizza-lovers", "Pizza Lovers");
     _ = try session.applyIncrementalStateEvent(&metadata_event.event);
 
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = GroupOutboundBuffer{};
     const author_secret = [_]u8{0x24} ** 32;
     try std.testing.expectError(
         error.UnknownPreviousReference,
         session.beginPutUser(
-            PublishContext.init(45, &author_secret, &outbound_buffer),
+            GroupPublishContext.init(45, &author_secret, &outbound_buffer),
             &.{
                 .pubkey = [_]u8{0xaa} ** 32,
                 .roles = &.{"moderator"},
@@ -1845,12 +1845,12 @@ test "group session blocks outbound publish helpers while relay auth is required
     session.markCurrentRelayConnected();
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var outbound_buffer = OutboundBuffer{};
+    var outbound_buffer = GroupOutboundBuffer{};
     const author_secret = [_]u8{0x25} ** 32;
     try std.testing.expectError(
         error.RelayAuthRequired,
         session.beginJoinRequest(
-            PublishContext.init(46, &author_secret, &outbound_buffer),
+            GroupPublishContext.init(46, &author_secret, &outbound_buffer),
             &.{ .reason = "please let me in" },
         ),
     );

@@ -5,9 +5,9 @@ const group_session = @import("group_session.zig");
 pub const GroupClientError = group_session.GroupSessionError;
 pub const GroupRelayState = group_session.GroupRelayState;
 pub const GroupClientView = group_session.GroupSessionView;
-pub const GroupCheckpointBuffers = group_session.CheckpointBuffers;
-pub const GroupCheckpointContext = group_session.CheckpointContext;
-pub const GroupCheckpoint = group_session.Checkpoint;
+pub const GroupCheckpointBuffers = group_session.GroupCheckpointBuffers;
+pub const GroupCheckpointContext = group_session.GroupCheckpointContext;
+pub const GroupCheckpoint = group_session.GroupCheckpoint;
 pub const GroupClientCapacity = struct {
     session: group_session.GroupSessionCapacity,
     previous_refs: usize,
@@ -175,65 +175,65 @@ pub const GroupClient = struct {
 
     pub fn beginJoinRequest(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupJoinRequestDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginJoinRequest(context, request);
     }
 
     pub fn beginMetadataSnapshot(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupMetadataDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginMetadataSnapshot(context, request);
     }
 
     pub fn beginAdminsSnapshot(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupAdminsDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginAdminsSnapshot(context, request);
     }
 
     pub fn beginMembersSnapshot(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupMembersDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginMembersSnapshot(context, request);
     }
 
     pub fn beginRolesSnapshot(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupRolesDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginRolesSnapshot(context, request);
     }
 
     pub fn beginLeaveRequest(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupLeaveRequestDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginLeaveRequest(context, request);
     }
 
     pub fn beginPutUser(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupPutUserDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginPutUser(context, request);
     }
 
     pub fn beginRemoveUser(
         self: *const GroupClient,
-        context: group_session.PublishContext,
+        context: group_session.GroupPublishContext,
         request: *const group_session.GroupRemoveUserDraft,
-    ) GroupClientError!group_session.OutboundEvent {
+    ) GroupClientError!group_session.GroupOutboundEvent {
         return self._session.beginRemoveUser(context, request);
     }
 
@@ -346,8 +346,8 @@ test "group client consumes mixed event stream over owned previous-ref storage" 
 
     var prior_refs: [1][]const u8 = undefined;
     const previous = client.selectPreviousRefs(null, prior_refs[0..]);
-    var join_buffer = group_session.OutboundBuffer{};
-    var leave_buffer = group_session.OutboundBuffer{};
+    var join_buffer = group_session.GroupOutboundBuffer{};
+    var leave_buffer = group_session.GroupOutboundBuffer{};
     const author_secret = [_]u8{0x09} ** 32;
     const join_event = try client.beginJoinRequest(
         .init(2, &author_secret, &join_buffer),
@@ -390,7 +390,7 @@ test "group client exports and restores one single-relay checkpoint without rela
 
     var prior_refs: [1][]const u8 = undefined;
     const known_previous = sender.selectPreviousRefs(null, prior_refs[0..]);
-    var outbound_buffer = group_session.OutboundBuffer{};
+    var outbound_buffer = group_session.GroupOutboundBuffer{};
     _ = try sender.beginPutUser(
         .init(5, &group_session_tests.test_author_secret, &outbound_buffer),
         &.{
@@ -440,7 +440,7 @@ test "group client exports and restores one single-relay checkpoint without rela
     try std.testing.expectEqual(@as(usize, 1), restored_previous.len);
 
     receiver.markCurrentRelayConnected();
-    var restored_buffer = group_session.OutboundBuffer{};
+    var restored_buffer = group_session.GroupOutboundBuffer{};
     const outbound = try receiver.beginPutUser(
         .init(200, &group_session_tests.test_author_secret, &restored_buffer),
         &.{
@@ -473,8 +473,8 @@ test "group client summarizes mixed relay events" {
 
     var prior_refs: [1][]const u8 = undefined;
     const previous = client.selectPreviousRefs(null, prior_refs[0..]);
-    var moderation_buffer = group_session.OutboundBuffer{};
-    var join_buffer = group_session.OutboundBuffer{};
+    var moderation_buffer = group_session.GroupOutboundBuffer{};
+    var join_buffer = group_session.GroupOutboundBuffer{};
     const author_secret = [_]u8{0x09} ** 32;
     const put_user = try client.beginPutUser(
         .init(2, &author_secret, &moderation_buffer),

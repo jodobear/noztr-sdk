@@ -80,7 +80,7 @@ pub const GroupFleetBackgroundRuntimeStorage = struct {
 pub const GroupFleetBackgroundRuntimeRequest = struct {
     baseline_relay_url: ?[]const u8 = null,
     pending_merged_checkpoint: ?*const GroupFleetMergedCheckpoint = null,
-    publish_events: []const group_session.OutboundEvent = &.{},
+    publish_events: []const group_session.GroupOutboundEvent = &.{},
     storage: *GroupFleetBackgroundRuntimeStorage,
 };
 
@@ -284,7 +284,7 @@ pub const GroupFleetTargetReconcileOutcome = struct {
 
 pub const GroupFleetPublishStep = struct {
     fanout_count: usize,
-    event: group_session.OutboundEvent,
+    event: group_session.GroupOutboundEvent,
 };
 
 pub const GroupFleetMergeSelection = struct {
@@ -644,14 +644,14 @@ pub const GroupFleetStoreRestoreOutcome = struct {
 };
 
 pub const GroupFleetPublishStorage = struct {
-    buffers: []group_session.OutboundBuffer,
+    buffers: []group_session.GroupOutboundBuffer,
     previous_refs: [][][]const u8,
-    events: []group_session.OutboundEvent,
+    events: []group_session.GroupOutboundEvent,
 
     pub fn init(
-        buffers: []group_session.OutboundBuffer,
+        buffers: []group_session.GroupOutboundBuffer,
         previous_refs: [][][]const u8,
-        events: []group_session.OutboundEvent,
+        events: []group_session.GroupOutboundEvent,
     ) GroupFleetPublishStorage {
         return .{
             .buffers = buffers,
@@ -682,7 +682,7 @@ pub const GroupFleetPublishContext = struct {
     fn publishContext(
         self: *GroupFleetPublishContext,
         index: u8,
-    ) group_session.PublishContext {
+    ) group_session.GroupPublishContext {
         return .init(
             self.created_at_base + (@as(u64, index) * self.created_at_stride),
             &self.author_secret_key,
@@ -1202,7 +1202,7 @@ pub const GroupFleet = struct {
         self: *const GroupFleet,
         context: *GroupFleetPublishContext,
         request: *const GroupFleetPutUserDraft,
-    ) GroupFleetError![]const group_session.OutboundEvent {
+    ) GroupFleetError![]const group_session.GroupOutboundEvent {
         try validatePublishStorage(self, context);
         const author_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&context.author_secret_key);
         var count: usize = 0;
@@ -1228,7 +1228,7 @@ pub const GroupFleet = struct {
         self: *const GroupFleet,
         context: *GroupFleetPublishContext,
         request: *const GroupFleetRemoveUserDraft,
-    ) GroupFleetError![]const group_session.OutboundEvent {
+    ) GroupFleetError![]const group_session.GroupOutboundEvent {
         try validatePublishStorage(self, context);
         const author_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&context.author_secret_key);
         var count: usize = 0;
@@ -1250,14 +1250,14 @@ pub const GroupFleet = struct {
     }
 
     pub fn nextPublishEvent(
-        events: []const group_session.OutboundEvent,
-    ) ?*const group_session.OutboundEvent {
+        events: []const group_session.GroupOutboundEvent,
+    ) ?*const group_session.GroupOutboundEvent {
         if (events.len == 0) return null;
         return &events[0];
     }
 
     pub fn nextPublishStep(
-        events: []const group_session.OutboundEvent,
+        events: []const group_session.GroupOutboundEvent,
     ) ?GroupFleetPublishStep {
         const event = nextPublishEvent(events) orelse return null;
         return .{
@@ -1279,7 +1279,7 @@ pub const GroupFleet = struct {
     }
 
     fn publishEventsContainRelay(
-        events: []const group_session.OutboundEvent,
+        events: []const group_session.GroupOutboundEvent,
         relay_url_text: []const u8,
     ) bool {
         for (events) |event| {
@@ -1644,7 +1644,7 @@ test "group fleet runtime inspection classifies connect authenticate reconcile a
     disconnected.noteCurrentRelayDisconnected();
     try auth_required.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var member_buffer = group_session.OutboundBuffer{};
+    var member_buffer = group_session.GroupOutboundBuffer{};
     const extra_member = try divergent.beginMembersSnapshot(
         .init(30, &test_author_secret, &member_buffer),
         &.{
@@ -1796,7 +1796,7 @@ test "group fleet background runtime inspection classifies connect authenticate 
     });
     divergent.markCurrentRelayConnected();
 
-    var extra_member_buffer = group_session.OutboundBuffer{};
+    var extra_member_buffer = group_session.GroupOutboundBuffer{};
     const extra_member = try divergent.beginMembersSnapshot(
         .init(6, &test_author_secret, &extra_member_buffer),
         &.{
@@ -1935,14 +1935,14 @@ test "group fleet background runtime inspection can prioritize publish over idle
     var clients = [_]*group_client.GroupClient{ &client_a, &client_b };
     const fleet = try GroupFleet.init(clients[0..]);
 
-    var publish_buffers: [2]group_session.OutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]group_session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_refs_a: [8][]const u8 = undefined;
     var previous_refs_b: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{
         previous_refs_a[0..],
         previous_refs_b[0..],
     };
-    var outbound_events: [2]group_session.OutboundEvent = undefined;
+    var outbound_events: [2]group_session.GroupOutboundEvent = undefined;
     var publish_storage = GroupFleetPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
@@ -2038,7 +2038,7 @@ test "group fleet can select the relay for one typed background runtime step" {
     });
     divergent.markCurrentRelayConnected();
 
-    var extra_member_buffer = group_session.OutboundBuffer{};
+    var extra_member_buffer = group_session.GroupOutboundBuffer{};
     const extra_member = try divergent.beginMembersSnapshot(
         .init(7, &test_author_secret, &extra_member_buffer),
         &.{
@@ -2123,7 +2123,7 @@ test "group fleet exports and restores a full checkpoint set across relay-local 
 
     var previous_refs: [1][]const u8 = undefined;
     const selected = source_b.selectPreviousRefs(null, previous_refs[0..]);
-    var outbound_buffer = group_session.OutboundBuffer{};
+    var outbound_buffer = group_session.GroupOutboundBuffer{};
     const put_user_event = try source_b.beginPutUser(
         .init(5, &test_author_secret, &outbound_buffer),
         &.{
@@ -2399,7 +2399,7 @@ test "group fleet persists checkpoints into a bounded store and restores them in
 
     var previous_refs: [1][]const u8 = undefined;
     const selected = source_b.selectPreviousRefs(null, previous_refs[0..]);
-    var outbound_buffer = group_session.OutboundBuffer{};
+    var outbound_buffer = group_session.GroupOutboundBuffer{};
     const put_user = try source_b.beginPutUser(
         .init(10, &test_author_secret, &outbound_buffer),
         &.{
@@ -2553,14 +2553,14 @@ test "group fleet builds and replays one put-user publish across all relays" {
     try client_a.applySnapshotEvents(snapshot_events[0..]);
     try client_b.applySnapshotEvents(snapshot_events[0..]);
 
-    var publish_buffers: [2]group_session.OutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]group_session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_refs_a: [8][]const u8 = undefined;
     var previous_refs_b: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{
         previous_refs_a[0..],
         previous_refs_b[0..],
     };
-    var outbound_events: [2]group_session.OutboundEvent = undefined;
+    var outbound_events: [2]group_session.GroupOutboundEvent = undefined;
     var publish_storage = GroupFleetPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
@@ -2625,14 +2625,14 @@ test "group fleet builds and replays one remove-user publish across all relays" 
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
-    var seed_buffers: [2]group_session.OutboundBuffer = .{ .{}, .{} };
+    var seed_buffers: [2]group_session.GroupOutboundBuffer = .{ .{}, .{} };
     var seed_previous_refs_a: [8][]const u8 = undefined;
     var seed_previous_refs_b: [8][]const u8 = undefined;
     var seed_previous_refs = [_][][]const u8{
         seed_previous_refs_a[0..],
         seed_previous_refs_b[0..],
     };
-    var seed_events: [2]group_session.OutboundEvent = undefined;
+    var seed_events: [2]group_session.GroupOutboundEvent = undefined;
     var seed_publish_storage = GroupFleetPublishStorage.init(
         seed_buffers[0..],
         seed_previous_refs[0..],
@@ -2651,14 +2651,14 @@ test "group fleet builds and replays one remove-user publish across all relays" 
         _ = try fleet.consumeRelayEventJson(outbound.relay_url, outbound.event_json, arena.allocator());
     }
 
-    var publish_buffers: [2]group_session.OutboundBuffer = .{ .{}, .{} };
+    var publish_buffers: [2]group_session.GroupOutboundBuffer = .{ .{}, .{} };
     var previous_refs_a: [8][]const u8 = undefined;
     var previous_refs_b: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{
         previous_refs_a[0..],
         previous_refs_b[0..],
     };
-    var outbound_events: [2]group_session.OutboundEvent = undefined;
+    var outbound_events: [2]group_session.GroupOutboundEvent = undefined;
     var publish_storage = GroupFleetPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
@@ -2714,12 +2714,12 @@ test "group fleet publish fanout surfaces bounded storage pressure" {
     try client_a.applySnapshotEvents(snapshot_events[0..]);
     try client_b.applySnapshotEvents(snapshot_events[0..]);
 
-    var publish_buffers: [1]group_session.OutboundBuffer = .{.{}};
+    var publish_buffers: [1]group_session.GroupOutboundBuffer = .{.{}};
     var previous_refs_a: [8][]const u8 = undefined;
     var previous_refs = [_][][]const u8{
         previous_refs_a[0..],
     };
-    var outbound_events: [1]group_session.OutboundEvent = undefined;
+    var outbound_events: [1]group_session.GroupOutboundEvent = undefined;
     var publish_storage = GroupFleetPublishStorage.init(
         publish_buffers[0..],
         previous_refs[0..],
@@ -2769,14 +2769,14 @@ test "group fleet builds and applies a merged checkpoint from explicit component
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var metadata_buffer_a = group_session.OutboundBuffer{};
+    var metadata_buffer_a = group_session.GroupOutboundBuffer{};
     const metadata_event_a = try client_a.beginMetadataSnapshot(
         .init(1, &test_author_secret, &metadata_buffer_a),
         &.{ .name = "Pizza Lovers" },
     );
     _ = try fleet.consumeRelayEventJson("wss://relay.one", metadata_event_a.event_json, arena.allocator());
 
-    var members_buffer_a = group_session.OutboundBuffer{};
+    var members_buffer_a = group_session.GroupOutboundBuffer{};
     const members_event_a = try client_a.beginMembersSnapshot(
         .init(2, &test_author_secret, &members_buffer_a),
         &.{
@@ -2790,14 +2790,14 @@ test "group fleet builds and applies a merged checkpoint from explicit component
     );
     _ = try fleet.consumeRelayEventJson("wss://relay.one", members_event_a.event_json, arena.allocator());
 
-    var metadata_buffer_b = group_session.OutboundBuffer{};
+    var metadata_buffer_b = group_session.GroupOutboundBuffer{};
     const metadata_event_b = try client_b.beginMetadataSnapshot(
         .init(3, &test_author_secret, &metadata_buffer_b),
         &.{ .name = "Pizza Lovers Relay Two" },
     );
     _ = try fleet.consumeRelayEventJson("wss://relay.one:444", metadata_event_b.event_json, arena.allocator());
 
-    var members_buffer_b = group_session.OutboundBuffer{};
+    var members_buffer_b = group_session.GroupOutboundBuffer{};
     const members_event_b = try client_b.beginMembersSnapshot(
         .init(4, &test_author_secret, &members_buffer_b),
         &.{
