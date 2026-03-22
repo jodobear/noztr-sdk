@@ -171,6 +171,7 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.Nip03VerifyJob) == type);
     try std.testing.expect(@TypeOf(client.Nip03VerifyCachedResult) == type);
     try std.testing.expect(@TypeOf(client.Nip03VerifyJobResult) == type);
+    try std.testing.expect(@TypeOf(client.Nip03StoredVerificationPlanning) == type);
     try std.testing.expect(@TypeOf(client.Nip03VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.Nip05VerifyClientError) == type);
     try std.testing.expect(@TypeOf(client.Nip05VerifyClientConfig) == type);

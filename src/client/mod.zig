@@ -402,6 +402,7 @@ pub const Nip03VerifyClientStorage = nip03_verify_client.Nip03VerifyClientStorag
 pub const Nip03VerifyJob = nip03_verify_client.Nip03VerifyJob;
 pub const Nip03VerifyCachedResult = nip03_verify_client.Nip03VerifyCachedResult;
 pub const Nip03VerifyJobResult = nip03_verify_client.Nip03VerifyJobResult;
+pub const Nip03StoredVerificationPlanning = nip03_verify_client.Nip03StoredVerificationPlanning;
 pub const Nip03VerifyClient = nip03_verify_client.Nip03VerifyClient;
 pub const Nip05VerifyClientError = nip05_verify_client.Nip05VerifyClientError;
 pub const Nip05VerifyClientConfig = nip05_verify_client.Nip05VerifyClientConfig;

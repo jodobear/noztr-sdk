@@ -12,7 +12,9 @@ const ots_header_magic = [_]u8{
 };
 const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
-pub const Nip03VerifyClientError = workflows.OpenTimestampsRememberedRemoteVerificationError;
+pub const Nip03VerifyClientError =
+    workflows.OpenTimestampsRememberedRemoteVerificationError ||
+    workflows.OpenTimestampsStoredVerificationDiscoveryError;
 
 pub const Nip03VerifyClientConfig = struct {};
 
@@ -31,6 +33,41 @@ pub const Nip03VerifyClientStorage = struct {
 pub const Nip03VerifyJob = workflows.OpenTimestampsRemoteProofRequest;
 pub const Nip03VerifyCachedResult = workflows.OpenTimestampsRemoteVerificationOutcome;
 pub const Nip03VerifyJobResult = workflows.OpenTimestampsRememberedRemoteVerificationOutcome;
+
+pub const Nip03StoredVerificationPlanning = struct {
+    pub const Match = workflows.OpenTimestampsStoredVerificationMatch;
+    pub const DiscoveryEntry = workflows.OpenTimestampsStoredVerificationDiscoveryEntry;
+    pub const Freshness = workflows.OpenTimestampsStoredVerificationFreshness;
+    pub const LatestFreshness = workflows.OpenTimestampsLatestStoredVerificationFreshness;
+    pub const DiscoveryFreshnessEntry = workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry;
+    pub const DiscoveryFreshnessStorage = workflows.OpenTimestampsStoredVerificationDiscoveryFreshnessStorage;
+    pub const LatestFreshnessRequest = workflows.OpenTimestampsLatestStoredVerificationFreshnessRequest;
+    pub const Target = workflows.OpenTimestampsStoredVerificationTarget;
+    pub const LatestTargetEntry = workflows.OpenTimestampsLatestStoredVerificationTargetEntry;
+    pub const LatestTargetStorage = workflows.OpenTimestampsLatestStoredVerificationTargetStorage;
+    pub const LatestTargetRequest = workflows.OpenTimestampsLatestStoredVerificationTargetRequest;
+    pub const FallbackPolicy = workflows.OpenTimestampsStoredVerificationFallbackPolicy;
+    pub const PreferredRequest = workflows.OpenTimestampsPreferredStoredVerificationRequest;
+    pub const Preferred = workflows.OpenTimestampsPreferredStoredVerification;
+    pub const PreferredTargetEntry = workflows.OpenTimestampsPreferredStoredVerificationTargetEntry;
+    pub const PreferredTargetStorage = workflows.OpenTimestampsPreferredStoredVerificationTargetStorage;
+    pub const PreferredTargetRequest = workflows.OpenTimestampsPreferredStoredVerificationTargetRequest;
+    pub const RuntimeAction = workflows.OpenTimestampsStoredVerificationRuntimeAction;
+    pub const RuntimeStorage = workflows.OpenTimestampsStoredVerificationRuntimeStorage;
+    pub const RuntimeRequest = workflows.OpenTimestampsStoredVerificationRuntimeRequest;
+    pub const RuntimePlan = workflows.OpenTimestampsStoredVerificationRuntimePlan;
+    pub const RuntimeStep = workflows.OpenTimestampsStoredVerificationRuntimeStep;
+    pub const RefreshEntry = workflows.OpenTimestampsStoredVerificationRefreshEntry;
+    pub const RefreshStorage = workflows.OpenTimestampsStoredVerificationRefreshStorage;
+    pub const RefreshRequest = workflows.OpenTimestampsStoredVerificationRefreshRequest;
+    pub const RefreshPlan = workflows.OpenTimestampsStoredVerificationRefreshPlan;
+    pub const RefreshStep = workflows.OpenTimestampsStoredVerificationRefreshStep;
+    pub const TargetRefreshEntry = workflows.OpenTimestampsStoredVerificationTargetRefreshEntry;
+    pub const TargetRefreshStorage = workflows.OpenTimestampsStoredVerificationTargetRefreshStorage;
+    pub const TargetRefreshRequest = workflows.OpenTimestampsStoredVerificationTargetRefreshRequest;
+    pub const TargetRefreshPlan = workflows.OpenTimestampsStoredVerificationTargetRefreshPlan;
+    pub const TargetRefreshStep = workflows.OpenTimestampsStoredVerificationTargetRefreshStep;
+};
 
 pub const Nip03VerifyClient = struct {
     config: Nip03VerifyClientConfig,
@@ -88,6 +125,90 @@ pub const Nip03VerifyClient = struct {
             proof_store,
             verification_store,
             job,
+        );
+    }
+
+    pub fn getLatestStoredVerificationFreshness(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.LatestFreshnessRequest,
+    ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.LatestFreshness {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn discoverLatestStoredVerificationFreshnessForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.LatestTargetRequest,
+    ) Nip03VerifyClientError![]const Nip03StoredVerificationPlanning.LatestTargetEntry {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn getPreferredStoredVerification(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.PreferredRequest,
+    ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.Preferred {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.getPreferredStoredVerification(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn getPreferredStoredVerificationForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.PreferredTargetRequest,
+    ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.PreferredTargetEntry {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredVerificationRuntime(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.RuntimeRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.RuntimePlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn planStoredVerificationRefresh(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.RefreshRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.RefreshPlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.planStoredVerificationRefresh(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn planStoredVerificationRefreshForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.TargetRefreshRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshPlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+            verification_store,
+            request,
         );
     }
 };
@@ -175,6 +296,198 @@ test "nip03 verify client drives remembered remote verification through one comm
     try std.testing.expectEqualStrings(
         "https://proof.example/hello.ots",
         cached.verified.proof_url,
+    );
+}
+
+test "nip03 verify client lifts remembered proof planning into the client surface" {
+    const fresh_target = try buildSignedTextEvent(0x21, 1, "fresh");
+    const stale_target = try buildSignedTextEvent(0x22, 2, "stale");
+    const missing_target = Nip03StoredVerificationPlanning.Target{
+        .target_event_id = [_]u8{0x99} ** 32,
+    };
+
+    var verification_store_records: [2]workflows.OpenTimestampsStoredVerificationRecord =
+        [_]workflows.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
+    var verification_store =
+        workflows.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+
+    var fresh_proof_bytes: [96]u8 = undefined;
+    const fresh_proof = buildLocalBitcoinProof(fresh_proof_bytes[0..], &fresh_target.id);
+    try rememberVerificationForTarget(
+        verification_store.asStore(),
+        &fresh_target,
+        45,
+        "https://proof.example/fresh.ots",
+        fresh_proof,
+    );
+
+    var stale_proof_bytes: [96]u8 = undefined;
+    const stale_proof = buildLocalBitcoinProof(stale_proof_bytes[0..], &stale_target.id);
+    try rememberVerificationForTarget(
+        verification_store.asStore(),
+        &stale_target,
+        5,
+        "https://proof.example/stale.ots",
+        stale_proof,
+    );
+
+    const client = Nip03VerifyClient.init(.{});
+
+    var fresh_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    const latest_fresh = (try client.getLatestStoredVerificationFreshness(
+        verification_store.asStore(),
+        .{
+            .target_event_id = &fresh_target.id,
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .matches = fresh_matches[0..],
+        },
+    )).?;
+    try std.testing.expectEqual(Nip03StoredVerificationPlanning.Freshness.fresh, latest_fresh.freshness);
+
+    var runtime_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var runtime_entries: [2]Nip03StoredVerificationPlanning.DiscoveryFreshnessEntry = undefined;
+    const runtime = try client.inspectStoredVerificationRuntime(
+        verification_store.asStore(),
+        .{
+            .target_event_id = &fresh_target.id,
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip03StoredVerificationPlanning.RuntimeStorage.init(
+                runtime_matches[0..],
+                runtime_entries[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(Nip03StoredVerificationPlanning.RuntimeAction.use_preferred, runtime.action);
+    try std.testing.expectEqualStrings(
+        "https://proof.example/fresh.ots",
+        runtime.nextStep().entry.?.entry.verification.proofUrl(),
+    );
+
+    const targets = [_]Nip03StoredVerificationPlanning.Target{
+        .{ .target_event_id = fresh_target.id },
+        .{ .target_event_id = stale_target.id },
+        missing_target,
+    };
+    var target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    const latest_entries = try client.discoverLatestStoredVerificationFreshnessForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .storage = Nip03StoredVerificationPlanning.LatestTargetStorage.init(
+                target_matches[0..],
+                target_latest_entries[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(Nip03StoredVerificationPlanning.Freshness.fresh, latest_entries[0].latest.?.freshness);
+    try std.testing.expectEqual(Nip03StoredVerificationPlanning.Freshness.stale, latest_entries[1].latest.?.freshness);
+    try std.testing.expect(latest_entries[2].latest == null);
+
+    var preferred_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var preferred_freshness_entries: [2]Nip03StoredVerificationPlanning.DiscoveryFreshnessEntry = undefined;
+    var preferred_entries: [3]Nip03StoredVerificationPlanning.PreferredTargetEntry = undefined;
+    const preferred = (try client.getPreferredStoredVerificationForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip03StoredVerificationPlanning.PreferredTargetStorage.init(
+                preferred_matches[0..],
+                preferred_freshness_entries[0..],
+                preferred_entries[0..],
+            ),
+        },
+    )).?;
+    try std.testing.expectEqualSlices(u8, fresh_target.id[0..], preferred.target.target_event_id[0..]);
+
+    var refresh_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var refresh_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    var refresh_entries: [3]Nip03StoredVerificationPlanning.RefreshEntry = undefined;
+    var refresh_targets: [3]Nip03StoredVerificationPlanning.TargetRefreshEntry = undefined;
+    const refresh_plan = try client.planStoredVerificationRefreshForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .storage = Nip03StoredVerificationPlanning.TargetRefreshStorage.init(
+                refresh_target_matches[0..],
+                refresh_target_latest_entries[0..],
+                refresh_entries[0..],
+                refresh_targets[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(usize, 1), refresh_plan.entries.len);
+    try std.testing.expectEqualSlices(
+        u8,
+        stale_target.id[0..],
+        refresh_plan.nextStep().?.entry.target.target_event_id[0..],
+    );
+}
+
+fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !noztr.nip01_event.Event {
+    const signer_secret = [_]u8{secret_byte} ** 32;
+    const signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&signer_secret);
+    var event = noztr.nip01_event.Event{
+        .id = [_]u8{0} ** 32,
+        .pubkey = signer_pubkey,
+        .sig = [_]u8{0} ** 64,
+        .kind = 1,
+        .created_at = created_at,
+        .content = content,
+        .tags = &.{},
+    };
+    try noztr.nostr_keys.nostr_sign_event(&signer_secret, &event);
+    return event;
+}
+
+fn rememberVerificationForTarget(
+    verification_store: workflows.OpenTimestampsVerificationStore,
+    target_event: *const noztr.nip01_event.Event,
+    attestation_created_at: u64,
+    proof_url: []const u8,
+    proof: []const u8,
+) !void {
+    var proof_b64_storage: [256]u8 = undefined;
+    const encoded = std.base64.standard.Encoder.encode(proof_b64_storage[0..], proof);
+    const event_id_hex = std.fmt.bytesToHex(target_event.id, .lower);
+    const tags = [_]noztr.nip01_event.EventTag{
+        .{ .items = &.{ "e", event_id_hex[0..] } },
+        .{ .items = &.{ "k", "1" } },
+    };
+    const attestation_event = noztr.nip01_event.Event{
+        .id = [_]u8{0} ** 32,
+        .pubkey = [_]u8{0x33} ** 32,
+        .sig = [_]u8{0} ** 64,
+        .kind = 1040,
+        .created_at = attestation_created_at,
+        .content = encoded,
+        .tags = tags[0..],
+    };
+    var stored_attestation = attestation_event;
+    stored_attestation.id[30] = @as(u8, @truncate(attestation_created_at));
+    stored_attestation.id[31] = @as(u8, @truncate(proof_url.len));
+    var proof_buffer: [128]u8 = undefined;
+    const local = try workflows.OpenTimestampsVerifier.verifyLocal(
+        target_event,
+        &stored_attestation,
+        proof_buffer[0..],
+    );
+    try std.testing.expect(local == .verified);
+    _ = try workflows.OpenTimestampsVerifier.rememberRemoteVerification(
+        verification_store,
+        target_event,
+        &stored_attestation,
+        &.{ .proof_url = proof_url, .verification = local.verified },
     );
 }
 
