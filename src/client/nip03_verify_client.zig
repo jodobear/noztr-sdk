@@ -81,6 +81,14 @@ pub const Nip03StoredVerificationPlanning = struct {
         workflows.OpenTimestampsStoredVerificationTargetRefreshCadencePlan;
     pub const TargetRefreshCadenceStep =
         workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceStep;
+    pub const TargetRefreshBatchStorage =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchStorage;
+    pub const TargetRefreshBatchRequest =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchRequest;
+    pub const TargetRefreshBatchPlan =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchPlan;
+    pub const TargetRefreshBatchStep =
+        workflows.OpenTimestampsStoredVerificationTargetRefreshBatchStep;
 };
 
 pub const Nip03VerifyClient = struct {
@@ -233,6 +241,18 @@ pub const Nip03VerifyClient = struct {
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshCadencePlan {
         _ = self;
         return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredVerificationRefreshBatchForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.TargetRefreshBatchRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshBatchPlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
             verification_store,
             request,
         );
@@ -493,6 +513,40 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         u8,
         stale_target.id[0..],
         cadence_plan.usableWhileRefreshingEntries()[0].target.target_event_id[0..],
+    );
+
+    var batch_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var batch_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    var batch_entries: [3]Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
+    var batch_groups: [5]Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
+    const batch_plan = try client.inspectStoredVerificationRefreshBatchForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .refresh_soon_age_seconds = 12,
+            .max_selected = 1,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip03StoredVerificationPlanning.TargetRefreshBatchStorage.init(
+                batch_target_matches[0..],
+                batch_target_latest_entries[0..],
+                batch_entries[0..],
+                batch_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), batch_plan.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), batch_plan.deferred_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        missing_target.target_event_id[0..],
+        batch_plan.nextBatchStep().?.entry.target.target_event_id[0..],
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        stale_target.id[0..],
+        batch_plan.deferredEntries()[0].target.target_event_id[0..],
     );
 }
 
