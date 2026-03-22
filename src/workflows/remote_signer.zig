@@ -37,31 +37,31 @@ pub const RemoteSignerError =
 pub const RemoteSignerMethod = noztr.nip46_remote_signing.RemoteSigningMethod;
 pub const PermissionScope = noztr.nip46_remote_signing.PermissionScope;
 pub const Permission = noztr.nip46_remote_signing.Permission;
-pub const PubkeyTextRequest = noztr.nip46_remote_signing.PubkeyTextRequest;
+pub const RemoteSignerPubkeyTextRequest = noztr.nip46_remote_signing.PubkeyTextRequest;
 
 /// Caller-owned storage for serialized request JSON.
-/// `OutboundRequest.json` borrows from this buffer until it is overwritten.
-pub const RequestBuffer = struct {
+/// `RemoteSignerOutboundRequest.json` borrows from this buffer until it is overwritten.
+pub const RemoteSignerRequestBuffer = struct {
     storage: [noztr.limits.nip46_message_json_bytes_max]u8 =
         [_]u8{0} ** noztr.limits.nip46_message_json_bytes_max,
 
-    fn writable(self: *RequestBuffer) []u8 {
+    fn writable(self: *RemoteSignerRequestBuffer) []u8 {
         return self.storage[0..];
     }
 };
 
 /// Caller-owned request-building context shared across `begin...` entrypoints.
 /// Request JSON borrows from `buffer` until it is overwritten.
-pub const RequestContext = struct {
+pub const RemoteSignerRequestContext = struct {
     id: []const u8,
-    buffer: *RequestBuffer,
+    buffer: *RemoteSignerRequestBuffer,
     scratch: std.mem.Allocator,
 
     pub fn init(
         id: []const u8,
-        buffer: *RequestBuffer,
+        buffer: *RemoteSignerRequestBuffer,
         scratch: std.mem.Allocator,
-    ) RequestContext {
+    ) RemoteSignerRequestContext {
         return .{
             .id = id,
             .buffer = buffer,
@@ -69,14 +69,14 @@ pub const RequestContext = struct {
         };
     }
 
-    fn writable(self: RequestContext) []u8 {
+    fn writable(self: RemoteSignerRequestContext) []u8 {
         return self.buffer.writable();
     }
 };
 
 /// Transport-ready request envelope.
-/// `json` borrows from the caller-provided `RequestBuffer`.
-pub const OutboundRequest = struct {
+/// `json` borrows from the caller-provided `RemoteSignerRequestBuffer`.
+pub const RemoteSignerOutboundRequest = struct {
     relay_url: []const u8,
     remote_signer_pubkey: [32]u8,
     json: []const u8,
@@ -86,16 +86,16 @@ pub const OutboundRequest = struct {
 /// Borrowed payloads in `signed_event_json` and `text_response.text` come from the
 /// `acceptResponseJson(...)` input and parsing scratch. Copy them if the caller needs
 /// to retain them after scratch or response input is reused.
-pub const TextResponse = struct {
+pub const RemoteSignerTextResponse = struct {
     method: RemoteSignerMethod,
     text: []const u8,
 };
 
-pub const ResponseOutcome = union(enum) {
+pub const RemoteSignerResponseOutcome = union(enum) {
     connected,
     user_pubkey: [32]u8,
     signed_event_json: []const u8,
-    text_response: TextResponse,
+    text_response: RemoteSignerTextResponse,
     pong,
     relays_switched: u8,
 };
@@ -282,9 +282,9 @@ pub const RemoteSignerSession = struct {
 
     pub fn beginConnect(
         self: *RemoteSignerSession,
-        context: RequestContext,
+        context: RemoteSignerRequestContext,
         requested_permissions: []const Permission,
-    ) RemoteSignerError!OutboundRequest {
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         try self.requireRelayReady();
 
         var built_request = noztr.nip46_remote_signing.BuiltRequest{};
@@ -309,8 +309,8 @@ pub const RemoteSignerSession = struct {
 
     pub fn beginGetPublicKey(
         self: *RemoteSignerSession,
-        context: RequestContext,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         try self.requireConnectedRequestReady();
 
         var built_request = noztr.nip46_remote_signing.BuiltRequest{};
@@ -331,9 +331,9 @@ pub const RemoteSignerSession = struct {
 
     pub fn beginSignEvent(
         self: *RemoteSignerSession,
-        context: RequestContext,
+        context: RemoteSignerRequestContext,
         unsigned_event_json: []const u8,
-    ) RemoteSignerError!OutboundRequest {
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         try self.requireConnectedRequestReady();
 
         var built_request = noztr.nip46_remote_signing.BuiltRequest{};
@@ -354,8 +354,8 @@ pub const RemoteSignerSession = struct {
 
     pub fn beginSwitchRelays(
         self: *RemoteSignerSession,
-        context: RequestContext,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         try self.requireConnectedRequestReady();
 
         var built_request = noztr.nip46_remote_signing.BuiltRequest{};
@@ -376,40 +376,40 @@ pub const RemoteSignerSession = struct {
 
     pub fn beginNip04Encrypt(
         self: *RemoteSignerSession,
-        context: RequestContext,
-        request: *const PubkeyTextRequest,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+        request: *const RemoteSignerPubkeyTextRequest,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         return self.beginPubkeyTextRequest(context, .nip04_encrypt, request);
     }
 
     pub fn beginNip04Decrypt(
         self: *RemoteSignerSession,
-        context: RequestContext,
-        request: *const PubkeyTextRequest,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+        request: *const RemoteSignerPubkeyTextRequest,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         return self.beginPubkeyTextRequest(context, .nip04_decrypt, request);
     }
 
     pub fn beginNip44Encrypt(
         self: *RemoteSignerSession,
-        context: RequestContext,
-        request: *const PubkeyTextRequest,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+        request: *const RemoteSignerPubkeyTextRequest,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         return self.beginPubkeyTextRequest(context, .nip44_encrypt, request);
     }
 
     pub fn beginNip44Decrypt(
         self: *RemoteSignerSession,
-        context: RequestContext,
-        request: *const PubkeyTextRequest,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+        request: *const RemoteSignerPubkeyTextRequest,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         return self.beginPubkeyTextRequest(context, .nip44_decrypt, request);
     }
 
     pub fn beginPing(
         self: *RemoteSignerSession,
-        context: RequestContext,
-    ) RemoteSignerError!OutboundRequest {
+        context: RemoteSignerRequestContext,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         try self.requireConnectedRequestReady();
 
         var built_request = noztr.nip46_remote_signing.BuiltRequest{};
@@ -435,7 +435,7 @@ pub const RemoteSignerSession = struct {
         self: *RemoteSignerSession,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) RemoteSignerError!ResponseOutcome {
+    ) RemoteSignerError!RemoteSignerResponseOutcome {
         const message = noztr.nip46_remote_signing.message_parse_json(response_json, scratch) catch |err| {
             self.clearPendingForMalformedResponse(response_json);
             return err;
@@ -448,10 +448,10 @@ pub const RemoteSignerSession = struct {
 
     fn beginPubkeyTextRequest(
         self: *RemoteSignerSession,
-        context: RequestContext,
+        context: RemoteSignerRequestContext,
         method: RemoteSignerMethod,
-        request: *const PubkeyTextRequest,
-    ) RemoteSignerError!OutboundRequest {
+        request: *const RemoteSignerPubkeyTextRequest,
+    ) RemoteSignerError!RemoteSignerOutboundRequest {
         try self.requireConnectedRequestReady();
 
         var built_request = noztr.nip46_remote_signing.BuiltRequest{};
@@ -475,7 +475,7 @@ pub const RemoteSignerSession = struct {
         self: *RemoteSignerSession,
         response: *const noztr.nip46_remote_signing.Response,
         scratch: std.mem.Allocator,
-    ) RemoteSignerError!ResponseOutcome {
+    ) RemoteSignerError!RemoteSignerResponseOutcome {
         const pending_index =
             self.findPendingIndex(response.id) orelse return error.UnknownResponseId;
         const method = self._state.pending[pending_index].method;
@@ -728,10 +728,10 @@ fn serialize_response(
 
 fn requestContext(
     id: []const u8,
-    buffer: *RequestBuffer,
+    buffer: *RemoteSignerRequestBuffer,
     scratch: std.mem.Allocator,
-) RequestContext {
-    return RequestContext.init(id, buffer, scratch);
+) RemoteSignerRequestContext {
+    return RemoteSignerRequestContext.init(id, buffer, scratch);
 }
 
 test "remote signer session connects with matching secret echo" {
@@ -744,7 +744,7 @@ test "remote signer session connects with matching secret echo" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     const outbound = try session.beginConnect(
@@ -826,7 +826,7 @@ test "remote signer selects a shared relay-pool step back onto the signer sessio
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginConnect(
@@ -882,7 +882,7 @@ test "remote signer session rejects mismatched secret echo" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginConnect(
@@ -916,7 +916,7 @@ test "remote signer session requires secret echo when bunker secret is configure
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginConnect(
@@ -949,7 +949,7 @@ test "remote signer session rejects echoed secret when bunker secret is absent" 
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginConnect(
@@ -982,7 +982,7 @@ test "remote signer session enforces request response correlation" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var scratch_storage_a: [1024]u8 = undefined;
     var scratch_a = std.heap.FixedBufferAllocator.init(&scratch_storage_a);
     _ = try session.beginConnect(
@@ -1000,7 +1000,7 @@ test "remote signer session enforces request response correlation" {
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginGetPublicKey(
@@ -1031,7 +1031,7 @@ test "remote signer session blocks requests while relay auth is pending and reco
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var scratch_storage_a: [1024]u8 = undefined;
     var scratch_a = std.heap.FixedBufferAllocator.init(&scratch_storage_a);
     _ = try session.beginConnect(
@@ -1051,7 +1051,7 @@ test "remote signer session blocks requests while relay auth is pending and reco
 
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var blocked_request_buffer = RequestBuffer{};
+    var blocked_request_buffer = RemoteSignerRequestBuffer{};
     var blocked_request_scratch_storage: [1024]u8 = undefined;
     var blocked_request_scratch =
         std.heap.FixedBufferAllocator.init(&blocked_request_scratch_storage);
@@ -1074,7 +1074,7 @@ test "remote signer session blocks requests while relay auth is pending and reco
         auth_scratch.allocator(),
     );
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginPing(
@@ -1092,7 +1092,7 @@ test "remote signer session keeps relay blocked after invalid auth event" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1128,7 +1128,7 @@ test "remote signer session keeps relay blocked after invalid auth event" {
     );
     try std.testing.expect(!session.currentRelayCanSendRequests());
 
-    var blocked_request_buffer = RequestBuffer{};
+    var blocked_request_buffer = RemoteSignerRequestBuffer{};
     var blocked_request_scratch_storage: [1024]u8 = undefined;
     var blocked_request_scratch =
         std.heap.FixedBufferAllocator.init(&blocked_request_scratch_storage);
@@ -1150,7 +1150,7 @@ test "remote signer session applies switch relays responses" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1168,7 +1168,7 @@ test "remote signer session applies switch relays responses" {
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginSwitchRelays(
@@ -1215,7 +1215,7 @@ test "remote signer session keeps state unchanged on null switch relays response
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1233,7 +1233,7 @@ test "remote signer session keeps state unchanged on null switch relays response
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginSwitchRelays(
@@ -1265,7 +1265,7 @@ test "remote signer session rejects invalid switch relays urls and keeps state" 
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1283,7 +1283,7 @@ test "remote signer session rejects invalid switch relays urls and keeps state" 
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginSwitchRelays(
@@ -1318,7 +1318,7 @@ test "remote signer session reapplies auth flow after switch relays replacement"
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1336,7 +1336,7 @@ test "remote signer session reapplies auth flow after switch relays replacement"
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var switch_request_buffer = RequestBuffer{};
+    var switch_request_buffer = RemoteSignerRequestBuffer{};
     var switch_scratch_storage: [1024]u8 = undefined;
     var switch_scratch = std.heap.FixedBufferAllocator.init(&switch_scratch_storage);
     _ = try session.beginSwitchRelays(
@@ -1358,7 +1358,7 @@ test "remote signer session reapplies auth flow after switch relays replacement"
     session.markCurrentRelayConnected();
     try session.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var blocked_request_buffer = RequestBuffer{};
+    var blocked_request_buffer = RemoteSignerRequestBuffer{};
     var blocked_request_scratch_storage: [1024]u8 = undefined;
     var blocked_request_scratch =
         std.heap.FixedBufferAllocator.init(&blocked_request_scratch_storage);
@@ -1381,7 +1381,7 @@ test "remote signer session reapplies auth flow after switch relays replacement"
         auth_scratch.allocator(),
     );
 
-    var reconnect_request_buffer = RequestBuffer{};
+    var reconnect_request_buffer = RemoteSignerRequestBuffer{};
     var reconnect_request_scratch_storage: [1024]u8 = undefined;
     var reconnect_request_scratch =
         std.heap.FixedBufferAllocator.init(&reconnect_request_scratch_storage);
@@ -1400,7 +1400,7 @@ test "remote signer session reapplies auth flow after switch relays replacement"
         std.heap.FixedBufferAllocator.init(&reconnect_response_scratch_storage);
     _ = try session.acceptResponseJson(reconnect_response, reconnect_response_scratch.allocator());
 
-    var ping_request_buffer = RequestBuffer{};
+    var ping_request_buffer = RemoteSignerRequestBuffer{};
     var ping_request_scratch_storage: [1024]u8 = undefined;
     var ping_request_scratch = std.heap.FixedBufferAllocator.init(&ping_request_scratch_storage);
     _ = try session.beginPing(
@@ -1418,7 +1418,7 @@ test "remote signer session blocks requests after same relay disconnect until re
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1438,7 +1438,7 @@ test "remote signer session blocks requests after same relay disconnect until re
 
     session.noteCurrentRelayDisconnected();
 
-    var blocked_ping_buffer = RequestBuffer{};
+    var blocked_ping_buffer = RemoteSignerRequestBuffer{};
     var blocked_ping_scratch_storage: [1024]u8 = undefined;
     var blocked_ping_scratch =
         std.heap.FixedBufferAllocator.init(&blocked_ping_scratch_storage);
@@ -1449,7 +1449,7 @@ test "remote signer session blocks requests after same relay disconnect until re
         ),
     );
 
-    var blocked_pubkey_buffer = RequestBuffer{};
+    var blocked_pubkey_buffer = RemoteSignerRequestBuffer{};
     var blocked_pubkey_scratch_storage: [1024]u8 = undefined;
     var blocked_pubkey_scratch =
         std.heap.FixedBufferAllocator.init(&blocked_pubkey_scratch_storage);
@@ -1462,7 +1462,7 @@ test "remote signer session blocks requests after same relay disconnect until re
 
     session.markCurrentRelayConnected();
 
-    var reconnect_request_buffer = RequestBuffer{};
+    var reconnect_request_buffer = RemoteSignerRequestBuffer{};
     var reconnect_request_scratch_storage: [1024]u8 = undefined;
     var reconnect_request_scratch =
         std.heap.FixedBufferAllocator.init(&reconnect_request_scratch_storage);
@@ -1473,7 +1473,7 @@ test "remote signer session blocks requests after same relay disconnect until re
         ),
     );
 
-    var reconnect_connect_buffer = RequestBuffer{};
+    var reconnect_connect_buffer = RemoteSignerRequestBuffer{};
     var reconnect_connect_scratch_storage: [1024]u8 = undefined;
     var reconnect_connect_scratch =
         std.heap.FixedBufferAllocator.init(&reconnect_connect_scratch_storage);
@@ -1493,7 +1493,7 @@ test "remote signer disconnect clears in-flight requests so failover can resume"
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1511,7 +1511,7 @@ test "remote signer disconnect clears in-flight requests so failover can resume"
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var ping_request_buffer = RequestBuffer{};
+    var ping_request_buffer = RemoteSignerRequestBuffer{};
     var ping_request_scratch_storage: [1024]u8 = undefined;
     var ping_request_scratch = std.heap.FixedBufferAllocator.init(&ping_request_scratch_storage);
     _ = try session.beginPing(
@@ -1547,7 +1547,7 @@ test "remote signer session surfaces signer-declared errors and clears pending r
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1565,7 +1565,7 @@ test "remote signer session surfaces signer-declared errors and clears pending r
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginPing(
@@ -1597,7 +1597,7 @@ test "remote signer session rejects malformed sign_event responses and clears pe
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1615,7 +1615,7 @@ test "remote signer session rejects malformed sign_event responses and clears pe
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [4096]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginSignEvent(
@@ -1647,7 +1647,7 @@ test "remote signer session rejects invalidly signed sign_event responses" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1665,7 +1665,7 @@ test "remote signer session rejects invalidly signed sign_event responses" {
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [4096]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginSignEvent(
@@ -1700,7 +1700,7 @@ test "remote signer session clears pending requests when signer error text is ov
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1718,7 +1718,7 @@ test "remote signer session clears pending requests when signer error text is ov
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginPing(
@@ -1750,7 +1750,7 @@ test "remote signer session clears pending requests for oversized malformed resp
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1768,7 +1768,7 @@ test "remote signer session clears pending requests for oversized malformed resp
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
     _ = try session.beginPing(
@@ -1803,7 +1803,7 @@ test "remote signer session accepts nip04 encrypt text responses" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1821,10 +1821,10 @@ test "remote signer session accepts nip04 encrypt text responses" {
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
-    const request = PubkeyTextRequest{
+    const request = RemoteSignerPubkeyTextRequest{
         .pubkey = [_]u8{0xaa} ** 32,
         .text = "hello dm",
     };
@@ -1858,7 +1858,7 @@ test "remote signer session accepts nip44 decrypt text responses" {
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1876,10 +1876,10 @@ test "remote signer session accepts nip44 decrypt text responses" {
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
-    const request = PubkeyTextRequest{
+    const request = RemoteSignerPubkeyTextRequest{
         .pubkey = [_]u8{0xbb} ** 32,
         .text = "ciphertext",
     };
@@ -1911,10 +1911,10 @@ test "remote signer session blocks pubkey text methods until signer session is c
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
-    const request = PubkeyTextRequest{
+    const request = RemoteSignerPubkeyTextRequest{
         .pubkey = [_]u8{0xcc} ** 32,
         .text = "hello",
     };
@@ -1937,7 +1937,7 @@ test "remote signer session clears pending requests for malformed pubkey text re
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -1955,10 +1955,10 @@ test "remote signer session clears pending requests for malformed pubkey text re
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
-    const request = PubkeyTextRequest{
+    const request = RemoteSignerPubkeyTextRequest{
         .pubkey = [_]u8{0xdd} ** 32,
         .text = "hello",
     };
@@ -1991,7 +1991,7 @@ test "remote signer session records signer errors for pubkey text methods and cl
     var session = try RemoteSignerSession.initFromBunkerUriText(uri_text, arena.allocator());
     session.markCurrentRelayConnected();
 
-    var connect_request_buffer = RequestBuffer{};
+    var connect_request_buffer = RemoteSignerRequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try session.beginConnect(
@@ -2009,10 +2009,10 @@ test "remote signer session records signer errors for pubkey text methods and cl
         std.heap.FixedBufferAllocator.init(&connect_response_scratch_storage);
     _ = try session.acceptResponseJson(connect_response, connect_response_scratch.allocator());
 
-    var request_buffer = RequestBuffer{};
+    var request_buffer = RemoteSignerRequestBuffer{};
     var request_scratch_storage: [1024]u8 = undefined;
     var request_scratch = std.heap.FixedBufferAllocator.init(&request_scratch_storage);
-    const request = PubkeyTextRequest{
+    const request = RemoteSignerPubkeyTextRequest{
         .pubkey = [_]u8{0xee} ** 32,
         .text = "ciphertext",
     };

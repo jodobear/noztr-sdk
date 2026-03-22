@@ -32,6 +32,8 @@ current public workflow contract.
   - shortest public route from install/import to first workflow examples
 - [public contract map](./reference/contract-map.md)
   - task-to-symbol route for the current public workflow surface
+- [remote signer naming migration](./reference/remote-signer-naming-migration.md)
+  - short pre-`1.0` migration note for direct `remote_signer` submodule imports
 - [examples/README.md](../examples/README.md)
   - workflow recipes and teaching routes
 
