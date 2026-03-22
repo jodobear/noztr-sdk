@@ -67,6 +67,11 @@ pub const Nip03StoredVerificationPlanning = struct {
     pub const TargetRefreshRequest = workflows.OpenTimestampsStoredVerificationTargetRefreshRequest;
     pub const TargetRefreshPlan = workflows.OpenTimestampsStoredVerificationTargetRefreshPlan;
     pub const TargetRefreshStep = workflows.OpenTimestampsStoredVerificationTargetRefreshStep;
+    pub const TargetPolicyEntry = workflows.OpenTimestampsStoredVerificationTargetPolicyEntry;
+    pub const TargetPolicyGroup = workflows.OpenTimestampsStoredVerificationTargetPolicyGroup;
+    pub const TargetPolicyStorage = workflows.OpenTimestampsStoredVerificationTargetPolicyStorage;
+    pub const TargetPolicyRequest = workflows.OpenTimestampsStoredVerificationTargetPolicyRequest;
+    pub const TargetPolicyPlan = workflows.OpenTimestampsStoredVerificationTargetPolicyPlan;
     pub const TargetRefreshCadenceAction =
         workflows.OpenTimestampsStoredVerificationTargetRefreshCadenceAction;
     pub const TargetRefreshCadenceEntry =
@@ -243,6 +248,18 @@ pub const Nip03VerifyClient = struct {
     ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshPlan {
         _ = self;
         return workflows.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+            verification_store,
+            request,
+        );
+    }
+
+    pub fn inspectStoredVerificationPolicyForTargets(
+        self: *const Nip03VerifyClient,
+        verification_store: workflows.OpenTimestampsVerificationStore,
+        request: Nip03StoredVerificationPlanning.TargetPolicyRequest,
+    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetPolicyPlan {
+        _ = self;
+        return workflows.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
             verification_store,
             request,
         );
@@ -479,6 +496,45 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         },
     )).?;
     try std.testing.expectEqualSlices(u8, fresh_target.id[0..], preferred.target.target_event_id[0..]);
+
+    var policy_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
+    var policy_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
+    var policy_entries: [3]Nip03StoredVerificationPlanning.TargetPolicyEntry = undefined;
+    var policy_groups: [4]Nip03StoredVerificationPlanning.TargetPolicyGroup = undefined;
+    const policy_plan = try client.inspectStoredVerificationPolicyForTargets(
+        verification_store.asStore(),
+        .{
+            .targets = targets[0..],
+            .now_unix_seconds = 51,
+            .max_age_seconds = 20,
+            .fallback_policy = .allow_stale_latest,
+            .storage = Nip03StoredVerificationPlanning.TargetPolicyStorage.init(
+                policy_target_matches[0..],
+                policy_target_latest_entries[0..],
+                policy_entries[0..],
+                policy_groups[0..],
+            ),
+        },
+    );
+    try std.testing.expectEqual(@as(u32, 1), policy_plan.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), policy_plan.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 1), policy_plan.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 0), policy_plan.refresh_existing_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        missing_target.target_event_id[0..],
+        policy_plan.verifyNowEntries()[0].target.target_event_id[0..],
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        fresh_target.id[0..],
+        policy_plan.usablePreferredEntries()[0].target.target_event_id[0..],
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        stale_target.id[0..],
+        policy_plan.usablePreferredEntries()[1].target.target_event_id[0..],
+    );
 
     var refresh_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
     var refresh_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;

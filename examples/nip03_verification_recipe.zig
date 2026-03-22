@@ -13,9 +13,9 @@ const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 // Verify one detached OpenTimestamps proof document, remember the verification summary explicitly,
 // classify remembered discovery entries for freshness, inspect one typed remembered runtime step,
-// drive grouped remembered-target refresh cadence, bounded refresh-batch selection, turn-policy,
-// and refresh policy passes, then recover the latest remembered verification for the same target
-// event.
+// drive grouped remembered-target policy, refresh cadence, bounded refresh-batch selection,
+// turn-policy, and refresh policy passes, then recover the latest remembered verification for the
+// same target event.
 test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshness, inspects remembered typed runtime step, and drives grouped remembered proof policy" {
     const signer_secret = [_]u8{0x13} ** 32;
     const signer_pubkey = try common.derivePublicKey(&signer_secret);
@@ -240,8 +240,42 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
                     grouped_preferred_entries[0..],
                 ),
             },
-        )).?;
+    )).?;
     try std.testing.expectEqualSlices(u8, &target.id, &grouped_preferred.target.target_event_id);
+
+    var grouped_policy_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
+    var grouped_policy_latest: [2]noztr_sdk.workflows.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var grouped_policy_entries: [2]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetPolicyEntry = undefined;
+    var grouped_policy_groups: [4]noztr_sdk.workflows.OpenTimestampsStoredVerificationTargetPolicyGroup = undefined;
+    const grouped_policy =
+        try noztr_sdk.workflows.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+            verification_store.asStore(),
+            .{
+                .targets = grouped_targets[0..],
+                .now_unix_seconds = 62,
+                .max_age_seconds = 120,
+                .storage = .init(
+                    grouped_policy_matches[0..],
+                    grouped_policy_latest[0..],
+                    grouped_policy_entries[0..],
+                    grouped_policy_groups[0..],
+                ),
+            },
+        );
+    try std.testing.expectEqual(@as(u32, 1), grouped_policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), grouped_policy.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 0), grouped_policy.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 0), grouped_policy.refresh_existing_count);
+    try std.testing.expectEqualSlices(
+        u8,
+        &grouped_targets[1].target_event_id,
+        &grouped_policy.verifyNowEntries()[0].target.target_event_id,
+    );
+    try std.testing.expectEqualSlices(
+        u8,
+        &target.id,
+        &grouped_policy.usablePreferredEntries()[0].target.target_event_id,
+    );
 
     var grouped_cadence_matches: [1]noztr_sdk.workflows.OpenTimestampsStoredVerificationMatch = undefined;
     var grouped_cadence_latest: [2]noztr_sdk.workflows.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
