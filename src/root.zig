@@ -12,7 +12,7 @@ pub const runtime = @import("runtime/mod.zig");
 /// Explicit HTTP seam for the current HTTP-backed workflow slices.
 pub const transport = @import("transport/mod.zig");
 
-test "root module exposes workflows store runtime plus the explicit http seam" {
+test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(!@hasDecl(@This(), "noztr"));
     try std.testing.expect(@TypeOf(client) == type);
     try std.testing.expect(@TypeOf(client.local) == type);
@@ -392,6 +392,9 @@ test "root module exposes workflows store runtime plus the explicit http seam" {
     try std.testing.expect(@TypeOf(client.relay.subscription_turn.SubscriptionTurnCompletion) == type);
     try std.testing.expect(@TypeOf(client.relay.subscription_turn.SubscriptionTurnResult) == type);
     try std.testing.expect(@TypeOf(client.relay.subscription_turn.SubscriptionTurnClient) == type);
+}
+
+test "root module exposes store runtime transport and boundary namespaces" {
     try std.testing.expect(@TypeOf(store) == type);
     try std.testing.expect(@TypeOf(store.RelayInfoRecord) == type);
     try std.testing.expect(@TypeOf(store.RelayInfoResultPage) == type);
