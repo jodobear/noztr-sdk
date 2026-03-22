@@ -29,6 +29,7 @@ Then choose the right public guide:
 `noztr-sdk` is trying to be:
 
 - a Zig-native SDK above `noztr-core`
+- a production-grade generic Nostr SDK that absorbs broadly reusable protocol-facing heavy lifting
 - explicit about ownership, boundedness, and workflow control
 - suitable for real clients, signers, relays, bots, services, and CLI tooling
 
@@ -37,6 +38,10 @@ Then choose the right public guide:
 - a replacement for the `noztr-core` protocol kernel
 - an app-specific product layer
 - a hidden-runtime framework with implicit background behavior
+
+Do not optimize for the smallest possible public surface by default. Optimize for the strongest
+generic SDK surface that stays explicit, bounded, and reusable across many Nostr apps while
+leaving product-specific policy above the SDK.
 
 If a proposed change weakens the `noztr-core` versus `noztr-sdk` boundary, challenge the scope
 first.

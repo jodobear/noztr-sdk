@@ -5,11 +5,15 @@ Higher-level Zig Nostr SDK built on top of `noztr`.
 `noztr-sdk` exists to make building Nostr applications, relays, signers, clients, bots, services,
 and CLIs simple, explicit, and straightforward in Zig.
 
+The objective is not the smallest possible wrapper above `noztr`. The objective is a
+production-grade generic Zig Nostr SDK that absorbs broadly reusable relay/workflow heavy lifting
+while keeping product-specific policy explicit and caller-owned.
+
 ## What noztr-sdk is
 
 - The higher-level Zig SDK layer above the `noztr` protocol kernel.
-- Focused on workflow composition, transport seams, caller-owned stores, and explicit runtime
-  control.
+- Focused on workflow composition, transport seams, caller-owned stores, explicit runtime control,
+  and reusable relay/workflow heavy lifting that many apps would otherwise rebuild.
 - Intended for real clients, signers, relays, bots, services, and CLI tooling.
 - Deliberate about ownership and boundedness rather than hiding behavior behind global runtime
   magic.
@@ -52,13 +56,15 @@ If you are working in a local maintainer clone, use `.private-docs/` when presen
 - Model SDK ergonomics after real downstream usage, while preserving the `noztr` kernel boundary.
 - Use Zig package/import naming via `noztr_sdk`.
 
-`noztr-sdk` is also the generic downstream-targetable Zig Nostr SDK floor for higher-level Zig
-libraries that want to sit above Nostr without rebuilding the same bounded relay/workflow
+`noztr-sdk` is also the generic downstream-targetable Zig Nostr SDK foundation for higher-level
+Zig libraries that want to sit above Nostr without rebuilding the same bounded relay/workflow
 substrate locally.
 
 That means:
 - `noztr-sdk` owns generic Nostr-facing transport seams, relay/runtime plans, typed next-step
   helpers, and reusable bounded orchestration substrate.
+- `noztr-sdk` should absorb common relay/auth/query/exchange/replay/lifecycle heavy lifting when
+  that work is generic across many Nostr apps and SDK consumers.
 - downstream libraries own their own protocol-specific contracts and product/runtime policy above
   that floor.
 - `noztr-sdk` does not currently promise a generic public websocket framework or hidden background
