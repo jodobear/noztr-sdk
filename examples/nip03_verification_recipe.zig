@@ -4,6 +4,9 @@ const noztr_sdk = @import("noztr_sdk");
 const common = @import("common.zig");
 const http_fake = @import("http_fake.zig");
 
+const proof = noztr_sdk.workflows.proof.nip03;
+const Planning = proof.Planning;
+
 const ots_header_magic = [_]u8{
     0x00, 0x4f, 0x70, 0x65, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
     0x73, 0x00, 0x00, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x00, 0xbf, 0x89, 0xe2, 0xe8, 0x84,
@@ -23,26 +26,25 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try noztr.nostr_keys.nostr_sign_event(&signer_secret, &target);
     const event_id_hex = std.fmt.bytesToHex(target.id, .lower);
     var proof_bytes: [96]u8 = undefined;
-    const proof = buildLocalBitcoinProof(proof_bytes[0..], &target.id);
+    const proof_doc = buildLocalBitcoinProof(proof_bytes[0..], &target.id);
     var proof_b64: [256]u8 = undefined;
-    const encoded = std.base64.standard.Encoder.encode(proof_b64[0..], proof);
+    const encoded = std.base64.standard.Encoder.encode(proof_b64[0..], proof_doc);
     const tags = [_]noztr.nip01_event.EventTag{
         .{ .items = &.{ "e", event_id_hex[0..] } },
         .{ .items = &.{ "k", "1" } },
     };
     const attestation_event = common.simpleEvent(1040, [_]u8{0x33} ** 32, 2, encoded, tags[0..]);
     var fetched_proof: [128]u8 = undefined;
-    var proof_store_records: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsProofRecord =
-        [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsProofRecord{ .{}, .{} };
-    var proof_store =
-        noztr_sdk.workflows.proof.nip03.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
-        [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var proof_store_records: [2]proof.OpenTimestampsProofRecord =
+        [_]proof.OpenTimestampsProofRecord{ .{}, .{} };
+    var proof_store = proof.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
+    var verification_store_records: [2]proof.OpenTimestampsStoredVerificationRecord =
+        [_]proof.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
     var verification_store =
-        noztr_sdk.workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
-    var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof);
+        proof.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof_doc);
 
-    const outcome = try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.verifyRemoteCachedAndRemember(
+    const outcome = try proof.OpenTimestampsVerifier.verifyRemoteCachedAndRemember(
         http.client(),
         proof_store.asStore(),
         verification_store.asStore(),
@@ -58,7 +60,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expectEqual(@as(u32, 1), outcome.verified.verification.verification.attestation.target_kind);
     try std.testing.expectEqualStrings("https://proof.example/hello.ots", outcome.verified.verification.proof_url);
 
-    const cached = try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.verifyRemoteCached(
+    const cached = try proof.OpenTimestampsVerifier.verifyRemoteCached(
         http.client(),
         proof_store.asStore(),
         &.{
@@ -70,8 +72,8 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
     try std.testing.expect(cached == .verified);
 
-    var latest_matches: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    const latest = (try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.getLatestStoredVerification(
+    var latest_matches: [2]Planning.Match = undefined;
+    const latest = (try proof.OpenTimestampsVerifier.getLatestStoredVerification(
         verification_store.asStore(),
         .{
             .target_event_id = &target.id,
@@ -80,9 +82,9 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     )).?;
     try std.testing.expectEqualStrings("https://proof.example/hello.ots", latest.proofUrl());
 
-    var latest_freshness_matches: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_freshness_matches: [2]Planning.Match = undefined;
     const latest_freshness =
-        (try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
+        (try proof.OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
             verification_store.asStore(),
             .{
                 .target_event_id = &target.id,
@@ -92,20 +94,20 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
             },
         )).?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationFreshness.fresh,
+        Planning.Freshness.fresh,
         latest_freshness.freshness,
     );
     try std.testing.expectEqual(@as(u64, 60), latest_freshness.age_seconds);
 
-    var preferred_matches: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var preferred_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
-    const preferred = (try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerification(
+    var preferred_matches: [2]Planning.Match = undefined;
+    var preferred_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
+    const preferred = (try proof.OpenTimestampsVerifier.getPreferredStoredVerification(
         verification_store.asStore(),
         .{
             .target_event_id = &target.id,
             .now_unix_seconds = 62,
             .max_age_seconds = 120,
-            .storage = noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessStorage.init(
+            .storage = Planning.DiscoveryFreshnessStorage.init(
                 preferred_matches[0..],
                 preferred_entries[0..],
             ),
@@ -113,21 +115,21 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         },
     )).?;
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationFreshness.fresh,
+        Planning.Freshness.fresh,
         preferred.freshness,
     );
     try std.testing.expectEqual(@as(u64, 60), preferred.age_seconds);
 
-    var freshness_matches: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var freshness_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
+    var freshness_matches: [2]Planning.Match = undefined;
+    var freshness_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
     const discovered_with_freshness =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
+        try proof.OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
             verification_store.asStore(),
             .{
                 .target_event_id = &target.id,
                 .now_unix_seconds = 62,
                 .max_age_seconds = 120,
-                .storage = noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessStorage.init(
+                .storage = Planning.DiscoveryFreshnessStorage.init(
                     freshness_matches[0..],
                     freshness_entries[0..],
                 ),
@@ -135,34 +137,34 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         );
     try std.testing.expectEqual(@as(usize, 1), discovered_with_freshness.len);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationFreshness.fresh,
+        Planning.Freshness.fresh,
         discovered_with_freshness[0].freshness,
     );
     try std.testing.expectEqual(@as(u64, 60), discovered_with_freshness[0].age_seconds);
 
-    var runtime_matches: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var runtime_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
-    const runtime = try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
+    var runtime_matches: [2]Planning.Match = undefined;
+    var runtime_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
+    const runtime = try proof.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
         verification_store.asStore(),
         .{
             .target_event_id = &target.id,
             .now_unix_seconds = 62,
             .max_age_seconds = 120,
-            .storage = noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeStorage.init(
+            .storage = Planning.RuntimeStorage.init(
                 runtime_matches[0..],
                 runtime_entries[0..],
             ),
         },
     );
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeAction.use_preferred,
+        Planning.RuntimeAction.use_preferred,
         runtime.action,
     );
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
     const next_step = runtime.nextStep();
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRuntimeAction.use_preferred,
+        Planning.RuntimeAction.use_preferred,
         next_step.action,
     );
     const next_entry = next_step.entry.?;
@@ -175,10 +177,10 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         next_entry.entry.verification.proofUrl(),
     );
 
-    var refresh_matches: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var refresh_freshness_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
-    var refresh_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshEntry = undefined;
-    const refresh_plan = try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefresh(
+    var refresh_matches: [2]Planning.Match = undefined;
+    var refresh_freshness_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
+    var refresh_entries: [2]Planning.RefreshEntry = undefined;
+    const refresh_plan = try proof.OpenTimestampsVerifier.planStoredVerificationRefresh(
         verification_store.asStore(),
         .{
             .target_event_id = &target.id,
@@ -201,14 +203,14 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         refresh_plan.nextStep().?.entry.entry.entry.verification.proofUrl(),
     );
 
-    const grouped_targets = [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTarget{
+    const grouped_targets = [_]Planning.Target{
         .{ .target_event_id = target.id },
         .{ .target_event_id = [_]u8{0x99} ** 32 },
     };
-    var grouped_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_latest_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
+    var grouped_matches: [1]Planning.Match = undefined;
+    var grouped_latest_entries: [2]Planning.LatestTargetEntry = undefined;
     const grouped_latest =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+        try proof.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -219,16 +221,16 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         );
     try std.testing.expectEqual(@as(usize, 2), grouped_latest.len);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationFreshness.fresh,
+        Planning.Freshness.fresh,
         grouped_latest[0].latest.?.freshness,
     );
     try std.testing.expect(grouped_latest[1].latest == null);
 
-    var grouped_preferred_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_preferred_freshness: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = undefined;
-    var grouped_preferred_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsPreferredStoredVerificationTargetEntry = undefined;
+    var grouped_preferred_matches: [1]Planning.Match = undefined;
+    var grouped_preferred_freshness: [1]Planning.DiscoveryFreshnessEntry = undefined;
+    var grouped_preferred_entries: [2]Planning.PreferredTargetEntry = undefined;
     const grouped_preferred =
-        (try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        (try proof.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -243,12 +245,12 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     )).?;
     try std.testing.expectEqualSlices(u8, &target.id, &grouped_preferred.target.target_event_id);
 
-    var grouped_policy_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_policy_latest: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
-    var grouped_policy_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyEntry = undefined;
-    var grouped_policy_groups: [4]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyGroup = undefined;
+    var grouped_policy_matches: [1]Planning.Match = undefined;
+    var grouped_policy_latest: [2]Planning.LatestTargetEntry = undefined;
+    var grouped_policy_entries: [2]Planning.TargetPolicyEntry = undefined;
+    var grouped_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
     const grouped_policy =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+        try proof.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -277,12 +279,12 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         &grouped_policy.usablePreferredEntries()[0].target.target_event_id,
     );
 
-    var grouped_cadence_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_cadence_latest: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
-    var grouped_cadence_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
-    var grouped_cadence_groups: [5]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    var grouped_cadence_matches: [1]Planning.Match = undefined;
+    var grouped_cadence_latest: [2]Planning.LatestTargetEntry = undefined;
+    var grouped_cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var grouped_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
     const grouped_cadence =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -313,12 +315,12 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         &grouped_cadence.refreshSoonEntries()[0].target.target_event_id,
     );
 
-    var grouped_batch_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_batch_latest: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
-    var grouped_batch_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
-    var grouped_batch_groups: [5]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
+    var grouped_batch_matches: [1]Planning.Match = undefined;
+    var grouped_batch_latest: [2]Planning.LatestTargetEntry = undefined;
+    var grouped_batch_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var grouped_batch_groups: [5]Planning.TargetCadenceGroup = undefined;
     const grouped_batch =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+        try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -347,14 +349,14 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         &grouped_batch.deferredEntries()[0].target.target_event_id,
     );
 
-    var grouped_turn_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_turn_latest: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
-    var grouped_turn_cadence_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = undefined;
-    var grouped_turn_cadence_groups: [5]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = undefined;
-    var grouped_turn_entries: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyEntry = undefined;
-    var grouped_turn_groups: [4]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyGroup = undefined;
+    var grouped_turn_matches: [1]Planning.Match = undefined;
+    var grouped_turn_latest: [2]Planning.LatestTargetEntry = undefined;
+    var grouped_turn_cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var grouped_turn_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var grouped_turn_entries: [2]Planning.TargetTurnPolicyEntry = undefined;
+    var grouped_turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
     const grouped_turn =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        try proof.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -382,12 +384,12 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         &grouped_turn.nextWorkStep().?.entry.target.target_event_id,
     );
 
-    var grouped_refresh_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var grouped_refresh_freshness: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
-    const grouped_refresh_entries = [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshEntry{};
-    var grouped_refresh_targets: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    var grouped_refresh_matches: [1]Planning.Match = undefined;
+    var grouped_refresh_freshness: [2]Planning.LatestTargetEntry = undefined;
+    const grouped_refresh_entries = [_]Planning.RefreshEntry{};
+    var grouped_refresh_targets: [1]Planning.TargetRefreshEntry = undefined;
     const grouped_refresh =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+        try proof.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -424,19 +426,19 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
     try archive.ingestEventJson(attestation_json, arena.allocator());
 
-    const readiness_targets = [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTarget{
+    const readiness_targets = [_]Planning.Target{
         .{ .target_event_id = target.id },
     };
-    var readiness_matches: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationMatch = undefined;
-    var readiness_latest_entries: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsLatestStoredVerificationTargetEntry = undefined;
-    const readiness_refresh_entries = [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRefreshEntry{};
-    var readiness_target_refresh_entries: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshEntry = undefined;
+    var readiness_matches: [1]Planning.Match = undefined;
+    var readiness_latest_entries: [1]Planning.LatestTargetEntry = undefined;
+    const readiness_refresh_entries = [_]Planning.RefreshEntry{};
+    var readiness_target_refresh_entries: [1]Planning.TargetRefreshEntry = undefined;
     var readiness_target_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var readiness_attestation_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
-    var readiness_entries: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = undefined;
-    var readiness_groups: [4]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = undefined;
+    var readiness_entries: [1]Planning.TargetReadinessEntry = undefined;
+    var readiness_groups: [4]Planning.TargetReadinessGroup = undefined;
     const readiness =
-        try noztr_sdk.workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
             verification_store.asStore(),
             archive,
             .{
