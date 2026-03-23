@@ -32,6 +32,11 @@ pub const MixedDmObservedReplyRef = struct {
     relay_hint: ?[]const u8 = null,
 };
 
+pub const MixedDmObservedMessageIdentity = struct {
+    protocol: MixedDmProtocol,
+    event_id: [32]u8,
+};
+
 pub const MixedDmObservedMailboxDirectMessage = struct {
     wrap_event_id: [32]u8,
     rumor_event_id: [32]u8,
@@ -83,6 +88,13 @@ pub const MixedDmObservedMessage = union(enum) {
             .mailbox_direct_message => |message| message.wrap_event_id,
             .mailbox_file_message => |message| message.wrap_event_id,
             .legacy_direct_message => |message| message.event_id,
+        };
+    }
+
+    pub fn identity(self: *const MixedDmObservedMessage) MixedDmObservedMessageIdentity {
+        return .{
+            .protocol = self.protocol(),
+            .event_id = self.eventId(),
         };
     }
 
@@ -196,6 +208,78 @@ pub const MixedDmRememberedReplyRoute = struct {
     route: MixedDmReplyRoute,
     sender_protocol: MixedDmProtocol,
     remembered: bool,
+};
+
+pub const MixedDmDedupRecord = struct {
+    occupied: bool = false,
+    identity: MixedDmObservedMessageIdentity = .{
+        .protocol = .legacy,
+        .event_id = [_]u8{0} ** 32,
+    },
+    last_seen_at: u64 = 0,
+};
+
+pub const MixedDmDedupResult = enum {
+    first_seen,
+    duplicate,
+};
+
+pub const MixedDmDedupMemory = struct {
+    records: []MixedDmDedupRecord,
+
+    pub fn init(records: []MixedDmDedupRecord) MixedDmDedupMemory {
+        for (records) |*record| record.* = .{};
+        return .{ .records = records };
+    }
+
+    pub fn hasSeen(
+        self: *const MixedDmDedupMemory,
+        identity: *const MixedDmObservedMessageIdentity,
+    ) bool {
+        for (self.records) |record| {
+            if (!record.occupied) continue;
+            if (record.identity.protocol != identity.protocol) continue;
+            if (std.mem.eql(u8, &record.identity.event_id, &identity.event_id)) return true;
+        }
+        return false;
+    }
+
+    pub fn note(
+        self: *MixedDmDedupMemory,
+        identity: *const MixedDmObservedMessageIdentity,
+        seen_at: u64,
+    ) MixedDmDedupResult {
+        var first_free: ?usize = null;
+        var oldest_index: usize = 0;
+        var oldest_found = false;
+
+        for (self.records, 0..) |*record, index| {
+            if (!record.occupied) {
+                if (first_free == null) first_free = index;
+                continue;
+            }
+
+            if (record.identity.protocol == identity.protocol and
+                std.mem.eql(u8, &record.identity.event_id, &identity.event_id))
+            {
+                if (seen_at >= record.last_seen_at) record.last_seen_at = seen_at;
+                return .duplicate;
+            }
+
+            if (!oldest_found or record.last_seen_at < self.records[oldest_index].last_seen_at) {
+                oldest_index = index;
+                oldest_found = true;
+            }
+        }
+
+        const target_index = first_free orelse oldest_index;
+        self.records[target_index] = .{
+            .occupied = true,
+            .identity = identity.*,
+            .last_seen_at = seen_at,
+        };
+        return .first_seen;
+    }
 };
 
 pub const MixedDmClient = struct {
@@ -355,6 +439,31 @@ pub const MixedDmClient = struct {
             .sender_protocol = sender_protocol,
             .remembered = remembered_protocol != null,
         };
+    }
+
+    pub fn identifyObservedMessage(
+        _: MixedDmClient,
+        observation: *const MixedDmObservedMessage,
+    ) MixedDmObservedMessageIdentity {
+        return observation.identity();
+    }
+
+    pub fn hasSeenObservedMessage(
+        _: MixedDmClient,
+        memory: *const MixedDmDedupMemory,
+        observation: *const MixedDmObservedMessage,
+    ) bool {
+        const identity = observation.identity();
+        return memory.hasSeen(&identity);
+    }
+
+    pub fn noteObservedMessage(
+        _: MixedDmClient,
+        memory: *MixedDmDedupMemory,
+        observation: *const MixedDmObservedMessage,
+    ) MixedDmDedupResult {
+        const identity = observation.identity();
+        return memory.note(&identity, observation.createdAt());
     }
 };
 
@@ -671,4 +780,52 @@ test "mixed dm client keeps caller-owned sender protocol memory bounded and expl
     const replacement_peer = [_]u8{0x44} ** 32;
     client.rememberSenderProtocol(&memory, &replacement_peer, .mailbox, 50);
     try std.testing.expect(client.inspectRememberedSenderProtocol(&memory, &peer_mailbox) == null);
+}
+
+test "mixed dm client dedupes observed mailbox and legacy messages without owning inbox state" {
+    var storage = MixedDmClientStorage{};
+    const client = MixedDmClient.init(.{}, &storage);
+
+    const mailbox_observation: MixedDmObservedMessage = .{
+        .mailbox_direct_message = .{
+            .wrap_event_id = [_]u8{0x11} ** 32,
+            .rumor_event_id = [_]u8{0x12} ** 32,
+            .sender_pubkey = [_]u8{0x21} ** 32,
+            .recipient_pubkey = [_]u8{0x22} ** 32,
+            .recipient_count = 1,
+            .created_at = 100,
+            .content = "mailbox",
+        },
+    };
+    const legacy_observation: MixedDmObservedMessage = .{
+        .legacy_direct_message = .{
+            .event_id = [_]u8{0x31} ** 32,
+            .sender_pubkey = [_]u8{0x41} ** 32,
+            .recipient_pubkey = [_]u8{0x42} ** 32,
+            .created_at = 101,
+            .content = "legacy",
+        },
+    };
+
+    var records: [2]MixedDmDedupRecord = undefined;
+    var memory = MixedDmDedupMemory.init(records[0..]);
+
+    try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&memory, &mailbox_observation));
+    try std.testing.expect(client.hasSeenObservedMessage(&memory, &mailbox_observation));
+    try std.testing.expectEqual(.duplicate, client.noteObservedMessage(&memory, &mailbox_observation));
+    try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&memory, &legacy_observation));
+
+    const replacement: MixedDmObservedMessage = .{
+        .mailbox_direct_message = .{
+            .wrap_event_id = [_]u8{0x51} ** 32,
+            .rumor_event_id = [_]u8{0x52} ** 32,
+            .sender_pubkey = [_]u8{0x61} ** 32,
+            .recipient_pubkey = [_]u8{0x62} ** 32,
+            .recipient_count = 1,
+            .created_at = 90,
+            .content = "replacement",
+        },
+    };
+    try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&memory, &replacement));
+    try std.testing.expect(!client.hasSeenObservedMessage(&memory, &mailbox_observation));
 }

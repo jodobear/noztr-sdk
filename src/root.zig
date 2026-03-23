@@ -155,6 +155,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmReplyRouteReason) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmReplyRoute) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedReplyRef) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedMessageIdentity) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedMailboxDirectMessage) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedMailboxFileMessage) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedLegacyDirectMessage) == type);
@@ -163,6 +164,9 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmSenderProtocolMemory) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmRememberedReplyRequest) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmRememberedReplyRoute) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDedupRecord) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDedupMemory) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDedupResult) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientError) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientConfig) == type);

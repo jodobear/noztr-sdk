@@ -653,15 +653,18 @@ They do not imply:
 - `mixed_dm_client_recipe.zig`
   - goal: normalize one mailbox and one legacy inbound DM explicitly, then select one reply route
     over the mixed-DM facade, remember one sender protocol explicitly, and reuse that memory for
-    later replies instead of hand-stitching protocol checks in app code
+    later replies, then dedupe one observed message explicitly instead of hand-stitching protocol
+    checks and replay/live duplicate suppression in app code
   - related SDK symbols: `noztr_sdk.client.dm.mixed`, `MixedDmClient`, `MixedDmClientStorage`,
     `MixedDmProtocol`, `MixedDmReplyPolicy`, `MixedDmReplyRoute`,
-    `MixedDmSenderProtocolMemory`, `MixedDmRememberedReplyRoute`, `MixedDmObservedMessage`
+    `MixedDmSenderProtocolMemory`, `MixedDmRememberedReplyRoute`, `MixedDmDedupMemory`,
+    `MixedDmDedupResult`, `MixedDmObservedMessage`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
   - control points: mailbox and legacy intake still route through their existing workflow floors,
     the mixed layer only normalizes observed inbound message shape, keeps sender-protocol memory
-    caller-owned and bounded, routes reply selection back through explicit policy, and does not
-    invent a hidden inbox runtime, unread policy, or conversation model
+    caller-owned and bounded, keeps replay/live dedup caller-owned and bounded, routes reply
+    selection back through explicit policy, and does not invent a hidden inbox runtime, unread
+    policy, or conversation model
 - `legacy_dm_publish_job_client_recipe.zig`
   - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmPublishJobClient`,

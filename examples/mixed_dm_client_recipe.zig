@@ -107,4 +107,9 @@ test "recipe: mixed dm client normalizes mailbox and legacy intake and keeps rep
     });
     try std.testing.expect(remembered.remembered);
     try std.testing.expectEqual(.mailbox, remembered.route.protocol);
+
+    var dedup_records: [4]noztr_sdk.client.dm.mixed.MixedDmDedupRecord = undefined;
+    var dedup = noztr_sdk.client.dm.mixed.MixedDmDedupMemory.init(dedup_records[0..]);
+    try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&dedup, &mailbox_observation));
+    try std.testing.expectEqual(.duplicate, client.noteObservedMessage(&dedup, &mailbox_observation));
 }
