@@ -28,8 +28,9 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
         lookup_url_buffer[0..],
         body_buffer[0..],
     );
-    var remembered_records: [2]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = noztr_sdk.workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(
+    const workflow_planning = noztr_sdk.workflows.identity.nip05.Planning;
+    var remembered_records: [2]workflow_planning.Store.Record = undefined;
+    var remembered_store = workflow_planning.Store.Memory.init(
         remembered_records[0..],
     );
     const job = client.prepareVerifyJob(
@@ -42,7 +43,7 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
 
     try std.testing.expect(result == .verified);
     try std.testing.expectEqual(
-        noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.StorePutOutcome.stored,
+        noztr_sdk.client.identity.nip05.Planning.Store.PutOutcome.stored,
         (try client.rememberVerifyOutcome(
             remembered_store.asStore(),
             &result,
@@ -55,19 +56,19 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
     );
     try std.testing.expectEqual(@as(usize, 1), result.verified.profile.relays.len);
 
-    const targets = [_]noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.Target{
+    const targets = [_]noztr_sdk.client.identity.nip05.Planning.Target{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.LatestTargetEntry = undefined;
-    var refresh_entries: [2]noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.RefreshEntry = undefined;
-    const plan = try client.planRememberedResolutionRefreshForTargets(
+    var latest_entries: [2]noztr_sdk.client.identity.nip05.Planning.Latest.Entry = undefined;
+    var refresh_entries: [2]noztr_sdk.client.identity.nip05.Planning.Refresh.Entry = undefined;
+    const plan = try client.planRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.identity.nip05.Nip05RememberedResolutionPlanning.RefreshStorage.init(
+            .storage = noztr_sdk.client.identity.nip05.Planning.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

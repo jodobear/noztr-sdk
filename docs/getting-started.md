@@ -134,7 +134,7 @@ longer names:
 
 - [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
 - [remote signer naming migration](./reference/remote-signer-naming-migration.md)
-- [proof and identity planning migration](./reference/proof-identity-planning-migration.md)
+- [proof, identity, and NIP-05 planning migration](./reference/proof-identity-planning-migration.md)
 - [examples filename migration](./reference/examples-filename-migration.md)
 - [noztr-core rc4 migration](./reference/noztr-core-rc4-migration.md)
 

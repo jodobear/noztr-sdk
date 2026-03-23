@@ -1,164 +1,46 @@
 ---
-title: Proof And Identity Planning Migration
+title: Proof, Identity, And NIP-05 Planning Migration
 doc_type: reference
 status: active
 owner: noztr-sdk
 read_when:
-  - migrating_pre_1_0_nip03_nip39_client_planning_imports
+  - migrating_pre_1_0_proof_identity_nip05_planning_imports
 ---
 
-# Proof And Identity Planning Migration
+# Proof, Identity, And NIP-05 Planning Migration
 
-This is the current pre-`1.0` breaking cleanup for the client-facing:
+This is the current pre-`1.0` breaking cleanup for the client-facing and workflow-facing planning
+families in:
 
 - `noztr_sdk.client.proof.nip03.*`
 - `noztr_sdk.client.identity.nip39.*`
+- `noztr_sdk.client.identity.nip05.*`
+- `noztr_sdk.workflows.proof.nip03.*`
+- `noztr_sdk.workflows.identity.verify.*`
+- `noztr_sdk.workflows.identity.nip05.*`
 
-The grouped routes stayed the same. The cleanup shortens the planning families inside those routes
-so the namespace carries more of the context and the route-internal names stay role-focused.
+The grouped routes stayed the same. The cleanup is inside those routes:
 
-## `NIP-03` Client Planning
+- replace flat alias walls with nested planning groups
+- keep the route carrying the domain context
+- keep the remaining local names role-focused
 
-### Renamed Type Family
+## Canonical Planning Routes
 
-| Old name | Canonical name |
-| --- | --- |
-| `Nip03StoredVerificationPlanning` | `Planning` |
-| `TargetRefreshReadinessAction` | `TargetReadinessAction` |
-| `TargetRefreshReadinessEntry` | `TargetReadinessEntry` |
-| `TargetRefreshReadinessGroup` | `TargetReadinessGroup` |
-| `TargetRefreshReadinessStorage` | `TargetReadinessStorage` |
-| `TargetRefreshReadinessRequest` | `TargetReadinessRequest` |
-| `TargetRefreshReadinessPlan` | `TargetReadinessPlan` |
-| `TargetRefreshReadinessStep` | `TargetReadinessStep` |
-| `TargetRefreshCadenceAction` | `TargetCadenceAction` |
-| `TargetRefreshCadenceEntry` | `TargetCadenceEntry` |
-| `TargetRefreshCadenceGroup` | `TargetCadenceGroup` |
-| `TargetRefreshCadenceStorage` | `TargetCadenceStorage` |
-| `TargetRefreshCadenceRequest` | `TargetCadenceRequest` |
-| `TargetRefreshCadencePlan` | `TargetCadencePlan` |
-| `TargetRefreshCadenceStep` | `TargetCadenceStep` |
-| `TargetRefreshBatchStorage` | `TargetBatchStorage` |
-| `TargetRefreshBatchRequest` | `TargetBatchRequest` |
-| `TargetRefreshBatchPlan` | `TargetBatchPlan` |
-| `TargetRefreshBatchStep` | `TargetBatchStep` |
+Use these grouped planning routes directly:
 
-### Renamed Client Methods
+```zig
+const proof = noztr_sdk.client.proof.nip03;
+const ProofPlanning = proof.Planning;
 
-| Old method | Canonical method |
-| --- | --- |
-| `getLatestStoredVerificationFreshness` | `getLatestFreshness` |
-| `discoverLatestStoredVerificationFreshnessForTargets` | `discoverLatestForTargets` |
-| `getPreferredStoredVerification` | `getPreferred` |
-| `getPreferredStoredVerificationForTargets` | `getPreferredForTargets` |
-| `inspectStoredVerificationRuntime` | `inspectRuntime` |
-| `planStoredVerificationRefresh` | `planRefresh` |
-| `planStoredVerificationRefreshForTargets` | `planTargetRefresh` |
-| `inspectStoredVerificationRefreshReadinessForTargets` | `inspectTargetReadiness` |
-| `inspectStoredVerificationPolicyForTargets` | `inspectTargetPolicy` |
-| `inspectStoredVerificationRefreshCadenceForTargets` | `inspectTargetCadence` |
-| `inspectStoredVerificationRefreshBatchForTargets` | `inspectTargetBatch` |
-| `inspectStoredVerificationTurnPolicyForTargets` | `inspectTargetTurnPolicy` |
+const identity = noztr_sdk.client.identity.nip39;
+const IdentityPlanning = identity.Planning;
 
-## `NIP-39` Client Planning
+const nip05 = noztr_sdk.client.identity.nip05;
+const Nip05Planning = nip05.Planning;
+```
 
-### Renamed Type Family
-
-| Old name | Canonical name |
-| --- | --- |
-| `Nip39StoredProfilePlanning` | `Planning` |
-| `TargetLatestFreshnessEntry` | `TargetLatestEntry` |
-| `TargetLatestFreshnessStorage` | `TargetLatestStorage` |
-| `TargetLatestFreshnessRequest` | `TargetLatestRequest` |
-| `RememberedIdentityLatestFreshnessStorage` | `RememberedLatestStorage` |
-| `RememberedIdentityLatestFreshnessRequest` | `RememberedLatestRequest` |
-| `RememberedIdentityLatestFreshnessPlan` | `RememberedLatestPlan` |
-| `TargetRefreshCadenceAction` | `TargetCadenceAction` |
-| `TargetRefreshCadenceEntry` | `TargetCadenceEntry` |
-| `TargetRefreshCadenceGroup` | `TargetCadenceGroup` |
-| `TargetRefreshCadenceStorage` | `TargetCadenceStorage` |
-| `TargetRefreshCadenceRequest` | `TargetCadenceRequest` |
-| `TargetRefreshCadencePlan` | `TargetCadencePlan` |
-| `TargetRefreshCadenceStep` | `TargetCadenceStep` |
-| `RememberedIdentityRefreshCadenceStorage` | `RememberedCadenceStorage` |
-| `RememberedIdentityRefreshCadenceRequest` | `RememberedCadenceRequest` |
-| `RememberedIdentityRefreshCadencePlan` | `RememberedCadencePlan` |
-| `TargetRefreshBatchStorage` | `TargetBatchStorage` |
-| `TargetRefreshBatchRequest` | `TargetBatchRequest` |
-| `TargetRefreshBatchPlan` | `TargetBatchPlan` |
-| `TargetRefreshBatchStep` | `TargetBatchStep` |
-| `RememberedIdentityRefreshBatchStorage` | `RememberedBatchStorage` |
-| `RememberedIdentityRefreshBatchRequest` | `RememberedBatchRequest` |
-| `RememberedIdentityRefreshBatchPlan` | `RememberedBatchPlan` |
-| `StoredWatchedTargetPolicyError` | `WatchedPolicyError` |
-| `StoredWatchedTargetPolicyStorage` | `WatchedPolicyStorage` |
-| `StoredWatchedTargetPolicyRequest` | `WatchedPolicyRequest` |
-| `StoredWatchedTargetPolicyPlan` | `WatchedPolicyPlan` |
-| `StoredWatchedTargetRefreshCadenceError` | `WatchedCadenceError` |
-| `StoredWatchedTargetRefreshCadenceStorage` | `WatchedCadenceStorage` |
-| `StoredWatchedTargetRefreshCadenceRequest` | `WatchedCadenceRequest` |
-| `StoredWatchedTargetRefreshCadencePlan` | `WatchedCadencePlan` |
-| `StoredWatchedTargetRefreshBatchError` | `WatchedBatchError` |
-| `StoredWatchedTargetRefreshBatchStorage` | `WatchedBatchStorage` |
-| `StoredWatchedTargetRefreshBatchRequest` | `WatchedBatchRequest` |
-| `StoredWatchedTargetRefreshBatchPlan` | `WatchedBatchPlan` |
-| `StoredWatchedTargetOrchestrationError` | `WatchedOrchestrationError` |
-| `StoredWatchedTargetOrchestrationStorage` | `WatchedOrchestrationStorage` |
-| `StoredWatchedTargetOrchestrationRequest` | `WatchedOrchestrationRequest` |
-| `StoredWatchedTargetOrchestrationPlan` | `WatchedOrchestrationPlan` |
-| `StoredWatchedTargetTurnPolicyError` | `WatchedTurnPolicyError` |
-| `StoredWatchedTargetTurnPolicyStorage` | `WatchedTurnPolicyStorage` |
-| `StoredWatchedTargetTurnPolicyRequest` | `WatchedTurnPolicyRequest` |
-| `StoredWatchedTargetTurnPolicyPlan` | `WatchedTurnPolicyPlan` |
-
-### Renamed Client Methods
-
-| Old method | Canonical method |
-| --- | --- |
-| `discoverStoredProfileEntriesForTargets` | `discoverTargets` |
-| `discoverStoredProfileEntriesWithFreshnessForTargets` | `discoverTargetsWithFreshness` |
-| `inspectLatestStoredProfileFreshnessForTargets` | `inspectTargetLatest` |
-| `inspectRememberedIdentityLatestFreshness` | `inspectRememberedLatest` |
-| `getPreferredStoredProfilesForTargets` | `getPreferredForTargets` |
-| `getPreferredStoredProfileForTargets` | `getPreferredTarget` |
-| `planStoredProfileRefreshForTargets` | `planTargetRefresh` |
-| `inspectStoredProfileRuntimeForTargets` | `inspectTargetRuntime` |
-| `inspectStoredProfilePolicyForTargets` | `inspectTargetPolicy` |
-| `inspectStoredProfileRefreshCadenceForTargets` | `inspectTargetCadence` |
-| `inspectStoredProfileRefreshBatchForTargets` | `inspectTargetBatch` |
-| `inspectStoredProfileTurnPolicyForTargets` | `inspectTargetTurnPolicy` |
-| `inspectStoredWatchedTargetPolicy` | `inspectWatchedPolicy` |
-| `inspectStoredWatchedTargetRefreshCadence` | `inspectWatchedCadence` |
-| `inspectRememberedIdentityRefreshCadence` | `inspectRememberedCadence` |
-| `inspectStoredWatchedTargetRefreshBatch` | `inspectWatchedBatch` |
-| `inspectRememberedIdentityRefreshBatch` | `inspectRememberedBatch` |
-| `inspectStoredWatchedTargetTurnPolicy` | `inspectWatchedTurnPolicy` |
-| `inspectStoredWatchedTargetOrchestration` | `inspectWatchedOrchestration` |
-
-## Reason
-
-The grouped routes already carry:
-
-- proof versus identity
-- `NIP-03` versus `NIP-39`
-- verify client versus lower workflow floors
-
-The older client-facing names kept restating too much of that route in every planning type and
-method name. This cleanup keeps the grouped routes stable and shortens the remaining names to the
-role that matters at the client layer.
-
-## Canonical Workflow Planning Route
-
-The follow-on workflow-support cleanup keeps the grouped workflow planning route as the canonical
-entry point for proof and identity planning families:
-
-- `noztr_sdk.workflows.proof.nip03.Planning`
-- `noztr_sdk.workflows.identity.verify.Planning`
-
-Use those grouped planning routes directly in downstream workflows, recipes, and examples instead
-of spelling long raw workflow type paths in every import site.
-
-Typical pattern:
+Workflow-floor grouped planning routes are the same shape:
 
 ```zig
 const proof = noztr_sdk.workflows.proof.nip03;
@@ -166,11 +48,126 @@ const ProofPlanning = proof.Planning;
 
 const identity = noztr_sdk.workflows.identity.verify;
 const IdentityPlanning = identity.Planning;
+
+const nip05 = noztr_sdk.workflows.identity.nip05;
+const Nip05Planning = nip05.Planning;
 ```
 
-This follow-on does not introduce a second public migration file because it continues the same
-pre-`1.0` cleanup direction:
+## `NIP-03` Planning Shape
 
-- grouped route stays canonical
-- route-internal names stay shorter
-- dependent recipes and docs should teach the grouped planning route directly
+Old flat names like:
+
+- `Planning.LatestTargetRequest`
+- `Planning.PreferredTargetEntry`
+- `Planning.TargetReadinessRequest`
+- `Planning.TargetCadencePlan`
+- `Planning.TargetTurnPolicyPlan`
+
+now live under grouped families:
+
+- `Planning.Stored.*`
+- `Planning.Latest.*`
+- `Planning.Preferred.*`
+- `Planning.Runtime.*`
+- `Planning.Refresh.*`
+- `Planning.TargetRefresh.*`
+- `Planning.Readiness.*`
+- `Planning.Policy.*`
+- `Planning.Cadence.*`
+- `Planning.Batch.*`
+- `Planning.Turn.*`
+
+Examples:
+
+- `Planning.LatestTargetRequest` -> `Planning.Latest.Request`
+- `Planning.PreferredTargetEntry` -> `Planning.Preferred.Entry`
+- `Planning.TargetReadinessPlan` -> `Planning.Readiness.Plan`
+- `Planning.TargetCadenceStorage` -> `Planning.Cadence.Storage`
+- `Planning.TargetTurnPolicyRequest` -> `Planning.Turn.Request`
+
+## `NIP-39` Planning Shape
+
+Old flat names like:
+
+- `Planning.TargetDiscoveryRequest`
+- `Planning.StoredProfileDiscoveryFreshnessEntry`
+- `Planning.TargetLatestRequest`
+- `Planning.PreferredTargetSelectionRequest`
+- `Planning.RememberedCadencePlan`
+- `Planning.WatchedOrchestrationPlan`
+
+now live under grouped families:
+
+- `Planning.Match`
+- `Planning.Record.*`
+- `Planning.Stored.*`
+- `Planning.Target`
+- `Planning.Discovery.*`
+- `Planning.DiscoveryFresh.*`
+- `Planning.Latest.*`
+- `Planning.Preferred.*`
+- `Planning.Refresh.*`
+- `Planning.Runtime.*`
+- `Planning.Policy.*`
+- `Planning.Cadence.*`
+- `Planning.Batch.*`
+- `Planning.Turn.*`
+- `Planning.Remembered.*`
+- `Planning.Watched.*`
+
+Examples:
+
+- `Planning.TargetDiscoveryRequest` -> `Planning.Discovery.Request`
+- `Planning.StoredProfileDiscoveryFreshnessEntry` -> `Planning.Stored.FreshEntry`
+- `Planning.TargetLatestRequest` -> `Planning.Latest.Request`
+- `Planning.PreferredTargetSelectionRequest` -> `Planning.Preferred.EntriesRequest`
+- `Planning.RememberedCadencePlan` -> `Planning.Remembered.Cadence.Plan`
+- `Planning.WatchedOrchestrationPlan` -> `Planning.Watched.Orchestration.Plan`
+
+## `NIP-05` Planning Shape
+
+The old one-off client-side `Nip05RememberedResolutionPlanning` facade is gone.
+
+Use:
+
+- `noztr_sdk.client.identity.nip05.Planning`
+- `noztr_sdk.workflows.identity.nip05.Planning`
+
+The grouped family is now:
+
+- `Planning.Store.*`
+- `Planning.Target`
+- `Planning.Latest.*`
+- `Planning.Refresh.*`
+
+Examples:
+
+- `Nip05RememberedResolutionPlanning.StorePutOutcome` -> `Planning.Store.PutOutcome`
+- `Nip05RememberedResolutionPlanning.Record` -> `Planning.Store.Record`
+- `Nip05RememberedResolutionPlanning.LatestTargetRequest` -> `Planning.Latest.Request`
+- `Nip05RememberedResolutionPlanning.RefreshPlan` -> `Planning.Refresh.Plan`
+
+## `NIP-05` Method Renames
+
+The resolver/client route already carries the NIP-05 remembered-resolution context, so the longer
+method names were shortened too:
+
+- `inspectLatestRememberedResolutionFreshnessForTargets` -> `inspectLatestForTargets`
+- `planRememberedResolutionRefreshForTargets` -> `planRefreshForTargets`
+
+This applies to both:
+
+- `noztr_sdk.workflows.identity.nip05.Nip05Resolver`
+- `noztr_sdk.client.identity.nip05.Nip05VerifyClient`
+
+## Reason
+
+The grouped routes already carry:
+
+- proof versus identity
+- `NIP-03` versus `NIP-39` versus `NIP-05`
+- client versus workflow floor
+
+The old shape kept restating too much of that context in every request, plan, storage, and entry
+name. This cleanup keeps the grouped routes stable and moves the remaining names toward the
+shortest sensible role-based shape inside each route.

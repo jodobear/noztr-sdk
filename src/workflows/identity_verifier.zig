@@ -2162,89 +2162,180 @@ pub const IdentityRememberedProfileVerificationError =
 pub const IdentityStoredProfileDiscoveryError = IdentityProfileStoreError || error{BufferTooSmall};
 
 pub const Planning = struct {
-    pub const ProfileMatch = IdentityProfileMatch;
-    pub const RememberedIdentityRecord = IdentityRememberedIdentityRecord;
-    pub const WatchedTargetRecord = IdentityWatchedTargetRecord;
-    pub const StoredProfileDiscoveryEntry = IdentityStoredProfileDiscoveryEntry;
-    pub const StoredProfileFreshness = IdentityStoredProfileFreshness;
-    pub const StoredProfileFallbackPolicy = IdentityStoredProfileFallbackPolicy;
-    pub const StoredProfileDiscoveryFreshnessEntry = IdentityStoredProfileDiscoveryFreshnessEntry;
+    pub const Match = IdentityProfileMatch;
+
+    pub const Record = struct {
+        pub const Remembered = IdentityRememberedIdentityRecord;
+        pub const Watched = IdentityWatchedTargetRecord;
+    };
+
+    pub const Stored = struct {
+        pub const Entry = IdentityStoredProfileDiscoveryEntry;
+        pub const Freshness = IdentityStoredProfileFreshness;
+        pub const FallbackPolicy = IdentityStoredProfileFallbackPolicy;
+        pub const FreshEntry = IdentityStoredProfileDiscoveryFreshnessEntry;
+
+        pub const Discovery = struct {
+            pub const Storage = IdentityStoredProfileDiscoveryStorage;
+            pub const Request = IdentityStoredProfileDiscoveryRequest;
+        };
+
+        pub const DiscoveryFresh = struct {
+            pub const Storage = IdentityStoredProfileDiscoveryFreshnessStorage;
+            pub const Request = IdentityStoredProfileDiscoveryFreshnessRequest;
+        };
+
+        pub const Runtime = struct {
+            pub const Action = IdentityStoredProfileRuntimeAction;
+            pub const Storage = IdentityStoredProfileRuntimeStorage;
+            pub const Request = IdentityStoredProfileRuntimeRequest;
+            pub const Plan = IdentityStoredProfileRuntimePlan;
+            pub const Step = IdentityStoredProfileRuntimeStep;
+        };
+
+        pub const Refresh = struct {
+            pub const Entry = IdentityStoredProfileRefreshEntry;
+            pub const Storage = IdentityStoredProfileRefreshStorage;
+            pub const Request = IdentityStoredProfileRefreshRequest;
+            pub const Plan = IdentityStoredProfileRefreshPlan;
+            pub const Step = IdentityStoredProfileRefreshStep;
+        };
+    };
+
     pub const Target = IdentityStoredProfileTarget;
-    pub const TargetDiscoveryGroup = IdentityStoredProfileTargetDiscoveryGroup;
-    pub const TargetDiscoveryStorage = IdentityStoredProfileTargetDiscoveryStorage;
-    pub const TargetDiscoveryRequest = IdentityStoredProfileTargetDiscoveryRequest;
-    pub const TargetDiscoveryFreshnessGroup = IdentityStoredProfileTargetDiscoveryFreshnessGroup;
-    pub const TargetDiscoveryFreshnessStorage = IdentityStoredProfileTargetDiscoveryFreshnessStorage;
-    pub const TargetDiscoveryFreshnessRequest = IdentityStoredProfileTargetDiscoveryFreshnessRequest;
-    pub const PreferredTargetEntry = IdentityPreferredStoredProfileTargetEntry;
-    pub const PreferredTargetStorage = IdentityPreferredStoredProfileTargetStorage;
-    pub const PreferredTargetSelectionRequest = IdentityPreferredStoredProfileTargetSelectionRequest;
-    pub const TargetLatestEntry = IdentityStoredProfileTargetLatestFreshnessEntry;
-    pub const TargetLatestStorage = IdentityStoredProfileTargetLatestFreshnessStorage;
-    pub const TargetLatestRequest = IdentityStoredProfileTargetLatestFreshnessRequest;
-    pub const RememberedLatestStorage = IdentityRememberedIdentityLatestFreshnessStorage;
-    pub const RememberedLatestRequest = IdentityRememberedIdentityLatestFreshnessRequest;
-    pub const RememberedLatestPlan = IdentityRememberedIdentityLatestFreshnessPlan;
-    pub const PreferredTargetRequest = IdentityPreferredStoredProfileTargetRequest;
-    pub const PreferredTarget = IdentityPreferredStoredProfileTarget;
-    pub const TargetRefreshEntry = IdentityStoredProfileTargetRefreshEntry;
-    pub const TargetRefreshStorage = IdentityStoredProfileTargetRefreshStorage;
-    pub const TargetRefreshRequest = IdentityStoredProfileTargetRefreshRequest;
-    pub const TargetRefreshPlan = IdentityStoredProfileTargetRefreshPlan;
-    pub const TargetRefreshStep = IdentityStoredProfileTargetRefreshStep;
-    pub const TargetRuntimeAction = IdentityStoredProfileTargetRuntimeAction;
-    pub const TargetRuntimeRequest = IdentityStoredProfileTargetRuntimeRequest;
-    pub const TargetRuntimePlan = IdentityStoredProfileTargetRuntimePlan;
-    pub const TargetRuntimeStep = IdentityStoredProfileTargetRuntimeStep;
-    pub const TargetPolicyEntry = IdentityStoredProfileTargetPolicyEntry;
-    pub const TargetPolicyGroup = IdentityStoredProfileTargetPolicyGroup;
-    pub const TargetPolicyStorage = IdentityStoredProfileTargetPolicyStorage;
-    pub const TargetPolicyRequest = IdentityStoredProfileTargetPolicyRequest;
-    pub const TargetPolicyPlan = IdentityStoredProfileTargetPolicyPlan;
-    pub const TargetCadenceAction = IdentityStoredProfileTargetRefreshCadenceAction;
-    pub const TargetCadenceEntry = IdentityStoredProfileTargetRefreshCadenceEntry;
-    pub const TargetCadenceGroup = IdentityStoredProfileTargetRefreshCadenceGroup;
-    pub const TargetCadenceStorage = IdentityStoredProfileTargetRefreshCadenceStorage;
-    pub const TargetCadenceRequest = IdentityStoredProfileTargetRefreshCadenceRequest;
-    pub const TargetCadencePlan = IdentityStoredProfileTargetRefreshCadencePlan;
-    pub const TargetCadenceStep = IdentityStoredProfileTargetRefreshCadenceStep;
-    pub const RememberedCadenceStorage = IdentityRememberedIdentityRefreshCadenceStorage;
-    pub const RememberedCadenceRequest = IdentityRememberedIdentityRefreshCadenceRequest;
-    pub const RememberedCadencePlan = IdentityRememberedIdentityRefreshCadencePlan;
-    pub const TargetBatchStorage = IdentityStoredProfileTargetRefreshBatchStorage;
-    pub const TargetBatchRequest = IdentityStoredProfileTargetRefreshBatchRequest;
-    pub const TargetBatchPlan = IdentityStoredProfileTargetRefreshBatchPlan;
-    pub const TargetBatchStep = IdentityStoredProfileTargetRefreshBatchStep;
-    pub const RememberedBatchStorage = IdentityRememberedIdentityRefreshBatchStorage;
-    pub const RememberedBatchRequest = IdentityRememberedIdentityRefreshBatchRequest;
-    pub const RememberedBatchPlan = IdentityRememberedIdentityRefreshBatchPlan;
-    pub const TargetTurnPolicyAction = IdentityStoredProfileTargetTurnPolicyAction;
-    pub const TargetTurnPolicyEntry = IdentityStoredProfileTargetTurnPolicyEntry;
-    pub const TargetTurnPolicyGroup = IdentityStoredProfileTargetTurnPolicyGroup;
-    pub const TargetTurnPolicyStorage = IdentityStoredProfileTargetTurnPolicyStorage;
-    pub const TargetTurnPolicyRequest = IdentityStoredProfileTargetTurnPolicyRequest;
-    pub const TargetTurnPolicyPlan = IdentityStoredProfileTargetTurnPolicyPlan;
-    pub const TargetTurnPolicyStep = IdentityStoredProfileTargetTurnPolicyStep;
-    pub const WatchedPolicyError = IdentityStoredWatchedTargetPolicyError;
-    pub const WatchedPolicyStorage = IdentityStoredWatchedTargetPolicyStorage;
-    pub const WatchedPolicyRequest = IdentityStoredWatchedTargetPolicyRequest;
-    pub const WatchedPolicyPlan = IdentityStoredWatchedTargetPolicyPlan;
-    pub const WatchedCadenceError = IdentityStoredWatchedTargetRefreshCadenceError;
-    pub const WatchedCadenceStorage = IdentityStoredWatchedTargetRefreshCadenceStorage;
-    pub const WatchedCadenceRequest = IdentityStoredWatchedTargetRefreshCadenceRequest;
-    pub const WatchedCadencePlan = IdentityStoredWatchedTargetRefreshCadencePlan;
-    pub const WatchedBatchError = IdentityStoredWatchedTargetRefreshBatchError;
-    pub const WatchedBatchStorage = IdentityStoredWatchedTargetRefreshBatchStorage;
-    pub const WatchedBatchRequest = IdentityStoredWatchedTargetRefreshBatchRequest;
-    pub const WatchedBatchPlan = IdentityStoredWatchedTargetRefreshBatchPlan;
-    pub const WatchedOrchestrationError = IdentityStoredWatchedTargetOrchestrationError;
-    pub const WatchedOrchestrationStorage = IdentityStoredWatchedTargetOrchestrationStorage;
-    pub const WatchedOrchestrationRequest = IdentityStoredWatchedTargetOrchestrationRequest;
-    pub const WatchedOrchestrationPlan = IdentityStoredWatchedTargetOrchestrationPlan;
-    pub const WatchedTurnPolicyError = IdentityStoredWatchedTargetTurnPolicyError;
-    pub const WatchedTurnPolicyStorage = IdentityStoredWatchedTargetTurnPolicyStorage;
-    pub const WatchedTurnPolicyRequest = IdentityStoredWatchedTargetTurnPolicyRequest;
-    pub const WatchedTurnPolicyPlan = IdentityStoredWatchedTargetTurnPolicyPlan;
+
+    pub const Discovery = struct {
+        pub const Group = IdentityStoredProfileTargetDiscoveryGroup;
+        pub const Storage = IdentityStoredProfileTargetDiscoveryStorage;
+        pub const Request = IdentityStoredProfileTargetDiscoveryRequest;
+    };
+
+    pub const DiscoveryFresh = struct {
+        pub const Group = IdentityStoredProfileTargetDiscoveryFreshnessGroup;
+        pub const Storage = IdentityStoredProfileTargetDiscoveryFreshnessStorage;
+        pub const Request = IdentityStoredProfileTargetDiscoveryFreshnessRequest;
+    };
+
+    pub const Latest = struct {
+        pub const Entry = IdentityStoredProfileTargetLatestFreshnessEntry;
+        pub const Storage = IdentityStoredProfileTargetLatestFreshnessStorage;
+        pub const Request = IdentityStoredProfileTargetLatestFreshnessRequest;
+    };
+
+    pub const Preferred = struct {
+        pub const Entry = IdentityPreferredStoredProfileTargetEntry;
+        pub const Storage = IdentityPreferredStoredProfileTargetStorage;
+        pub const EntriesRequest = IdentityPreferredStoredProfileTargetSelectionRequest;
+        pub const Request = IdentityPreferredStoredProfileTargetRequest;
+        pub const Value = IdentityPreferredStoredProfileTarget;
+    };
+
+    pub const Refresh = struct {
+        pub const Entry = IdentityStoredProfileTargetRefreshEntry;
+        pub const Storage = IdentityStoredProfileTargetRefreshStorage;
+        pub const Request = IdentityStoredProfileTargetRefreshRequest;
+        pub const Plan = IdentityStoredProfileTargetRefreshPlan;
+        pub const Step = IdentityStoredProfileTargetRefreshStep;
+    };
+
+    pub const Runtime = struct {
+        pub const Action = IdentityStoredProfileTargetRuntimeAction;
+        pub const Request = IdentityStoredProfileTargetRuntimeRequest;
+        pub const Plan = IdentityStoredProfileTargetRuntimePlan;
+        pub const Step = IdentityStoredProfileTargetRuntimeStep;
+    };
+
+    pub const Policy = struct {
+        pub const Entry = IdentityStoredProfileTargetPolicyEntry;
+        pub const Group = IdentityStoredProfileTargetPolicyGroup;
+        pub const Storage = IdentityStoredProfileTargetPolicyStorage;
+        pub const Request = IdentityStoredProfileTargetPolicyRequest;
+        pub const Plan = IdentityStoredProfileTargetPolicyPlan;
+    };
+
+    pub const Cadence = struct {
+        pub const Action = IdentityStoredProfileTargetRefreshCadenceAction;
+        pub const Entry = IdentityStoredProfileTargetRefreshCadenceEntry;
+        pub const Group = IdentityStoredProfileTargetRefreshCadenceGroup;
+        pub const Storage = IdentityStoredProfileTargetRefreshCadenceStorage;
+        pub const Request = IdentityStoredProfileTargetRefreshCadenceRequest;
+        pub const Plan = IdentityStoredProfileTargetRefreshCadencePlan;
+        pub const Step = IdentityStoredProfileTargetRefreshCadenceStep;
+    };
+
+    pub const Batch = struct {
+        pub const Storage = IdentityStoredProfileTargetRefreshBatchStorage;
+        pub const Request = IdentityStoredProfileTargetRefreshBatchRequest;
+        pub const Plan = IdentityStoredProfileTargetRefreshBatchPlan;
+        pub const Step = IdentityStoredProfileTargetRefreshBatchStep;
+    };
+
+    pub const Turn = struct {
+        pub const Action = IdentityStoredProfileTargetTurnPolicyAction;
+        pub const Entry = IdentityStoredProfileTargetTurnPolicyEntry;
+        pub const Group = IdentityStoredProfileTargetTurnPolicyGroup;
+        pub const Storage = IdentityStoredProfileTargetTurnPolicyStorage;
+        pub const Request = IdentityStoredProfileTargetTurnPolicyRequest;
+        pub const Plan = IdentityStoredProfileTargetTurnPolicyPlan;
+        pub const Step = IdentityStoredProfileTargetTurnPolicyStep;
+    };
+
+    pub const Remembered = struct {
+        pub const Latest = struct {
+            pub const Storage = IdentityRememberedIdentityLatestFreshnessStorage;
+            pub const Request = IdentityRememberedIdentityLatestFreshnessRequest;
+            pub const Plan = IdentityRememberedIdentityLatestFreshnessPlan;
+        };
+
+        pub const Cadence = struct {
+            pub const Storage = IdentityRememberedIdentityRefreshCadenceStorage;
+            pub const Request = IdentityRememberedIdentityRefreshCadenceRequest;
+            pub const Plan = IdentityRememberedIdentityRefreshCadencePlan;
+        };
+
+        pub const Batch = struct {
+            pub const Storage = IdentityRememberedIdentityRefreshBatchStorage;
+            pub const Request = IdentityRememberedIdentityRefreshBatchRequest;
+            pub const Plan = IdentityRememberedIdentityRefreshBatchPlan;
+        };
+    };
+
+    pub const Watched = struct {
+        pub const Policy = struct {
+            pub const Error = IdentityStoredWatchedTargetPolicyError;
+            pub const Storage = IdentityStoredWatchedTargetPolicyStorage;
+            pub const Request = IdentityStoredWatchedTargetPolicyRequest;
+            pub const Plan = IdentityStoredWatchedTargetPolicyPlan;
+        };
+
+        pub const Cadence = struct {
+            pub const Error = IdentityStoredWatchedTargetRefreshCadenceError;
+            pub const Storage = IdentityStoredWatchedTargetRefreshCadenceStorage;
+            pub const Request = IdentityStoredWatchedTargetRefreshCadenceRequest;
+            pub const Plan = IdentityStoredWatchedTargetRefreshCadencePlan;
+        };
+
+        pub const Batch = struct {
+            pub const Error = IdentityStoredWatchedTargetRefreshBatchError;
+            pub const Storage = IdentityStoredWatchedTargetRefreshBatchStorage;
+            pub const Request = IdentityStoredWatchedTargetRefreshBatchRequest;
+            pub const Plan = IdentityStoredWatchedTargetRefreshBatchPlan;
+        };
+
+        pub const Orchestration = struct {
+            pub const Error = IdentityStoredWatchedTargetOrchestrationError;
+            pub const Storage = IdentityStoredWatchedTargetOrchestrationStorage;
+            pub const Request = IdentityStoredWatchedTargetOrchestrationRequest;
+            pub const Plan = IdentityStoredWatchedTargetOrchestrationPlan;
+        };
+
+        pub const Turn = struct {
+            pub const Error = IdentityStoredWatchedTargetTurnPolicyError;
+            pub const Storage = IdentityStoredWatchedTargetTurnPolicyStorage;
+            pub const Request = IdentityStoredWatchedTargetTurnPolicyRequest;
+            pub const Plan = IdentityStoredWatchedTargetTurnPolicyPlan;
+        };
+    };
 };
 
 pub const IdentityVerifier = struct {

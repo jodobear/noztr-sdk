@@ -22,8 +22,9 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
     fake_http.expected_accept = "application/json";
     var lookup_url_buffer: [128]u8 = undefined;
     var body_buffer: [384]u8 = undefined;
-    var remembered_records: [2]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = noztr_sdk.workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(
+    const planning = noztr_sdk.workflows.identity.nip05.Planning;
+    var remembered_records: [2]planning.Store.Record = undefined;
+    var remembered_store = planning.Store.Memory.init(
         remembered_records[0..],
     );
 
@@ -42,7 +43,7 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
 
     try std.testing.expect(outcome == .verified);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionStorePutOutcome.stored,
+        planning.Store.PutOutcome.stored,
         try noztr_sdk.workflows.identity.nip05.Nip05Resolver.rememberResolution(
             remembered_store.asStore(),
             &outcome.verified,
@@ -55,19 +56,19 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
     );
     try std.testing.expectEqual(@as(usize, 1), outcome.verified.profile.relays.len);
 
-    const targets = [_]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionTarget{
+    const targets = [_]planning.Target{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]noztr_sdk.workflows.identity.nip05.Nip05LatestRememberedResolutionTargetEntry = undefined;
-    var refresh_entries: [2]noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRefreshEntry = undefined;
-    const refresh_plan = try noztr_sdk.workflows.identity.nip05.Nip05Resolver.planRememberedResolutionRefreshForTargets(
+    var latest_entries: [2]planning.Latest.Entry = undefined;
+    var refresh_entries: [2]planning.Refresh.Entry = undefined;
+    const refresh_plan = try noztr_sdk.workflows.identity.nip05.Nip05Resolver.planRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.workflows.identity.nip05.Nip05RememberedResolutionRefreshStorage.init(
+            .storage = planning.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

@@ -107,8 +107,8 @@ pub const Nip39VerifyClient = struct {
     pub fn discoverTargets(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetDiscoveryRequest,
-    ) Nip39VerifyClientError![]const Planning.TargetDiscoveryGroup {
+        request: Planning.Discovery.Request,
+    ) Nip39VerifyClientError![]const Planning.Discovery.Group {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.discoverStoredProfileEntriesForTargets(store, request);
     }
@@ -116,8 +116,8 @@ pub const Nip39VerifyClient = struct {
     pub fn discoverTargetsWithFreshness(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetDiscoveryFreshnessRequest,
-    ) Nip39VerifyClientError![]const Planning.TargetDiscoveryFreshnessGroup {
+        request: Planning.DiscoveryFresh.Request,
+    ) Nip39VerifyClientError![]const Planning.DiscoveryFresh.Group {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
             store,
@@ -128,7 +128,7 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectTargetLatest(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetLatestRequest,
+        request: Planning.Latest.Request,
     ) Nip39VerifyClientError!Planning.TargetLatestPlan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
@@ -140,8 +140,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectRememberedLatest(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.RememberedLatestRequest,
-    ) Nip39VerifyClientError!Planning.RememberedLatestPlan {
+        request: Planning.Remembered.Latest.Request,
+    ) Nip39VerifyClientError!Planning.Remembered.Latest.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityLatestFreshness(store, request);
     }
@@ -149,8 +149,8 @@ pub const Nip39VerifyClient = struct {
     pub fn getPreferredForTargets(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.PreferredTargetSelectionRequest,
-    ) Nip39VerifyClientError![]const Planning.PreferredTargetEntry {
+        request: Planning.Preferred.EntriesRequest,
+    ) Nip39VerifyClientError![]const Planning.Preferred.Entry {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.getPreferredStoredProfilesForTargets(store, request);
     }
@@ -158,8 +158,8 @@ pub const Nip39VerifyClient = struct {
     pub fn getPreferredTarget(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.PreferredTargetRequest,
-    ) Nip39VerifyClientError!?Planning.PreferredTarget {
+        request: Planning.Preferred.Request,
+    ) Nip39VerifyClientError!?Planning.Preferred.Value {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.getPreferredStoredProfileForTargets(store, request);
     }
@@ -167,8 +167,8 @@ pub const Nip39VerifyClient = struct {
     pub fn planTargetRefresh(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetRefreshRequest,
-    ) Nip39VerifyClientError!Planning.TargetRefreshPlan {
+        request: Planning.Refresh.Request,
+    ) Nip39VerifyClientError!Planning.Refresh.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.planStoredProfileRefreshForTargets(store, request);
     }
@@ -176,8 +176,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectTargetRuntime(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetRuntimeRequest,
-    ) Nip39VerifyClientError!Planning.TargetRuntimePlan {
+        request: Planning.Runtime.Request,
+    ) Nip39VerifyClientError!Planning.Runtime.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRuntimeForTargets(store, request);
     }
@@ -185,8 +185,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectTargetPolicy(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetPolicyRequest,
-    ) Nip39VerifyClientError!Planning.TargetPolicyPlan {
+        request: Planning.Policy.Request,
+    ) Nip39VerifyClientError!Planning.Policy.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredProfilePolicyForTargets(store, request);
     }
@@ -194,8 +194,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectTargetCadence(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetCadenceRequest,
-    ) Nip39VerifyClientError!Planning.TargetCadencePlan {
+        request: Planning.Cadence.Request,
+    ) Nip39VerifyClientError!Planning.Cadence.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
             store,
@@ -206,8 +206,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectTargetBatch(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetBatchRequest,
-    ) Nip39VerifyClientError!Planning.TargetBatchPlan {
+        request: Planning.Batch.Request,
+    ) Nip39VerifyClientError!Planning.Batch.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
             store,
@@ -218,8 +218,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectTargetTurnPolicy(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.TargetTurnPolicyRequest,
-    ) Nip39VerifyClientError!Planning.TargetTurnPolicyPlan {
+        request: Planning.Turn.Request,
+    ) Nip39VerifyClientError!Planning.Turn.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(store, request);
     }
@@ -228,8 +228,8 @@ pub const Nip39VerifyClient = struct {
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
         watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
-        request: Planning.WatchedPolicyRequest,
-    ) Nip39VerifyClientError!Planning.WatchedPolicyPlan {
+        request: Planning.Watched.Policy.Request,
+    ) Nip39VerifyClientError!Planning.Watched.Policy.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetPolicy(
             store,
@@ -242,8 +242,8 @@ pub const Nip39VerifyClient = struct {
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
         watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
-        request: Planning.WatchedCadenceRequest,
-    ) Nip39VerifyClientError!Planning.WatchedCadencePlan {
+        request: Planning.Watched.Cadence.Request,
+    ) Nip39VerifyClientError!Planning.Watched.Cadence.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetRefreshCadence(
             store,
@@ -255,8 +255,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectRememberedCadence(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.RememberedCadenceRequest,
-    ) Nip39VerifyClientError!Planning.RememberedCadencePlan {
+        request: Planning.Remembered.Cadence.Request,
+    ) Nip39VerifyClientError!Planning.Remembered.Cadence.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityRefreshCadence(store, request);
     }
@@ -265,8 +265,8 @@ pub const Nip39VerifyClient = struct {
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
         watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
-        request: Planning.WatchedBatchRequest,
-    ) Nip39VerifyClientError!Planning.WatchedBatchPlan {
+        request: Planning.Watched.Batch.Request,
+    ) Nip39VerifyClientError!Planning.Watched.Batch.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetRefreshBatch(
             store,
@@ -278,8 +278,8 @@ pub const Nip39VerifyClient = struct {
     pub fn inspectRememberedBatch(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.RememberedBatchRequest,
-    ) Nip39VerifyClientError!Planning.RememberedBatchPlan {
+        request: Planning.Remembered.Batch.Request,
+    ) Nip39VerifyClientError!Planning.Remembered.Batch.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityRefreshBatch(store, request);
     }
@@ -288,8 +288,8 @@ pub const Nip39VerifyClient = struct {
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
         watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
-        request: Planning.WatchedTurnPolicyRequest,
-    ) Nip39VerifyClientError!Planning.WatchedTurnPolicyPlan {
+        request: Planning.Watched.Turn.Request,
+    ) Nip39VerifyClientError!Planning.Watched.Turn.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetTurnPolicy(
             store,
@@ -302,8 +302,8 @@ pub const Nip39VerifyClient = struct {
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
         watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
-        request: Planning.WatchedOrchestrationRequest,
-    ) Nip39VerifyClientError!Planning.WatchedOrchestrationPlan {
+        request: Planning.Watched.Orchestration.Request,
+    ) Nip39VerifyClientError!Planning.Watched.Orchestration.Plan {
         _ = self;
         return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetOrchestration(
             store,
@@ -475,14 +475,14 @@ test "nip39 verify client lifts remembered target turn policy into the client su
         .{ .provider = .github, .identity = "bob" },
         .{ .provider = .github, .identity = "carol" },
     };
-    var matches: [2]Planning.ProfileMatch = undefined;
-    var latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var policy_entries: [3]Planning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var entries: [3]Planning.TargetTurnPolicyEntry = undefined;
-    var groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    var matches: [2]Planning.Match = undefined;
+    var latest_entries: [3]Planning.Latest.Entry = undefined;
+    var policy_entries: [3]Planning.Policy.Entry = undefined;
+    var policy_groups: [4]Planning.Policy.Group = undefined;
+    var cadence_entries: [3]Planning.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var entries: [3]Planning.Turn.Entry = undefined;
+    var groups: [4]Planning.Turn.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectTargetTurnPolicy(
@@ -494,7 +494,7 @@ test "nip39 verify client lifts remembered target turn policy into the client su
             .refresh_soon_age_seconds = 10,
             .max_selected = 1,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.TargetTurnPolicyStorage.init(
+            .storage = Planning.Turn.Storage.init(
                 matches[0..],
                 latest_entries[0..],
                 policy_entries[0..],
@@ -566,16 +566,16 @@ test "nip39 verify client inspects stored watched target turn policy through the
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
 
-    var listed_records: [4]Planning.WatchedTargetRecord = undefined;
+    var listed_records: [4]Planning.Record.Watched = undefined;
     var targets: [4]Planning.Target = undefined;
-    var matches: [2]Planning.ProfileMatch = undefined;
-    var latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var policy_entries: [4]Planning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var turn_entries: [4]Planning.TargetTurnPolicyEntry = undefined;
-    var turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    var matches: [2]Planning.Match = undefined;
+    var latest_entries: [4]Planning.Latest.Entry = undefined;
+    var policy_entries: [4]Planning.Policy.Entry = undefined;
+    var policy_groups: [4]Planning.Policy.Group = undefined;
+    var cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var turn_entries: [4]Planning.Turn.Entry = undefined;
+    var turn_groups: [4]Planning.Turn.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectWatchedTurnPolicy(
@@ -587,10 +587,10 @@ test "nip39 verify client inspects stored watched target turn policy through the
             .refresh_soon_age_seconds = 12,
             .max_selected = 3,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedTurnPolicyStorage.init(
+            .storage = Planning.Watched.Turn.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetTurnPolicyStorage.init(
+                Planning.Turn.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     policy_entries[0..],
@@ -654,12 +654,12 @@ test "nip39 verify client inspects stored watched target policy through the clie
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
 
-    var listed_records: [3]Planning.WatchedTargetRecord = undefined;
+    var listed_records: [3]Planning.Record.Watched = undefined;
     var targets: [3]Planning.Target = undefined;
-    var matches: [1]Planning.ProfileMatch = undefined;
-    var latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var policy_entries: [3]Planning.TargetPolicyEntry = undefined;
-    var groups: [4]Planning.TargetPolicyGroup = undefined;
+    var matches: [1]Planning.Match = undefined;
+    var latest_entries: [3]Planning.Latest.Entry = undefined;
+    var policy_entries: [3]Planning.Policy.Entry = undefined;
+    var groups: [4]Planning.Policy.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectWatchedPolicy(
@@ -668,10 +668,10 @@ test "nip39 verify client inspects stored watched target policy through the clie
         .{
             .now_unix_seconds = 50,
             .max_age_seconds = 20,
-            .storage = Planning.WatchedPolicyStorage.init(
+            .storage = Planning.Watched.Policy.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetPolicyStorage.init(
+                Planning.Policy.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     policy_entries[0..],
@@ -746,12 +746,12 @@ test "nip39 verify client inspects stored watched target refresh cadence through
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
 
-    var listed_records: [4]Planning.WatchedTargetRecord = undefined;
+    var listed_records: [4]Planning.Record.Watched = undefined;
     var targets: [4]Planning.Target = undefined;
-    var matches: [1]Planning.ProfileMatch = undefined;
-    var latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var groups: [5]Planning.TargetCadenceGroup = undefined;
+    var matches: [1]Planning.Match = undefined;
+    var latest_entries: [4]Planning.Latest.Entry = undefined;
+    var cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var groups: [5]Planning.Cadence.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectWatchedCadence(
@@ -762,10 +762,10 @@ test "nip39 verify client inspects stored watched target refresh cadence through
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedCadenceStorage.init(
+            .storage = Planning.Watched.Cadence.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetCadenceStorage.init(
+                Planning.Cadence.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],
@@ -825,12 +825,12 @@ test "nip39 verify client inspects stored watched target refresh batch through t
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
 
-    var listed_records: [3]Planning.WatchedTargetRecord = undefined;
+    var listed_records: [3]Planning.Record.Watched = undefined;
     var targets: [3]Planning.Target = undefined;
-    var matches: [1]Planning.ProfileMatch = undefined;
-    var latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var matches: [1]Planning.Match = undefined;
+    var latest_entries: [3]Planning.Latest.Entry = undefined;
+    var cadence_entries: [3]Planning.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Cadence.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const batch = try client.inspectWatchedBatch(
@@ -842,10 +842,10 @@ test "nip39 verify client inspects stored watched target refresh batch through t
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedBatchStorage.init(
+            .storage = Planning.Watched.Batch.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetBatchStorage.init(
+                Planning.Batch.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],
@@ -917,32 +917,32 @@ test "nip39 verify client inspects stored watched target orchestration through t
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "bob" });
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
 
-    var listed_records: [4]Planning.WatchedTargetRecord = undefined;
+    var listed_records: [4]Planning.Record.Watched = undefined;
     var targets: [4]Planning.Target = undefined;
 
-    var policy_matches: [1]Planning.ProfileMatch = undefined;
-    var policy_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var policy_entries: [4]Planning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
+    var policy_matches: [1]Planning.Match = undefined;
+    var policy_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var policy_entries: [4]Planning.Policy.Entry = undefined;
+    var policy_groups: [4]Planning.Policy.Group = undefined;
 
-    var cadence_matches: [1]Planning.ProfileMatch = undefined;
-    var cadence_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var cadence_matches: [1]Planning.Match = undefined;
+    var cadence_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Cadence.Group = undefined;
 
-    var batch_matches: [1]Planning.ProfileMatch = undefined;
-    var batch_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var batch_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var batch_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var batch_matches: [1]Planning.Match = undefined;
+    var batch_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
 
-    var turn_matches: [1]Planning.ProfileMatch = undefined;
-    var turn_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var turn_policy_entries: [4]Planning.TargetPolicyEntry = undefined;
-    var turn_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var turn_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var turn_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var turn_entries: [4]Planning.TargetTurnPolicyEntry = undefined;
-    var turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    var turn_matches: [1]Planning.Match = undefined;
+    var turn_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var turn_policy_entries: [4]Planning.Policy.Entry = undefined;
+    var turn_policy_groups: [4]Planning.Policy.Group = undefined;
+    var turn_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var turn_entries: [4]Planning.Turn.Entry = undefined;
+    var turn_groups: [4]Planning.Turn.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectWatchedOrchestration(
@@ -954,28 +954,28 @@ test "nip39 verify client inspects stored watched target orchestration through t
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedOrchestrationStorage.init(
+            .storage = Planning.Watched.Orchestration.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetPolicyStorage.init(
+                Planning.Policy.Storage.init(
                     policy_matches[0..],
                     policy_latest_entries[0..],
                     policy_entries[0..],
                     policy_groups[0..],
                 ),
-                Planning.TargetCadenceStorage.init(
+                Planning.Cadence.Storage.init(
                     cadence_matches[0..],
                     cadence_latest_entries[0..],
                     cadence_entries[0..],
                     cadence_groups[0..],
                 ),
-                Planning.TargetBatchStorage.init(
+                Planning.Batch.Storage.init(
                     batch_matches[0..],
                     batch_latest_entries[0..],
                     batch_cadence_entries[0..],
                     batch_cadence_groups[0..],
                 ),
-                Planning.TargetTurnPolicyStorage.init(
+                Planning.Turn.Storage.init(
                     turn_matches[0..],
                     turn_latest_entries[0..],
                     turn_policy_entries[0..],
@@ -1057,10 +1057,10 @@ test "nip39 verify client inspects remembered identity latest freshness through 
     _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &alice_pubkey_b, 45, &alice_fresh_summary);
     _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &bob_pubkey, 5, &bob_summary);
 
-    var remembered_records: [2]Planning.RememberedIdentityRecord = undefined;
+    var remembered_records: [2]Planning.Record.Remembered = undefined;
     var targets: [2]Planning.Target = undefined;
-    var matches: [2]Planning.ProfileMatch = undefined;
-    var entries: [2]Planning.TargetLatestEntry = undefined;
+    var matches: [2]Planning.Match = undefined;
+    var entries: [2]Planning.Latest.Entry = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectRememberedLatest(
@@ -1131,12 +1131,12 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
     _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
     _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
-    var remembered_records: [3]Planning.RememberedIdentityRecord = undefined;
+    var remembered_records: [3]Planning.Record.Remembered = undefined;
     var targets: [3]Planning.Target = undefined;
-    var matches: [1]Planning.ProfileMatch = undefined;
-    var latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
-    var groups: [5]Planning.TargetCadenceGroup = undefined;
+    var matches: [1]Planning.Match = undefined;
+    var latest_entries: [3]Planning.Latest.Entry = undefined;
+    var cadence_entries: [3]Planning.Cadence.Entry = undefined;
+    var groups: [5]Planning.Cadence.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const plan = try client.inspectRememberedCadence(
@@ -1149,7 +1149,7 @@ test "nip39 verify client inspects remembered identity refresh cadence through t
             .storage = .init(
                 remembered_records[0..],
                 targets[0..],
-                Planning.TargetCadenceStorage.init(
+                Planning.Cadence.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],
@@ -1203,12 +1203,12 @@ test "nip39 verify client inspects remembered identity refresh batch through the
     _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &soon_pubkey, 35, &soon_summary);
     _ = try workflows.identity.verify.IdentityVerifier.rememberProfileSummary(profile_store.asStore(), &stale_pubkey, 5, &stale_summary);
 
-    var remembered_records: [2]Planning.RememberedIdentityRecord = undefined;
+    var remembered_records: [2]Planning.Record.Remembered = undefined;
     var targets: [2]Planning.Target = undefined;
-    var matches: [1]Planning.ProfileMatch = undefined;
-    var latest_entries: [2]Planning.TargetLatestEntry = undefined;
-    var cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var matches: [1]Planning.Match = undefined;
+    var latest_entries: [2]Planning.Latest.Entry = undefined;
+    var cadence_entries: [2]Planning.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Cadence.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
     const batch = try client.inspectRememberedBatch(
@@ -1222,7 +1222,7 @@ test "nip39 verify client inspects remembered identity refresh batch through the
             .storage = .init(
                 remembered_records[0..],
                 targets[0..],
-                Planning.TargetBatchStorage.init(
+                Planning.Batch.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],

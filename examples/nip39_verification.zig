@@ -147,14 +147,14 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
         verified_claims[1].outcome.verified.proof_url,
     );
 
-    var discovered_matches: [2]Planning.ProfileMatch = undefined;
-    var discovered_entries: [2]Planning.StoredProfileDiscoveryEntry = undefined;
+    var discovered_matches: [2]Planning.Match = undefined;
+    var discovered_entries: [2]Planning.Stored.Entry = undefined;
     const discovered = try identity.IdentityVerifier.discoverStoredProfileEntries(
         profile_store.asStore(),
         .{
             .provider = .github,
             .identity = "alice",
-            .storage = identity.IdentityStoredProfileDiscoveryStorage.init(
+            .storage = Planning.Stored.Discovery.Storage.init(
                 discovered_matches[0..],
                 discovered_entries[0..],
             ),
@@ -164,8 +164,8 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualSlices(u8, pubkey[0..], discovered[0].match.pubkey[0..]);
     try std.testing.expectEqualStrings("alice", discovered[0].matchedClaim().identitySlice());
 
-    var discovered_freshness_matches: [2]Planning.ProfileMatch = undefined;
-    var discovered_freshness_entries: [2]Planning.StoredProfileDiscoveryFreshnessEntry = undefined;
+    var discovered_freshness_matches: [2]Planning.Match = undefined;
+    var discovered_freshness_entries: [2]Planning.Stored.FreshEntry = undefined;
     const discovered_with_freshness =
         try identity.IdentityVerifier.discoverStoredProfileEntriesWithFreshness(
             profile_store.asStore(),
@@ -174,7 +174,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
                 .identity = "alice",
                 .now_unix_seconds = 31,
                 .max_age_seconds = 60,
-                .storage = identity.IdentityStoredProfileDiscoveryFreshnessStorage.init(
+                .storage = Planning.Stored.DiscoveryFresh.Storage.init(
                     discovered_freshness_matches[0..],
                     discovered_freshness_entries[0..],
                 ),
@@ -182,7 +182,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
         );
     try std.testing.expectEqual(@as(usize, 1), discovered_with_freshness.len);
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.fresh,
+        Planning.Stored.Freshness.fresh,
         discovered_with_freshness[0].freshness,
     );
     try std.testing.expectEqual(@as(u64, 30), discovered_with_freshness[0].age_seconds);
@@ -219,14 +219,14 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
         .{ .provider = .github, .identity = "bob" },
         .{ .provider = .github, .identity = "carol" },
     };
-    var watched_group_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_group_entries: [2]Planning.StoredProfileDiscoveryEntry = undefined;
-    var watched_group_groups: [3]Planning.TargetDiscoveryGroup = undefined;
+    var watched_group_matches: [2]Planning.Match = undefined;
+    var watched_group_entries: [2]Planning.Stored.Entry = undefined;
+    var watched_group_groups: [3]Planning.Discovery.Group = undefined;
     const watched_groups = try identity.IdentityVerifier.discoverStoredProfileEntriesForTargets(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
-            .storage = Planning.TargetDiscoveryStorage.init(
+            .storage = Planning.Discovery.Storage.init(
                 watched_group_matches[0..],
                 watched_group_entries[0..],
                 watched_group_groups[0..],
@@ -243,9 +243,9 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualStrings("carol", watched_groups[2].target.identity);
     try std.testing.expectEqual(@as(usize, 0), watched_groups[2].entries.len);
 
-    var watched_fresh_group_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_fresh_group_entries: [2]Planning.StoredProfileDiscoveryFreshnessEntry = undefined;
-    var watched_fresh_group_groups: [3]Planning.TargetDiscoveryFreshnessGroup = undefined;
+    var watched_fresh_group_matches: [2]Planning.Match = undefined;
+    var watched_fresh_group_entries: [2]Planning.Stored.FreshEntry = undefined;
+    var watched_fresh_group_groups: [3]Planning.DiscoveryFresh.Group = undefined;
     const watched_groups_with_freshness =
         try identity.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
             profile_store.asStore(),
@@ -253,7 +253,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
                 .targets = watched_targets[0..],
                 .now_unix_seconds = 31,
                 .max_age_seconds = 20,
-                .storage = Planning.TargetDiscoveryFreshnessStorage.init(
+                .storage = Planning.DiscoveryFresh.Storage.init(
                     watched_fresh_group_matches[0..],
                     watched_fresh_group_entries[0..],
                     watched_fresh_group_groups[0..],
@@ -263,25 +263,25 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqual(@as(usize, 3), watched_groups_with_freshness.len);
     try std.testing.expectEqual(@as(usize, 1), watched_groups_with_freshness[0].entries.len);
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.stale,
+        Planning.Stored.Freshness.stale,
         watched_groups_with_freshness[0].entries[0].freshness,
     );
     try std.testing.expectEqual(@as(usize, 1), watched_groups_with_freshness[1].entries.len);
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.stale,
+        Planning.Stored.Freshness.stale,
         watched_groups_with_freshness[1].entries[0].freshness,
     );
     try std.testing.expectEqual(@as(usize, 0), watched_groups_with_freshness[2].entries.len);
 
-    var watched_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_entries: [3]Planning.TargetLatestEntry = undefined;
+    var watched_matches: [2]Planning.Match = undefined;
+    var watched_entries: [3]Planning.Latest.Entry = undefined;
     const watched_latest = try identity.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
             .now_unix_seconds = 31,
             .max_age_seconds = 20,
-            .storage = Planning.TargetLatestStorage.init(
+            .storage = Planning.Latest.Storage.init(
                 watched_matches[0..],
                 watched_entries[0..],
             ),
@@ -293,7 +293,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqual(@as(u32, 1), watched_latest.missing_count);
     try std.testing.expectEqualStrings("alice", watched_latest.entries[0].target.identity);
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.stale,
+        Planning.Stored.Freshness.stale,
         watched_latest.entries[0].latest.?.freshness,
     );
     try std.testing.expectEqualStrings(
@@ -302,7 +302,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     );
     try std.testing.expectEqualStrings("bob", watched_latest.entries[1].target.identity);
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.stale,
+        Planning.Stored.Freshness.stale,
         watched_latest.entries[1].latest.?.freshness,
     );
     try std.testing.expectEqualStrings(
@@ -313,8 +313,8 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expect(watched_latest.entries[2].latest == null);
     try std.testing.expectEqualStrings("alice", watched_latest.nextEntry().?.target.identity);
     try std.testing.expectEqualStrings("alice", watched_latest.nextStep().?.entry.target.identity);
-    var watched_preferred_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_preferred_entries: [3]Planning.PreferredTargetEntry = undefined;
+    var watched_preferred_matches: [2]Planning.Match = undefined;
+    var watched_preferred_entries: [3]Planning.Preferred.Entry = undefined;
     const watched_preferred_per_target =
         try identity.IdentityVerifier.getPreferredStoredProfilesForTargets(
             profile_store.asStore(),
@@ -323,7 +323,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
                 .now_unix_seconds = 31,
                 .max_age_seconds = 20,
                 .fallback_policy = .allow_stale_latest,
-                .storage = Planning.PreferredTargetStorage.init(
+                .storage = Planning.Preferred.Storage.init(
                     watched_preferred_matches[0..],
                     watched_preferred_entries[0..],
                 ),
@@ -349,7 +349,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
             .now_unix_seconds = 31,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.TargetLatestStorage.init(
+            .storage = Planning.Latest.Storage.init(
                 watched_matches[0..],
                 watched_entries[0..],
             ),
@@ -357,23 +357,23 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     )).?;
     try std.testing.expectEqualStrings("bob", watched_preferred.target.identity);
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.stale,
+        Planning.Stored.Freshness.stale,
         watched_preferred.latest.freshness,
     );
     try std.testing.expectEqualStrings(
         "gist-bob",
         watched_preferred.latest.latest.matchedClaim().proofSlice(),
     );
-    var watched_refresh_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_refresh_freshness: [3]Planning.TargetLatestEntry = undefined;
-    var watched_refresh_entries: [2]Planning.TargetRefreshEntry = undefined;
+    var watched_refresh_matches: [2]Planning.Match = undefined;
+    var watched_refresh_freshness: [3]Planning.Latest.Entry = undefined;
+    var watched_refresh_entries: [2]Planning.Refresh.Entry = undefined;
     const watched_refresh = try identity.IdentityVerifier.planStoredProfileRefreshForTargets(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
             .now_unix_seconds = 31,
             .max_age_seconds = 20,
-            .storage = Planning.TargetRefreshStorage.init(
+            .storage = Planning.Refresh.Storage.init(
                 watched_refresh_matches[0..],
                 watched_refresh_freshness[0..],
                 watched_refresh_entries[0..],
@@ -385,22 +385,22 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualStrings("alice", watched_refresh.entries[1].target.identity);
     try std.testing.expectEqualStrings("bob", watched_refresh.nextEntry().?.target.identity);
     try std.testing.expectEqualStrings("bob", watched_refresh.nextStep().?.entry.target.identity);
-    var watched_runtime_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_runtime_entries: [3]Planning.TargetLatestEntry = undefined;
+    var watched_runtime_matches: [2]Planning.Match = undefined;
+    var watched_runtime_entries: [3]Planning.Latest.Entry = undefined;
     const watched_runtime = try identity.IdentityVerifier.inspectStoredProfileRuntimeForTargets(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
             .now_unix_seconds = 31,
             .max_age_seconds = 20,
-            .storage = Planning.TargetLatestStorage.init(
+            .storage = Planning.Latest.Storage.init(
                 watched_runtime_matches[0..],
                 watched_runtime_entries[0..],
             ),
         },
     );
     try std.testing.expectEqual(
-        Planning.TargetRuntimeAction.verify_now,
+        Planning.Runtime.Action.verify_now,
         watched_runtime.action,
     );
     try std.testing.expectEqual(@as(u32, 0), watched_runtime.fresh_count);
@@ -412,10 +412,10 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     );
     try std.testing.expectEqualStrings("carol", watched_runtime.nextEntry().?.target.identity);
     try std.testing.expectEqualStrings("carol", watched_runtime.nextStep().entry.?.target.identity);
-    var watched_policy_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_policy_latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var watched_policy_entries: [3]Planning.TargetPolicyEntry = undefined;
-    var watched_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
+    var watched_policy_matches: [2]Planning.Match = undefined;
+    var watched_policy_latest_entries: [3]Planning.Latest.Entry = undefined;
+    var watched_policy_entries: [3]Planning.Policy.Entry = undefined;
+    var watched_policy_groups: [4]Planning.Policy.Group = undefined;
     const watched_policy = try identity.IdentityVerifier.inspectStoredProfilePolicyForTargets(
         profile_store.asStore(),
         .{
@@ -423,7 +423,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
             .now_unix_seconds = 31,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.TargetPolicyStorage.init(
+            .storage = Planning.Policy.Storage.init(
                 watched_policy_matches[0..],
                 watched_policy_latest_entries[0..],
                 watched_policy_entries[0..],
@@ -442,10 +442,10 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqual(@as(usize, 2), watched_policy.refreshNeededEntries().len);
     try std.testing.expectEqualStrings("alice", watched_policy.refreshNeededEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", watched_policy.refreshNeededEntries()[1].target.identity);
-    var watched_cadence_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_cadence_latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var watched_cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
-    var watched_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var watched_cadence_matches: [2]Planning.Match = undefined;
+    var watched_cadence_latest_entries: [3]Planning.Latest.Entry = undefined;
+    var watched_cadence_entries: [3]Planning.Cadence.Entry = undefined;
+    var watched_cadence_groups: [5]Planning.Cadence.Group = undefined;
     const watched_cadence = try identity.IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
         profile_store.asStore(),
         .{
@@ -454,7 +454,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 10,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.TargetCadenceStorage.init(
+            .storage = Planning.Cadence.Storage.init(
                 watched_cadence_matches[0..],
                 watched_cadence_latest_entries[0..],
                 watched_cadence_entries[0..],
@@ -474,10 +474,10 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualStrings("bob", watched_cadence.usableWhileRefreshingEntries()[1].target.identity);
     try std.testing.expectEqual(@as(usize, 0), watched_cadence.refreshSoonEntries().len);
 
-    var watched_batch_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_batch_latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var watched_batch_cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
-    var watched_batch_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var watched_batch_matches: [2]Planning.Match = undefined;
+    var watched_batch_latest_entries: [3]Planning.Latest.Entry = undefined;
+    var watched_batch_cadence_entries: [3]Planning.Cadence.Entry = undefined;
+    var watched_batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
     const watched_refresh_batch =
         try identity.IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
             profile_store.asStore(),
@@ -488,7 +488,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
                 .refresh_soon_age_seconds = 10,
                 .max_selected = 2,
                 .fallback_policy = .allow_stale_latest,
-                .storage = Planning.TargetBatchStorage.init(
+                .storage = Planning.Batch.Storage.init(
                     watched_batch_matches[0..],
                     watched_batch_latest_entries[0..],
                     watched_batch_cadence_entries[0..],
@@ -508,14 +508,14 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqual(@as(usize, 1), watched_batch_deferred.len);
     try std.testing.expectEqualStrings("bob", watched_batch_deferred[0].target.identity);
 
-    var watched_turn_matches: [2]Planning.ProfileMatch = undefined;
-    var watched_turn_latest_entries: [3]Planning.TargetLatestEntry = undefined;
-    var watched_turn_policy_entries: [3]Planning.TargetPolicyEntry = undefined;
-    var watched_turn_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var watched_turn_cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
-    var watched_turn_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var watched_turn_entries: [3]Planning.TargetTurnPolicyEntry = undefined;
-    var watched_turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    var watched_turn_matches: [2]Planning.Match = undefined;
+    var watched_turn_latest_entries: [3]Planning.Latest.Entry = undefined;
+    var watched_turn_policy_entries: [3]Planning.Policy.Entry = undefined;
+    var watched_turn_policy_groups: [4]Planning.Policy.Group = undefined;
+    var watched_turn_cadence_entries: [3]Planning.Cadence.Entry = undefined;
+    var watched_turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var watched_turn_entries: [3]Planning.Turn.Entry = undefined;
+    var watched_turn_groups: [4]Planning.Turn.Group = undefined;
     const watched_turn_policy =
         try identity.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
             profile_store.asStore(),
@@ -526,7 +526,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
                 .refresh_soon_age_seconds = 10,
                 .max_selected = 2,
                 .fallback_policy = .allow_stale_latest,
-                .storage = Planning.TargetTurnPolicyStorage.init(
+                .storage = Planning.Turn.Storage.init(
                     watched_turn_matches[0..],
                     watched_turn_latest_entries[0..],
                     watched_turn_policy_entries[0..],
@@ -557,7 +557,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualStrings("bob", watched_turn_policy.idleEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", watched_turn_policy.deferredEntries()[0].target.identity);
 
-    var preferred_matches: [2]Planning.ProfileMatch = undefined;
+    var preferred_matches: [2]Planning.Match = undefined;
     const preferred = (try identity.IdentityVerifier.getPreferredStoredProfile(
         profile_store.asStore(),
         .{
@@ -570,14 +570,14 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
         },
     )).?;
     try std.testing.expectEqual(
-        Planning.StoredProfileFreshness.fresh,
+        Planning.Stored.Freshness.fresh,
         preferred.freshness,
     );
     try std.testing.expectEqual(@as(u64, 30), preferred.age_seconds);
     try std.testing.expectEqualStrings("alice", preferred.entry.matchedClaim().identitySlice());
 
-    var runtime_matches: [2]Planning.ProfileMatch = undefined;
-    var runtime_entries: [2]Planning.StoredProfileDiscoveryFreshnessEntry = undefined;
+    var runtime_matches: [2]Planning.Match = undefined;
+    var runtime_entries: [2]Planning.Stored.FreshEntry = undefined;
     const runtime = try identity.IdentityVerifier.inspectStoredProfileRuntime(
         profile_store.asStore(),
         .{
@@ -585,21 +585,21 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
             .identity = "alice",
             .now_unix_seconds = 31,
             .max_age_seconds = 60,
-            .storage = identity.IdentityStoredProfileRuntimeStorage.init(
+            .storage = Planning.Stored.Runtime.Storage.init(
                 runtime_matches[0..],
                 runtime_entries[0..],
             ),
         },
     );
     try std.testing.expectEqual(
-        identity.IdentityStoredProfileRuntimeAction.use_preferred,
+        Planning.Stored.Runtime.Action.use_preferred,
         runtime.action,
     );
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
     const next_step = runtime.nextStep();
     try std.testing.expectEqual(
-        identity.IdentityStoredProfileRuntimeAction.use_preferred,
+        Planning.Stored.Runtime.Action.use_preferred,
         next_step.action,
     );
     const next_entry = next_step.entry.?;
@@ -616,9 +616,9 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
         runtime.preferredEntry().?.matchedClaim().identitySlice(),
     );
 
-    var refresh_matches: [2]Planning.ProfileMatch = undefined;
-    var refresh_freshness_entries: [2]Planning.StoredProfileDiscoveryFreshnessEntry = undefined;
-    var refresh_entries: [2]identity.IdentityStoredProfileRefreshEntry = undefined;
+    var refresh_matches: [2]Planning.Match = undefined;
+    var refresh_freshness_entries: [2]Planning.Stored.FreshEntry = undefined;
+    var refresh_entries: [2]Planning.Stored.Refresh.Entry = undefined;
     const refresh_plan = try identity.IdentityVerifier.planStoredProfileRefresh(
         profile_store.asStore(),
         .{
@@ -626,7 +626,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
             .identity = "alice",
             .now_unix_seconds = 100,
             .max_age_seconds = 60,
-            .storage = identity.IdentityStoredProfileRefreshStorage.init(
+            .storage = Planning.Stored.Refresh.Storage.init(
                 refresh_matches[0..],
                 refresh_freshness_entries[0..],
                 refresh_entries[0..],
@@ -673,7 +673,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqual(@as(usize, 2), cached_summary.cache_hit_count);
     try std.testing.expectEqual(@as(usize, 0), cached_summary.network_fetch_count);
 
-    var latest_matches: [2]Planning.ProfileMatch = undefined;
+    var latest_matches: [2]Planning.Match = undefined;
     const latest = (try identity.IdentityVerifier.getLatestStoredProfile(
         profile_store.asStore(),
         .{
@@ -685,7 +685,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualSlices(u8, pubkey[0..], latest.match.pubkey[0..]);
     try std.testing.expectEqualStrings("alice", latest.matchedClaim().identitySlice());
 
-    var freshness_matches: [2]Planning.ProfileMatch = undefined;
+    var freshness_matches: [2]Planning.Match = undefined;
     const freshness = (try identity.IdentityVerifier.getLatestStoredProfileFreshness(
         profile_store.asStore(),
         .{
@@ -696,7 +696,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
             .matches = freshness_matches[0..],
         },
     )).?;
-    try std.testing.expectEqual(Planning.StoredProfileFreshness.fresh, freshness.freshness);
+    try std.testing.expectEqual(Planning.Stored.Freshness.fresh, freshness.freshness);
     try std.testing.expectEqual(@as(u64, 30), freshness.age_seconds);
     try std.testing.expectEqualStrings("alice", freshness.latest.matchedClaim().identitySlice());
 }

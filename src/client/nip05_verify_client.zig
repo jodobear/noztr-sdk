@@ -33,26 +33,7 @@ pub const Nip05VerifyJob = workflows.identity.nip05.Nip05VerificationRequest;
 pub const Nip05LookupJobResult = workflows.identity.nip05.Nip05LookupOutcome;
 pub const Nip05VerifyJobResult = workflows.identity.nip05.Nip05VerificationOutcome;
 
-pub const Nip05RememberedResolutionPlanning = struct {
-    pub const StorePutOutcome = workflows.identity.nip05.Nip05RememberedResolutionStorePutOutcome;
-    pub const Record = workflows.identity.nip05.Nip05RememberedResolutionRecord;
-    pub const Store = workflows.identity.nip05.Nip05RememberedResolutionStore;
-    pub const MemoryStore = workflows.identity.nip05.MemoryNip05RememberedResolutionStore;
-    pub const Target = workflows.identity.nip05.Nip05RememberedResolutionTarget;
-    pub const Freshness = workflows.identity.nip05.Nip05RememberedResolutionFreshness;
-    pub const LatestFreshness = workflows.identity.nip05.Nip05LatestRememberedResolutionFreshness;
-    pub const LatestTargetEntry = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetEntry;
-    pub const LatestTargetStorage = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetStorage;
-    pub const LatestTargetRequest = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetRequest;
-    pub const LatestTargetPlan = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetPlan;
-    pub const LatestTargetStep = workflows.identity.nip05.Nip05LatestRememberedResolutionTargetStep;
-    pub const RefreshAction = workflows.identity.nip05.Nip05RememberedResolutionRefreshAction;
-    pub const RefreshEntry = workflows.identity.nip05.Nip05RememberedResolutionRefreshEntry;
-    pub const RefreshStorage = workflows.identity.nip05.Nip05RememberedResolutionRefreshStorage;
-    pub const RefreshRequest = workflows.identity.nip05.Nip05RememberedResolutionRefreshRequest;
-    pub const RefreshPlan = workflows.identity.nip05.Nip05RememberedResolutionRefreshPlan;
-    pub const RefreshStep = workflows.identity.nip05.Nip05RememberedResolutionRefreshStep;
-};
+pub const Planning = workflows.identity.nip05.Planning;
 
 pub const Nip05VerifyClient = struct {
     config: Nip05VerifyClientConfig,
@@ -111,10 +92,10 @@ pub const Nip05VerifyClient = struct {
 
     pub fn rememberLookupOutcome(
         self: *const Nip05VerifyClient,
-        store: Nip05RememberedResolutionPlanning.Store,
+        store: Planning.Store.Backend,
         outcome: *const Nip05LookupJobResult,
         resolved_at: u64,
-    ) Nip05VerifyClientError!?Nip05RememberedResolutionPlanning.StorePutOutcome {
+    ) Nip05VerifyClientError!?Planning.Store.PutOutcome {
         _ = self;
         return switch (outcome.*) {
             .resolved => |resolved| try workflows.identity.nip05.Nip05Resolver.rememberResolution(
@@ -128,10 +109,10 @@ pub const Nip05VerifyClient = struct {
 
     pub fn rememberVerifyOutcome(
         self: *const Nip05VerifyClient,
-        store: Nip05RememberedResolutionPlanning.Store,
+        store: Planning.Store.Backend,
         outcome: *const Nip05VerifyJobResult,
         resolved_at: u64,
-    ) Nip05VerifyClientError!?Nip05RememberedResolutionPlanning.StorePutOutcome {
+    ) Nip05VerifyClientError!?Planning.Store.PutOutcome {
         _ = self;
         return switch (outcome.*) {
             .verified => |verified| try workflows.identity.nip05.Nip05Resolver.rememberResolution(
@@ -145,33 +126,33 @@ pub const Nip05VerifyClient = struct {
 
     pub fn getRememberedResolution(
         self: *const Nip05VerifyClient,
-        store: Nip05RememberedResolutionPlanning.Store,
+        store: Planning.Store.Backend,
         address_text: []const u8,
         scratch: std.mem.Allocator,
-    ) Nip05VerifyClientError!?Nip05RememberedResolutionPlanning.Record {
+    ) Nip05VerifyClientError!?Planning.Store.Record {
         _ = self;
         return workflows.identity.nip05.Nip05Resolver.getRememberedResolution(store, address_text, scratch);
     }
 
-    pub fn inspectLatestRememberedResolutionFreshnessForTargets(
+    pub fn inspectLatestForTargets(
         self: *const Nip05VerifyClient,
-        store: Nip05RememberedResolutionPlanning.Store,
-        request: Nip05RememberedResolutionPlanning.LatestTargetRequest,
-    ) Nip05VerifyClientError!Nip05RememberedResolutionPlanning.LatestTargetPlan {
+        store: Planning.Store.Backend,
+        request: Planning.Latest.Request,
+    ) Nip05VerifyClientError!Planning.Latest.Plan {
         _ = self;
-        return workflows.identity.nip05.Nip05Resolver.inspectLatestRememberedResolutionFreshnessForTargets(
+        return workflows.identity.nip05.Nip05Resolver.inspectLatestForTargets(
             store,
             request,
         );
     }
 
-    pub fn planRememberedResolutionRefreshForTargets(
+    pub fn planRefreshForTargets(
         self: *const Nip05VerifyClient,
-        store: Nip05RememberedResolutionPlanning.Store,
-        request: Nip05RememberedResolutionPlanning.RefreshRequest,
-    ) Nip05VerifyClientError!Nip05RememberedResolutionPlanning.RefreshPlan {
+        store: Planning.Store.Backend,
+        request: Planning.Refresh.Request,
+    ) Nip05VerifyClientError!Planning.Refresh.Plan {
         _ = self;
-        return workflows.identity.nip05.Nip05Resolver.planRememberedResolutionRefreshForTargets(store, request);
+        return workflows.identity.nip05.Nip05Resolver.planRefreshForTargets(store, request);
     }
 };
 
@@ -305,7 +286,7 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
     const verify_outcome = try client.verify(fake_http.client(), verify);
     try std.testing.expect(verify_outcome == .verified);
     try std.testing.expectEqual(
-        Nip05RememberedResolutionPlanning.StorePutOutcome.stored,
+        Planning.Store.PutOutcome.stored,
         (try client.rememberVerifyOutcome(
             remembered_store.asStore(),
             &verify_outcome,
@@ -321,18 +302,18 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
     try std.testing.expect(restored != null);
     try std.testing.expectEqualStrings("alice@example.com", restored.?.addressText());
 
-    const targets = [_]Nip05RememberedResolutionPlanning.Target{
+    const targets = [_]Planning.Target{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]Nip05RememberedResolutionPlanning.LatestTargetEntry = undefined;
-    const latest_plan = try client.inspectLatestRememberedResolutionFreshnessForTargets(
+    var latest_entries: [2]Planning.Latest.Entry = undefined;
+    const latest_plan = try client.inspectLatestForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = Nip05RememberedResolutionPlanning.LatestTargetStorage.init(
+            .storage = Planning.Latest.Storage.init(
                 latest_entries[0..],
             ),
             .scratch = arena.allocator(),
@@ -369,20 +350,20 @@ test "nip05 verify client plans remembered refresh work through one client surfa
     _ = try workflows.identity.nip05.Nip05Resolver.rememberResolution(remembered_store.asStore(), &resolution, 95);
     _ = try workflows.identity.nip05.Nip05Resolver.rememberResolution(remembered_store.asStore(), &stale_resolution, 10);
 
-    const targets = [_]Nip05RememberedResolutionPlanning.Target{
+    const targets = [_]Planning.Target{
         .{ .address_text = "carol@example.com" },
         .{ .address_text = "bob@example.com" },
         .{ .address_text = "alice@example.com" },
     };
-    var latest_entries: [3]Nip05RememberedResolutionPlanning.LatestTargetEntry = undefined;
-    var refresh_entries: [3]Nip05RememberedResolutionPlanning.RefreshEntry = undefined;
-    const plan = try client.planRememberedResolutionRefreshForTargets(
+    var latest_entries: [3]Planning.Latest.Entry = undefined;
+    var refresh_entries: [3]Planning.Refresh.Entry = undefined;
+    const plan = try client.planRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 100,
             .max_age_seconds = 20,
-            .storage = Nip05RememberedResolutionPlanning.RefreshStorage.init(
+            .storage = Planning.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

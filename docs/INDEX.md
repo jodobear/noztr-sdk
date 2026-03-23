@@ -55,8 +55,8 @@ If you are evaluating `noztr-sdk` for another Zig SDK, read the downstream bound
     local-state route
 - [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
   - short pre-`1.0` migration note for the mailbox and legacy sync-runtime family cleanup
-- [proof and identity planning migration](./reference/proof-identity-planning-migration.md)
-  - short pre-`1.0` migration note for the grouped proof/identity planning cleanup
+- [proof, identity, and NIP-05 planning migration](./reference/proof-identity-planning-migration.md)
+  - short pre-`1.0` migration note for the grouped proof/identity/NIP-05 planning cleanup
 - [examples filename migration](./reference/examples-filename-migration.md)
   - short pre-`1.0` migration note for dropping the redundant `_recipe` example filename suffix
 - [noztr-core rc4 migration](./reference/noztr-core-rc4-migration.md)

@@ -276,7 +276,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.identity.nip05.Nip05VerifyJob) == type);
     try std.testing.expect(@TypeOf(client.identity.nip05.Nip05LookupJobResult) == type);
     try std.testing.expect(@TypeOf(client.identity.nip05.Nip05VerifyJobResult) == type);
-    try std.testing.expect(@TypeOf(client.identity.nip05.Nip05RememberedResolutionPlanning) == type);
+    try std.testing.expect(@TypeOf(client.identity.nip05.Planning) == type);
     try std.testing.expect(@TypeOf(client.identity.nip05.Nip05VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyClientError) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyClientConfig) == type);

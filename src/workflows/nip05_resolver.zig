@@ -316,6 +316,35 @@ pub const Nip05RememberedResolutionRefreshStep = struct {
     entry: Nip05RememberedResolutionRefreshEntry,
 };
 
+pub const Planning = struct {
+    pub const Store = struct {
+        pub const PutOutcome = Nip05RememberedResolutionStorePutOutcome;
+        pub const Record = Nip05RememberedResolutionRecord;
+        pub const Backend = Nip05RememberedResolutionStore;
+        pub const Memory = MemoryNip05RememberedResolutionStore;
+    };
+
+    pub const Target = Nip05RememberedResolutionTarget;
+
+    pub const Latest = struct {
+        pub const Freshness = Nip05RememberedResolutionFreshness;
+        pub const Entry = Nip05LatestRememberedResolutionTargetEntry;
+        pub const Storage = Nip05LatestRememberedResolutionTargetStorage;
+        pub const Request = Nip05LatestRememberedResolutionTargetRequest;
+        pub const Plan = Nip05LatestRememberedResolutionTargetPlan;
+        pub const Step = Nip05LatestRememberedResolutionTargetStep;
+    };
+
+    pub const Refresh = struct {
+        pub const Action = Nip05RememberedResolutionRefreshAction;
+        pub const Entry = Nip05RememberedResolutionRefreshEntry;
+        pub const Storage = Nip05RememberedResolutionRefreshStorage;
+        pub const Request = Nip05RememberedResolutionRefreshRequest;
+        pub const Plan = Nip05RememberedResolutionRefreshPlan;
+        pub const Step = Nip05RememberedResolutionRefreshStep;
+    };
+};
+
 pub const Nip05VerificationRequest = struct {
     address_text: []const u8,
     expected_pubkey: *const [32]u8,
@@ -430,7 +459,7 @@ pub const Nip05Resolver = struct {
         return store.getResolution(canonical_address);
     }
 
-    pub fn inspectLatestRememberedResolutionFreshnessForTargets(
+    pub fn inspectLatestForTargets(
         store: Nip05RememberedResolutionStore,
         request: Nip05LatestRememberedResolutionTargetRequest,
     ) (Nip05ResolverError || Nip05RememberedResolutionStoreError)!Nip05LatestRememberedResolutionTargetPlan {
@@ -474,14 +503,14 @@ pub const Nip05Resolver = struct {
         return plan;
     }
 
-    pub fn planRememberedResolutionRefreshForTargets(
+    pub fn planRefreshForTargets(
         store: Nip05RememberedResolutionStore,
         request: Nip05RememberedResolutionRefreshRequest,
     ) (Nip05ResolverError || Nip05RememberedResolutionStoreError)!Nip05RememberedResolutionRefreshPlan {
         if (request.storage.latest_entries.len < request.targets.len) return error.BufferTooSmall;
         if (request.storage.entries.len < request.targets.len) return error.BufferTooSmall;
 
-        const latest_plan = try inspectLatestRememberedResolutionFreshnessForTargets(
+        const latest_plan = try inspectLatestForTargets(
             store,
             .{
                 .targets = request.targets,
@@ -1028,7 +1057,7 @@ test "nip05 resolver inspects latest remembered resolution freshness for targets
     };
     var latest_entries: [3]Nip05LatestRememberedResolutionTargetEntry = undefined;
 
-    const plan = try Nip05Resolver.inspectLatestRememberedResolutionFreshnessForTargets(
+    const plan = try Nip05Resolver.inspectLatestForTargets(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -1084,7 +1113,7 @@ test "nip05 resolver plans remembered resolution refresh work for missing and st
     var latest_entries: [3]Nip05LatestRememberedResolutionTargetEntry = undefined;
     var refresh_entries: [3]Nip05RememberedResolutionRefreshEntry = undefined;
 
-    const plan = try Nip05Resolver.planRememberedResolutionRefreshForTargets(
+    const plan = try Nip05Resolver.planRefreshForTargets(
         store.asStore(),
         .{
             .targets = targets[0..],

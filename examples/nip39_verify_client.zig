@@ -117,39 +117,39 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
     _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
 
-    var listed_records: [4]Planning.WatchedTargetRecord = undefined;
+    var listed_records: [4]Planning.Record.Watched = undefined;
     var targets: [4]Planning.Target = undefined;
-    var matches: [2]Planning.ProfileMatch = undefined;
-    var latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var policy_entries: [4]Planning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var batch_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var batch_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var batch_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var orchestration_policy_matches: [2]Planning.ProfileMatch = undefined;
-    var orchestration_policy_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var orchestration_policy_entries: [4]Planning.TargetPolicyEntry = undefined;
-    var orchestration_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var orchestration_cadence_matches: [2]Planning.ProfileMatch = undefined;
-    var orchestration_cadence_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var orchestration_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var orchestration_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var orchestration_batch_matches: [2]Planning.ProfileMatch = undefined;
-    var orchestration_batch_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var orchestration_batch_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var orchestration_batch_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var orchestration_turn_matches: [2]Planning.ProfileMatch = undefined;
-    var orchestration_turn_latest_entries: [4]Planning.TargetLatestEntry = undefined;
-    var orchestration_turn_policy_entries: [4]Planning.TargetPolicyEntry = undefined;
-    var orchestration_turn_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
-    var orchestration_turn_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
-    var orchestration_turn_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
-    var turn_entries: [4]Planning.TargetTurnPolicyEntry = undefined;
-    var turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
-    var orchestration_turn_entries: [4]Planning.TargetTurnPolicyEntry = undefined;
-    var orchestration_turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    var matches: [2]Planning.Match = undefined;
+    var latest_entries: [4]Planning.Latest.Entry = undefined;
+    var policy_entries: [4]Planning.Policy.Entry = undefined;
+    var policy_groups: [4]Planning.Policy.Group = undefined;
+    var cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var batch_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var orchestration_policy_matches: [2]Planning.Match = undefined;
+    var orchestration_policy_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var orchestration_policy_entries: [4]Planning.Policy.Entry = undefined;
+    var orchestration_policy_groups: [4]Planning.Policy.Group = undefined;
+    var orchestration_cadence_matches: [2]Planning.Match = undefined;
+    var orchestration_cadence_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var orchestration_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var orchestration_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var orchestration_batch_matches: [2]Planning.Match = undefined;
+    var orchestration_batch_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var orchestration_batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var orchestration_batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var orchestration_turn_matches: [2]Planning.Match = undefined;
+    var orchestration_turn_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var orchestration_turn_policy_entries: [4]Planning.Policy.Entry = undefined;
+    var orchestration_turn_policy_groups: [4]Planning.Policy.Group = undefined;
+    var orchestration_turn_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var orchestration_turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var turn_entries: [4]Planning.Turn.Entry = undefined;
+    var turn_groups: [4]Planning.Turn.Group = undefined;
+    var orchestration_turn_entries: [4]Planning.Turn.Entry = undefined;
+    var orchestration_turn_groups: [4]Planning.Turn.Group = undefined;
 
     const cadence = try client.inspectWatchedCadence(
         profile_store.asStore(),
@@ -159,10 +159,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedCadenceStorage.init(
+            .storage = Planning.Watched.Cadence.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetCadenceStorage.init(
+                Planning.Cadence.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],
@@ -188,10 +188,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedBatchStorage.init(
+            .storage = Planning.Watched.Batch.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetBatchStorage.init(
+                Planning.Batch.Storage.init(
                     matches[0..],
                     batch_latest_entries[0..],
                     batch_cadence_entries[0..],
@@ -216,10 +216,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 3,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedTurnPolicyStorage.init(
+            .storage = Planning.Watched.Turn.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetTurnPolicyStorage.init(
+                Planning.Turn.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     policy_entries[0..],
@@ -251,28 +251,28 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.WatchedOrchestrationStorage.init(
+            .storage = Planning.Watched.Orchestration.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.TargetPolicyStorage.init(
+                Planning.Policy.Storage.init(
                     orchestration_policy_matches[0..],
                     orchestration_policy_latest_entries[0..],
                     orchestration_policy_entries[0..],
                     orchestration_policy_groups[0..],
                 ),
-                Planning.TargetCadenceStorage.init(
+                Planning.Cadence.Storage.init(
                     orchestration_cadence_matches[0..],
                     orchestration_cadence_latest_entries[0..],
                     orchestration_cadence_entries[0..],
                     orchestration_cadence_groups[0..],
                 ),
-                Planning.TargetBatchStorage.init(
+                Planning.Batch.Storage.init(
                     orchestration_batch_matches[0..],
                     orchestration_batch_latest_entries[0..],
                     orchestration_batch_cadence_entries[0..],
                     orchestration_batch_cadence_groups[0..],
                 ),
-                Planning.TargetTurnPolicyStorage.init(
+                Planning.Turn.Storage.init(
                     orchestration_turn_matches[0..],
                     orchestration_turn_latest_entries[0..],
                     orchestration_turn_policy_entries[0..],
@@ -305,22 +305,22 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     try std.testing.expectEqualStrings("alice", orchestration.useCachedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", orchestration.deferredEntries()[0].target.identity);
 
-    var remembered_records: [2]Planning.RememberedIdentityRecord = undefined;
+    var remembered_records: [2]Planning.Record.Remembered = undefined;
     var remembered_targets: [2]Planning.Target = undefined;
-    var remembered_matches: [1]Planning.ProfileMatch = undefined;
-    var remembered_latest_entries: [2]Planning.TargetLatestEntry = undefined;
-    var remembered_cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
-    var remembered_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var remembered_matches: [1]Planning.Match = undefined;
+    var remembered_latest_entries: [2]Planning.Latest.Entry = undefined;
+    var remembered_cadence_entries: [2]Planning.Cadence.Entry = undefined;
+    var remembered_cadence_groups: [5]Planning.Cadence.Group = undefined;
 
     const remembered_freshness = try client.inspectRememberedLatest(
         profile_store.asStore(),
         .{
             .now_unix_seconds = 50,
             .max_age_seconds = 20,
-            .storage = Planning.RememberedLatestStorage.init(
+            .storage = Planning.Remembered.Latest.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                Planning.TargetLatestStorage.init(
+                Planning.Latest.Storage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                 ),
@@ -339,10 +339,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.RememberedCadenceStorage.init(
+            .storage = Planning.Remembered.Cadence.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                Planning.TargetCadenceStorage.init(
+                Planning.Cadence.Storage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                     remembered_cadence_entries[0..],
@@ -367,10 +367,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.RememberedBatchStorage.init(
+            .storage = Planning.Remembered.Batch.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                Planning.TargetBatchStorage.init(
+                Planning.Batch.Storage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                     remembered_cadence_entries[0..],
