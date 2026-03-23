@@ -27,6 +27,7 @@ const local_state_client = @import("local_state_client.zig");
 const nip03_verify_client = @import("nip03_verify_client.zig");
 const nip05_verify_client = @import("nip05_verify_client.zig");
 const nip39_verify_client = @import("nip39_verify_client.zig");
+const social_profile_content_client = @import("social_profile_content_client.zig");
 const publish_job_client = @import("publish_job_client.zig");
 const publish_client = @import("publish_client.zig");
 const publish_turn_client = @import("publish_turn_client.zig");
@@ -119,6 +120,10 @@ pub const dm = struct {
 pub const identity = struct {
     pub const nip05 = nip05_verify_client;
     pub const nip39 = nip39_verify_client;
+};
+
+pub const social = struct {
+    pub const profile_content = social_profile_content_client;
 };
 
 pub const proof = struct {
