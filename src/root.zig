@@ -1095,6 +1095,6 @@ test "phase9 exposes the group session workflow surface" {
     try std.testing.expect(@TypeOf(workflows.groups.session.GroupPutUserDraft) == type);
     try std.testing.expect(@TypeOf(workflows.groups.session.GroupRemoveUserDraft) == type);
     try std.testing.expect(@TypeOf(workflows.groups.session.GroupObservedEventKind) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.session.GroupJoinRequestInfo) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.session.GroupLeaveRequestInfo) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.session.JoinRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.session.LeaveRequest) == type);
 }

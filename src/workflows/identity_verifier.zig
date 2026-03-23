@@ -4361,7 +4361,7 @@ test "identity verifier extracts and verifies claims from a full identity event"
         .{ .provider = .github, .identity = "alice", .proof = "gist-id" },
         .{ .provider = .twitter, .identity = "alice_public", .proof = "1619358434134196225" },
     };
-    var tags_storage: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(
@@ -4440,7 +4440,7 @@ test "identity verifier classifies unsupported and fetch-failed claims during pr
         .{ .provider = .telegram, .identity = "1087295469", .proof = "nostrdirectory/770" },
         .{ .provider = .mastodon, .identity = "bitcoinhackers.org/@semisol", .proof = "109775066355589974" },
     };
-    var tags_storage: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(
@@ -4512,7 +4512,7 @@ test "identity verifier exposes provider-specific details for verified profile c
             .proof = "109775066355589974",
         },
     };
-    var tags_storage: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(
@@ -4635,7 +4635,7 @@ test "identity verifier reuses cached profile verification outcomes before fetch
         .{ .provider = .github, .identity = "alice", .proof = "gist-id" },
         .{ .provider = .twitter, .identity = "alice_public", .proof = "1619358434134196225" },
     };
-    var tags_storage: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(
@@ -4753,7 +4753,7 @@ test "identity verifier cached profile verification still classifies telegram as
     const claims = [_]noztr.nip39_external_identities.IdentityClaim{
         .{ .provider = .telegram, .identity = "1087295469", .proof = "nostrdirectory/770" },
     };
-    var tags_storage: [1]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [1]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags = [_]noztr.nip01_event.EventTag{
         try noztr.nip39_external_identities.identity_claim_build_tag(&tags_storage[0], &claims[0]),
     };
@@ -4812,7 +4812,7 @@ test "identity verifier stores verified profile claims and discovers them by pro
         .{ .provider = .github, .identity = "alice", .proof = "gist-id" },
         .{ .provider = .twitter, .identity = "alice_public", .proof = "1619358434134196225" },
     };
-    var tags_storage: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(
@@ -5014,7 +5014,7 @@ test "identity verifier verifies, remembers, and hydrates stored profile discove
         .{ .provider = .github, .identity = "alice", .proof = "gist-id" },
         .{ .provider = .mastodon, .identity = "nostr.example/@alice", .proof = "112233" },
     };
-    var tags_storage: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var tags_storage: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(

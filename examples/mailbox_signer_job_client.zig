@@ -258,7 +258,7 @@ fn buildRelayListEventJson(
 ) ![]const u8 {
     const pubkey = try common.derivePublicKey(secret_key);
     var tags_storage: [8]noztr.nip01_event.EventTag = undefined;
-    var built_tag_storage: [8]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tag_storage: [8]noztr.nip17_private_messages.TagBuilder = undefined;
     for (relays, 0..) |relay, i| {
         tags_storage[i] = try noztr.nip17_private_messages.nip17_build_relay_tag(&built_tag_storage[i], relay);
     }

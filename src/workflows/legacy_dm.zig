@@ -49,7 +49,7 @@ pub const PreparedLegacyDmEvent = struct {
 /// `plaintext` borrows from caller-provided plaintext output.
 pub const LegacyDmMessageOutcome = struct {
     event: noztr.nip01_event.Event,
-    message: noztr.nip04.MessageInfo,
+    message: noztr.nip04.Message,
     plaintext: []const u8,
 };
 

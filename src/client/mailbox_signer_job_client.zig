@@ -55,7 +55,7 @@ pub const MailboxSignerJobReady = union(enum) {
 pub const MailboxSignerDirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
-    reply_to: ?noztr.nip17_private_messages.DmReplyRef = null,
+    reply_to: ?noztr.nip17_private_messages.ReplyRef = null,
     recipient_relay_list_event_json: []const u8,
     sender_relay_list_event_json: ?[]const u8 = null,
     content: []const u8,
@@ -543,7 +543,7 @@ fn buildDirectMessageRumorJson(
     author_pubkey: [32]u8,
     request: *const MailboxSignerDirectMessageRequest,
 ) MailboxSignerJobClientError![]const u8 {
-    var built_recipient_tag: noztr.nip17_private_messages.BuiltTag = .{};
+    var built_recipient_tag: noztr.nip17_private_messages.TagBuilder = .{};
     var reply_tag_storage: MailboxSignerReplyTagStorage = .{};
     const recipient_hex = std.fmt.bytesToHex(request.recipient_pubkey, .lower);
     const recipient_tag = try noztr.nip17_private_messages.nip17_build_recipient_tag(
@@ -596,7 +596,7 @@ fn buildUnsignedWrapJson(
     created_at: u64,
     wrap_payload: []const u8,
 ) MailboxSignerJobClientError![]const u8 {
-    var built_recipient_tag: noztr.nip17_private_messages.BuiltTag = .{};
+    var built_recipient_tag: noztr.nip17_private_messages.TagBuilder = .{};
     const recipient_hex = std.fmt.bytesToHex(recipient_pubkey, .lower);
     const recipient_tag = try noztr.nip17_private_messages.nip17_build_recipient_tag(
         &built_recipient_tag,
@@ -626,7 +626,7 @@ const MailboxSignerReplyTagStorage = struct {
 
 fn buildReplyTag(
     storage: *MailboxSignerReplyTagStorage,
-    reply_to: *const noztr.nip17_private_messages.DmReplyRef,
+    reply_to: *const noztr.nip17_private_messages.ReplyRef,
 ) MailboxSignerJobClientError!noztr.nip01_event.EventTag {
     const event_id_hex = std.fmt.bytesToHex(reply_to.event_id, .lower);
     @memcpy(storage.event_id_hex[0..], event_id_hex[0..]);
@@ -1111,7 +1111,7 @@ fn buildRelayListEventJson(
 ) MailboxSignerJobClientError![]const u8 {
     var operator = local_operator.LocalOperatorClient.init(.{});
     const public_key = try operator.derivePublicKey(secret_key);
-    var built_tags: [8]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tags: [8]noztr.nip17_private_messages.TagBuilder = undefined;
     var tags: [8]noztr.nip01_event.EventTag = undefined;
     var count: usize = 0;
     while (count < relays.len) : (count += 1) {

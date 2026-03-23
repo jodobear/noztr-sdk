@@ -16,7 +16,7 @@ test "recipe: mixed dm client normalizes intake and prepares bounded outbound ma
     var capability_storage = noztr_sdk.client.dm.capability.DmCapabilityClientStorage{};
     const capability = noztr_sdk.client.dm.capability.DmCapabilityClient.init(.{}, &capability_storage);
     var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
-    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.TagBuilder = undefined;
     var relay_list_storage = noztr_sdk.client.dm.capability.MailboxRelayListDraftStorage.init(
         relay_tags[0..],
         built_tags[0..],

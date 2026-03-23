@@ -11,7 +11,7 @@ test "recipe: dm capability client composes mailbox relay-list support and mixed
 
     const secret_key = [_]u8{0x44} ** 32;
     var tag_storage: [2]noztr.nip01_event.EventTag = undefined;
-    var built_tag_storage: [2]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tag_storage: [2]noztr.nip17_private_messages.TagBuilder = undefined;
     var draft_storage = noztr_sdk.client.dm.capability.MailboxRelayListDraftStorage.init(
         tag_storage[0..],
         built_tag_storage[0..],

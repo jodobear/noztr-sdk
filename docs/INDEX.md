@@ -59,6 +59,8 @@ If you are evaluating `noztr-sdk` for another Zig SDK, read the downstream bound
   - short pre-`1.0` migration note for the grouped proof/identity planning cleanup
 - [examples filename migration](./reference/examples-filename-migration.md)
   - short pre-`1.0` migration note for dropping the redundant `_recipe` example filename suffix
+- [noztr-core rc4 migration](./reference/noztr-core-rc4-migration.md)
+  - short pre-`1.0` migration note for cumulative post-`rc.3` core-driven SDK type renames
 - [examples/README.md](../examples/README.md)
   - workflow recipes and teaching routes
 

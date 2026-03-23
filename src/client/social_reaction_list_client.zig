@@ -74,7 +74,7 @@ pub const SocialListDraft = struct {
 };
 
 pub const SocialListDraftStorage = struct {
-    identifier_tag: noztr.nip51_lists.BuiltTag = undefined,
+    identifier_tag: noztr.nip51_lists.TagBuilder = undefined,
     tags: []noztr.nip01_event.EventTag,
 
     pub fn init(tags: []noztr.nip01_event.EventTag) SocialListDraftStorage {
@@ -108,7 +108,7 @@ pub const StoredSocialListSelectionRequest = struct {
 pub const StoredSocialListSelection = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
-    info: noztr.nip51_lists.ListInfo,
+    info: noztr.nip51_lists.List,
     items: []const noztr.nip51_lists.ListItem,
 };
 
@@ -419,7 +419,7 @@ pub const SocialReactionListClient = struct {
         self: SocialReactionListClient,
         event: *const noztr.nip01_event.Event,
         items_out: []noztr.nip51_lists.ListItem,
-    ) SocialReactionListClientError!noztr.nip51_lists.ListInfo {
+    ) SocialReactionListClientError!noztr.nip51_lists.List {
         _ = self;
         if (noztr.nip51_lists.list_kind_classify(event.kind) == null) {
             return error.InvalidListEventKind;

@@ -64,7 +64,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     };
     var fake_http = TestMultiHttp.init(responses[0..]);
 
-    var built_tags: [2]noztr.nip39_external_identities.BuiltTag = undefined;
+    var built_tags: [2]noztr.nip39_external_identities.TagBuilder = undefined;
     var tags: [2]noztr.nip01_event.EventTag = undefined;
     for (&claims, 0..) |*claim, index| {
         tags[index] = try noztr.nip39_external_identities.identity_claim_build_tag(

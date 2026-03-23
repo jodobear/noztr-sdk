@@ -442,7 +442,7 @@ pub const Session = struct {
     ) Error!OutboundRequest {
         try self.requireRelayReady();
 
-        var built_request = noztr.nip46_remote_signing.BuiltRequest{};
+        var built_request = noztr.nip46_remote_signing.RequestBuilder{};
         const request = try noztr.nip46_remote_signing.request_build_connect(
             &built_request,
             context.id,
@@ -468,7 +468,7 @@ pub const Session = struct {
     ) Error!OutboundRequest {
         try self.requireConnectedRequestReady();
 
-        var built_request = noztr.nip46_remote_signing.BuiltRequest{};
+        var built_request = noztr.nip46_remote_signing.RequestBuilder{};
         const request = try noztr.nip46_remote_signing.request_build_empty(
             &built_request,
             context.id,
@@ -491,7 +491,7 @@ pub const Session = struct {
     ) Error!OutboundRequest {
         try self.requireConnectedRequestReady();
 
-        var built_request = noztr.nip46_remote_signing.BuiltRequest{};
+        var built_request = noztr.nip46_remote_signing.RequestBuilder{};
         const request = try noztr.nip46_remote_signing.request_build_sign_event(
             &built_request,
             context.id,
@@ -513,7 +513,7 @@ pub const Session = struct {
     ) Error!OutboundRequest {
         try self.requireConnectedRequestReady();
 
-        var built_request = noztr.nip46_remote_signing.BuiltRequest{};
+        var built_request = noztr.nip46_remote_signing.RequestBuilder{};
         const request = try noztr.nip46_remote_signing.request_build_empty(
             &built_request,
             context.id,
@@ -567,7 +567,7 @@ pub const Session = struct {
     ) Error!OutboundRequest {
         try self.requireConnectedRequestReady();
 
-        var built_request = noztr.nip46_remote_signing.BuiltRequest{};
+        var built_request = noztr.nip46_remote_signing.RequestBuilder{};
         const request = try noztr.nip46_remote_signing.request_build_empty(
             &built_request,
             context.id,
@@ -609,7 +609,7 @@ pub const Session = struct {
     ) Error!OutboundRequest {
         try self.requireConnectedRequestReady();
 
-        var built_request = noztr.nip46_remote_signing.BuiltRequest{};
+        var built_request = noztr.nip46_remote_signing.RequestBuilder{};
         const signed_request = try noztr.nip46_remote_signing.request_build_pubkey_text(
             &built_request,
             context.id,

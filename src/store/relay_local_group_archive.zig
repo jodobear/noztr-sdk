@@ -12,7 +12,7 @@ pub const RelayLocalGroupArchiveError = archive.EventArchiveError || group_local
 
 pub const RelayLocalGroupArchive = struct {
     archive: archive.EventArchive,
-    reference: noztr.nip29_relay_groups.GroupReference,
+    reference: noztr.nip29_relay_groups.Reference,
 
     pub fn init(
         store: client.ClientStore,
@@ -96,7 +96,7 @@ fn classifyStateEventKind(kind: u32) RelayLocalGroupArchiveError!group_session.G
 }
 
 fn requireReferenceMatch(
-    reference: *const noztr.nip29_relay_groups.GroupReference,
+    reference: *const noztr.nip29_relay_groups.Reference,
     event: *const noztr.nip01_event.Event,
 ) RelayLocalGroupArchiveError!void {
     var users: [noztr.limits.tags_max]noztr.nip29_relay_groups.GroupStateUser = undefined;

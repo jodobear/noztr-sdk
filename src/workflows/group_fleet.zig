@@ -704,7 +704,7 @@ pub const GroupFleetRemoveUserDraft = struct {
 
 pub const GroupFleet = struct {
     _clients: []*group_client.GroupClient,
-    _reference: noztr.nip29_relay_groups.GroupReference,
+    _reference: noztr.nip29_relay_groups.Reference,
 
     pub fn init(clients: []*group_client.GroupClient) GroupFleetError!GroupFleet {
         if (clients.len == 0) return error.NoClients;
@@ -732,7 +732,7 @@ pub const GroupFleet = struct {
         };
     }
 
-    pub fn groupReference(self: *const GroupFleet) noztr.nip29_relay_groups.GroupReference {
+    pub fn groupReference(self: *const GroupFleet) noztr.nip29_relay_groups.Reference {
         return self._reference;
     }
 

@@ -87,7 +87,7 @@ test "recipe: social profile content client composes social authoring, bounded s
     try client.storeSocialContentEventJson(archive, first_note.event_json, arena.allocator());
     try client.storeSocialContentEventJson(archive, second_note.event_json, arena.allocator());
 
-    var long_form_built_tags: [8]noztr.nip23_long_form.BuiltTag = undefined;
+    var long_form_built_tags: [8]noztr.nip23_long_form.TagBuilder = undefined;
     var long_form_tags: [8]noztr.nip01_event.EventTag = undefined;
     var long_form_storage = noztr_sdk.client.social.profile_content.SocialLongFormDraftStorage.init(
         long_form_built_tags[0..],

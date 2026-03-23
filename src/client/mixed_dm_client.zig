@@ -655,7 +655,7 @@ fn prepareMailboxDirectMessage(
     };
 }
 
-fn mailboxReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip17_private_messages.DmReplyRef {
+fn mailboxReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip17_private_messages.ReplyRef {
     const reply = reply_to orelse return null;
     return .{
         .event_id = reply.event_id,
@@ -718,7 +718,7 @@ fn observeLegacyDirectMessage(
 }
 
 fn observedReplyFromMailbox(
-    reply_to: ?noztr.nip17_private_messages.DmReplyRef,
+    reply_to: ?noztr.nip17_private_messages.ReplyRef,
 ) ?MixedDmObservedReplyRef {
     const reply = reply_to orelse return null;
     return .{
@@ -751,7 +751,7 @@ test "mixed dm client normalizes mailbox and legacy observations and keeps reply
     var relay_list_client_storage = dm_capability.DmCapabilityClientStorage{};
     const relay_list_client = dm_capability.DmCapabilityClient.init(.{}, &relay_list_client_storage);
     var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
-    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.TagBuilder = undefined;
     var relay_list_storage = dm_capability.MailboxRelayListDraftStorage.init(
         relay_tags[0..],
         built_tags[0..],
@@ -859,7 +859,7 @@ test "mixed dm client keeps replay and subscription intake normalization bounded
     var relay_list_client_storage = dm_capability.DmCapabilityClientStorage{};
     const relay_list_client = dm_capability.DmCapabilityClient.init(.{}, &relay_list_client_storage);
     var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
-    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.TagBuilder = undefined;
     var relay_list_storage = dm_capability.MailboxRelayListDraftStorage.init(
         relay_tags[0..],
         built_tags[0..],
@@ -1049,7 +1049,7 @@ test "mixed dm client prepares mailbox and legacy outbound work explicitly" {
     var capability_storage = dm_capability.DmCapabilityClientStorage{};
     const capability = dm_capability.DmCapabilityClient.init(.{}, &capability_storage);
     var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
-    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.TagBuilder = undefined;
     var relay_list_storage = dm_capability.MailboxRelayListDraftStorage.init(
         relay_tags[0..],
         built_tags[0..],
@@ -1132,7 +1132,7 @@ test "mixed dm client prepares remembered outbound route over caller-owned memor
     var capability_storage = dm_capability.DmCapabilityClientStorage{};
     const capability = dm_capability.DmCapabilityClient.init(.{}, &capability_storage);
     var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
-    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.TagBuilder = undefined;
     var relay_list_storage = dm_capability.MailboxRelayListDraftStorage.init(
         relay_tags[0..],
         built_tags[0..],

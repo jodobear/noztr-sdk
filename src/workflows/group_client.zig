@@ -43,8 +43,8 @@ pub const GroupClientConfig = struct {
 
 pub const GroupClientEventOutcome = union(enum) {
     state: group_session.GroupStateEventKind,
-    join_request: group_session.GroupJoinRequestInfo,
-    leave_request: group_session.GroupLeaveRequestInfo,
+    join_request: group_session.JoinRequest,
+    leave_request: group_session.LeaveRequest,
     generic: void,
 };
 
@@ -100,7 +100,7 @@ pub const GroupClient = struct {
         };
     }
 
-    pub fn groupReference(self: *const GroupClient) noztr.nip29_relay_groups.GroupReference {
+    pub fn groupReference(self: *const GroupClient) noztr.nip29_relay_groups.Reference {
         return self._session.groupReference();
     }
 

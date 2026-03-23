@@ -6033,8 +6033,8 @@ fn rememberTestRemoteVerification(
 const TestAttestationFixture = struct {
     target_id_hex: [64]u8,
     target_kind: u32,
-    event_tag: noztr.nip03_opentimestamps.BuiltTag,
-    kind_tag: noztr.nip03_opentimestamps.BuiltTag,
+    event_tag: noztr.nip03_opentimestamps.TagBuilder,
+    kind_tag: noztr.nip03_opentimestamps.TagBuilder,
     tags: [2]noztr.nip01_event.EventTag,
     event: noztr.nip01_event.Event,
 

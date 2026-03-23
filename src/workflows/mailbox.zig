@@ -53,7 +53,7 @@ pub const MailboxError =
 pub const MailboxMessageOutcome = struct {
     wrap_event_id: [32]u8,
     rumor_event: noztr.nip01_event.Event,
-    message: noztr.nip17_private_messages.DmMessageInfo,
+    message: noztr.nip17_private_messages.Message,
 };
 
 /// Parsed mailbox file-message intake result.
@@ -61,7 +61,7 @@ pub const MailboxMessageOutcome = struct {
 pub const MailboxFileMessageOutcome = struct {
     wrap_event_id: [32]u8,
     rumor_event: noztr.nip01_event.Event,
-    file_message: noztr.nip17_private_messages.FileMessageInfo,
+    file_message: noztr.nip17_private_messages.FileMessage,
 };
 
 pub const MailboxEnvelopeOutcome = union(enum) {
@@ -84,7 +84,7 @@ pub const MailboxOutboundBuffer = struct {
 pub const MailboxDirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
-    reply_to: ?noztr.nip17_private_messages.DmReplyRef = null,
+    reply_to: ?noztr.nip17_private_messages.ReplyRef = null,
     content: []const u8,
     created_at: u64,
     wrap_signer_private_key: [32]u8,
@@ -1215,7 +1215,7 @@ pub const MailboxSession = struct {
                 error.InvalidEvent => unreachable,
             };
         };
-        var built_recipient_tag: noztr.nip17_private_messages.BuiltTag = .{};
+        var built_recipient_tag: noztr.nip17_private_messages.TagBuilder = .{};
         var reply_tag_storage: MailboxReplyTagStorage = .{};
         const recipient_hex = std.fmt.bytesToHex(request.recipient_pubkey, .lower);
         const recipient_tag = try noztr.nip17_private_messages.nip17_build_recipient_tag(
@@ -1316,13 +1316,13 @@ pub const MailboxSession = struct {
         const total_tag_count = base_tag_count + request.thumbs.len + request.fallbacks.len;
         var rumor_tags = try scratch.alloc(noztr.nip01_event.EventTag, total_tag_count);
         var built_metadata_tags = try scratch.alloc(
-            noztr.nip17_private_messages.BuiltFileMetadataTag,
+            noztr.nip17_private_messages.FileTagBuilder,
             total_tag_count - 1,
         );
         var tag_index: usize = 0;
         var metadata_index: usize = 0;
 
-        var built_recipient_tag: noztr.nip17_private_messages.BuiltTag = .{};
+        var built_recipient_tag: noztr.nip17_private_messages.TagBuilder = .{};
         const recipient_hex = std.fmt.bytesToHex(request.recipient_pubkey, .lower);
         rumor_tags[tag_index] = try noztr.nip17_private_messages.nip17_build_recipient_tag(
             &built_recipient_tag,
@@ -1645,7 +1645,7 @@ const MailboxReplyTagStorage = struct {
 
 fn buildReplyTag(
     storage: *MailboxReplyTagStorage,
-    reply_to: *const noztr.nip17_private_messages.DmReplyRef,
+    reply_to: *const noztr.nip17_private_messages.ReplyRef,
 ) MailboxError!noztr.nip01_event.EventTag {
     const event_id_hex = std.fmt.bytesToHex(reply_to.event_id, .lower);
     @memcpy(storage.event_id_hex[0..], event_id_hex[0..]);
@@ -3655,8 +3655,8 @@ const TestSignedEventFixture = struct {
 
 const TestRumorFixture = struct {
     event: noztr.nip01_event.Event,
-    recipient_tag: noztr.nip17_private_messages.BuiltTag = .{},
-    file_metadata_tags: [7]noztr.nip17_private_messages.BuiltFileMetadataTag = undefined,
+    recipient_tag: noztr.nip17_private_messages.TagBuilder = .{},
+    file_metadata_tags: [7]noztr.nip17_private_messages.FileTagBuilder = undefined,
     json_storage: [2048]u8,
     json: []const u8,
 };

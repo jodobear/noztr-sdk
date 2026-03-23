@@ -7,8 +7,8 @@ pub const max_group_id_bytes: u16 = noztr.limits.tag_item_bytes_max;
 pub const previous_refs_history_capacity: u8 = 50;
 pub const previous_ref_text_bytes: u8 = 8;
 
-pub const GroupJoinRequestInfo = noztr.nip29_relay_groups.GroupJoinRequestInfo;
-pub const GroupLeaveRequestInfo = noztr.nip29_relay_groups.GroupLeaveRequestInfo;
+pub const JoinRequest = noztr.nip29_relay_groups.JoinRequest;
+pub const LeaveRequest = noztr.nip29_relay_groups.LeaveRequest;
 pub const GroupMetadata = noztr.nip29_relay_groups.GroupMetadata;
 pub const GroupAdmin = noztr.nip29_relay_groups.GroupAdmin;
 pub const GroupMember = noztr.nip29_relay_groups.GroupMember;
@@ -96,7 +96,7 @@ pub const GroupSessionConfig = struct {
 };
 
 pub const GroupSessionView = struct {
-    reference: noztr.nip29_relay_groups.GroupReference,
+    reference: noztr.nip29_relay_groups.Reference,
     relay_url: []const u8,
     relay_ready: bool,
     metadata: noztr.nip29_relay_groups.GroupMetadata,
@@ -306,7 +306,7 @@ pub const GroupSession = struct {
         return session;
     }
 
-    pub fn groupReference(self: *const GroupSession) noztr.nip29_relay_groups.GroupReference {
+    pub fn groupReference(self: *const GroupSession) noztr.nip29_relay_groups.Reference {
         return .{
             .host = self._state.reference_host[0..self._state.reference_host_len],
             .id = self._state.group_id[0..self._state.group_id_len],
@@ -420,7 +420,7 @@ pub const GroupSession = struct {
         event_json: []const u8,
         previous_storage: [][]const u8,
         scratch: std.mem.Allocator,
-    ) GroupSessionError!GroupJoinRequestInfo {
+    ) GroupSessionError!JoinRequest {
         try self.requireRelayReady();
         const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
         return self.acceptJoinRequestEvent(&event, previous_storage);
@@ -430,7 +430,7 @@ pub const GroupSession = struct {
         self: *GroupSession,
         event: *const noztr.nip01_event.Event,
         previous_storage: [][]const u8,
-    ) GroupSessionError!GroupJoinRequestInfo {
+    ) GroupSessionError!JoinRequest {
         try self.requireRelayReady();
         try noztr.nip01_event.event_verify(event);
         const info = try noztr.nip29_relay_groups.group_join_request_extract(event, previous_storage);
@@ -445,7 +445,7 @@ pub const GroupSession = struct {
         event_json: []const u8,
         previous_storage: [][]const u8,
         scratch: std.mem.Allocator,
-    ) GroupSessionError!GroupLeaveRequestInfo {
+    ) GroupSessionError!LeaveRequest {
         try self.requireRelayReady();
         const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
         return self.acceptLeaveRequestEvent(&event, previous_storage);
@@ -455,7 +455,7 @@ pub const GroupSession = struct {
         self: *GroupSession,
         event: *const noztr.nip01_event.Event,
         previous_storage: [][]const u8,
-    ) GroupSessionError!GroupLeaveRequestInfo {
+    ) GroupSessionError!LeaveRequest {
         try self.requireRelayReady();
         try noztr.nip01_event.event_verify(event);
         const info = try noztr.nip29_relay_groups.group_leave_request_extract(event, previous_storage);
@@ -811,7 +811,7 @@ pub const GroupSession = struct {
         request: *const GroupMetadataDraft,
     ) GroupSessionError!GroupOutboundEvent {
         var tags: [8]noztr.nip01_event.EventTag = undefined;
-        var built_tags: [8]noztr.nip29_relay_groups.BuiltTag = undefined;
+        var built_tags: [8]noztr.nip29_relay_groups.TagBuilder = undefined;
         const tag_count = try buildMetadataSnapshotTags(
             self.groupReference().id,
             request,
@@ -832,7 +832,7 @@ pub const GroupSession = struct {
         admins: []const GroupAdmin,
     ) GroupSessionError!GroupOutboundEvent {
         var tags: [noztr.limits.tags_max]noztr.nip01_event.EventTag = undefined;
-        var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.BuiltTag = undefined;
+        var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.TagBuilder = undefined;
         var pubkey_hexes: [noztr.limits.tags_max][noztr.limits.pubkey_hex_length]u8 = undefined;
         const tag_count = try buildAdminsSnapshotTags(
             self.groupReference().id,
@@ -855,7 +855,7 @@ pub const GroupSession = struct {
         members: []const GroupMember,
     ) GroupSessionError!GroupOutboundEvent {
         var tags: [noztr.limits.tags_max]noztr.nip01_event.EventTag = undefined;
-        var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.BuiltTag = undefined;
+        var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.TagBuilder = undefined;
         var pubkey_hexes: [noztr.limits.tags_max][noztr.limits.pubkey_hex_length]u8 = undefined;
         const tag_count = try buildMembersSnapshotTags(
             self.groupReference().id,
@@ -878,7 +878,7 @@ pub const GroupSession = struct {
         roles: []const GroupRole,
     ) GroupSessionError!GroupOutboundEvent {
         var tags: [noztr.limits.tags_max]noztr.nip01_event.EventTag = undefined;
-        var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.BuiltTag = undefined;
+        var built_tags: [noztr.limits.tags_max]noztr.nip29_relay_groups.TagBuilder = undefined;
         const tag_count = try buildRolesSnapshotTags(
             self.groupReference().id,
             roles,
@@ -928,7 +928,7 @@ pub const GroupSession = struct {
 
     fn storeReference(
         self: *GroupSession,
-        reference: noztr.nip29_relay_groups.GroupReference,
+        reference: noztr.nip29_relay_groups.Reference,
     ) void {
         std.debug.assert(reference.host.len <= self._state.reference_host.len);
         std.debug.assert(reference.id.len <= self._state.group_id.len);
@@ -1131,7 +1131,7 @@ fn extractIdentifierTagGroupId(tags: []const noztr.nip01_event.EventTag) GroupSe
         if (!std.mem.eql(u8, tag.items[0], "d")) continue;
         if (group_id != null) return error.DuplicateIdentifierTag;
         if (tag.items.len != 2) return error.InvalidIdentifierTag;
-        var built_tag: noztr.nip29_relay_groups.BuiltTag = .{};
+        var built_tag: noztr.nip29_relay_groups.TagBuilder = .{};
         _ = try noztr.nip29_relay_groups.group_build_identifier_tag(&built_tag, tag.items[1]);
         group_id = tag.items[1];
     }
@@ -1145,7 +1145,7 @@ fn extractGroupTagGroupId(tags: []const noztr.nip01_event.EventTag) GroupSession
         if (!std.mem.eql(u8, tag.items[0], "h")) continue;
         if (group_id != null) return error.DuplicateGroupTag;
         if (tag.items.len != 2 and tag.items.len != 3) return error.InvalidGroupTag;
-        var built_tag: noztr.nip29_relay_groups.BuiltTag = .{};
+        var built_tag: noztr.nip29_relay_groups.TagBuilder = .{};
         _ = try noztr.nip29_relay_groups.group_build_group_tag(&built_tag, tag.items[1]);
         if (tag.items.len == 3) {
             const parsed = std.Uri.parse(tag.items[2]) catch return error.InvalidGroupTag;
@@ -1166,7 +1166,7 @@ fn collectPreviousRefsFromTags(
         if (!std.mem.eql(u8, tag.items[0], "previous")) continue;
         if (count == out_previous.len) return error.BufferTooSmall;
         if (tag.items.len != 2) return error.InvalidPreviousTag;
-        var built_tag: noztr.nip29_relay_groups.BuiltTag = .{};
+        var built_tag: noztr.nip29_relay_groups.TagBuilder = .{};
         _ = try noztr.nip29_relay_groups.group_build_previous_tag(&built_tag, tag.items[1]);
         out_previous[count] = tag.items[1];
         count += 1;
@@ -1263,7 +1263,7 @@ fn buildMetadataSnapshotTags(
     group_id: []const u8,
     request: *const GroupMetadataDraft,
     tags_out: []noztr.nip01_event.EventTag,
-    built_tags: []noztr.nip29_relay_groups.BuiltTag,
+    built_tags: []noztr.nip29_relay_groups.TagBuilder,
 ) GroupSessionError!usize {
     std.debug.assert(tags_out.len >= 8);
     std.debug.assert(built_tags.len >= 8);
@@ -1324,7 +1324,7 @@ fn buildAdminsSnapshotTags(
     group_id: []const u8,
     admins: []const GroupAdmin,
     tags_out: []noztr.nip01_event.EventTag,
-    built_tags: []noztr.nip29_relay_groups.BuiltTag,
+    built_tags: []noztr.nip29_relay_groups.TagBuilder,
     pubkey_hexes: [][noztr.limits.pubkey_hex_length]u8,
 ) GroupSessionError!usize {
     if (admins.len + 1 > tags_out.len) return error.BufferTooSmall;
@@ -1355,7 +1355,7 @@ fn buildMembersSnapshotTags(
     group_id: []const u8,
     members: []const GroupMember,
     tags_out: []noztr.nip01_event.EventTag,
-    built_tags: []noztr.nip29_relay_groups.BuiltTag,
+    built_tags: []noztr.nip29_relay_groups.TagBuilder,
     pubkey_hexes: [][noztr.limits.pubkey_hex_length]u8,
 ) GroupSessionError!usize {
     if (members.len + 1 > tags_out.len) return error.BufferTooSmall;
@@ -1385,7 +1385,7 @@ fn buildRolesSnapshotTags(
     group_id: []const u8,
     roles: []const GroupRole,
     tags_out: []noztr.nip01_event.EventTag,
-    built_tags: []noztr.nip29_relay_groups.BuiltTag,
+    built_tags: []noztr.nip29_relay_groups.TagBuilder,
 ) GroupSessionError!usize {
     if (roles.len + 1 > tags_out.len) return error.BufferTooSmall;
     if (roles.len + 1 > built_tags.len) return error.BufferTooSmall;
@@ -1467,22 +1467,22 @@ fn buildModerationTags(
 }
 
 fn validateGroupTag(group_id: []const u8) GroupSessionError!void {
-    var built: noztr.nip29_relay_groups.BuiltTag = .{};
+    var built: noztr.nip29_relay_groups.TagBuilder = .{};
     _ = try noztr.nip29_relay_groups.group_build_group_tag(&built, group_id);
 }
 
 fn validateCodeTag(code: []const u8) GroupSessionError!void {
-    var built: noztr.nip29_relay_groups.BuiltTag = .{};
+    var built: noztr.nip29_relay_groups.TagBuilder = .{};
     _ = try noztr.nip29_relay_groups.group_build_code_tag(&built, code);
 }
 
 fn validatePreviousTag(previous_ref: []const u8) GroupSessionError!void {
-    var built: noztr.nip29_relay_groups.BuiltTag = .{};
+    var built: noztr.nip29_relay_groups.TagBuilder = .{};
     _ = try noztr.nip29_relay_groups.group_build_previous_tag(&built, previous_ref);
 }
 
 fn validateUserTag(pubkey_hex: []const u8, roles: []const []const u8) GroupSessionError!void {
-    var built: noztr.nip29_relay_groups.BuiltTag = .{};
+    var built: noztr.nip29_relay_groups.TagBuilder = .{};
     _ = try noztr.nip29_relay_groups.group_build_user_tag(&built, pubkey_hex, roles);
 }
 

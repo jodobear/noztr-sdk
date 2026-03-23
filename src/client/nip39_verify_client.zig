@@ -353,7 +353,7 @@ test "nip39 verify client drives cached remembered profile verification through 
         body,
     );
 
-    var built_tag: noztr.nip39_external_identities.BuiltTag = undefined;
+    var built_tag: noztr.nip39_external_identities.TagBuilder = undefined;
     const tag = try noztr.nip39_external_identities.identity_claim_build_tag(&built_tag, &claim);
     var event = noztr.nip01_event.Event{
         .id = [_]u8{0} ** 32,

@@ -42,11 +42,11 @@ pub const MailboxRelayListDraft = struct {
 
 pub const MailboxRelayListDraftStorage = struct {
     tags: []noztr.nip01_event.EventTag,
-    built_tags: []noztr.nip17_private_messages.BuiltTag,
+    built_tags: []noztr.nip17_private_messages.TagBuilder,
 
     pub fn init(
         tags: []noztr.nip01_event.EventTag,
-        built_tags: []noztr.nip17_private_messages.BuiltTag,
+        built_tags: []noztr.nip17_private_messages.TagBuilder,
     ) MailboxRelayListDraftStorage {
         return .{
             .tags = tags,
@@ -439,7 +439,7 @@ test "dm capability client prepares mailbox relay-list publish and subscription 
 
     const secret_key = [_]u8{0x71} ** 32;
     var tag_storage: [2]noztr.nip01_event.EventTag = undefined;
-    var built_tag_storage: [2]noztr.nip17_private_messages.BuiltTag = undefined;
+    var built_tag_storage: [2]noztr.nip17_private_messages.TagBuilder = undefined;
     var draft_storage = MailboxRelayListDraftStorage.init(
         tag_storage[0..],
         built_tag_storage[0..],
@@ -509,10 +509,10 @@ test "dm capability client stores and selects the latest verified mailbox relay-
 
     const secret_key = [_]u8{0x61} ** 32;
     var first_tags: [1]noztr.nip01_event.EventTag = undefined;
-    var first_built: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var first_built: [1]noztr.nip17_private_messages.TagBuilder = undefined;
     var first_draft_storage = MailboxRelayListDraftStorage.init(first_tags[0..], first_built[0..]);
     var second_tags: [2]noztr.nip01_event.EventTag = undefined;
-    var second_built: [2]noztr.nip17_private_messages.BuiltTag = undefined;
+    var second_built: [2]noztr.nip17_private_messages.TagBuilder = undefined;
     var second_draft_storage = MailboxRelayListDraftStorage.init(second_tags[0..], second_built[0..]);
     var first_json: [noztr.limits.event_json_max]u8 = undefined;
     var second_json: [noztr.limits.event_json_max]u8 = undefined;

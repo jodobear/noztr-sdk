@@ -70,11 +70,11 @@ pub const SocialLongFormDraft = struct {
 };
 
 pub const SocialLongFormDraftStorage = struct {
-    built_tags: []noztr.nip23_long_form.BuiltTag,
+    built_tags: []noztr.nip23_long_form.TagBuilder,
     tags: []noztr.nip01_event.EventTag,
 
     pub fn init(
-        built_tags: []noztr.nip23_long_form.BuiltTag,
+        built_tags: []noztr.nip23_long_form.TagBuilder,
         tags: []noztr.nip01_event.EventTag,
     ) SocialLongFormDraftStorage {
         return .{
@@ -481,8 +481,8 @@ pub const SocialProfileContentClient = struct {
     pub fn inspectNoteThread(
         self: SocialProfileContentClient,
         event: *const noztr.nip01_event.Event,
-        mentions_out: []noztr.nip10_threads.ThreadReference,
-    ) SocialProfileContentClientError!noztr.nip10_threads.ThreadInfo {
+        mentions_out: []noztr.nip10_threads.Reference,
+    ) SocialProfileContentClientError!noztr.nip10_threads.Thread {
         _ = self;
         if (event.kind != note_event_kind) return error.InvalidNoteEventKind;
         return noztr.nip10_threads.thread_extract(event, mentions_out);
@@ -747,7 +747,7 @@ test "social profile content client builds long-form publish posture and inspect
     const local = local_operator.LocalOperatorClient.init(.{});
     const secret_key = [_]u8{0x42} ** 32;
 
-    var long_form_built_tags: [8]noztr.nip23_long_form.BuiltTag = undefined;
+    var long_form_built_tags: [8]noztr.nip23_long_form.TagBuilder = undefined;
     var long_form_tags: [8]noztr.nip01_event.EventTag = undefined;
     var long_form_storage = SocialLongFormDraftStorage.init(
         long_form_built_tags[0..],
@@ -823,7 +823,7 @@ test "social profile content client builds long-form publish posture and inspect
         .content = "reply note",
         .tags = note_tags[0..],
     });
-    var mentions: [2]noztr.nip10_threads.ThreadReference = undefined;
+    var mentions: [2]noztr.nip10_threads.Reference = undefined;
     const thread = try client.inspectNoteThread(&note_event, mentions[0..]);
     try std.testing.expectEqual(root_id, thread.root.?.event_id);
     try std.testing.expectEqual(reply_id, thread.reply.?.event_id);
@@ -875,7 +875,7 @@ test "social profile content client stores verified social content and selects a
         },
     );
 
-    var article_built_tags: [8]noztr.nip23_long_form.BuiltTag = undefined;
+    var article_built_tags: [8]noztr.nip23_long_form.TagBuilder = undefined;
     var article_tags: [8]noztr.nip01_event.EventTag = undefined;
     var article_storage = SocialLongFormDraftStorage.init(
         article_built_tags[0..],
@@ -896,7 +896,7 @@ test "social profile content client stores verified social content and selects a
         },
     );
 
-    var draft_built_tags: [8]noztr.nip23_long_form.BuiltTag = undefined;
+    var draft_built_tags: [8]noztr.nip23_long_form.TagBuilder = undefined;
     var draft_tags: [8]noztr.nip01_event.EventTag = undefined;
     var draft_storage = SocialLongFormDraftStorage.init(
         draft_built_tags[0..],
