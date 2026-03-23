@@ -120,18 +120,22 @@ They do not imply:
     browser seam directly, and the SDK still stops at the reusable browser seam instead of
     expanding into extension packaging or approval UI
 - `social_profile_content_client_recipe.zig`
-  - goal: compose one kind-`0` profile publish, one kind-`1` note subscription, and one `NIP-23`
-    long-form inspection route above the local operator, publish, and relay-query floors
+  - goal: compose one kind-`0` profile publish, one kind-`1` note subscription, one `NIP-23`
+    long-form inspection route, and explicit archive-backed latest-profile, note-page, and
+    long-form selection above the local operator, publish, relay-query, and event-archive floors
   - related SDK symbols: `noztr_sdk.client.social.profile_content`, `SocialProfileContentClient`,
     `SocialProfileDraft`, `SocialProfileDraftStorage`, `SocialNoteDraft`,
     `SocialLongFormDraft`, `SocialLongFormDraftStorage`, `SocialEventQuery`,
-    `SocialSubscriptionPlanStorage`, `SocialProfileInspection`
+    `SocialSubscriptionPlanStorage`, `SocialProfileInspection`,
+    `StoredSocialProfileSelectionRequest`, `StoredSocialNotePageRequest`,
+    `StoredSocialLongFormSelectionRequest`, `noztr_sdk.store.EventArchive`
   - kernel fixture help: `noztr.nip10_threads`, `noztr.nip23_long_form`,
     `noztr.nip24_extra_metadata`
   - control points: deterministic profile, thread, and long-form parsing stay on `noztr`, relay
-    readiness still routes through the existing publish and query clients, long-form tag-building
-    stays caller-buffered and explicit, and this first social route stops short of ranking, feed
-    sync, reactions, lists, or social-graph policy
+    readiness still routes through the existing publish and query clients, archive-backed reads
+    are explicit instead of hidden sync, long-form tag-building stays caller-buffered and
+    explicit, and this first social route still stops short of ranking, feed sync, reactions,
+    lists, or social-graph policy
 - `social_reaction_list_client_recipe.zig`
   - goal: compose one `NIP-25` reaction publish route, one public `NIP-51` follow-set publish
     route, and one explicit stored latest-list selection over the local archive seam

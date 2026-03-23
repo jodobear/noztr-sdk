@@ -12,17 +12,22 @@ pub const note_event_kind: u32 = noztr.nip10_threads.text_note_event_kind;
 pub const SocialProfileContentClientError =
     publish_client.PublishClientError ||
     relay_query_client.RelayQueryClientError ||
+    store.EventArchiveError ||
+    noztr.nip01_event.EventParseError ||
+    noztr.nip01_event.EventVerifyError ||
     noztr.nip23_long_form.LongFormError ||
     noztr.nip24_extra_metadata.ExtraMetadataError ||
     noztr.nip10_threads.ThreadError ||
     error{
         InvalidProfileEventKind,
         InvalidNoteEventKind,
+        InvalidStoredSocialContentKind,
         TooManyAuthors,
         TooManyKinds,
         QueryLimitTooLarge,
         LongFormDraftStorageTooSmall,
         LongFormBuiltTagStorageTooSmall,
+        StoredNotePageStorageTooSmall,
     };
 
 pub const SocialProfileContentClientConfig = struct {
@@ -116,6 +121,60 @@ pub const SocialSubscriptionPlanStorage = struct {
 pub const SocialProfileInspection = struct {
     extras: noztr.nip24_extra_metadata.MetadataExtras,
     common_tags: noztr.nip24_extra_metadata.CommonTagInfo,
+};
+
+pub const StoredSocialProfileSelectionRequest = struct {
+    author: store.EventPubkeyHex,
+    cursor: ?store.EventCursor = null,
+    limit: usize = 0,
+};
+
+pub const StoredSocialProfileSelection = struct {
+    record: store.ClientEventRecord,
+    event: noztr.nip01_event.Event,
+    inspection: SocialProfileInspection,
+};
+
+pub const StoredSocialProfileResult = struct {
+    selection: ?StoredSocialProfileSelection = null,
+    truncated: bool = false,
+    next_cursor: ?store.EventCursor = null,
+};
+
+pub const StoredSocialNotePageRequest = struct {
+    query: SocialEventQuery = .{},
+    cursor: ?store.EventCursor = null,
+};
+
+pub const StoredSocialNoteRecord = struct {
+    record: store.ClientEventRecord,
+    event: noztr.nip01_event.Event,
+};
+
+pub const StoredSocialNotePage = struct {
+    notes: []const StoredSocialNoteRecord = &.{},
+    truncated: bool = false,
+    next_cursor: ?store.EventCursor = null,
+};
+
+pub const StoredSocialLongFormSelectionRequest = struct {
+    author: store.EventPubkeyHex,
+    identifier: ?[]const u8 = null,
+    include_drafts: bool = false,
+    cursor: ?store.EventCursor = null,
+    limit: usize = 0,
+};
+
+pub const StoredSocialLongFormSelection = struct {
+    record: store.ClientEventRecord,
+    event: noztr.nip01_event.Event,
+    metadata: noztr.nip23_long_form.LongFormMetadata,
+};
+
+pub const StoredSocialLongFormResult = struct {
+    selection: ?StoredSocialLongFormSelection = null,
+    truncated: bool = false,
+    next_cursor: ?store.EventCursor = null,
 };
 
 pub const SocialProfileContentClient = struct {
@@ -449,6 +508,144 @@ pub const SocialProfileContentClient = struct {
         return noztr.nip23_long_form.long_form_extract(event, out_hashtags);
     }
 
+    pub fn storeSocialContentEventJson(
+        _: SocialProfileContentClient,
+        archive: store.EventArchive,
+        event_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) SocialProfileContentClientError!void {
+        const event = try parseVerifiedStoredSocialContentEventJson(event_json, scratch);
+        if (!storedSocialContentKindSupported(event.kind)) return error.InvalidStoredSocialContentKind;
+        return archive.ingestEventJson(event_json, scratch);
+    }
+
+    pub fn inspectLatestStoredProfile(
+        self: SocialProfileContentClient,
+        archive: store.EventArchive,
+        request: *const StoredSocialProfileSelectionRequest,
+        page: *store.EventQueryResultPage,
+        out_reference_urls: [][]const u8,
+        out_hashtags: [][]const u8,
+        scratch: std.mem.Allocator,
+    ) SocialProfileContentClientError!StoredSocialProfileResult {
+        const authors = [_]store.EventPubkeyHex{request.author};
+        const kinds = [_]u32{profile_event_kind};
+        try archive.query(&.{
+            .authors = authors[0..],
+            .kinds = kinds[0..],
+            .cursor = request.cursor,
+            .limit = request.limit,
+        }, page);
+
+        for (page.slice()) |record| {
+            const event = try parseVerifiedStoredSocialContentEventJson(record.eventJson(), scratch);
+            const inspection = try self.inspectProfileEvent(
+                &event,
+                out_reference_urls,
+                out_hashtags,
+                scratch,
+            );
+            return .{
+                .selection = .{
+                    .record = record,
+                    .event = event,
+                    .inspection = inspection,
+                },
+                .truncated = page.truncated,
+                .next_cursor = page.next_cursor,
+            };
+        }
+
+        return .{
+            .selection = null,
+            .truncated = page.truncated,
+            .next_cursor = page.next_cursor,
+        };
+    }
+
+    pub fn inspectStoredNotePage(
+        _: SocialProfileContentClient,
+        archive: store.EventArchive,
+        request: *const StoredSocialNotePageRequest,
+        page: *store.EventQueryResultPage,
+        notes_out: []StoredSocialNoteRecord,
+        scratch: std.mem.Allocator,
+    ) SocialProfileContentClientError!StoredSocialNotePage {
+        const kinds = [_]u32{note_event_kind};
+        try archive.query(&.{
+            .authors = request.query.authors,
+            .kinds = kinds[0..],
+            .since = request.query.since,
+            .until = request.query.until,
+            .cursor = request.cursor,
+            .limit = request.query.limit,
+        }, page);
+
+        if (page.count > notes_out.len) return error.StoredNotePageStorageTooSmall;
+
+        var note_count: usize = 0;
+        for (page.slice(), 0..) |record, index| {
+            const event = try parseVerifiedStoredSocialContentEventJson(record.eventJson(), scratch);
+            if (event.kind != note_event_kind) return error.InvalidNoteEventKind;
+            notes_out[index] = .{
+                .record = record,
+                .event = event,
+            };
+            note_count += 1;
+        }
+
+        return .{
+            .notes = notes_out[0..note_count],
+            .truncated = page.truncated,
+            .next_cursor = page.next_cursor,
+        };
+    }
+
+    pub fn inspectLatestStoredLongForm(
+        self: SocialProfileContentClient,
+        archive: store.EventArchive,
+        request: *const StoredSocialLongFormSelectionRequest,
+        page: *store.EventQueryResultPage,
+        out_hashtags: [][]const u8,
+        scratch: std.mem.Allocator,
+    ) SocialProfileContentClientError!StoredSocialLongFormResult {
+        const article_kind = @intFromEnum(noztr.nip23_long_form.LongFormKind.article);
+        const draft_kind = @intFromEnum(noztr.nip23_long_form.LongFormKind.draft);
+        const authors = [_]store.EventPubkeyHex{request.author};
+        const live_kinds = [_]u32{article_kind};
+        const live_and_draft_kinds = [_]u32{ article_kind, draft_kind };
+        const kinds = if (request.include_drafts) live_and_draft_kinds[0..] else live_kinds[0..];
+        try archive.query(&.{
+            .authors = authors[0..],
+            .kinds = kinds,
+            .cursor = request.cursor,
+            .limit = request.limit,
+        }, page);
+
+        for (page.slice()) |record| {
+            const event = try parseVerifiedStoredSocialContentEventJson(record.eventJson(), scratch);
+            const metadata = try self.inspectLongFormEvent(&event, out_hashtags);
+            if (request.identifier) |identifier| {
+                if (!std.mem.eql(u8, metadata.identifier, identifier)) continue;
+            }
+            return .{
+                .selection = .{
+                    .record = record,
+                    .event = event,
+                    .metadata = metadata,
+                },
+                .truncated = page.truncated,
+                .next_cursor = page.next_cursor,
+            };
+        }
+
+        return .{
+            .selection = null,
+            .truncated = page.truncated,
+            .next_cursor = page.next_cursor,
+        };
+    }
+
     fn inspectSingleSubscription(
         self: *const SocialProfileContentClient,
         subscription_id: []const u8,
@@ -503,6 +700,21 @@ fn filterFromSocialEventQuery(
         filter.limit = @intCast(query.limit);
     }
     return filter;
+}
+
+fn parseVerifiedStoredSocialContentEventJson(
+    event_json: []const u8,
+    scratch: std.mem.Allocator,
+) SocialProfileContentClientError!noztr.nip01_event.Event {
+    const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
+    try noztr.nip01_event.event_verify(&event);
+    return event;
+}
+
+fn storedSocialContentKindSupported(kind: u32) bool {
+    if (kind == profile_event_kind) return true;
+    if (kind == note_event_kind) return true;
+    return noztr.nip23_long_form.long_form_kind_classify(kind) != null;
 }
 
 test "social profile content client composes publish and subscription posture over shared relay state" {
@@ -657,3 +869,233 @@ test "social profile content client builds long-form publish posture and inspect
     try std.testing.expectEqual(reply_id, thread.reply.?.event_id);
 }
 
+test "social profile content client stores verified social content and selects archive-backed reads explicitly" {
+    var storage = SocialProfileContentClientStorage{};
+    var client = SocialProfileContentClient.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x61} ** 32;
+    var memory_store = store.MemoryClientStore{};
+    const archive = store.EventArchive.init(memory_store.asClientStore());
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var profile_content: [256]u8 = undefined;
+    var profile_storage = SocialProfileDraftStorage.init(profile_content[0..]);
+    var profile_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared_profile = try client.prepareProfilePublish(
+        profile_event_json[0..],
+        &profile_storage,
+        &secret_key,
+        &.{
+            .created_at = 10,
+            .extras = .{
+                .display_name = "Alice",
+                .website = "https://example.com",
+            },
+        },
+    );
+
+    var first_note_json: [noztr.limits.event_json_max]u8 = undefined;
+    const first_note = try client.prepareNotePublish(
+        first_note_json[0..],
+        &secret_key,
+        &.{
+            .created_at = 11,
+            .content = "first note",
+        },
+    );
+    var second_note_json: [noztr.limits.event_json_max]u8 = undefined;
+    const second_note = try client.prepareNotePublish(
+        second_note_json[0..],
+        &secret_key,
+        &.{
+            .created_at = 12,
+            .content = "second note",
+        },
+    );
+
+    var article_built_tags: [8]noztr.nip23_long_form.BuiltTag = undefined;
+    var article_tags: [8]noztr.nip01_event.EventTag = undefined;
+    var article_storage = SocialLongFormDraftStorage.init(
+        article_built_tags[0..],
+        article_tags[0..],
+    );
+    var article_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const article = try client.prepareLongFormPublish(
+        article_event_json[0..],
+        &article_storage,
+        &secret_key,
+        &.{
+            .kind = .article,
+            .created_at = 13,
+            .content = "# article",
+            .identifier = "hello-world",
+            .title = "Hello World",
+            .hashtags = &.{"zig"},
+        },
+    );
+
+    var draft_built_tags: [8]noztr.nip23_long_form.BuiltTag = undefined;
+    var draft_tags: [8]noztr.nip01_event.EventTag = undefined;
+    var draft_storage = SocialLongFormDraftStorage.init(
+        draft_built_tags[0..],
+        draft_tags[0..],
+    );
+    var draft_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const draft = try client.prepareLongFormPublish(
+        draft_event_json[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .kind = .draft,
+            .created_at = 14,
+            .content = "# draft",
+            .identifier = "hello-world",
+            .title = "Hello Draft",
+            .hashtags = &.{"zig"},
+        },
+    );
+
+    try client.storeSocialContentEventJson(archive, prepared_profile.event_json, arena.allocator());
+    try client.storeSocialContentEventJson(archive, first_note.event_json, arena.allocator());
+    try client.storeSocialContentEventJson(archive, second_note.event_json, arena.allocator());
+    try client.storeSocialContentEventJson(archive, article.event_json, arena.allocator());
+    try client.storeSocialContentEventJson(archive, draft.event_json, arena.allocator());
+
+    const author_hex = std.fmt.bytesToHex(prepared_profile.event.pubkey, .lower);
+
+    var profile_page_storage: [1]store.ClientEventRecord = undefined;
+    var profile_page = store.EventQueryResultPage.init(profile_page_storage[0..]);
+    var profile_reference_urls: [2][]const u8 = undefined;
+    var profile_hashtags: [2][]const u8 = undefined;
+    const profile_result = try client.inspectLatestStoredProfile(
+        archive,
+        &.{ .author = author_hex },
+        &profile_page,
+        profile_reference_urls[0..],
+        profile_hashtags[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(profile_result.selection != null);
+    try std.testing.expectEqual(@as(u64, 10), profile_result.selection.?.event.created_at);
+    try std.testing.expectEqualStrings("Alice", profile_result.selection.?.inspection.extras.display_name.?);
+
+    var note_page_storage: [2]store.ClientEventRecord = undefined;
+    var note_page = store.EventQueryResultPage.init(note_page_storage[0..]);
+    var notes_out: [2]StoredSocialNoteRecord = undefined;
+    const authors = [_]store.EventPubkeyHex{author_hex};
+    const note_result = try client.inspectStoredNotePage(
+        archive,
+        &.{
+            .query = .{
+                .authors = authors[0..],
+                .limit = 2,
+            },
+        },
+        &note_page,
+        notes_out[0..],
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(@as(usize, 2), note_result.notes.len);
+    try std.testing.expectEqual(@as(u64, 12), note_result.notes[0].event.created_at);
+    try std.testing.expectEqualStrings("second note", note_result.notes[0].event.content);
+    try std.testing.expectEqual(@as(u64, 11), note_result.notes[1].event.created_at);
+
+    var long_form_page_storage: [2]store.ClientEventRecord = undefined;
+    var long_form_page = store.EventQueryResultPage.init(long_form_page_storage[0..]);
+    var long_form_hashtags: [2][]const u8 = undefined;
+    const article_result = try client.inspectLatestStoredLongForm(
+        archive,
+        &.{
+            .author = author_hex,
+            .identifier = "hello-world",
+        },
+        &long_form_page,
+        long_form_hashtags[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(article_result.selection != null);
+    try std.testing.expectEqual(noztr.nip23_long_form.LongFormKind.article, article_result.selection.?.metadata.kind);
+    try std.testing.expectEqualStrings("Hello World", article_result.selection.?.metadata.title.?);
+
+    var draft_page_storage: [2]store.ClientEventRecord = undefined;
+    var draft_page = store.EventQueryResultPage.init(draft_page_storage[0..]);
+    var draft_hashtags_out: [2][]const u8 = undefined;
+    const draft_result = try client.inspectLatestStoredLongForm(
+        archive,
+        &.{
+            .author = author_hex,
+            .identifier = "hello-world",
+            .include_drafts = true,
+        },
+        &draft_page,
+        draft_hashtags_out[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(draft_result.selection != null);
+    try std.testing.expectEqual(noztr.nip23_long_form.LongFormKind.draft, draft_result.selection.?.metadata.kind);
+    try std.testing.expectEqualStrings("Hello Draft", draft_result.selection.?.metadata.title.?);
+}
+
+test "social profile content client rejects invalid signatures during social archive ingest and inspection" {
+    var storage = SocialProfileContentClientStorage{};
+    var client = SocialProfileContentClient.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x62} ** 32;
+    var profile_content: [256]u8 = undefined;
+    var profile_storage = SocialProfileDraftStorage.init(profile_content[0..]);
+    var profile_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared_profile = try client.prepareProfilePublish(
+        profile_event_json[0..],
+        &profile_storage,
+        &secret_key,
+        &.{
+            .created_at = 20,
+            .extras = .{ .display_name = "Mallory" },
+        },
+    );
+
+    var invalid_json: [noztr.limits.event_json_max]u8 = undefined;
+    @memcpy(invalid_json[0..prepared_profile.event_json.len], prepared_profile.event_json);
+    corruptEventSignatureHex(invalid_json[0..prepared_profile.event_json.len]);
+
+    var memory_store = store.MemoryClientStore{};
+    const archive = store.EventArchive.init(memory_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidSignature,
+        client.storeSocialContentEventJson(
+            archive,
+            invalid_json[0..prepared_profile.event_json.len],
+            arena.allocator(),
+        ),
+    );
+
+    try archive.ingestEventJson(invalid_json[0..prepared_profile.event_json.len], arena.allocator());
+
+    const author_hex = std.fmt.bytesToHex(prepared_profile.event.pubkey, .lower);
+    var page_storage: [1]store.ClientEventRecord = undefined;
+    var page = store.EventQueryResultPage.init(page_storage[0..]);
+    var reference_urls: [1][]const u8 = undefined;
+    var hashtags: [1][]const u8 = undefined;
+    try std.testing.expectError(
+        error.InvalidSignature,
+        client.inspectLatestStoredProfile(
+            archive,
+            &.{ .author = author_hex, .limit = 1 },
+            &page,
+            reference_urls[0..],
+            hashtags[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+fn corruptEventSignatureHex(event_json: []u8) void {
+    const signature_prefix = "\"sig\":\"";
+    const start = std.mem.indexOf(u8, event_json, signature_prefix).? + signature_prefix.len;
+    event_json[start] = if (event_json[start] == '0') '1' else '0';
+}
