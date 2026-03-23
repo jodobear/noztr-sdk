@@ -72,7 +72,7 @@ The current public floor is grouped and broad:
 - `client.identity.*`
   - `NIP-05` and `NIP-39` client-facing identity flows
 - `client.social.*`
-  - profile, note, thread, and long-form client-facing social/content composition
+  - profile, note, thread, long-form, reaction, and list client-facing social/content composition
 - `client.proof.*`
   - `NIP-03` proof verification and remembered-proof planning
 - `client.groups.*`

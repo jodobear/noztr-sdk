@@ -132,6 +132,18 @@ They do not imply:
     readiness still routes through the existing publish and query clients, long-form tag-building
     stays caller-buffered and explicit, and this first social route stops short of ranking, feed
     sync, reactions, lists, or social-graph policy
+- `social_reaction_list_client_recipe.zig`
+  - goal: compose one `NIP-25` reaction publish route, one public `NIP-51` follow-set publish
+    route, and one explicit stored latest-list selection over the local archive seam
+  - related SDK symbols: `noztr_sdk.client.social.reaction_list`, `SocialReactionListClient`,
+    `SocialReactionDraft`, `SocialReactionDraftStorage`, `SocialReactionEmojiReference`,
+    `SocialListDraft`, `SocialListDraftStorage`, `StoredSocialListSelectionRequest`,
+    `StoredSocialListInspection`, `noztr_sdk.store.EventArchive`
+  - kernel fixture help: `noztr.nip25_reactions`, `noztr.nip51_lists`
+  - control points: deterministic reaction and list parsing still stays on `noztr`, reaction and
+    list publish still routes through the existing publish floor, relay query posture stays
+    bounded and caller-driven, and stored list selection stays explicit over the archive seam
+    instead of becoming a hidden background sync or opaque merge engine
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response
