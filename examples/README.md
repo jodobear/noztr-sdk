@@ -638,6 +638,18 @@ They do not imply:
   - control points: strict legacy payload and kind-`4` validation still route through
     `noztr-core`, reply and relay-hint tag shaping stay explicit in the SDK workflow floor, and
     outbound serialization plus inbound plaintext recovery remain fully caller-owned
+- `dm_capability_client_recipe.zig`
+  - goal: prepare one kind-`10050` mailbox relay-list publish, inspect one stored latest relay
+    list explicitly over the archive seam, then select one explicit mixed-DM reply protocol
+  - related SDK symbols: `noztr_sdk.client.dm.capability`, `DmCapabilityClient`,
+    `DmCapabilityClientStorage`, `MailboxRelayListDraft`, `MailboxRelayListDraftStorage`,
+    `StoredMailboxRelayListSelectionRequest`, `StoredMailboxRelayListInspection`, `DmProtocol`,
+    `DmReplyPolicy`, `DmReplySelection`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
+  - control points: kind-`10050` tag and relay-list parsing still route through `noztr-core`,
+    relay publish/query state stays explicit on the shared SDK seams, archive-backed relay-list
+    inspection verifies signatures before trust, and reply selection stays explicit instead of
+    pretending the SDK owns a hidden mixed inbox runtime
 - `legacy_dm_publish_job_client_recipe.zig`
   - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmPublishJobClient`,
