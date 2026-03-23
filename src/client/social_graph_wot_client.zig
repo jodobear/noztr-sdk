@@ -70,20 +70,20 @@ pub const SocialContactInspection = struct {
     contact_count: u16,
 };
 
-pub const StoredSocialContactSelectionRequest = struct {
+pub const LatestContactListRequest = struct {
     author: store.EventPubkeyHex,
     cursor: ?store.EventCursor = null,
     limit: usize = 0,
 };
 
-pub const StoredSocialContactSelection = struct {
+pub const LatestContactList = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
     contacts: []const noztr.nip02_contacts.ContactEntry,
 };
 
-pub const StoredSocialContactInspection = struct {
-    selection: ?StoredSocialContactSelection = null,
+pub const LatestContactListResult = struct {
+    latest: ?LatestContactList = null,
     truncated: bool = false,
     next_cursor: ?store.EventCursor = null,
 };
@@ -100,7 +100,7 @@ pub const SocialStarterWotSupport = struct {
 };
 
 pub const SocialStarterWotInspection = struct {
-    root: ?StoredSocialContactSelection = null,
+    root: ?LatestContactList = null,
     direct_follow: bool = false,
     root_follow_count: usize = 0,
     expanded_follow_count: usize = 0,
@@ -309,14 +309,14 @@ pub const SocialGraphWotClient = struct {
         return archive.ingestEventJson(event_json, scratch);
     }
 
-    pub fn inspectLatestStoredContacts(
+    pub fn inspectLatestContactList(
         self: SocialGraphWotClient,
         archive: store.EventArchive,
-        request: *const StoredSocialContactSelectionRequest,
+        request: *const LatestContactListRequest,
         page: *store.EventQueryResultPage,
         contacts_out: []noztr.nip02_contacts.ContactEntry,
         scratch: std.mem.Allocator,
-    ) SocialGraphWotClientError!StoredSocialContactInspection {
+    ) SocialGraphWotClientError!LatestContactListResult {
         const authors = [_]store.EventPubkeyHex{request.author};
         const kinds = [_]u32{contact_list_event_kind};
         try archive.query(&.{
@@ -330,7 +330,7 @@ pub const SocialGraphWotClient = struct {
             const event = try parseVerifiedContactEventJson(record.eventJson(), scratch);
             const inspection = try self.inspectContactEvent(&event, contacts_out);
             return .{
-                .selection = .{
+                .latest = .{
                     .record = record,
                     .event = event,
                     .contacts = inspection.contacts,
@@ -341,7 +341,7 @@ pub const SocialGraphWotClient = struct {
         }
 
         return .{
-            .selection = null,
+            .latest = null,
             .truncated = page.truncated,
             .next_cursor = page.next_cursor,
         };
@@ -358,7 +358,7 @@ pub const SocialGraphWotClient = struct {
         supporters_out: []SocialStarterWotSupport,
         scratch: std.mem.Allocator,
     ) SocialGraphWotClientError!SocialStarterWotInspection {
-        const root_inspection = try self.inspectLatestStoredContacts(
+        const root_inspection = try self.inspectLatestContactList(
             archive,
             &.{
                 .author = request.root_author,
@@ -370,7 +370,7 @@ pub const SocialGraphWotClient = struct {
             scratch,
         );
 
-        if (root_inspection.selection == null) {
+        if (root_inspection.latest == null) {
             return .{
                 .root = null,
                 .truncated = root_inspection.truncated,
@@ -378,7 +378,7 @@ pub const SocialGraphWotClient = struct {
             };
         }
 
-        const root_selection = root_inspection.selection.?;
+        const root_selection = root_inspection.latest.?;
 
         var direct_follow = false;
         var root_follow_count: usize = 0;
@@ -400,15 +400,15 @@ pub const SocialGraphWotClient = struct {
             }
 
             expanded_follow_count += 1;
-            const peer_inspection = try self.inspectLatestStoredContacts(
+            const peer_inspection = try self.inspectLatestContactList(
                 archive,
                 &.{ .author = contact_pubkey_hex, .limit = 1 },
                 peer_page,
                 peer_contacts_out,
                 scratch,
             );
-            if (peer_inspection.selection == null) continue;
-            if (!contactSliceContainsHex(peer_inspection.selection.?.contacts, request.candidate)) continue;
+            if (peer_inspection.latest == null) continue;
+            if (!contactSliceContainsHex(peer_inspection.latest.?.contacts, request.candidate)) continue;
 
             support_count += 1;
             if (supporter_count < supporters_out.len) {
@@ -612,15 +612,15 @@ test "social graph wot client inspects latest stored contacts and starter wot ex
     var latest_page_storage: [1]store.ClientEventRecord = undefined;
     var latest_page = store.EventQueryResultPage.init(latest_page_storage[0..]);
     var latest_contacts: [3]noztr.nip02_contacts.ContactEntry = undefined;
-    const latest = try client.inspectLatestStoredContacts(
+    const latest = try client.inspectLatestContactList(
         archive,
         &.{ .author = root_author_hex },
         &latest_page,
         latest_contacts[0..],
         arena.allocator(),
     );
-    try std.testing.expect(latest.selection != null);
-    try std.testing.expectEqual(@as(usize, 3), latest.selection.?.contacts.len);
+    try std.testing.expect(latest.latest != null);
+    try std.testing.expectEqual(@as(usize, 3), latest.latest.?.contacts.len);
 
     var root_page_storage: [1]store.ClientEventRecord = undefined;
     var peer_page_storage: [1]store.ClientEventRecord = undefined;
@@ -737,7 +737,7 @@ test "social graph wot client rejects invalid stored contact signatures during i
 
     try std.testing.expectError(
         error.InvalidSignature,
-        client.inspectLatestStoredContacts(
+        client.inspectLatestContactList(
             archive,
             &.{ .author = author_hex, .limit = 1 },
             &page,

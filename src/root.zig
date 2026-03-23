@@ -137,9 +137,9 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.dm.capability.MailboxRelayListSubscriptionRequest) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.MailboxRelayListSubscriptionStorage) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.MailboxRelayListInspection) == type);
-    try std.testing.expect(@TypeOf(client.dm.capability.StoredMailboxRelayListSelectionRequest) == type);
-    try std.testing.expect(@TypeOf(client.dm.capability.StoredMailboxRelayListSelection) == type);
-    try std.testing.expect(@TypeOf(client.dm.capability.StoredMailboxRelayListInspection) == type);
+    try std.testing.expect(@TypeOf(client.dm.capability.LatestMailboxRelayListRequest) == type);
+    try std.testing.expect(@TypeOf(client.dm.capability.LatestMailboxRelayList) == type);
+    try std.testing.expect(@TypeOf(client.dm.capability.LatestMailboxRelayListResult) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmProtocol) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmReplyPolicy) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmReplySelectionRequest) == type);

@@ -63,7 +63,7 @@ test "recipe: social reaction list client composes one reaction route and one st
     var page_storage: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var page = noztr_sdk.store.EventQueryResultPage.init(page_storage[0..]);
     var items: [2]noztr.nip51_lists.ListItem = undefined;
-    const inspection = try client.inspectLatestStoredList(
+    const inspection = try client.inspectLatestList(
         archive,
         &.{
             .author = author_hex,
@@ -74,6 +74,6 @@ test "recipe: social reaction list client composes one reaction route and one st
         items[0..],
         arena.allocator(),
     );
-    try std.testing.expect(inspection.selection != null);
-    try std.testing.expectEqualStrings("friends", inspection.selection.?.info.metadata.identifier.?);
+    try std.testing.expect(inspection.latest != null);
+    try std.testing.expectEqualStrings("friends", inspection.latest.?.info.metadata.identifier.?);
 }

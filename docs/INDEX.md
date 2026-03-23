@@ -57,6 +57,8 @@ If you are evaluating `noztr-sdk` for another Zig SDK, read the downstream bound
   - short pre-`1.0` migration note for the mailbox and legacy sync-runtime family cleanup
 - [DM orchestration naming migration](./reference/dm-orchestration-naming-migration.md)
   - short pre-`1.0` migration note for the mailbox and legacy job/turn family cleanup
+- [social and DM stored-read migration](./reference/social-dm-stored-read-migration.md)
+  - short pre-`1.0` migration note for the social and DM read-side naming cleanup
 - [proof, identity, and NIP-05 planning migration](./reference/proof-identity-planning-migration.md)
   - short pre-`1.0` migration note for the grouped proof/identity/NIP-05 planning cleanup
 - [examples filename migration](./reference/examples-filename-migration.md)

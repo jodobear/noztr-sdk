@@ -115,7 +115,7 @@ test "recipe: social profile content client composes social authoring, bounded s
     var profile_page = noztr_sdk.store.EventQueryResultPage.init(profile_page_storage[0..]);
     var reference_urls: [1][]const u8 = undefined;
     var profile_hashtags: [1][]const u8 = undefined;
-    const latest_profile = try client.inspectLatestStoredProfile(
+    const latest_profile = try client.inspectLatestProfile(
         archive,
         &.{ .author = author_hex },
         &profile_page,
@@ -123,12 +123,12 @@ test "recipe: social profile content client composes social authoring, bounded s
         profile_hashtags[0..],
         arena.allocator(),
     );
-    try std.testing.expect(latest_profile.selection != null);
+    try std.testing.expect(latest_profile.latest != null);
 
     var note_page_storage: [2]noztr_sdk.store.ClientEventRecord = undefined;
     var note_page = noztr_sdk.store.EventQueryResultPage.init(note_page_storage[0..]);
-    var note_records: [2]noztr_sdk.client.social.profile_content.StoredSocialNoteRecord = undefined;
-    const stored_notes = try client.inspectStoredNotePage(
+    var note_records: [2]noztr_sdk.client.social.profile_content.NoteRecord = undefined;
+    const stored_notes = try client.inspectNotePage(
         archive,
         &.{
             .query = .{
@@ -145,7 +145,7 @@ test "recipe: social profile content client composes social authoring, bounded s
     var long_form_page_storage: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var long_form_page = noztr_sdk.store.EventQueryResultPage.init(long_form_page_storage[0..]);
     var stored_long_form_hashtags: [2][]const u8 = undefined;
-    const latest_long_form = try client.inspectLatestStoredLongForm(
+    const latest_long_form = try client.inspectLatestLongForm(
         archive,
         &.{
             .author = author_hex,
@@ -155,5 +155,5 @@ test "recipe: social profile content client composes social authoring, bounded s
         stored_long_form_hashtags[0..],
         arena.allocator(),
     );
-    try std.testing.expect(latest_long_form.selection != null);
+    try std.testing.expect(latest_long_form.latest != null);
 }

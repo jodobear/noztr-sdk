@@ -78,20 +78,20 @@ pub const MailboxRelayListInspection = struct {
     relay_count: u16,
 };
 
-pub const StoredMailboxRelayListSelectionRequest = struct {
+pub const LatestMailboxRelayListRequest = struct {
     author: store.EventPubkeyHex,
     cursor: ?store.EventCursor = null,
     limit: usize = 0,
 };
 
-pub const StoredMailboxRelayListSelection = struct {
+pub const LatestMailboxRelayList = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
     relays: []const []const u8,
 };
 
-pub const StoredMailboxRelayListInspection = struct {
-    selection: ?StoredMailboxRelayListSelection = null,
+pub const LatestMailboxRelayListResult = struct {
+    latest: ?LatestMailboxRelayList = null,
     truncated: bool = false,
     next_cursor: ?store.EventCursor = null,
 };
@@ -300,14 +300,14 @@ pub const DmCapabilityClient = struct {
         return archive.ingestEventJson(event_json, scratch);
     }
 
-    pub fn inspectLatestStoredMailboxRelayList(
+    pub fn inspectLatestMailboxRelayList(
         self: DmCapabilityClient,
         archive: store.EventArchive,
-        request: *const StoredMailboxRelayListSelectionRequest,
+        request: *const LatestMailboxRelayListRequest,
         page: *store.EventQueryResultPage,
         relays_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) DmCapabilityClientError!StoredMailboxRelayListInspection {
+    ) DmCapabilityClientError!LatestMailboxRelayListResult {
         const authors = [_]store.EventPubkeyHex{request.author};
         const kinds = [_]u32{mailbox_relay_list_kind};
         try archive.query(&.{
@@ -321,7 +321,7 @@ pub const DmCapabilityClient = struct {
             const event = try parseVerifiedMailboxRelayListEventJson(record.eventJson(), scratch);
             const inspection = try self.inspectMailboxRelayListEvent(&event, relays_out);
             return .{
-                .selection = .{
+                .latest = .{
                     .record = record,
                     .event = event,
                     .relays = inspection.relays,
@@ -332,7 +332,7 @@ pub const DmCapabilityClient = struct {
         }
 
         return .{
-            .selection = null,
+            .latest = null,
             .truncated = page.truncated,
             .next_cursor = page.next_cursor,
         };
@@ -537,7 +537,7 @@ test "dm capability client stores and selects the latest verified mailbox relay-
     var page_storage: [2]store.ClientEventRecord = undefined;
     var page = store.EventQueryResultPage.init(page_storage[0..]);
     var relays_out: [4][]const u8 = undefined;
-    const inspection = try client.inspectLatestStoredMailboxRelayList(
+    const inspection = try client.inspectLatestMailboxRelayList(
         archive,
         &.{ .author = author_hex, .limit = 2 },
         &page,
@@ -545,10 +545,10 @@ test "dm capability client stores and selects the latest verified mailbox relay-
         arena.allocator(),
     );
 
-    try std.testing.expect(inspection.selection != null);
-    try std.testing.expectEqual(@as(usize, 2), inspection.selection.?.relays.len);
-    try std.testing.expectEqualStrings("wss://dm.second", inspection.selection.?.relays[0]);
-    try std.testing.expectEqualStrings("wss://dm.third", inspection.selection.?.relays[1]);
+    try std.testing.expect(inspection.latest != null);
+    try std.testing.expectEqual(@as(usize, 2), inspection.latest.?.relays.len);
+    try std.testing.expectEqualStrings("wss://dm.second", inspection.latest.?.relays[0]);
+    try std.testing.expectEqualStrings("wss://dm.third", inspection.latest.?.relays[1]);
 }
 
 test "dm capability client classifies protocols and keeps reply-policy selection explicit" {

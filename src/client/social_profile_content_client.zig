@@ -109,41 +109,41 @@ pub const SocialProfileInspection = struct {
     common_tags: noztr.nip24_extra_metadata.CommonTagInfo,
 };
 
-pub const StoredSocialProfileSelectionRequest = struct {
+pub const LatestProfileRequest = struct {
     author: store.EventPubkeyHex,
     cursor: ?store.EventCursor = null,
     limit: usize = 0,
 };
 
-pub const StoredSocialProfileSelection = struct {
+pub const LatestProfile = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
     inspection: SocialProfileInspection,
 };
 
-pub const StoredSocialProfileResult = struct {
-    selection: ?StoredSocialProfileSelection = null,
+pub const LatestProfileResult = struct {
+    latest: ?LatestProfile = null,
     truncated: bool = false,
     next_cursor: ?store.EventCursor = null,
 };
 
-pub const StoredSocialNotePageRequest = struct {
+pub const NotePageRequest = struct {
     query: SocialEventQuery = .{},
     cursor: ?store.EventCursor = null,
 };
 
-pub const StoredSocialNoteRecord = struct {
+pub const NoteRecord = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
 };
 
-pub const StoredSocialNotePage = struct {
-    notes: []const StoredSocialNoteRecord = &.{},
+pub const NotePage = struct {
+    notes: []const NoteRecord = &.{},
     truncated: bool = false,
     next_cursor: ?store.EventCursor = null,
 };
 
-pub const StoredSocialLongFormSelectionRequest = struct {
+pub const LatestLongFormRequest = struct {
     author: store.EventPubkeyHex,
     identifier: ?[]const u8 = null,
     include_drafts: bool = false,
@@ -151,14 +151,14 @@ pub const StoredSocialLongFormSelectionRequest = struct {
     limit: usize = 0,
 };
 
-pub const StoredSocialLongFormSelection = struct {
+pub const LatestLongForm = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
     metadata: noztr.nip23_long_form.LongFormMetadata,
 };
 
-pub const StoredSocialLongFormResult = struct {
-    selection: ?StoredSocialLongFormSelection = null,
+pub const LatestLongFormResult = struct {
+    latest: ?LatestLongForm = null,
     truncated: bool = false,
     next_cursor: ?store.EventCursor = null,
 };
@@ -508,15 +508,15 @@ pub const SocialProfileContentClient = struct {
         return archive.ingestEventJson(event_json, scratch);
     }
 
-    pub fn inspectLatestStoredProfile(
+    pub fn inspectLatestProfile(
         self: SocialProfileContentClient,
         archive: store.EventArchive,
-        request: *const StoredSocialProfileSelectionRequest,
+        request: *const LatestProfileRequest,
         page: *store.EventQueryResultPage,
         out_reference_urls: [][]const u8,
         out_hashtags: [][]const u8,
         scratch: std.mem.Allocator,
-    ) SocialProfileContentClientError!StoredSocialProfileResult {
+    ) SocialProfileContentClientError!LatestProfileResult {
         const authors = [_]store.EventPubkeyHex{request.author};
         const kinds = [_]u32{profile_event_kind};
         try archive.query(&.{
@@ -535,7 +535,7 @@ pub const SocialProfileContentClient = struct {
                 scratch,
             );
             return .{
-                .selection = .{
+                .latest = .{
                     .record = record,
                     .event = event,
                     .inspection = inspection,
@@ -546,20 +546,20 @@ pub const SocialProfileContentClient = struct {
         }
 
         return .{
-            .selection = null,
+            .latest = null,
             .truncated = page.truncated,
             .next_cursor = page.next_cursor,
         };
     }
 
-    pub fn inspectStoredNotePage(
+    pub fn inspectNotePage(
         _: SocialProfileContentClient,
         archive: store.EventArchive,
-        request: *const StoredSocialNotePageRequest,
+        request: *const NotePageRequest,
         page: *store.EventQueryResultPage,
-        notes_out: []StoredSocialNoteRecord,
+        notes_out: []NoteRecord,
         scratch: std.mem.Allocator,
-    ) SocialProfileContentClientError!StoredSocialNotePage {
+    ) SocialProfileContentClientError!NotePage {
         const kinds = [_]u32{note_event_kind};
         try archive.query(&.{
             .authors = request.query.authors,
@@ -590,14 +590,14 @@ pub const SocialProfileContentClient = struct {
         };
     }
 
-    pub fn inspectLatestStoredLongForm(
+    pub fn inspectLatestLongForm(
         self: SocialProfileContentClient,
         archive: store.EventArchive,
-        request: *const StoredSocialLongFormSelectionRequest,
+        request: *const LatestLongFormRequest,
         page: *store.EventQueryResultPage,
         out_hashtags: [][]const u8,
         scratch: std.mem.Allocator,
-    ) SocialProfileContentClientError!StoredSocialLongFormResult {
+    ) SocialProfileContentClientError!LatestLongFormResult {
         const article_kind = @intFromEnum(noztr.nip23_long_form.LongFormKind.article);
         const draft_kind = @intFromEnum(noztr.nip23_long_form.LongFormKind.draft);
         const authors = [_]store.EventPubkeyHex{request.author};
@@ -618,7 +618,7 @@ pub const SocialProfileContentClient = struct {
                 if (!std.mem.eql(u8, metadata.identifier, identifier)) continue;
             }
             return .{
-                .selection = .{
+                .latest = .{
                     .record = record,
                     .event = event,
                     .metadata = metadata,
@@ -629,7 +629,7 @@ pub const SocialProfileContentClient = struct {
         }
 
         return .{
-            .selection = null,
+            .latest = null,
             .truncated = page.truncated,
             .next_cursor = page.next_cursor,
         };
@@ -929,7 +929,7 @@ test "social profile content client stores verified social content and selects a
     var profile_page = store.EventQueryResultPage.init(profile_page_storage[0..]);
     var profile_reference_urls: [2][]const u8 = undefined;
     var profile_hashtags: [2][]const u8 = undefined;
-    const profile_result = try client.inspectLatestStoredProfile(
+    const profile_result = try client.inspectLatestProfile(
         archive,
         &.{ .author = author_hex },
         &profile_page,
@@ -937,15 +937,15 @@ test "social profile content client stores verified social content and selects a
         profile_hashtags[0..],
         arena.allocator(),
     );
-    try std.testing.expect(profile_result.selection != null);
-    try std.testing.expectEqual(@as(u64, 10), profile_result.selection.?.event.created_at);
-    try std.testing.expectEqualStrings("Alice", profile_result.selection.?.inspection.extras.display_name.?);
+    try std.testing.expect(profile_result.latest != null);
+    try std.testing.expectEqual(@as(u64, 10), profile_result.latest.?.event.created_at);
+    try std.testing.expectEqualStrings("Alice", profile_result.latest.?.inspection.extras.display_name.?);
 
     var note_page_storage: [2]store.ClientEventRecord = undefined;
     var note_page = store.EventQueryResultPage.init(note_page_storage[0..]);
-    var notes_out: [2]StoredSocialNoteRecord = undefined;
+    var notes_out: [2]NoteRecord = undefined;
     const authors = [_]store.EventPubkeyHex{author_hex};
-    const note_result = try client.inspectStoredNotePage(
+    const note_result = try client.inspectNotePage(
         archive,
         &.{
             .query = .{
@@ -965,7 +965,7 @@ test "social profile content client stores verified social content and selects a
     var long_form_page_storage: [2]store.ClientEventRecord = undefined;
     var long_form_page = store.EventQueryResultPage.init(long_form_page_storage[0..]);
     var long_form_hashtags: [2][]const u8 = undefined;
-    const article_result = try client.inspectLatestStoredLongForm(
+    const article_result = try client.inspectLatestLongForm(
         archive,
         &.{
             .author = author_hex,
@@ -975,14 +975,14 @@ test "social profile content client stores verified social content and selects a
         long_form_hashtags[0..],
         arena.allocator(),
     );
-    try std.testing.expect(article_result.selection != null);
-    try std.testing.expectEqual(noztr.nip23_long_form.LongFormKind.article, article_result.selection.?.metadata.kind);
-    try std.testing.expectEqualStrings("Hello World", article_result.selection.?.metadata.title.?);
+    try std.testing.expect(article_result.latest != null);
+    try std.testing.expectEqual(noztr.nip23_long_form.LongFormKind.article, article_result.latest.?.metadata.kind);
+    try std.testing.expectEqualStrings("Hello World", article_result.latest.?.metadata.title.?);
 
     var draft_page_storage: [2]store.ClientEventRecord = undefined;
     var draft_page = store.EventQueryResultPage.init(draft_page_storage[0..]);
     var draft_hashtags_out: [2][]const u8 = undefined;
-    const draft_result = try client.inspectLatestStoredLongForm(
+    const draft_result = try client.inspectLatestLongForm(
         archive,
         &.{
             .author = author_hex,
@@ -993,9 +993,9 @@ test "social profile content client stores verified social content and selects a
         draft_hashtags_out[0..],
         arena.allocator(),
     );
-    try std.testing.expect(draft_result.selection != null);
-    try std.testing.expectEqual(noztr.nip23_long_form.LongFormKind.draft, draft_result.selection.?.metadata.kind);
-    try std.testing.expectEqualStrings("Hello Draft", draft_result.selection.?.metadata.title.?);
+    try std.testing.expect(draft_result.latest != null);
+    try std.testing.expectEqual(noztr.nip23_long_form.LongFormKind.draft, draft_result.latest.?.metadata.kind);
+    try std.testing.expectEqualStrings("Hello Draft", draft_result.latest.?.metadata.title.?);
 }
 
 test "social profile content client rejects invalid signatures during social archive ingest and inspection" {
@@ -1043,7 +1043,7 @@ test "social profile content client rejects invalid signatures during social arc
     var hashtags: [1][]const u8 = undefined;
     try std.testing.expectError(
         error.InvalidSignature,
-        client.inspectLatestStoredProfile(
+        client.inspectLatestProfile(
             archive,
             &.{ .author = author_hex, .limit = 1 },
             &page,

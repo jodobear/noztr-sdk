@@ -44,16 +44,16 @@ test "recipe: dm capability client composes mailbox relay-list support and mixed
     var page_storage: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var page = noztr_sdk.store.EventQueryResultPage.init(page_storage[0..]);
     var relay_urls: [4][]const u8 = undefined;
-    const stored = try client.inspectLatestStoredMailboxRelayList(
+    const stored = try client.inspectLatestMailboxRelayList(
         archive,
         &.{ .author = author_hex, .limit = 1 },
         &page,
         relay_urls[0..],
         arena.allocator(),
     );
-    try std.testing.expect(stored.selection != null);
-    try std.testing.expectEqualStrings("wss://dm.one", stored.selection.?.relays[0]);
-    try std.testing.expectEqualStrings("wss://dm.two", stored.selection.?.relays[1]);
+    try std.testing.expect(stored.latest != null);
+    try std.testing.expectEqualStrings("wss://dm.one", stored.latest.?.relays[0]);
+    try std.testing.expectEqualStrings("wss://dm.two", stored.latest.?.relays[1]);
 
     const inbound_protocol = try client.inspectDmProtocolKind(noztr.nip04.dm_kind);
     const reply = try client.selectReplyProtocol(&.{

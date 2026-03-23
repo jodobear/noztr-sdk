@@ -97,7 +97,7 @@ pub const SocialListSubscriptionRequest = struct {
 
 pub const SocialSubscriptionPlanStorage = social_support.SubscriptionPlanStorage;
 
-pub const StoredSocialListSelectionRequest = struct {
+pub const LatestListRequest = struct {
     author: store.EventPubkeyHex,
     kind: noztr.nip51_lists.ListKind,
     identifier: ?[]const u8 = null,
@@ -105,15 +105,15 @@ pub const StoredSocialListSelectionRequest = struct {
     limit: usize = 0,
 };
 
-pub const StoredSocialListSelection = struct {
+pub const LatestList = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
     info: noztr.nip51_lists.List,
     items: []const noztr.nip51_lists.ListItem,
 };
 
-pub const StoredSocialListInspection = struct {
-    selection: ?StoredSocialListSelection = null,
+pub const LatestListResult = struct {
+    latest: ?LatestList = null,
     truncated: bool = false,
     next_cursor: ?store.EventCursor = null,
 };
@@ -437,14 +437,14 @@ pub const SocialReactionListClient = struct {
         return archive.ingestEventJson(event_json, scratch);
     }
 
-    pub fn inspectLatestStoredList(
+    pub fn inspectLatestList(
         self: SocialReactionListClient,
         archive: store.EventArchive,
-        request: *const StoredSocialListSelectionRequest,
+        request: *const LatestListRequest,
         page: *store.EventQueryResultPage,
         items_out: []noztr.nip51_lists.ListItem,
         scratch: std.mem.Allocator,
-    ) SocialReactionListClientError!StoredSocialListInspection {
+    ) SocialReactionListClientError!LatestListResult {
         _ = self;
 
         const authors = [_]store.EventPubkeyHex{request.author};
@@ -465,7 +465,7 @@ pub const SocialReactionListClient = struct {
             }
 
             return .{
-                .selection = .{
+                .latest = .{
                     .record = record,
                     .event = event,
                     .info = info,
@@ -477,7 +477,7 @@ pub const SocialReactionListClient = struct {
         }
 
         return .{
-            .selection = null,
+            .latest = null,
             .truncated = page.truncated,
             .next_cursor = page.next_cursor,
         };
@@ -679,7 +679,7 @@ test "social reaction list client selects the latest stored list explicitly over
     var page_storage: [2]store.ClientEventRecord = undefined;
     var page = store.EventQueryResultPage.init(page_storage[0..]);
     var items: [2]noztr.nip51_lists.ListItem = undefined;
-    const inspection = try client.inspectLatestStoredList(
+    const inspection = try client.inspectLatestList(
         archive,
         &.{
             .author = author_hex,
@@ -690,9 +690,9 @@ test "social reaction list client selects the latest stored list explicitly over
         items[0..],
         arena.allocator(),
     );
-    try std.testing.expect(inspection.selection != null);
-    try std.testing.expectEqual(@as(u64, 20), inspection.selection.?.event.created_at);
-    try std.testing.expectEqualStrings("team", inspection.selection.?.info.metadata.identifier.?);
-    try std.testing.expect(inspection.selection.?.items[0] == .pubkey);
-    try std.testing.expectEqual(followed_two, inspection.selection.?.items[0].pubkey.pubkey);
+    try std.testing.expect(inspection.latest != null);
+    try std.testing.expectEqual(@as(u64, 20), inspection.latest.?.event.created_at);
+    try std.testing.expectEqualStrings("team", inspection.latest.?.info.metadata.identifier.?);
+    try std.testing.expect(inspection.latest.?.items[0] == .pubkey);
+    try std.testing.expectEqual(followed_two, inspection.latest.?.items[0].pubkey.pubkey);
 }
