@@ -119,6 +119,85 @@ pub const MixedDmObservedMessage = union(enum) {
     }
 };
 
+pub const MixedDmSenderProtocolMemoryRecord = struct {
+    occupied: bool = false,
+    peer_pubkey: [32]u8 = [_]u8{0} ** 32,
+    protocol: MixedDmProtocol = .legacy,
+    last_observed_at: u64 = 0,
+};
+
+pub const MixedDmSenderProtocolMemory = struct {
+    records: []MixedDmSenderProtocolMemoryRecord,
+
+    pub fn init(records: []MixedDmSenderProtocolMemoryRecord) MixedDmSenderProtocolMemory {
+        for (records) |*record| record.* = .{};
+        return .{ .records = records };
+    }
+
+    pub fn protocolFor(
+        self: *const MixedDmSenderProtocolMemory,
+        peer_pubkey: *const [32]u8,
+    ) ?MixedDmProtocol {
+        for (self.records) |record| {
+            if (!record.occupied) continue;
+            if (std.mem.eql(u8, &record.peer_pubkey, peer_pubkey)) return record.protocol;
+        }
+        return null;
+    }
+
+    pub fn remember(
+        self: *MixedDmSenderProtocolMemory,
+        peer_pubkey: *const [32]u8,
+        protocol: MixedDmProtocol,
+        observed_at: u64,
+    ) void {
+        var first_free: ?usize = null;
+        var oldest_index: usize = 0;
+        var oldest_found = false;
+
+        for (self.records, 0..) |*record, index| {
+            if (!record.occupied) {
+                if (first_free == null) first_free = index;
+                continue;
+            }
+
+            if (std.mem.eql(u8, &record.peer_pubkey, peer_pubkey)) {
+                if (observed_at >= record.last_observed_at) {
+                    record.protocol = protocol;
+                    record.last_observed_at = observed_at;
+                }
+                return;
+            }
+
+            if (!oldest_found or record.last_observed_at < self.records[oldest_index].last_observed_at) {
+                oldest_index = index;
+                oldest_found = true;
+            }
+        }
+
+        const target_index = first_free orelse oldest_index;
+        self.records[target_index] = .{
+            .occupied = true,
+            .peer_pubkey = peer_pubkey.*,
+            .protocol = protocol,
+            .last_observed_at = observed_at,
+        };
+    }
+};
+
+pub const MixedDmRememberedReplyRequest = struct {
+    peer_pubkey: [32]u8,
+    fallback_sender_protocol: MixedDmProtocol,
+    policy: MixedDmReplyPolicy = .sender_protocol,
+    recipient_mailbox_available: bool = false,
+};
+
+pub const MixedDmRememberedReplyRoute = struct {
+    route: MixedDmReplyRoute,
+    sender_protocol: MixedDmProtocol,
+    remembered: bool,
+};
+
 pub const MixedDmClient = struct {
     capability: dm_capability.DmCapabilityClient,
 
@@ -227,6 +306,55 @@ pub const MixedDmClient = struct {
     ) ?MixedDmObservedMessage {
         const message = intake.message orelse return null;
         return self.observeLegacyMessage(&message);
+    }
+
+    pub fn rememberObservedSenderProtocol(
+        _: MixedDmClient,
+        memory: *MixedDmSenderProtocolMemory,
+        observation: *const MixedDmObservedMessage,
+    ) void {
+        const sender_pubkey = observation.senderPubkey();
+        memory.remember(
+            &sender_pubkey,
+            observation.protocol(),
+            observation.createdAt(),
+        );
+    }
+
+    pub fn rememberSenderProtocol(
+        _: MixedDmClient,
+        memory: *MixedDmSenderProtocolMemory,
+        peer_pubkey: *const [32]u8,
+        protocol: MixedDmProtocol,
+        observed_at: u64,
+    ) void {
+        memory.remember(peer_pubkey, protocol, observed_at);
+    }
+
+    pub fn inspectRememberedSenderProtocol(
+        _: MixedDmClient,
+        memory: *const MixedDmSenderProtocolMemory,
+        peer_pubkey: *const [32]u8,
+    ) ?MixedDmProtocol {
+        return memory.protocolFor(peer_pubkey);
+    }
+
+    pub fn selectRememberedReplyRoute(
+        self: MixedDmClient,
+        memory: *const MixedDmSenderProtocolMemory,
+        request: *const MixedDmRememberedReplyRequest,
+    ) MixedDmClientError!MixedDmRememberedReplyRoute {
+        const remembered_protocol = memory.protocolFor(&request.peer_pubkey);
+        const sender_protocol = remembered_protocol orelse request.fallback_sender_protocol;
+        return .{
+            .route = try self.selectReplyRoute(&.{
+                .sender_protocol = sender_protocol,
+                .policy = request.policy,
+                .recipient_mailbox_available = request.recipient_mailbox_available,
+            }),
+            .sender_protocol = sender_protocol,
+            .remembered = remembered_protocol != null,
+        };
     }
 };
 
@@ -501,4 +629,46 @@ test "mixed dm client keeps replay and subscription intake normalization bounded
         .message = legacy_message,
     };
     try std.testing.expect(client.observeLegacySubscriptionIntake(&legacy_subscription_intake) != null);
+}
+
+test "mixed dm client keeps caller-owned sender protocol memory bounded and explicit" {
+    var storage = MixedDmClientStorage{};
+    const client = MixedDmClient.init(.{}, &storage);
+
+    const peer_mailbox = [_]u8{0x11} ** 32;
+    const peer_legacy = [_]u8{0x22} ** 32;
+    const unknown_peer = [_]u8{0x33} ** 32;
+
+    var records: [2]MixedDmSenderProtocolMemoryRecord = undefined;
+    var memory = MixedDmSenderProtocolMemory.init(records[0..]);
+
+    client.rememberSenderProtocol(&memory, &peer_mailbox, .mailbox, 100);
+    client.rememberSenderProtocol(&memory, &peer_legacy, .legacy, 101);
+    try std.testing.expectEqual(.mailbox, client.inspectRememberedSenderProtocol(&memory, &peer_mailbox).?);
+    try std.testing.expectEqual(.legacy, client.inspectRememberedSenderProtocol(&memory, &peer_legacy).?);
+    try std.testing.expect(client.inspectRememberedSenderProtocol(&memory, &unknown_peer) == null);
+
+    const remembered_route = try client.selectRememberedReplyRoute(&memory, &.{
+        .peer_pubkey = peer_mailbox,
+        .fallback_sender_protocol = .legacy,
+        .policy = .sender_protocol,
+        .recipient_mailbox_available = true,
+    });
+    try std.testing.expect(remembered_route.remembered);
+    try std.testing.expectEqual(.mailbox, remembered_route.sender_protocol);
+    try std.testing.expectEqual(.mailbox, remembered_route.route.protocol);
+
+    const fallback_route = try client.selectRememberedReplyRoute(&memory, &.{
+        .peer_pubkey = unknown_peer,
+        .fallback_sender_protocol = .legacy,
+        .policy = .prefer_mailbox,
+        .recipient_mailbox_available = false,
+    });
+    try std.testing.expect(!fallback_route.remembered);
+    try std.testing.expectEqual(.legacy, fallback_route.sender_protocol);
+    try std.testing.expectEqual(.legacy, fallback_route.route.protocol);
+
+    const replacement_peer = [_]u8{0x44} ** 32;
+    client.rememberSenderProtocol(&memory, &replacement_peer, .mailbox, 50);
+    try std.testing.expect(client.inspectRememberedSenderProtocol(&memory, &peer_mailbox) == null);
 }

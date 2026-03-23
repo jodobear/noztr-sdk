@@ -94,4 +94,17 @@ test "recipe: mixed dm client normalizes mailbox and legacy intake and keeps rep
         false,
     );
     try std.testing.expectEqual(.legacy, explicit_fallback.protocol);
+
+    var memory_records: [4]noztr_sdk.client.dm.mixed.MixedDmSenderProtocolMemoryRecord = undefined;
+    var memory = noztr_sdk.client.dm.mixed.MixedDmSenderProtocolMemory.init(memory_records[0..]);
+    client.rememberObservedSenderProtocol(&memory, &mailbox_observation);
+
+    const remembered = try client.selectRememberedReplyRoute(&memory, &.{
+        .peer_pubkey = mailbox_observation.senderPubkey(),
+        .fallback_sender_protocol = .legacy,
+        .policy = .sender_protocol,
+        .recipient_mailbox_available = true,
+    });
+    try std.testing.expect(remembered.remembered);
+    try std.testing.expectEqual(.mailbox, remembered.route.protocol);
 }
