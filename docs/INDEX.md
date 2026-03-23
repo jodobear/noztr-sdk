@@ -71,6 +71,8 @@ The current public floor is grouped and broad:
   - mailbox and legacy-DM runtime, replay, subscription, and orchestration composition
 - `client.identity.*`
   - `NIP-05` and `NIP-39` client-facing identity flows
+- `client.social.*`
+  - profile, note, thread, and long-form client-facing social/content composition
 - `client.proof.*`
   - `NIP-03` proof verification and remembered-proof planning
 - `client.groups.*`

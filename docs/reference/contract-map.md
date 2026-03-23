@@ -33,6 +33,7 @@ Within `workflows` and `client`, the canonical grouped discovery route is now:
 - `client.signer.*`
 - `client.dm.*`
 - `client.identity.*`
+- `client.social.*`
 - `client.proof.*`
 - `client.groups.*`
 
@@ -105,6 +106,7 @@ as an alternative flat discovery shape.
 | Command-ready local key generation and public-key derivation over the local operator floor | `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`, `LocalKeyJobRequest`, `LocalKeyJobResult` | `noztr_sdk.client.local.keys.LocalKeyJobClient` | [local_key_job_client_recipe.zig](../../examples/local_key_job_client_recipe.zig) |
 | Command-ready local `nip44` encrypt-decrypt over the local operator floor | `noztr_sdk.client`, `LocalNip44JobClient`, `LocalNip44JobClientStorage`, `LocalNip44JobRequest`, `LocalNip44JobResult` | `noztr_sdk.client.local.nip44.LocalNip44JobClient` | [local_nip44_job_client_recipe.zig](../../examples/local_nip44_job_client_recipe.zig) |
 | Local operator tooling for keys, `NIP-19` entities, local event signing/inspection, and local `NIP-44` crypto | `noztr_sdk.client`, `LocalOperatorClient`, `LocalKeypair`, `LocalEventDraft`, `LocalEventInspection` | `noztr_sdk.client.local.operator.LocalOperatorClient` | [local_operator_client_recipe.zig](../../examples/local_operator_client_recipe.zig) |
+| Social profile, note, thread, and long-form composition above the local operator, publish, and relay-query floors | `noztr_sdk.client`, `SocialProfileContentClient`, `SocialProfileContentClientStorage`, `SocialProfileDraft`, `SocialProfileDraftStorage`, `SocialNoteDraft`, `SocialLongFormDraft`, `SocialLongFormDraftStorage`, `SocialEventQuery`, `SocialSubscriptionPlanStorage`, `SocialProfileInspection`, `noztr_sdk.runtime.RelayPoolPublishPlan`, `noztr_sdk.runtime.RelayPoolSubscriptionPlan` | `noztr_sdk.client.social.profile_content.SocialProfileContentClient` | [social_profile_content_client_recipe.zig](../../examples/social_profile_content_client_recipe.zig) |
 | One-shot publish composition over local operator tooling plus shared relay runtime | `noztr_sdk.client`, `PublishClient`, `PublishClientStorage`, `PreparedPublishEvent`, `TargetedPublishEvent`, `noztr_sdk.runtime`, `RelayPoolPublishPlan`, `RelayPoolPublishStep` | `noztr_sdk.client.relay.publish.PublishClient` | [publish_client_recipe.zig](../../examples/publish_client_recipe.zig) |
 | Command-ready publish job composition over auth-aware publish turns | `noztr_sdk.client`, `PublishJobClient`, `PublishJobClientStorage`, `PublishJobAuthEventStorage`, `PreparedPublishJobAuthEvent`, `PublishJobRequest`, `PublishJobReady`, `PublishJobResult` | `noztr_sdk.client.relay.publish_job.PublishJobClient` | [publish_job_client_recipe.zig](../../examples/publish_job_client_recipe.zig) |
 | Bounded publish turn composition over local drafts, relay-targeted `EVENT`, and validated publish `OK` replies | `noztr_sdk.client`, `PublishTurnClient`, `PublishTurnClientStorage`, `PublishTurnRequest`, `PublishTurnResult` | `noztr_sdk.client.relay.publish_turn.PublishTurnClient` | [publish_turn_client_recipe.zig](../../examples/publish_turn_client_recipe.zig) |

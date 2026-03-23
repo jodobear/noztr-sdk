@@ -27,7 +27,7 @@ Use these docs when you need public routing or contract context before opening a
 - public SDK imports come from `@import("noztr_sdk").workflows`
 - grouped routes inside those namespaces are now canonical:
   - `client.local.*`, `client.relay.*`, `client.signer.*`, `client.dm.*`, `client.identity.*`,
-    `client.proof.*`, `client.groups.*`
+    `client.social.*`, `client.proof.*`, `client.groups.*`
   - `workflows.groups.*`, `workflows.identity.*`, `workflows.dm.*`, `workflows.proof.*`,
     `workflows.signer.*`
 - shared store/query imports come from `@import("noztr_sdk").store`
@@ -119,6 +119,19 @@ They do not imply:
     adapter remains caller-driven, the shared signer-capability vocabulary now reaches the thin
     browser seam directly, and the SDK still stops at the reusable browser seam instead of
     expanding into extension packaging or approval UI
+- `social_profile_content_client_recipe.zig`
+  - goal: compose one kind-`0` profile publish, one kind-`1` note subscription, and one `NIP-23`
+    long-form inspection route above the local operator, publish, and relay-query floors
+  - related SDK symbols: `noztr_sdk.client.social.profile_content`, `SocialProfileContentClient`,
+    `SocialProfileDraft`, `SocialProfileDraftStorage`, `SocialNoteDraft`,
+    `SocialLongFormDraft`, `SocialLongFormDraftStorage`, `SocialEventQuery`,
+    `SocialSubscriptionPlanStorage`, `SocialProfileInspection`
+  - kernel fixture help: `noztr.nip10_threads`, `noztr.nip23_long_form`,
+    `noztr.nip24_extra_metadata`
+  - control points: deterministic profile, thread, and long-form parsing stay on `noztr`, relay
+    readiness still routes through the existing publish and query clients, long-form tag-building
+    stays caller-buffered and explicit, and this first social route stops short of ranking, feed
+    sync, reactions, lists, or social-graph policy
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response
