@@ -9,8 +9,11 @@ const noztr = @import("noztr");
 
 pub const MixedDmClientError =
     dm_capability.DmCapabilityClientError ||
+    workflows.dm.mailbox.MailboxError ||
+    workflows.dm.legacy.LegacyDmError ||
     error{
         InvalidMailboxEnvelopeRecipients,
+        MissingRecipientMailboxRelayList,
     };
 
 pub const MixedDmClientConfig = struct {
@@ -282,6 +285,70 @@ pub const MixedDmDedupMemory = struct {
     }
 };
 
+pub const MixedDmOutboundStorage = struct {
+    legacy: workflows.dm.legacy.LegacyDmOutboundStorage = .{},
+    mailbox_outbound: workflows.dm.mailbox.MailboxOutboundBuffer = .{},
+    mailbox_delivery: workflows.dm.mailbox.MailboxDeliveryStorage = .{},
+};
+
+pub const MixedDmDirectMessageRequest = struct {
+    recipient_pubkey: [32]u8,
+    recipient_relay_hint: ?[]const u8 = null,
+    reply_to: ?MixedDmObservedReplyRef = null,
+    content: []const u8,
+    created_at: u64,
+    legacy_iv: [noztr.limits.nip04_iv_bytes]u8,
+    recipient_relay_list_event_json: ?[]const u8 = null,
+    sender_relay_list_event_json: ?[]const u8 = null,
+    mailbox_wrap_signer_private_key: [32]u8,
+    mailbox_seal_nonce: [32]u8,
+    mailbox_wrap_nonce: [32]u8,
+};
+
+pub const MixedDmRememberedDirectMessageRequest = struct {
+    recipient_pubkey: [32]u8,
+    recipient_relay_hint: ?[]const u8 = null,
+    reply_to: ?MixedDmObservedReplyRef = null,
+    content: []const u8,
+    created_at: u64,
+    fallback_sender_protocol: MixedDmProtocol,
+    policy: MixedDmReplyPolicy = .sender_protocol,
+    recipient_mailbox_available: bool = false,
+    legacy_iv: [noztr.limits.nip04_iv_bytes]u8,
+    recipient_relay_list_event_json: ?[]const u8 = null,
+    sender_relay_list_event_json: ?[]const u8 = null,
+    mailbox_wrap_signer_private_key: [32]u8,
+    mailbox_seal_nonce: [32]u8,
+    mailbox_wrap_nonce: [32]u8,
+};
+
+pub const MixedDmPreparedMailboxDirectMessage = struct {
+    delivery: workflows.dm.mailbox.MailboxDeliveryPlan,
+};
+
+pub const MixedDmPreparedLegacyDirectMessage = struct {
+    event: noztr.nip01_event.Event,
+    event_json: []const u8,
+};
+
+pub const MixedDmPreparedDirectMessage = union(enum) {
+    mailbox: MixedDmPreparedMailboxDirectMessage,
+    legacy: MixedDmPreparedLegacyDirectMessage,
+
+    pub fn protocol(self: *const MixedDmPreparedDirectMessage) MixedDmProtocol {
+        return switch (self.*) {
+            .mailbox => .mailbox,
+            .legacy => .legacy,
+        };
+    }
+};
+
+pub const MixedDmRememberedPreparedDirectMessage = struct {
+    prepared: MixedDmPreparedDirectMessage,
+    sender_protocol: MixedDmProtocol,
+    remembered: bool,
+};
+
 pub const MixedDmClient = struct {
     capability: dm_capability.DmCapabilityClient,
 
@@ -465,7 +532,144 @@ pub const MixedDmClient = struct {
         const identity = observation.identity();
         return memory.note(&identity, observation.createdAt());
     }
+
+    pub fn prepareDirectMessage(
+        _: MixedDmClient,
+        event_json_output: []u8,
+        sender_secret_key: *const [32]u8,
+        storage: *MixedDmOutboundStorage,
+        protocol: MixedDmProtocol,
+        request: *const MixedDmDirectMessageRequest,
+        scratch: std.mem.Allocator,
+    ) MixedDmClientError!MixedDmPreparedDirectMessage {
+        return switch (protocol) {
+            .legacy => prepareLegacyDirectMessage(
+                event_json_output,
+                sender_secret_key,
+                &storage.legacy,
+                request,
+            ),
+            .mailbox => try prepareMailboxDirectMessage(
+                sender_secret_key,
+                storage,
+                request,
+                scratch,
+            ),
+        };
+    }
+
+    pub fn prepareRememberedDirectMessage(
+        self: MixedDmClient,
+        event_json_output: []u8,
+        sender_secret_key: *const [32]u8,
+        storage: *MixedDmOutboundStorage,
+        memory: *const MixedDmSenderProtocolMemory,
+        request: *const MixedDmRememberedDirectMessageRequest,
+        scratch: std.mem.Allocator,
+    ) MixedDmClientError!MixedDmRememberedPreparedDirectMessage {
+        const route = try self.selectRememberedReplyRoute(memory, &.{
+            .peer_pubkey = request.recipient_pubkey,
+            .fallback_sender_protocol = request.fallback_sender_protocol,
+            .policy = request.policy,
+            .recipient_mailbox_available = request.recipient_mailbox_available,
+        });
+        return .{
+            .prepared = try self.prepareDirectMessage(
+                event_json_output,
+                sender_secret_key,
+                storage,
+                route.route.protocol,
+                &.{
+                    .recipient_pubkey = request.recipient_pubkey,
+                    .recipient_relay_hint = request.recipient_relay_hint,
+                    .reply_to = request.reply_to,
+                    .content = request.content,
+                    .created_at = request.created_at,
+                    .legacy_iv = request.legacy_iv,
+                    .recipient_relay_list_event_json = request.recipient_relay_list_event_json,
+                    .sender_relay_list_event_json = request.sender_relay_list_event_json,
+                    .mailbox_wrap_signer_private_key = request.mailbox_wrap_signer_private_key,
+                    .mailbox_seal_nonce = request.mailbox_seal_nonce,
+                    .mailbox_wrap_nonce = request.mailbox_wrap_nonce,
+                },
+                scratch,
+            ),
+            .sender_protocol = route.sender_protocol,
+            .remembered = route.remembered,
+        };
+    }
 };
+
+fn prepareLegacyDirectMessage(
+    event_json_output: []u8,
+    sender_secret_key: *const [32]u8,
+    storage: *workflows.dm.legacy.LegacyDmOutboundStorage,
+    request: *const MixedDmDirectMessageRequest,
+) MixedDmClientError!MixedDmPreparedDirectMessage {
+    const session = workflows.dm.legacy.LegacyDmSession.init(sender_secret_key);
+    const prepared = try session.buildDirectMessageEvent(storage, &.{
+        .recipient_pubkey = request.recipient_pubkey,
+        .recipient_relay_hint = request.recipient_relay_hint,
+        .reply_to = legacyReplyFromMixed(request.reply_to),
+        .content = request.content,
+        .created_at = request.created_at,
+        .iv = request.legacy_iv,
+    });
+    return .{
+        .legacy = .{
+            .event = prepared.event,
+            .event_json = try session.serializeDirectMessageEventJson(event_json_output, &prepared.event),
+        },
+    };
+}
+
+fn prepareMailboxDirectMessage(
+    sender_secret_key: *const [32]u8,
+    storage: *MixedDmOutboundStorage,
+    request: *const MixedDmDirectMessageRequest,
+    scratch: std.mem.Allocator,
+) MixedDmClientError!MixedDmPreparedDirectMessage {
+    const recipient_relay_list_event_json =
+        request.recipient_relay_list_event_json orelse return error.MissingRecipientMailboxRelayList;
+    var session = workflows.dm.mailbox.MailboxSession.init(sender_secret_key);
+    return .{
+        .mailbox = .{
+            .delivery = try session.planDirectMessageDelivery(
+                &storage.mailbox_outbound,
+                &storage.mailbox_delivery,
+                recipient_relay_list_event_json,
+                request.sender_relay_list_event_json,
+                &.{
+                    .recipient_pubkey = request.recipient_pubkey,
+                    .recipient_relay_hint = request.recipient_relay_hint,
+                    .reply_to = mailboxReplyFromMixed(request.reply_to),
+                    .content = request.content,
+                    .created_at = request.created_at,
+                    .wrap_signer_private_key = request.mailbox_wrap_signer_private_key,
+                    .seal_nonce = request.mailbox_seal_nonce,
+                    .wrap_nonce = request.mailbox_wrap_nonce,
+                },
+                scratch,
+            ),
+        },
+    };
+}
+
+fn mailboxReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip17_private_messages.DmReplyRef {
+    const reply = reply_to orelse return null;
+    return .{
+        .event_id = reply.event_id,
+        .relay_hint = reply.relay_hint,
+    };
+}
+
+fn legacyReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip04.Nip04ReplyRef {
+    const reply = reply_to orelse return null;
+    return .{
+        .event_id = reply.event_id,
+        .relay_hint = reply.relay_hint,
+    };
+}
 
 fn observeMailboxDirectMessage(
     message: *const workflows.dm.mailbox.MailboxMessageOutcome,
@@ -828,4 +1032,147 @@ test "mixed dm client dedupes observed mailbox and legacy messages without ownin
     };
     try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&memory, &replacement));
     try std.testing.expect(!client.hasSeenObservedMessage(&memory, &mailbox_observation));
+}
+
+test "mixed dm client prepares mailbox and legacy outbound work explicitly" {
+    var storage = MixedDmClientStorage{};
+    const client = MixedDmClient.init(.{}, &storage);
+
+    const sender_secret = [_]u8{0x11} ** 32;
+    const recipient_secret = [_]u8{0x22} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
+    const reply_event_id = [_]u8{0x99} ** 32;
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var capability_storage = dm_capability.DmCapabilityClientStorage{};
+    const capability = dm_capability.DmCapabilityClient.init(.{}, &capability_storage);
+    var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var relay_list_storage = dm_capability.MailboxRelayListDraftStorage.init(
+        relay_tags[0..],
+        built_tags[0..],
+    );
+    var relay_list_json_output: [noztr.limits.event_json_max]u8 = undefined;
+    const relay_list = try capability.prepareMailboxRelayListPublish(
+        relay_list_json_output[0..],
+        &relay_list_storage,
+        &recipient_secret,
+        &.{ .created_at = 99, .relays = &.{"wss://dm.one"} },
+    );
+
+    var outbound_storage = MixedDmOutboundStorage{};
+    var event_json_output: [noztr.limits.event_json_max]u8 = undefined;
+    const mailbox = try client.prepareDirectMessage(
+        event_json_output[0..],
+        &sender_secret,
+        &outbound_storage,
+        .mailbox,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://dm.one",
+            .reply_to = .{
+                .event_id = reply_event_id,
+                .relay_hint = "wss://thread.example",
+            },
+            .content = "mailbox mixed outbound",
+            .created_at = 100,
+            .legacy_iv = [_]u8{0xaa} ** noztr.limits.nip04_iv_bytes,
+            .recipient_relay_list_event_json = relay_list.event_json,
+            .mailbox_wrap_signer_private_key = sender_secret,
+            .mailbox_seal_nonce = [_]u8{0xbb} ** 32,
+            .mailbox_wrap_nonce = [_]u8{0xcc} ** 32,
+        },
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(.mailbox, mailbox.protocol());
+    try std.testing.expectEqualStrings("wss://dm.one", mailbox.mailbox.delivery.nextStep().?.relay_url);
+
+    const legacy = try client.prepareDirectMessage(
+        event_json_output[0..],
+        &sender_secret,
+        &outbound_storage,
+        .legacy,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://legacy.one",
+            .reply_to = .{
+                .event_id = reply_event_id,
+                .relay_hint = "wss://thread.example",
+            },
+            .content = "legacy mixed outbound",
+            .created_at = 101,
+            .legacy_iv = [_]u8{0xdd} ** noztr.limits.nip04_iv_bytes,
+            .mailbox_wrap_signer_private_key = sender_secret,
+            .mailbox_seal_nonce = [_]u8{0} ** 32,
+            .mailbox_wrap_nonce = [_]u8{0} ** 32,
+        },
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(.legacy, legacy.protocol());
+    var plaintext_output: [noztr.limits.nip04_plaintext_max_bytes]u8 = undefined;
+    const legacy_session = workflows.dm.legacy.LegacyDmSession.init(&recipient_secret);
+    const accepted = try legacy_session.acceptDirectMessageEvent(&legacy.legacy.event, plaintext_output[0..]);
+    try std.testing.expect(accepted.message.reply_to != null);
+    try std.testing.expectEqualSlices(u8, &reply_event_id, &accepted.message.reply_to.?.event_id);
+}
+
+test "mixed dm client prepares remembered outbound route over caller-owned memory" {
+    var storage = MixedDmClientStorage{};
+    const client = MixedDmClient.init(.{}, &storage);
+
+    const sender_secret = [_]u8{0x31} ** 32;
+    const recipient_secret = [_]u8{0x42} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    var capability_storage = dm_capability.DmCapabilityClientStorage{};
+    const capability = dm_capability.DmCapabilityClient.init(.{}, &capability_storage);
+    var relay_tags: [1]noztr.nip01_event.EventTag = undefined;
+    var built_tags: [1]noztr.nip17_private_messages.BuiltTag = undefined;
+    var relay_list_storage = dm_capability.MailboxRelayListDraftStorage.init(
+        relay_tags[0..],
+        built_tags[0..],
+    );
+    var relay_list_json_output: [noztr.limits.event_json_max]u8 = undefined;
+    const relay_list = try capability.prepareMailboxRelayListPublish(
+        relay_list_json_output[0..],
+        &relay_list_storage,
+        &recipient_secret,
+        &.{ .created_at = 109, .relays = &.{"wss://dm.one"} },
+    );
+
+    var memory_records: [2]MixedDmSenderProtocolMemoryRecord = undefined;
+    var memory = MixedDmSenderProtocolMemory.init(memory_records[0..]);
+    client.rememberSenderProtocol(&memory, &recipient_pubkey, .mailbox, 110);
+
+    var outbound_storage = MixedDmOutboundStorage{};
+    var event_json_output: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try client.prepareRememberedDirectMessage(
+        event_json_output[0..],
+        &sender_secret,
+        &outbound_storage,
+        &memory,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://dm.one",
+            .content = "remembered mailbox outbound",
+            .created_at = 111,
+            .fallback_sender_protocol = .legacy,
+            .policy = .sender_protocol,
+            .recipient_mailbox_available = true,
+            .legacy_iv = [_]u8{0xee} ** noztr.limits.nip04_iv_bytes,
+            .recipient_relay_list_event_json = relay_list.event_json,
+            .mailbox_wrap_signer_private_key = sender_secret,
+            .mailbox_seal_nonce = [_]u8{0xf1} ** 32,
+            .mailbox_wrap_nonce = [_]u8{0xf2} ** 32,
+        },
+        arena.allocator(),
+    );
+    try std.testing.expect(prepared.remembered);
+    try std.testing.expectEqual(.mailbox, prepared.sender_protocol);
+    try std.testing.expectEqual(.mailbox, prepared.prepared.protocol());
 }
