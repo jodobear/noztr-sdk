@@ -9,6 +9,19 @@ The objective is not the smallest possible wrapper above `noztr`. The objective 
 production-grade generic Zig Nostr SDK that absorbs broadly reusable relay/workflow heavy lifting
 while keeping product-specific policy explicit and caller-owned.
 
+## Objective And Posture
+
+- Objective: be the production-grade non-kernel Zig SDK layer above `noztr`, so real Nostr apps,
+  relays, signers, bots, services, and CLI tooling do not have to rebuild the same
+  relay/session/store/workflow substrate from scratch.
+- Modeled after: applesauce, primarily as an ergonomics, workflow, and store-layer reference, not
+  as a protocol source of truth or something to port mechanically into Zig.
+- Philosophy: keep deterministic protocol-kernel behavior in `noztr`, keep reusable non-kernel
+  relay/session/store/sync/workflow composition in `noztr-sdk`, keep product-specific policy
+  above the SDK, and prefer explicit caller-owned control over hidden runtime magic.
+- Values: clarity, boundedness, reuse, Zig-native design, and honesty about what belongs in the
+  SDK versus what belongs above it.
+
 ## What noztr-sdk is
 
 - The higher-level Zig SDK layer above the `noztr` protocol kernel.
@@ -143,12 +156,12 @@ The structured SDK examples tree now lives under `examples/`.
 
 Start here:
 - `examples/consumer_smoke.zig`
-- `examples/remote_signer_recipe.zig`
-- `examples/signer_client_recipe.zig`
-- `examples/signer_capability_recipe.zig`
-- `examples/nip07_browser_signer_recipe.zig`
-- `examples/mailbox_recipe.zig`
-- `examples/nip03_verification_recipe.zig`
-- `examples/group_session_recipe.zig`
+- `examples/remote_signer.zig`
+- `examples/signer_client.zig`
+- `examples/signer_capability.zig`
+- `examples/nip07_browser_signer.zig`
+- `examples/mailbox.zig`
+- `examples/nip03_verification.zig`
+- `examples/group_session.zig`
 
 For the agent-readable recipe catalog, use `examples/README.md`.
