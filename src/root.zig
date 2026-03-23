@@ -267,7 +267,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.proof.nip03.Nip03VerifyJob) == type);
     try std.testing.expect(@TypeOf(client.proof.nip03.Nip03VerifyCachedResult) == type);
     try std.testing.expect(@TypeOf(client.proof.nip03.Nip03VerifyJobResult) == type);
-    try std.testing.expect(@TypeOf(client.proof.nip03.Nip03StoredVerificationPlanning) == type);
+    try std.testing.expect(@TypeOf(client.proof.nip03.Planning) == type);
     try std.testing.expect(@TypeOf(client.proof.nip03.Nip03VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.identity.nip05.Nip05VerifyClientError) == type);
     try std.testing.expect(@TypeOf(client.identity.nip05.Nip05VerifyClientConfig) == type);
@@ -284,7 +284,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyJob) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifySummary) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyJobResult) == type);
-    try std.testing.expect(@TypeOf(client.identity.nip39.Nip39StoredProfilePlanning) == type);
+    try std.testing.expect(@TypeOf(client.identity.nip39.Planning) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.relay.publish_job.PublishJobClientError) == type);
     try std.testing.expect(@TypeOf(client.relay.publish_job.PublishJobClientConfig) == type);

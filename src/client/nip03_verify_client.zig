@@ -37,7 +37,7 @@ pub const Nip03VerifyJob = workflows.proof.nip03.OpenTimestampsRemoteProofReques
 pub const Nip03VerifyCachedResult = workflows.proof.nip03.OpenTimestampsRemoteVerificationOutcome;
 pub const Nip03VerifyJobResult = workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationOutcome;
 
-pub const Nip03StoredVerificationPlanning = struct {
+pub const Planning = struct {
     pub const Match = workflows.proof.nip03.OpenTimestampsStoredVerificationMatch;
     pub const DiscoveryEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryEntry;
     pub const Freshness = workflows.proof.nip03.OpenTimestampsStoredVerificationFreshness;
@@ -70,46 +70,46 @@ pub const Nip03StoredVerificationPlanning = struct {
     pub const TargetRefreshRequest = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshRequest;
     pub const TargetRefreshPlan = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshPlan;
     pub const TargetRefreshStep = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshStep;
-    pub const TargetRefreshReadinessAction =
+    pub const TargetReadinessAction =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessAction;
-    pub const TargetRefreshReadinessEntry =
+    pub const TargetReadinessEntry =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessEntry;
-    pub const TargetRefreshReadinessGroup =
+    pub const TargetReadinessGroup =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessGroup;
-    pub const TargetRefreshReadinessStorage =
+    pub const TargetReadinessStorage =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessStorage;
-    pub const TargetRefreshReadinessRequest =
+    pub const TargetReadinessRequest =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessRequest;
-    pub const TargetRefreshReadinessPlan =
+    pub const TargetReadinessPlan =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessPlan;
-    pub const TargetRefreshReadinessStep =
+    pub const TargetReadinessStep =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessStep;
     pub const TargetPolicyEntry = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyEntry;
     pub const TargetPolicyGroup = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyGroup;
     pub const TargetPolicyStorage = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyStorage;
     pub const TargetPolicyRequest = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyRequest;
     pub const TargetPolicyPlan = workflows.proof.nip03.OpenTimestampsStoredVerificationTargetPolicyPlan;
-    pub const TargetRefreshCadenceAction =
+    pub const TargetCadenceAction =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceAction;
-    pub const TargetRefreshCadenceEntry =
+    pub const TargetCadenceEntry =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceEntry;
-    pub const TargetRefreshCadenceGroup =
+    pub const TargetCadenceGroup =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceGroup;
-    pub const TargetRefreshCadenceStorage =
+    pub const TargetCadenceStorage =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceStorage;
-    pub const TargetRefreshCadenceRequest =
+    pub const TargetCadenceRequest =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceRequest;
-    pub const TargetRefreshCadencePlan =
+    pub const TargetCadencePlan =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadencePlan;
-    pub const TargetRefreshCadenceStep =
+    pub const TargetCadenceStep =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshCadenceStep;
-    pub const TargetRefreshBatchStorage =
+    pub const TargetBatchStorage =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchStorage;
-    pub const TargetRefreshBatchRequest =
+    pub const TargetBatchRequest =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchRequest;
-    pub const TargetRefreshBatchPlan =
+    pub const TargetBatchPlan =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchPlan;
-    pub const TargetRefreshBatchStep =
+    pub const TargetBatchStep =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshBatchStep;
     pub const TargetTurnPolicyAction =
         workflows.proof.nip03.OpenTimestampsStoredVerificationTargetTurnPolicyAction;
@@ -186,11 +186,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn getLatestStoredVerificationFreshness(
+    pub fn getLatestFreshness(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.LatestFreshnessRequest,
-    ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.LatestFreshness {
+        request: Planning.LatestFreshnessRequest,
+    ) Nip03VerifyClientError!?Planning.LatestFreshness {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
             verification_store,
@@ -198,11 +198,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn discoverLatestStoredVerificationFreshnessForTargets(
+    pub fn discoverLatestForTargets(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.LatestTargetRequest,
-    ) Nip03VerifyClientError![]const Nip03StoredVerificationPlanning.LatestTargetEntry {
+        request: Planning.LatestTargetRequest,
+    ) Nip03VerifyClientError![]const Planning.LatestTargetEntry {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
             verification_store,
@@ -210,11 +210,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn getPreferredStoredVerification(
+    pub fn getPreferred(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.PreferredRequest,
-    ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.Preferred {
+        request: Planning.PreferredRequest,
+    ) Nip03VerifyClientError!?Planning.Preferred {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerification(
             verification_store,
@@ -222,11 +222,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn getPreferredStoredVerificationForTargets(
+    pub fn getPreferredForTargets(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.PreferredTargetRequest,
-    ) Nip03VerifyClientError!?Nip03StoredVerificationPlanning.PreferredTargetEntry {
+        request: Planning.PreferredTargetRequest,
+    ) Nip03VerifyClientError!?Planning.PreferredTargetEntry {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
             verification_store,
@@ -234,11 +234,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn inspectStoredVerificationRuntime(
+    pub fn inspectRuntime(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.RuntimeRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.RuntimePlan {
+        request: Planning.RuntimeRequest,
+    ) Nip03VerifyClientError!Planning.RuntimePlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
             verification_store,
@@ -246,11 +246,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn planStoredVerificationRefresh(
+    pub fn planRefresh(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.RefreshRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.RefreshPlan {
+        request: Planning.RefreshRequest,
+    ) Nip03VerifyClientError!Planning.RefreshPlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefresh(
             verification_store,
@@ -258,11 +258,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn planStoredVerificationRefreshForTargets(
+    pub fn planTargetRefresh(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.TargetRefreshRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshPlan {
+        request: Planning.TargetRefreshRequest,
+    ) Nip03VerifyClientError!Planning.TargetRefreshPlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
             verification_store,
@@ -270,12 +270,12 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn inspectStoredVerificationRefreshReadinessForTargets(
+    pub fn inspectTargetReadiness(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
         event_archive: store.EventArchive,
-        request: Nip03StoredVerificationPlanning.TargetRefreshReadinessRequest,
-    ) Nip03StoredVerificationRefreshReadinessError!Nip03StoredVerificationPlanning.TargetRefreshReadinessPlan {
+        request: Planning.TargetReadinessRequest,
+    ) Nip03StoredVerificationRefreshReadinessError!Planning.TargetReadinessPlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
             verification_store,
@@ -284,11 +284,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn inspectStoredVerificationPolicyForTargets(
+    pub fn inspectTargetPolicy(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.TargetPolicyRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetPolicyPlan {
+        request: Planning.TargetPolicyRequest,
+    ) Nip03VerifyClientError!Planning.TargetPolicyPlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
             verification_store,
@@ -296,11 +296,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn inspectStoredVerificationRefreshCadenceForTargets(
+    pub fn inspectTargetCadence(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.TargetRefreshCadenceRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshCadencePlan {
+        request: Planning.TargetCadenceRequest,
+    ) Nip03VerifyClientError!Planning.TargetCadencePlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
             verification_store,
@@ -308,11 +308,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn inspectStoredVerificationRefreshBatchForTargets(
+    pub fn inspectTargetBatch(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.TargetRefreshBatchRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetRefreshBatchPlan {
+        request: Planning.TargetBatchRequest,
+    ) Nip03VerifyClientError!Planning.TargetBatchPlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
             verification_store,
@@ -320,11 +320,11 @@ pub const Nip03VerifyClient = struct {
         );
     }
 
-    pub fn inspectStoredVerificationTurnPolicyForTargets(
+    pub fn inspectTargetTurnPolicy(
         self: *const Nip03VerifyClient,
         verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
-        request: Nip03StoredVerificationPlanning.TargetTurnPolicyRequest,
-    ) Nip03VerifyClientError!Nip03StoredVerificationPlanning.TargetTurnPolicyPlan {
+        request: Planning.TargetTurnPolicyRequest,
+    ) Nip03VerifyClientError!Planning.TargetTurnPolicyPlan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
             verification_store,
@@ -422,7 +422,7 @@ test "nip03 verify client drives remembered remote verification through one comm
 test "nip03 verify client lifts remembered proof planning into the client surface" {
     const fresh_target = try buildSignedTextEvent(0x21, 1, "fresh");
     const stale_target = try buildSignedTextEvent(0x22, 2, "stale");
-    const missing_target = Nip03StoredVerificationPlanning.Target{
+    const missing_target = Planning.Target{
         .target_event_id = [_]u8{0x99} ** 32,
     };
 
@@ -453,8 +453,8 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
 
     const client = Nip03VerifyClient.init(.{});
 
-    var fresh_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    const latest_fresh = (try client.getLatestStoredVerificationFreshness(
+    var fresh_matches: [2]Planning.Match = undefined;
+    const latest_fresh = (try client.getLatestFreshness(
         verification_store.asStore(),
         .{
             .target_event_id = &fresh_target.id,
@@ -463,63 +463,63 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
             .matches = fresh_matches[0..],
         },
     )).?;
-    try std.testing.expectEqual(Nip03StoredVerificationPlanning.Freshness.fresh, latest_fresh.freshness);
+    try std.testing.expectEqual(Planning.Freshness.fresh, latest_fresh.freshness);
 
-    var runtime_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var runtime_entries: [2]Nip03StoredVerificationPlanning.DiscoveryFreshnessEntry = undefined;
-    const runtime = try client.inspectStoredVerificationRuntime(
+    var runtime_matches: [2]Planning.Match = undefined;
+    var runtime_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
+    const runtime = try client.inspectRuntime(
         verification_store.asStore(),
         .{
             .target_event_id = &fresh_target.id,
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = Nip03StoredVerificationPlanning.RuntimeStorage.init(
+            .storage = Planning.RuntimeStorage.init(
                 runtime_matches[0..],
                 runtime_entries[0..],
             ),
         },
     );
-    try std.testing.expectEqual(Nip03StoredVerificationPlanning.RuntimeAction.use_preferred, runtime.action);
+    try std.testing.expectEqual(Planning.RuntimeAction.use_preferred, runtime.action);
     try std.testing.expectEqualStrings(
         "https://proof.example/fresh.ots",
         runtime.nextStep().entry.?.entry.verification.proofUrl(),
     );
 
-    const targets = [_]Nip03StoredVerificationPlanning.Target{
+    const targets = [_]Planning.Target{
         .{ .target_event_id = fresh_target.id },
         .{ .target_event_id = stale_target.id },
         missing_target,
     };
-    var target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    const latest_entries = try client.discoverLatestStoredVerificationFreshnessForTargets(
+    var target_matches: [2]Planning.Match = undefined;
+    var target_latest_entries: [3]Planning.LatestTargetEntry = undefined;
+    const latest_entries = try client.discoverLatestForTargets(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
-            .storage = Nip03StoredVerificationPlanning.LatestTargetStorage.init(
+            .storage = Planning.LatestTargetStorage.init(
                 target_matches[0..],
                 target_latest_entries[0..],
             ),
         },
     );
-    try std.testing.expectEqual(Nip03StoredVerificationPlanning.Freshness.fresh, latest_entries[0].latest.?.freshness);
-    try std.testing.expectEqual(Nip03StoredVerificationPlanning.Freshness.stale, latest_entries[1].latest.?.freshness);
+    try std.testing.expectEqual(Planning.Freshness.fresh, latest_entries[0].latest.?.freshness);
+    try std.testing.expectEqual(Planning.Freshness.stale, latest_entries[1].latest.?.freshness);
     try std.testing.expect(latest_entries[2].latest == null);
 
-    var preferred_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var preferred_freshness_entries: [2]Nip03StoredVerificationPlanning.DiscoveryFreshnessEntry = undefined;
-    var preferred_entries: [3]Nip03StoredVerificationPlanning.PreferredTargetEntry = undefined;
-    const preferred = (try client.getPreferredStoredVerificationForTargets(
+    var preferred_matches: [2]Planning.Match = undefined;
+    var preferred_freshness_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
+    var preferred_entries: [3]Planning.PreferredTargetEntry = undefined;
+    const preferred = (try client.getPreferredForTargets(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = Nip03StoredVerificationPlanning.PreferredTargetStorage.init(
+            .storage = Planning.PreferredTargetStorage.init(
                 preferred_matches[0..],
                 preferred_freshness_entries[0..],
                 preferred_entries[0..],
@@ -528,18 +528,18 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
     )).?;
     try std.testing.expectEqualSlices(u8, fresh_target.id[0..], preferred.target.target_event_id[0..]);
 
-    var policy_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var policy_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    var policy_entries: [3]Nip03StoredVerificationPlanning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]Nip03StoredVerificationPlanning.TargetPolicyGroup = undefined;
-    const policy_plan = try client.inspectStoredVerificationPolicyForTargets(
+    var policy_target_matches: [2]Planning.Match = undefined;
+    var policy_target_latest_entries: [3]Planning.LatestTargetEntry = undefined;
+    var policy_entries: [3]Planning.TargetPolicyEntry = undefined;
+    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
+    const policy_plan = try client.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = Nip03StoredVerificationPlanning.TargetPolicyStorage.init(
+            .storage = Planning.TargetPolicyStorage.init(
                 policy_target_matches[0..],
                 policy_target_latest_entries[0..],
                 policy_entries[0..],
@@ -567,17 +567,17 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         policy_plan.usablePreferredEntries()[1].target.target_event_id[0..],
     );
 
-    var refresh_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var refresh_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    var refresh_entries: [3]Nip03StoredVerificationPlanning.RefreshEntry = undefined;
-    var refresh_targets: [3]Nip03StoredVerificationPlanning.TargetRefreshEntry = undefined;
-    const refresh_plan = try client.planStoredVerificationRefreshForTargets(
+    var refresh_target_matches: [2]Planning.Match = undefined;
+    var refresh_target_latest_entries: [3]Planning.LatestTargetEntry = undefined;
+    var refresh_entries: [3]Planning.RefreshEntry = undefined;
+    var refresh_targets: [3]Planning.TargetRefreshEntry = undefined;
+    const refresh_plan = try client.planTargetRefresh(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
-            .storage = Nip03StoredVerificationPlanning.TargetRefreshStorage.init(
+            .storage = Planning.TargetRefreshStorage.init(
                 refresh_target_matches[0..],
                 refresh_target_latest_entries[0..],
                 refresh_entries[0..],
@@ -592,11 +592,11 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         refresh_plan.nextStep().?.entry.target.target_event_id[0..],
     );
 
-    var cadence_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var cadence_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    var cadence_entries: [3]Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
-    var cadence_groups: [5]Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
-    const cadence_plan = try client.inspectStoredVerificationRefreshCadenceForTargets(
+    var cadence_target_matches: [2]Planning.Match = undefined;
+    var cadence_target_latest_entries: [3]Planning.LatestTargetEntry = undefined;
+    var cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
+    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    const cadence_plan = try client.inspectTargetCadence(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -604,7 +604,7 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .fallback_policy = .allow_stale_latest,
-            .storage = Nip03StoredVerificationPlanning.TargetRefreshCadenceStorage.init(
+            .storage = Planning.TargetCadenceStorage.init(
                 cadence_target_matches[0..],
                 cadence_target_latest_entries[0..],
                 cadence_entries[0..],
@@ -628,11 +628,11 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         cadence_plan.usableWhileRefreshingEntries()[0].target.target_event_id[0..],
     );
 
-    var batch_target_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var batch_target_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    var batch_entries: [3]Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
-    var batch_groups: [5]Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
-    const batch_plan = try client.inspectStoredVerificationRefreshBatchForTargets(
+    var batch_target_matches: [2]Planning.Match = undefined;
+    var batch_target_latest_entries: [3]Planning.LatestTargetEntry = undefined;
+    var batch_entries: [3]Planning.TargetCadenceEntry = undefined;
+    var batch_groups: [5]Planning.TargetCadenceGroup = undefined;
+    const batch_plan = try client.inspectTargetBatch(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -641,7 +641,7 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
             .fallback_policy = .allow_stale_latest,
-            .storage = Nip03StoredVerificationPlanning.TargetRefreshBatchStorage.init(
+            .storage = Planning.TargetBatchStorage.init(
                 batch_target_matches[0..],
                 batch_target_latest_entries[0..],
                 batch_entries[0..],
@@ -662,13 +662,13 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         batch_plan.deferredEntries()[0].target.target_event_id[0..],
     );
 
-    var turn_policy_matches: [2]Nip03StoredVerificationPlanning.Match = undefined;
-    var turn_policy_latest_entries: [3]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    var turn_policy_cadence_entries: [3]Nip03StoredVerificationPlanning.TargetRefreshCadenceEntry = undefined;
-    var turn_policy_cadence_groups: [5]Nip03StoredVerificationPlanning.TargetRefreshCadenceGroup = undefined;
-    var turn_policy_entries: [3]Nip03StoredVerificationPlanning.TargetTurnPolicyEntry = undefined;
-    var turn_policy_groups: [4]Nip03StoredVerificationPlanning.TargetTurnPolicyGroup = undefined;
-    const turn_policy_plan = try client.inspectStoredVerificationTurnPolicyForTargets(
+    var turn_policy_matches: [2]Planning.Match = undefined;
+    var turn_policy_latest_entries: [3]Planning.LatestTargetEntry = undefined;
+    var turn_policy_cadence_entries: [3]Planning.TargetCadenceEntry = undefined;
+    var turn_policy_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var turn_policy_entries: [3]Planning.TargetTurnPolicyEntry = undefined;
+    var turn_policy_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    const turn_policy_plan = try client.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -677,7 +677,7 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
             .fallback_policy = .allow_stale_latest,
-            .storage = Nip03StoredVerificationPlanning.TargetTurnPolicyStorage.init(
+            .storage = Planning.TargetTurnPolicyStorage.init(
                 turn_policy_matches[0..],
                 turn_policy_latest_entries[0..],
                 turn_policy_cadence_entries[0..],
@@ -760,26 +760,26 @@ test "nip03 verify client lifts stored verification refresh readiness into the c
     try archive.ingestEventJson(ready_attestation_json, arena.allocator());
 
     const client = Nip03VerifyClient.init(.{});
-    const targets = [_]Nip03StoredVerificationPlanning.Target{
+    const targets = [_]Planning.Target{
         .{ .target_event_id = ready_target.id },
         .{ .target_event_id = blocked_target.id },
     };
-    var matches: [1]Nip03StoredVerificationPlanning.Match = undefined;
-    var latest_entries: [2]Nip03StoredVerificationPlanning.LatestTargetEntry = undefined;
-    const refresh_entries = [_]Nip03StoredVerificationPlanning.RefreshEntry{};
-    var target_refresh_entries: [2]Nip03StoredVerificationPlanning.TargetRefreshEntry = undefined;
+    var matches: [1]Planning.Match = undefined;
+    var latest_entries: [2]Planning.LatestTargetEntry = undefined;
+    const refresh_entries = [_]Planning.RefreshEntry{};
+    var target_refresh_entries: [2]Planning.TargetRefreshEntry = undefined;
     var target_records: [1]store.ClientEventRecord = undefined;
     var attestation_records: [1]store.ClientEventRecord = undefined;
-    var readiness_entries: [2]Nip03StoredVerificationPlanning.TargetRefreshReadinessEntry = undefined;
-    var readiness_groups: [4]Nip03StoredVerificationPlanning.TargetRefreshReadinessGroup = undefined;
-    const plan = try client.inspectStoredVerificationRefreshReadinessForTargets(
+    var readiness_entries: [2]Planning.TargetReadinessEntry = undefined;
+    var readiness_groups: [4]Planning.TargetReadinessGroup = undefined;
+    const plan = try client.inspectTargetReadiness(
         verification_store.asStore(),
         archive,
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 10,
-            .storage = Nip03StoredVerificationPlanning.TargetRefreshReadinessStorage.init(
+            .storage = Planning.TargetReadinessStorage.init(
                 matches[0..],
                 latest_entries[0..],
                 refresh_entries[0..],
@@ -805,7 +805,7 @@ test "nip03 verify client lifts stored verification refresh readiness into the c
     try std.testing.expect(plan.attestationRecord(plan.nextReadyEntry().?) != null);
     try std.testing.expectEqual(@as(usize, 1), plan.blockedEntries().len);
     try std.testing.expectEqual(
-        Nip03StoredVerificationPlanning.TargetRefreshReadinessAction.missing_events,
+        Planning.TargetReadinessAction.missing_events,
         plan.blockedEntries()[0].action,
     );
 }

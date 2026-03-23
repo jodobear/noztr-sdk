@@ -930,7 +930,7 @@ They do not imply:
     the client surface
   - related SDK symbols: `noztr_sdk.client`, `Nip03VerifyClient`, `Nip03VerifyClientStorage`,
     `Nip03VerifyJob`, `Nip03VerifyCachedResult`, `Nip03VerifyJobResult`,
-    `Nip03StoredVerificationPlanning`, `noztr_sdk.store.EventArchive`,
+    `Planning`, `noztr_sdk.store.EventArchive`,
     `noztr_sdk.store.MemoryClientStore`
   - kernel fixture help: `noztr.nostr_keys`, `noztr.nip03_opentimestamps`
   - control points: the client only assembles remote-proof request posture above the existing
@@ -955,7 +955,7 @@ They do not imply:
     long-lived planning route through the client surface
   - related SDK symbols: `noztr_sdk.client`, `Nip39VerifyClient`, `Nip39VerifyClientStorage`,
     `Nip39VerifyJob`, `Nip39VerifySummary`, `Nip39VerifyJobResult`,
-    `Nip39StoredProfilePlanning`, `MemoryIdentityWatchedTargetStore`
+    `Planning`, `MemoryIdentityWatchedTargetStore`
   - kernel fixture help: `noztr.nip39_external_identities`
   - control points: the client assembles one profile verification job plus remembered-identity
     strategy helpers over the explicit profile store and one watched-target-store-backed long-lived
