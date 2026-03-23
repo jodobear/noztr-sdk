@@ -1257,6 +1257,71 @@ pub const OpenTimestampsRememberedRemoteVerificationOutcome = union(enum) {
     fetch_failed: OpenTimestampsFetchFailure,
 };
 
+pub const Planning = struct {
+    pub const Match = OpenTimestampsStoredVerificationMatch;
+    pub const DiscoveryEntry = OpenTimestampsStoredVerificationDiscoveryEntry;
+    pub const Freshness = OpenTimestampsStoredVerificationFreshness;
+    pub const LatestFreshness = OpenTimestampsLatestStoredVerificationFreshness;
+    pub const DiscoveryFreshnessEntry = OpenTimestampsStoredVerificationDiscoveryFreshnessEntry;
+    pub const DiscoveryFreshnessStorage = OpenTimestampsStoredVerificationDiscoveryFreshnessStorage;
+    pub const LatestFreshnessRequest = OpenTimestampsLatestStoredVerificationFreshnessRequest;
+    pub const Target = OpenTimestampsStoredVerificationTarget;
+    pub const LatestTargetEntry = OpenTimestampsLatestStoredVerificationTargetEntry;
+    pub const LatestTargetStorage = OpenTimestampsLatestStoredVerificationTargetStorage;
+    pub const LatestTargetRequest = OpenTimestampsLatestStoredVerificationTargetRequest;
+    pub const FallbackPolicy = OpenTimestampsStoredVerificationFallbackPolicy;
+    pub const PreferredRequest = OpenTimestampsPreferredStoredVerificationRequest;
+    pub const Preferred = OpenTimestampsPreferredStoredVerification;
+    pub const PreferredTargetEntry = OpenTimestampsPreferredStoredVerificationTargetEntry;
+    pub const PreferredTargetStorage = OpenTimestampsPreferredStoredVerificationTargetStorage;
+    pub const PreferredTargetRequest = OpenTimestampsPreferredStoredVerificationTargetRequest;
+    pub const RuntimeAction = OpenTimestampsStoredVerificationRuntimeAction;
+    pub const RuntimeStorage = OpenTimestampsStoredVerificationRuntimeStorage;
+    pub const RuntimeRequest = OpenTimestampsStoredVerificationRuntimeRequest;
+    pub const RuntimePlan = OpenTimestampsStoredVerificationRuntimePlan;
+    pub const RuntimeStep = OpenTimestampsStoredVerificationRuntimeStep;
+    pub const RefreshEntry = OpenTimestampsStoredVerificationRefreshEntry;
+    pub const RefreshStorage = OpenTimestampsStoredVerificationRefreshStorage;
+    pub const RefreshRequest = OpenTimestampsStoredVerificationRefreshRequest;
+    pub const RefreshPlan = OpenTimestampsStoredVerificationRefreshPlan;
+    pub const RefreshStep = OpenTimestampsStoredVerificationRefreshStep;
+    pub const TargetRefreshEntry = OpenTimestampsStoredVerificationTargetRefreshEntry;
+    pub const TargetRefreshStorage = OpenTimestampsStoredVerificationTargetRefreshStorage;
+    pub const TargetRefreshRequest = OpenTimestampsStoredVerificationTargetRefreshRequest;
+    pub const TargetRefreshPlan = OpenTimestampsStoredVerificationTargetRefreshPlan;
+    pub const TargetRefreshStep = OpenTimestampsStoredVerificationTargetRefreshStep;
+    pub const TargetReadinessAction = OpenTimestampsStoredVerificationTargetRefreshReadinessAction;
+    pub const TargetReadinessEntry = OpenTimestampsStoredVerificationTargetRefreshReadinessEntry;
+    pub const TargetReadinessGroup = OpenTimestampsStoredVerificationTargetRefreshReadinessGroup;
+    pub const TargetReadinessStorage = OpenTimestampsStoredVerificationTargetRefreshReadinessStorage;
+    pub const TargetReadinessRequest = OpenTimestampsStoredVerificationTargetRefreshReadinessRequest;
+    pub const TargetReadinessPlan = OpenTimestampsStoredVerificationTargetRefreshReadinessPlan;
+    pub const TargetReadinessStep = OpenTimestampsStoredVerificationTargetRefreshReadinessStep;
+    pub const TargetPolicyEntry = OpenTimestampsStoredVerificationTargetPolicyEntry;
+    pub const TargetPolicyGroup = OpenTimestampsStoredVerificationTargetPolicyGroup;
+    pub const TargetPolicyStorage = OpenTimestampsStoredVerificationTargetPolicyStorage;
+    pub const TargetPolicyRequest = OpenTimestampsStoredVerificationTargetPolicyRequest;
+    pub const TargetPolicyPlan = OpenTimestampsStoredVerificationTargetPolicyPlan;
+    pub const TargetCadenceAction = OpenTimestampsStoredVerificationTargetRefreshCadenceAction;
+    pub const TargetCadenceEntry = OpenTimestampsStoredVerificationTargetRefreshCadenceEntry;
+    pub const TargetCadenceGroup = OpenTimestampsStoredVerificationTargetRefreshCadenceGroup;
+    pub const TargetCadenceStorage = OpenTimestampsStoredVerificationTargetRefreshCadenceStorage;
+    pub const TargetCadenceRequest = OpenTimestampsStoredVerificationTargetRefreshCadenceRequest;
+    pub const TargetCadencePlan = OpenTimestampsStoredVerificationTargetRefreshCadencePlan;
+    pub const TargetCadenceStep = OpenTimestampsStoredVerificationTargetRefreshCadenceStep;
+    pub const TargetBatchStorage = OpenTimestampsStoredVerificationTargetRefreshBatchStorage;
+    pub const TargetBatchRequest = OpenTimestampsStoredVerificationTargetRefreshBatchRequest;
+    pub const TargetBatchPlan = OpenTimestampsStoredVerificationTargetRefreshBatchPlan;
+    pub const TargetBatchStep = OpenTimestampsStoredVerificationTargetRefreshBatchStep;
+    pub const TargetTurnPolicyAction = OpenTimestampsStoredVerificationTargetTurnPolicyAction;
+    pub const TargetTurnPolicyEntry = OpenTimestampsStoredVerificationTargetTurnPolicyEntry;
+    pub const TargetTurnPolicyGroup = OpenTimestampsStoredVerificationTargetTurnPolicyGroup;
+    pub const TargetTurnPolicyStorage = OpenTimestampsStoredVerificationTargetTurnPolicyStorage;
+    pub const TargetTurnPolicyRequest = OpenTimestampsStoredVerificationTargetTurnPolicyRequest;
+    pub const TargetTurnPolicyPlan = OpenTimestampsStoredVerificationTargetTurnPolicyPlan;
+    pub const TargetTurnPolicyStep = OpenTimestampsStoredVerificationTargetTurnPolicyStep;
+};
+
 pub const OpenTimestampsVerifier = struct {
     fn hydrateStoredVerificationEntry(
         verification_store: OpenTimestampsVerificationStore,
