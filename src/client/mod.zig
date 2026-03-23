@@ -6,6 +6,7 @@ const auth_subscription_turn_client = @import("auth_subscription_turn_client.zig
 const count_job_client = @import("count_job_client.zig");
 const count_turn_client = @import("count_turn_client.zig");
 const dm_capability_client = @import("dm_capability_client.zig");
+const mixed_dm_client = @import("mixed_dm_client.zig");
 const local_entity_job_client = @import("local_entity_job_client.zig");
 const legacy_dm_publish_job_client = @import("legacy_dm_publish_job_client.zig");
 const legacy_dm_replay_job_client = @import("legacy_dm_replay_job_client.zig");
@@ -103,6 +104,7 @@ pub const signer = struct {
 
 pub const dm = struct {
     pub const capability = dm_capability_client;
+    pub const mixed = mixed_dm_client;
 
     pub const legacy = struct {
         pub const publish_job = legacy_dm_publish_job_client;

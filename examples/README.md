@@ -650,6 +650,15 @@ They do not imply:
     relay publish/query state stays explicit on the shared SDK seams, archive-backed relay-list
     inspection verifies signatures before trust, and reply selection stays explicit instead of
     pretending the SDK owns a hidden mixed inbox runtime
+- `mixed_dm_client_recipe.zig`
+  - goal: normalize one mailbox and one legacy inbound DM explicitly, then select one reply route
+    over the mixed-DM facade instead of hand-stitching protocol checks in app code
+  - related SDK symbols: `noztr_sdk.client.dm.mixed`, `MixedDmClient`, `MixedDmClientStorage`,
+    `MixedDmProtocol`, `MixedDmReplyPolicy`, `MixedDmReplyRoute`, `MixedDmObservedMessage`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
+  - control points: mailbox and legacy intake still route through their existing workflow floors,
+    the mixed layer only normalizes observed inbound message shape and reply routing, and it does
+    not invent a hidden inbox runtime, unread policy, or conversation model
 - `legacy_dm_publish_job_client_recipe.zig`
   - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmPublishJobClient`,

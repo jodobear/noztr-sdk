@@ -8,6 +8,7 @@ comptime {
     _ = @import("local_nip44_job_client_recipe.zig");
     _ = @import("local_operator_client_recipe.zig");
     _ = @import("dm_capability_client_recipe.zig");
+    _ = @import("mixed_dm_client_recipe.zig");
     _ = @import("legacy_dm_publish_job_client_recipe.zig");
     _ = @import("legacy_dm_replay_turn_client_recipe.zig");
     _ = @import("legacy_dm_subscription_turn_client_recipe.zig");

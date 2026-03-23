@@ -171,6 +171,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig) |
 | build social contact-graph and starter-only WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client_recipe.zig](../examples/social_graph_wot_client_recipe.zig) |
 | build app-facing DM capability flows above mailbox and legacy DM | [public contract map](./reference/contract-map.md) | [dm_capability_client_recipe.zig](../examples/dm_capability_client_recipe.zig) |
+| build one simple mixed mailbox-plus-legacy DM facade for apps | [public contract map](./reference/contract-map.md) | [mixed_dm_client_recipe.zig](../examples/mixed_dm_client_recipe.zig) |
 | build signer-backed mailbox DM authoring above the remote-signer floor | [public contract map](./reference/contract-map.md) | [mailbox_signer_job_client_recipe.zig](../examples/mailbox_signer_job_client_recipe.zig) |
 | build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
 | build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |

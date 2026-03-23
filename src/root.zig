@@ -25,6 +25,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.signer.session.SignerClient) == type);
     try std.testing.expect(@TypeOf(client.dm) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmCapabilityClient) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClient) == type);
     try std.testing.expect(@TypeOf(client.identity) == type);
@@ -145,6 +146,20 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.dm.capability.DmReplySelectionReason) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmReplySelection) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmCapabilityClient) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClientError) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmProtocol) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmReplyPolicy) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmReplyRouteRequest) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmReplyRouteReason) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmReplyRoute) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedReplyRef) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedMailboxDirectMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedMailboxFileMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedLegacyDirectMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmObservedMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientError) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientConfig) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientStorage) == type);
