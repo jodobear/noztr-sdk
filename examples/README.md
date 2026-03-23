@@ -40,7 +40,6 @@ Use these docs when you need public routing or contract context before opening a
 
 In the recipe entries below:
 - treat the example file plus the grouped route from the contract map as the canonical discovery path
-- treat `related SDK symbols` as supporting symbol inventory around that canonical route
 
 ## If You Are Building Another Zig SDK
 
@@ -83,13 +82,10 @@ They do not imply:
 
 - `consumer_smoke.zig`
   - goal: minimal package/import check
-  - related SDK symbols: `noztr_sdk.workflows`
   - control point: verify the workflow namespace is the stable top-level entry
 - `remote_signer.zig`
   - goal: explicit `NIP-46` connect plus `get_public_key`, one `nip44_encrypt` request, and one
     shared relay-pool inspect/select step
-  - related SDK symbols: `noztr_sdk.workflows.signer.remote`, `Session`, `RequestBuffer`,
-    `RelayRuntimeStorage`, `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip46_remote_signing`
   - control points: caller starts connect, caller starts later signer requests, caller feeds
     responses back in explicitly, caller reuses one request context shape instead of repeating
@@ -102,10 +98,6 @@ They do not imply:
 - `signer_capability.zig`
   - goal: drive one shared signer capability route through local, remote, and browser signer
     adapters while keeping backend differences explicit
-  - related SDK symbols: `noztr_sdk.client.signer.capability`, `SignerBackendKind`,
-    `SignerOperation`, `SignerOperationMode`, `SignerCapabilityProfile`,
-    `SignerOperationRequest`, `SignerOperationResult`, `LocalOperatorClient`, `SignerClient`,
-    `Nip07BrowserProvider`
   - control points: capability reporting stays honest about unsupported operations, shared request
     and result vocabulary stays bounded, local remote and browser adapters can all drive the route
     honestly, and the surface still stops short of browser-extension product ownership
@@ -113,8 +105,6 @@ They do not imply:
   - goal: project thin browser signer presence, supported-method reporting, and shared
     signer-capability completion onto the browser seam without claiming extension or
     browser-product ownership
-  - related SDK symbols: `noztr_sdk.client.signer.browser`, `Nip07BrowserProvider`,
-    `Nip07BrowserSupport`, `noztr_sdk.client.signer.capability.SignerCapabilityProfile`
   - control points: browser support stays explicit about absence and partial method coverage, the
     adapter remains caller-driven, the shared signer-capability vocabulary now reaches the thin
     browser seam directly, and the SDK still stops at the reusable browser seam instead of
@@ -123,12 +113,6 @@ They do not imply:
   - goal: compose one kind-`0` profile publish, one kind-`1` note subscription, one `NIP-23`
     long-form inspection route, and explicit archive-backed latest-profile, note-page, and
     long-form selection above the local operator, publish, relay-query, and event-archive floors
-  - related SDK symbols: `noztr_sdk.client.social.profile_content`, `SocialProfileContentClient`,
-    `SocialProfileDraft`, `SocialProfileDraftStorage`, `SocialNoteDraft`,
-    `SocialLongFormDraft`, `SocialLongFormDraftStorage`, `SocialEventQuery`,
-    `SocialSubscriptionPlanStorage`, `SocialProfileInspection`,
-    `StoredSocialProfileSelectionRequest`, `StoredSocialNotePageRequest`,
-    `StoredSocialLongFormSelectionRequest`, `noztr_sdk.store.EventArchive`
   - kernel fixture help: `noztr.nip10_threads`, `noztr.nip23_long_form`,
     `noztr.nip24_extra_metadata`
   - control points: deterministic profile, thread, and long-form parsing stay on `noztr`, relay
@@ -139,10 +123,6 @@ They do not imply:
 - `social_reaction_list_client.zig`
   - goal: compose one `NIP-25` reaction publish route, one public `NIP-51` follow-set publish
     route, and one explicit stored latest-list selection over the local archive seam
-  - related SDK symbols: `noztr_sdk.client.social.reaction_list`, `SocialReactionListClient`,
-    `SocialReactionDraft`, `SocialReactionDraftStorage`, `SocialReactionEmojiReference`,
-    `SocialListDraft`, `SocialListDraftStorage`, `StoredSocialListSelectionRequest`,
-    `StoredSocialListInspection`, `noztr_sdk.store.EventArchive`
   - kernel fixture help: `noztr.nip25_reactions`, `noztr.nip51_lists`
   - control points: deterministic reaction and list parsing still stays on `noztr`, reaction and
     list publish still routes through the existing publish floor, relay query posture stays
@@ -151,11 +131,6 @@ They do not imply:
 - `social_graph_wot_client.zig`
   - goal: compose one kind-`3` contact-list publish route, one bounded contact subscription
     posture, and one explicit starter-only WoT inspection over verified latest contact lists
-  - related SDK symbols: `noztr_sdk.client.social.graph_wot`, `SocialGraphWotClient`,
-    `SocialContactDraft`, `SocialContactDraftStorage`, `SocialContactTagStorage`,
-    `SocialContactSubscriptionRequest`, `StoredSocialContactSelectionRequest`,
-    `StoredSocialContactInspection`, `SocialStarterWotRequest`, `SocialStarterWotInspection`,
-    `noztr_sdk.store.EventArchive`
   - kernel fixture help: `noztr.nip02_contacts`
   - control points: deterministic contact-tag parsing stays on `noztr`, contact-list publish and
     relay query posture still routes through the existing publish and query floors, stored latest
@@ -165,10 +140,6 @@ They do not imply:
 - `signer_connect_job_client.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response
-  - related SDK symbols: `noztr_sdk.client`, `SignerConnectJobClient`,
-    `SignerConnectJobClientStorage`, `SignerConnectJobAuthEventStorage`,
-    `PreparedSignerConnectJobAuthEvent`, `SignerConnectJobRequest`,
-    `SignerConnectJobReady`, `SignerConnectJobResult`
   - kernel fixture help: `noztr.nip46_remote_signing`, `noztr.nip42_auth`
   - control points: relay auth handling stays explicit and caller-driven, request building still
     routes through the bounded signer client floor, and this layer only exposes command-ready
@@ -176,10 +147,6 @@ They do not imply:
 - `signer_pubkey_job_client.zig`
   - goal: prepare one command-ready signer pubkey job that either yields one relay `AUTH` event
     or one `get_public_key` request, then close it with one validated public-key response
-  - related SDK symbols: `noztr_sdk.client`, `SignerPubkeyJobClient`,
-    `SignerPubkeyJobClientStorage`, `SignerPubkeyJobAuthEventStorage`,
-    `PreparedSignerPubkeyJobAuthEvent`, `SignerPubkeyJobRequest`, `SignerPubkeyJobReady`,
-    `SignerPubkeyJobResult`
   - kernel fixture help: `noztr.nip46_remote_signing`, `noztr.nip42_auth`
   - control points: signer-session establishment still stays explicit, relay auth handling stays
     explicit and caller-driven, request building still routes through the bounded signer client
@@ -188,10 +155,6 @@ They do not imply:
 - `signer_nip44_encrypt_job_client.zig`
   - goal: prepare one command-ready signer `nip44_encrypt` job that either yields one relay
     `AUTH` event or one `nip44_encrypt` request, then close it with one validated text response
-  - related SDK symbols: `noztr_sdk.client`, `SignerNip44EncryptJobClient`,
-    `SignerNip44EncryptJobClientStorage`, `SignerNip44EncryptJobAuthEventStorage`,
-    `PreparedSignerNip44EncryptJobAuthEvent`, `SignerNip44EncryptJobRequest`,
-    `SignerNip44EncryptJobReady`, `SignerNip44EncryptJobResult`
   - kernel fixture help: `noztr.nip46_remote_signing`, `noztr.nip42_auth`
   - control points: signer-session establishment still stays explicit, relay auth handling stays
     explicit and caller-driven, request building still routes through the bounded signer client
@@ -200,8 +163,6 @@ They do not imply:
 - `local_operator_client.zig`
   - goal: derive one local keypair, roundtrip `NIP-19` entities, sign and inspect one local
     event, and perform one explicit local `NIP-44` encrypt/decrypt roundtrip
-  - related SDK symbols: `noztr_sdk.client`, `LocalOperatorClient`, `LocalKeypair`,
-    `LocalEventDraft`, `LocalEventInspection`
   - kernel fixture help: `noztr.nostr_keys`, `noztr.nip19_bech32`, `noztr.nip01_event`,
     `noztr.nip44`
   - control points: the client composes deterministic kernel helpers instead of re-implementing
@@ -211,8 +172,6 @@ They do not imply:
 - `local_key_job_client.zig`
   - goal: derive one deterministic public key and generate one fresh keypair through one
     command-ready SDK job layer
-  - related SDK symbols: `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`,
-    `LocalKeyJobRequest`, `LocalKeyJobResult`
   - kernel fixture help: `noztr.nostr_keys`
   - control points: key generation and pubkey derivation still route through the local operator
     floor, the job layer adds command-ready result posture instead of secret-store policy, and
@@ -221,8 +180,6 @@ They do not imply:
 - `local_entity_job_client.zig`
   - goal: encode one `npub`, encode one `nsec`, and decode one representative `NIP-19` entity
     through one command-ready SDK job layer
-  - related SDK symbols: `noztr_sdk.client`, `LocalEntityJobClient`,
-    `LocalEntityJobClientStorage`, `LocalEntityJobRequest`, `LocalEntityJobResult`
   - kernel fixture help: `noztr.nip19_bech32`
   - control points: entity encode-decode still routes through the local operator floor, the job
     layer adds command-ready result posture instead of CLI-owned bech32 wiring, and downstream
@@ -230,8 +187,6 @@ They do not imply:
 - `local_event_job_client.zig`
   - goal: sign one local draft, verify that signed event, and inspect one event JSON through one
     command-ready SDK job layer
-  - related SDK symbols: `noztr_sdk.client`, `LocalEventJobClient`,
-    `LocalEventJobClientStorage`, `LocalEventJobRequest`, `LocalEventJobResult`
   - kernel fixture help: `noztr.nip01_event`, `noztr.nostr_keys`
   - control points: event parse, sign, and verify still route through the local operator floor,
     the job layer adds command-ready result posture instead of CLI-owned event wiring, and
@@ -240,8 +195,6 @@ They do not imply:
 - `local_nip44_job_client.zig`
   - goal: encrypt one plaintext to a peer and decrypt it again through one command-ready SDK job
     layer
-  - related SDK symbols: `noztr_sdk.client`, `LocalNip44JobClient`,
-    `LocalNip44JobClientStorage`, `LocalNip44JobRequest`, `LocalNip44JobResult`
   - kernel fixture help: `noztr.nip44`
   - control points: local crypto still routes through the local operator floor, caller-owned
     output buffers and optional nonce posture stay explicit, and downstream tools can build local
@@ -249,9 +202,6 @@ They do not imply:
 - `publish_client.zig`
   - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
     runtime, then pair one ready relay with one prepared outbound publish payload
-  - related SDK symbols: `noztr_sdk.client`, `PublishClient`, `PublishClientStorage`,
-    `PreparedPublishEvent`, `TargetedPublishEvent`, `noztr_sdk.runtime.RelayPoolPublishPlan`,
-    `noztr_sdk.runtime.RelayPoolPublishStep`
   - kernel fixture help: `noztr.nip01_event`
   - control points: the client reuses the local operator floor instead of re-implementing
     signing, relay readiness still routes through the shared relay-pool layer, publish work stays
@@ -261,9 +211,6 @@ They do not imply:
 - `publish_job_client.zig`
   - goal: prepare one command-ready publish job that either yields one auth event or one bounded
     publish request, then close it with one validated publish `OK`
-  - related SDK symbols: `noztr_sdk.client`, `PublishJobClient`, `PublishJobClientStorage`,
-    `PublishJobAuthEventStorage`, `PreparedPublishJobAuthEvent`, `PublishJobRequest`,
-    `PublishJobReady`, `PublishJobResult`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`
   - control points: auth handling still routes through the auth-aware publish turn floor, publish
     request creation still routes through the bounded publish turn floor, and this layer only
@@ -271,8 +218,6 @@ They do not imply:
 - `publish_turn_client.zig`
   - goal: begin one explicit publish turn from a local draft and close it with one validated
     publish `OK` reply
-  - related SDK symbols: `noztr_sdk.client`, `PublishTurnClient`, `PublishTurnClientStorage`,
-    `PublishTurnRequest`, `PublishTurnResult`
   - kernel fixture help: `noztr.nip01_message`
   - control points: local draft signing still routes through the local operator floor, relay
     publish readiness still routes through the shared relay-pool layer, publish `OK` validation
@@ -281,9 +226,6 @@ They do not imply:
 - `auth_publish_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded publish turn
-  - related SDK symbols: `noztr_sdk.client`, `AuthPublishTurnClient`,
-    `AuthPublishTurnClientStorage`, `AuthPublishEventStorage`, `PreparedAuthPublishEvent`,
-    `AuthPublishTurnStep`, `AuthPublishTurnResult`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`
   - control points: relay auth challenge handling still routes through the shared relay-pool
     state machine, auth event authoring still routes through the local operator floor, publish turn
@@ -292,9 +234,6 @@ They do not imply:
 - `auth_count_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded count turn
-  - related SDK symbols: `noztr_sdk.client`, `AuthCountTurnClient`,
-    `AuthCountTurnClientStorage`, `AuthCountEventStorage`, `PreparedAuthCountEvent`,
-    `AuthCountTurnStep`, `AuthCountTurnResult`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
   - control points: relay auth challenge handling still routes through the shared relay-pool
     state machine, auth event authoring still routes through the local operator floor, count turn
@@ -303,9 +242,6 @@ They do not imply:
 - `count_job_client.zig`
   - goal: prepare one command-ready count job that either yields one auth event or one bounded
     `COUNT` request, then close it with one validated `COUNT` reply
-  - related SDK symbols: `noztr_sdk.client`, `CountJobClient`, `CountJobClientStorage`,
-    `CountJobAuthEventStorage`, `PreparedCountJobAuthEvent`, `CountJobRequest`, `CountJobReady`,
-    `CountJobResult`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
   - control points: auth handling still routes through the auth-aware count turn floor, count
     request creation still routes through the bounded count turn floor, and this layer only
@@ -313,9 +249,6 @@ They do not imply:
 - `auth_subscription_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded subscription turn
-  - related SDK symbols: `noztr_sdk.client`, `AuthSubscriptionTurnClient`,
-    `AuthSubscriptionTurnClientStorage`, `AuthSubscriptionEventStorage`,
-    `PreparedAuthSubscriptionEvent`, `AuthSubscriptionTurnStep`, `AuthSubscriptionTurnResult`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
   - control points: relay auth challenge handling still routes through the shared relay-pool
     state machine, auth event authoring still routes through the local operator floor,
@@ -325,10 +258,6 @@ They do not imply:
 - `subscription_job_client.zig`
   - goal: prepare one command-ready bounded subscription job that either yields one auth event or
     one subscription request, then close it with bounded transcript intake and explicit `CLOSE`
-  - related SDK symbols: `noztr_sdk.client`, `SubscriptionJobClient`,
-    `SubscriptionJobClientStorage`, `SubscriptionJobAuthEventStorage`,
-    `PreparedSubscriptionJobAuthEvent`, `SubscriptionJobRequest`, `SubscriptionJobIntake`,
-    `SubscriptionJobReady`, `SubscriptionJobResult`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`
   - control points: auth handling still routes through the auth-aware subscription turn floor,
     transcript closure still routes through the bounded subscription turn floor, and this layer
@@ -336,9 +265,6 @@ They do not imply:
 - `auth_replay_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded replay turn
-  - related SDK symbols: `noztr_sdk.client`, `AuthReplayTurnClient`,
-    `AuthReplayTurnClientStorage`, `AuthReplayEventStorage`, `PreparedAuthReplayEvent`,
-    `AuthReplayTurnStep`, `AuthReplayTurnResult`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`, `noztr.nostr_keys`
   - control points: relay auth challenge handling still routes through the shared relay-pool
     state machine, auth event authoring still routes through the local operator floor, replay
@@ -348,9 +274,6 @@ They do not imply:
 - `replay_job_client.zig`
   - goal: prepare one command-ready replay job that either yields one auth event or one bounded
     replay request, then close it with explicit replay transcript and checkpoint posture
-  - related SDK symbols: `noztr_sdk.client`, `ReplayJobClient`, `ReplayJobClientStorage`,
-    `ReplayJobAuthEventStorage`, `PreparedReplayJobAuthEvent`, `ReplayJobRequest`,
-    `ReplayJobIntake`, `ReplayJobReady`, `ReplayJobResult`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nip42_auth`, `noztr.nostr_keys`
   - control points: auth handling still routes through the auth-aware replay turn floor, replay
     transcript and checkpoint closure still route through the bounded replay turn floor, and this
@@ -358,8 +281,6 @@ They do not imply:
 - `count_turn_client.zig`
   - goal: begin one explicit count turn from caller-owned count specs and close it with one
     validated `COUNT` reply
-  - related SDK symbols: `noztr_sdk.client`, `CountTurnClient`, `CountTurnClientStorage`,
-    `CountTurnRequest`, `CountTurnResult`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: relay-targeted `COUNT` preparation still routes through the shared relay query
     and exchange floors, reply validation still routes through the response floor, and this layer
@@ -367,9 +288,6 @@ They do not imply:
 - `subscription_turn_client.zig`
   - goal: begin one explicit subscription turn from caller-owned subscription specs, accept bounded
     transcript intake, then close it explicitly
-  - related SDK symbols: `noztr_sdk.client`, `SubscriptionTurnClient`,
-    `SubscriptionTurnClientStorage`, `SubscriptionTurnState`, `SubscriptionTurnRequest`,
-    `SubscriptionTurnIntake`, `SubscriptionTurnResult`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: outbound `REQ` and `CLOSE` composition still route through the shared query
     and exchange floors, transcript validation still routes through the response floor, and this
@@ -378,9 +296,6 @@ They do not imply:
   - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
     as one outbound `AUTH` client message, then mark the relay ready only after explicit caller
     acceptance
-  - related SDK symbols: `noztr_sdk.client`, `RelayAuthClient`, `RelayAuthClientStorage`,
-    `RelayAuthTarget`, `RelayAuthEventStorage`, `PreparedRelayAuthEvent`,
-    `noztr_sdk.runtime.RelayPoolAuthPlan`, `noztr_sdk.runtime.RelayPoolAuthStep`
   - kernel fixture help: `noztr.nip42_auth`, `noztr.nip01_message`
   - control points: the shared runtime still owns relay auth-required state, the local operator
     floor still owns signing, the SDK only adds explicit auth target selection and message
@@ -390,10 +305,6 @@ They do not imply:
   - goal: compose one publish exchange, one count exchange, and one subscription exchange on the
     same shared relay floor, then validate the matching relay replies explicitly without hidden
     transport ownership
-  - related SDK symbols: `noztr_sdk.client`, `RelayExchangeClient`,
-    `RelayExchangeClientStorage`, `PublishExchangeRequest`, `PublishExchangeOutcome`,
-    `CountExchangeRequest`, `CountExchangeOutcome`, `SubscriptionExchangeRequest`,
-    `SubscriptionExchangeOutcome`, `CloseExchangeRequest`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nostr_keys`
   - control points: the client composes the already-landed local operator, relay query, and relay
     response floors instead of replacing them, publish/count/subscription work all stay explicit
@@ -403,10 +314,6 @@ They do not imply:
   - goal: inspect explicit shared relay query posture, then compose one outbound `REQ`, one
     outbound `COUNT`, and one outbound `CLOSE` payload for a ready relay without hidden
     subscription ownership
-  - related SDK symbols: `noztr_sdk.client`, `RelayQueryClient`, `RelayQueryClientStorage`,
-    `RelayQueryTarget`, `TargetedSubscriptionRequest`, `TargetedCountRequest`,
-    `TargetedCloseRequest`, `noztr_sdk.runtime.RelayPoolSubscriptionPlan`,
-    `noztr_sdk.runtime.RelayPoolCountPlan`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: relay readiness still routes through the shared relay-pool layer, request
     serialization stays on the kernel, the client only pairs ready relay targets with one-shot
@@ -415,10 +322,6 @@ They do not imply:
 - `relay_replay_client.zig`
   - goal: inspect one checkpoint-backed replay step, then compose one explicit replay `REQ`
     payload for a ready relay without rebuilding checkpoint or query glue in the caller
-  - related SDK symbols: `noztr_sdk.client`, `RelayReplayClient`, `RelayReplayClientStorage`,
-    `RelayReplayTarget`, `TargetedReplayRequest`, `noztr_sdk.runtime.RelayReplaySpec`,
-    `noztr_sdk.runtime.RelayPoolReplayPlan`, `noztr_sdk.runtime.RelayPoolReplayStep`,
-    `noztr_sdk.store.ClientCheckpointStore`
   - kernel fixture help: `noztr.nip01_message`
   - control points: replay cursor lookup still stays on the shared checkpoint seam, relay
     readiness still routes through the shared relay-pool layer, the client only maps one
@@ -427,9 +330,6 @@ They do not imply:
 - `relay_replay_exchange_client.zig`
   - goal: begin one checkpoint-backed replay request, accept explicit replay transcript intake,
     then compose one explicit replay `CLOSE` request without hidden sync ownership
-  - related SDK symbols: `noztr_sdk.client`, `RelayReplayExchangeClient`,
-    `RelayReplayExchangeClientStorage`, `ReplayExchangeRequest`, `ReplayExchangeOutcome`,
-    `ReplayCloseRequest`, `RelaySubscriptionTranscriptStorage`, `noztr_sdk.runtime.RelayReplaySpec`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`
   - control points: replay request composition still stays on the replay client floor, transcript
     intake still stays on the response floor, this layer only binds the two into one bounded
@@ -438,10 +338,6 @@ They do not imply:
 - `replay_checkpoint_advance_client.zig`
   - goal: consume one replay transcript outcome stream, derive one explicit checkpoint-advance
     candidate only after `EOSE`, then persist one explicit relay checkpoint target
-  - related SDK symbols: `noztr_sdk.client`, `ReplayCheckpointAdvanceClient`,
-    `ReplayCheckpointAdvanceState`, `ReplayCheckpointAdvanceCandidate`,
-    `ReplayCheckpointSaveTarget`, `ReplayExchangeRequest`, `ReplayExchangeOutcome`,
-    `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`
   - control points: replay transcript intake still stays on the replay exchange and response
     floors, checkpoint persistence still stays on the shared archive seam, this layer only decides
@@ -450,9 +346,6 @@ They do not imply:
 - `relay_replay_turn_client.zig`
   - goal: begin one replay turn, accept explicit replay transcript intake, then return one bounded
     close-plus-checkpoint result and persist it explicitly
-  - related SDK symbols: `noztr_sdk.client`, `RelayReplayTurnClient`,
-    `RelayReplayTurnClientStorage`, `ReplayTurnRequest`, `ReplayTurnIntake`, `ReplayTurnResult`,
-    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`
   - control points: replay request composition still stays on the replay exchange floor,
     checkpoint safety still stays on the replay checkpoint-advance floor, this layer only closes
@@ -462,9 +355,6 @@ They do not imply:
   - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
     validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed
     receive-side SDK helpers
-  - related SDK symbols: `noztr_sdk.client`, `RelayResponseClient`,
-    `RelaySubscriptionTranscriptStorage`, `RelaySubscriptionMessageOutcome`, `RelayCountMessage`,
-    `RelayPublishOkMessage`, `RelayNoticeMessage`, `RelayAuthChallengeMessage`
   - kernel fixture help: `noztr.nip01_message`, `noztr.nostr_keys`, `noztr.nip01_event`
   - control points: relay-message parsing and transcript transitions stay on the kernel, the SDK
     only adds explicit receive-side validation and typed outcomes, and downstream tools can now
@@ -473,12 +363,6 @@ They do not imply:
 - `relay_session_client.zig`
   - goal: drive one explicit relay session over shared runtime inspection, relay auth, outbound
     request shaping, receive-side transcript intake, and bounded member/checkpoint export-restore
-  - related SDK symbols: `noztr_sdk.client`, `RelaySessionClient`,
-    `RelaySessionClientStorage`, `RelaySessionCloseRequest`,
-    `RelaySubscriptionTranscriptStorage`, `PreparedRelayAuthEvent`,
-    `noztr_sdk.runtime.RelayPoolPlan`, `noztr_sdk.runtime.RelayPoolAuthPlan`,
-    `noztr_sdk.runtime.RelayPoolSubscriptionPlan`, `noztr_sdk.runtime.RelayPoolMemberSet`,
-    `noztr_sdk.runtime.RelayPoolCheckpointSet`
   - kernel fixture help: `noztr.nip01_filter`, `noztr.nip01_message`, `noztr.nip42_auth`,
     `noztr.nostr_keys`
   - control points: shared relay runtime remains explicit instead of turning into hidden session
@@ -490,8 +374,6 @@ They do not imply:
   - goal: use one first signer-tooling client surface to drive explicit `NIP-46` connect,
     `get_public_key`, one `nip44_encrypt` request, one shared relay-runtime inspect/select step,
     and one durable resume plus reconnect-cadence check
-  - related SDK symbols: `noztr_sdk.client`, `SignerClient`, `SignerClientStorage`,
-    `SignerClientResumeStorage`, `SignerClientSessionCadenceRequest`, `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip46_remote_signing`
   - control points: the client composes the existing remote-signer workflow instead of replacing
     it, caller still owns request storage and transport send/receive, sequential request ids are
@@ -501,8 +383,6 @@ They do not imply:
 - `store_query.zig`
   - goal: persist bounded event records, query them with one explicit cursor/page surface, and
     remember one named checkpoint
-  - related SDK symbols: `noztr_sdk.store`, `MemoryClientStore`, `ClientQuery`,
-    `EventQueryResultPage`, `EventCursor`, `IndexSelection`
   - kernel fixture help: `noztr.nip01_event`
   - control points: caller builds event JSON on the kernel, converts it into bounded store
     records explicitly, queries through one backend-agnostic selection surface with caller-owned
@@ -510,8 +390,6 @@ They do not imply:
 - `sqlite_client_store.zig`
   - goal: open one embedded durable SQLite-backed store, archive event/checkpoint state through
     the shared store seam, persist one relay-local checkpoint, and restore that state after reopen
-  - related SDK symbols: `noztr_sdk.store`, `SqliteClientStore`, `ClientStore`, `EventArchive`,
-    `RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip01_event`
   - control points: the durable baseline still satisfies the same shared store seam, higher
     archive/checkpoint helpers stay backend-agnostic, and the recipe proves serious local tooling
@@ -519,7 +397,6 @@ They do not imply:
 - `store_archive.zig`
   - goal: use one minimal CLI-facing archive helper above the shared store seam to ingest event
     JSON, replay a bounded query, and restore one named checkpoint
-  - related SDK symbols: `noztr_sdk.store`, `EventArchive`, `ClientStore`, `MemoryClientStore`
   - kernel fixture help: `noztr.nip01_event`
   - control points: caller still owns store construction, caller still supplies bounded scratch
     for event parsing, and the archive helper proves the shared store seam is usable above raw
@@ -527,8 +404,6 @@ They do not imply:
 - `relay_registry_archive.zig`
   - goal: remember one explicit relay set in bounded local storage and list it back in stable
     order
-  - related SDK symbols: `noztr_sdk.store`, `RelayRegistryArchive`, `RelayInfoStore`,
-    `RelayInfoRecord`, `RelayInfoResultPage`, `MemoryRelayInfoStore`
   - kernel fixture help: relay URL validation still routes through the SDK's relay URL seam
   - control points: caller still owns store construction, relay membership state stays explicit
     and side-effect free, and the helper proves `znk`-class tooling can remember a relay set on
@@ -537,8 +412,6 @@ They do not imply:
   - goal: compose one CLI-facing archive client over the shared store and runtime floors: ingest
     local event JSON, query it through one bounded page, persist named and per-relay checkpoints,
     inspect shared relay runtime, and derive one bounded replay step
-  - related SDK symbols: `noztr_sdk.client`, `CliArchiveClient`, `CliArchiveClientStorage`,
-    `noztr_sdk.store`, `noztr_sdk.runtime`
   - kernel fixture help: none beyond the shared store/runtime surfaces
   - control points: the client composes existing seams instead of hiding them, caller still owns
     client storage and replay specs, relay runtime and replay planning remain explicit and
@@ -548,8 +421,6 @@ They do not imply:
   - goal: compose one neutral local-state client over the shared archive, relay-registry,
     checkpoint, and relay-runtime seams: archive local events, remember one explicit relay set,
     restore it into runtime, and derive one bounded replay plan
-  - related SDK symbols: `noztr_sdk.client`, `LocalStateClient`, `LocalStateClientStorage`,
-    `LocalStateRestoreResult`, `noztr_sdk.store`, `noztr_sdk.runtime`
   - kernel fixture help: none beyond the shared store/runtime surfaces
   - control points: caller still owns stores, replay specs, and remembered relay state, runtime
     restore stays explicit, and the recipe proves there is now one neutral local-state route above
@@ -557,7 +428,6 @@ They do not imply:
     client
 - `relay_checkpoint.zig`
   - goal: persist one named cursor per relay and scope on top of the shared checkpoint seam
-  - related SDK symbols: `noztr_sdk.store`, `RelayCheckpointArchive`, `MemoryClientStore`
   - kernel fixture help: relay URL validation still routes through the SDK's relay URL seam
   - control points: caller still owns store construction and relay URL choice, and the helper
     proves relay-local runtime state can ride the shared checkpoint seam without exposing backend
@@ -565,8 +435,6 @@ They do not imply:
 - `relay_local_archive.zig`
   - goal: archive one relay-local event set through the shared event seam, restore one scoped
     cursor, and derive one checkpoint-backed replay query explicitly
-  - related SDK symbols: `noztr_sdk.store`, `RelayLocalArchive`, `RelayLocalArchiveTarget`,
-    `RelayLocalArchiveReplayPlan`, `MemoryClientStore`
   - kernel fixture help: `noztr.nip01_event`
   - control points: caller still owns store construction and relay choice, the helper stays
     relay-local instead of pretending the shared event seam already indexes events by relay, and
@@ -575,9 +443,6 @@ They do not imply:
 - `relay_directory_job_client.zig`
   - goal: refresh one relay's `NIP-11` metadata over the explicit HTTP seam and keep the bounded
     remembered record in the relay registry
-  - related SDK symbols: `noztr_sdk.client`, `RelayDirectoryJobClient`,
-    `RelayDirectoryJobClientStorage`, `RelayDirectoryRefreshJob`, `RelayDirectoryRefreshJobResult`,
-    `noztr_sdk.transport.HttpClient`, `noztr_sdk.store.RelayRegistryArchive`
   - kernel fixture help: `noztr.nip11`
   - control points: HTTP ownership stays explicit, URL/body/parse buffers stay caller-owned, and
     the job layer adds one command-ready metadata refresh posture instead of pulling network policy
@@ -585,10 +450,6 @@ They do not imply:
 - `relay_workspace_client.zig`
   - goal: remember one explicit relay set, restore it into the shared relay runtime, inspect the
     bounded runtime view, and derive one bounded replay plan over that remembered state
-  - related SDK symbols: `noztr_sdk.client`, `RelayWorkspaceClient`,
-    `RelayWorkspaceClientStorage`, `RelayWorkspaceRestoreResult`, `noztr_sdk.store.RelayRegistryArchive`,
-    `noztr_sdk.store.RelayCheckpointArchive`, `noztr_sdk.runtime.RelayPoolPlan`,
-    `noztr_sdk.runtime.RelayPoolReplayPlan`
   - kernel fixture help: none beyond the shared relay runtime and relay URL seams
   - control points: remembered relay state stays explicit, runtime restore stays a separate step
     instead of hidden bootstrap, and this narrower workspace route now sits on top of the neutral
@@ -596,8 +457,6 @@ They do not imply:
 - `relay_local_group_archive.zig`
   - goal: archive one relay-local `NIP-29` snapshot through the shared event store seam and
     restore it into a fresh group client in explicit oldest-to-newest replay order
-  - related SDK symbols: `noztr_sdk.store`, `RelayLocalGroupArchive`, `MemoryClientStore`,
-    `GroupClient`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller still owns store construction and group-client storage, the helper
     keeps replay relay-local instead of pretending the current shared event seam is already a
@@ -606,9 +465,6 @@ They do not imply:
 - `relay_pool.zig`
   - goal: inspect one shared multi-relay runtime plan, select one typed next pool step, then
     derive one bounded shared subscription step
-  - related SDK symbols: `noztr_sdk.runtime`, `RelayPool`, `RelayPoolStorage`,
-    `RelayPoolPlanStorage`, `RelayPoolPlan`, `RelayPoolStep`, `RelaySubscriptionSpec`,
-    `RelayPoolSubscriptionStorage`, `RelayPoolSubscriptionPlan`, `RelayPoolSubscriptionStep`
   - kernel fixture help: `noztr.nip01_filter`
   - control points: caller still owns bounded pool storage, relay URLs remain explicit, the pool
     surface exposes one shared inspect/plan/step model without mailbox/groups/signer semantics,
@@ -619,10 +475,6 @@ They do not imply:
   - goal: export one shared relay-pool checkpoint set, persist its per-relay cursors through the
     shared checkpoint seam, restore a fresh shared pool from that bounded set explicitly, then
     derive one typed replay-now step over the same shared pool plus checkpoint seam
-  - related SDK symbols: `noztr_sdk.runtime`, `RelayPool`, `RelayPoolCheckpointStorage`,
-    `RelayPoolCheckpointSet`, `RelayPoolCheckpointStep`, `RelayReplaySpec`,
-    `RelayPoolReplayStorage`, `RelayPoolReplayPlan`, `RelayPoolReplayStep`,
-    `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: none beyond the shared relay URL validation and session/runtime layer
   - control points: caller still owns cursor values, pool checkpoint records stay bounded and
     backend-agnostic, persistence still routes through the shared checkpoint seam instead of being
@@ -632,8 +484,6 @@ They do not imply:
 - `legacy_dm_workflow.zig`
   - goal: build one signed legacy kind-`4` direct message explicitly, serialize it once, then
     accept and decrypt it through the workflow floor without inventing relay or polling policy
-  - related SDK symbols: `LegacyDmSession`, `LegacyDmDirectMessageRequest`,
-    `LegacyDmOutboundStorage`, `PreparedLegacyDmEvent`, `LegacyDmMessageOutcome`
   - kernel fixture help: `noztr.nip04`, `noztr.nostr_keys`, `noztr.nip01_event`
   - control points: strict legacy payload and kind-`4` validation still route through
     `noztr-core`, reply and relay-hint tag shaping stay explicit in the SDK workflow floor, and
@@ -641,10 +491,6 @@ They do not imply:
 - `dm_capability_client.zig`
   - goal: prepare one kind-`10050` mailbox relay-list publish, inspect one stored latest relay
     list explicitly over the archive seam, then select one explicit mixed-DM reply protocol
-  - related SDK symbols: `noztr_sdk.client.dm.capability`, `DmCapabilityClient`,
-    `DmCapabilityClientStorage`, `MailboxRelayListDraft`, `MailboxRelayListDraftStorage`,
-    `StoredMailboxRelayListSelectionRequest`, `StoredMailboxRelayListInspection`, `DmProtocol`,
-    `DmReplyPolicy`, `DmReplySelection`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
   - control points: kind-`10050` tag and relay-list parsing still route through `noztr-core`,
     relay publish/query state stays explicit on the shared SDK seams, archive-backed relay-list
@@ -655,11 +501,6 @@ They do not imply:
     legacy inbound DM explicitly, then select one reply route, remember one sender protocol for
     later replies, dedupe one observed message, and prepare one bounded mailbox-or-legacy outbound
     DM without hand-stitching protocol selection in app code
-  - related SDK symbols: `noztr_sdk.client.dm.mixed`, `MixedDmClient`, `MixedDmClientStorage`,
-    `MixedDmProtocol`, `MixedDmReplyPolicy`, `MixedDmReplyRoute`,
-    `MixedDmSenderProtocolMemory`, `MixedDmRememberedReplyRoute`, `MixedDmDedupMemory`,
-    `MixedDmDedupResult`, `MixedDmObservedMessage`, `OutboundStorage`, `OutboundRequest`,
-    `RememberedPreparedOutbound`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
   - control points: mailbox and legacy intake still route through their existing workflow floors,
     the mixed layer keeps sender-protocol memory caller-owned and bounded, keeps replay/live dedup
@@ -667,10 +508,6 @@ They do not imply:
     policy, and does not invent a hidden inbox runtime, unread policy, or conversation model
 - `legacy_dm_publish_job_client.zig`
   - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
-  - related SDK symbols: `noztr_sdk.client`, `LegacyDmPublishJobClient`,
-    `LegacyDmPublishJobClientStorage`, `LegacyDmPublishJobAuthEventStorage`,
-    `PreparedLegacyDmPublishJobAuthEvent`, `LegacyDmPublishJobRequest`,
-    `LegacyDmPublishJobReady`, `LegacyDmPublishJobResult`
   - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
   - control points: DM event shaping still routes through the legacy DM workflow floor, auth
     event authoring still stays explicit and caller-owned, and this layer only selects one
@@ -678,10 +515,6 @@ They do not imply:
 - `legacy_dm_replay_turn_client.zig`
   - goal: replay one checkpoint-backed legacy kind-`4` transcript explicitly, then decrypt replay
     events through one bounded intake adapter
-  - related SDK symbols: `noztr_sdk.client`, `LegacyDmReplayTurnClient`,
-    `LegacyDmReplayTurnClientStorage`, `LegacyDmReplayTurnRequest`,
-    `LegacyDmReplayTurnIntake`, `LegacyDmReplayTurnResult`, `LegacyDmMessageOutcome`,
-    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
   - control points: replay planning and checkpoint closure still route through the shared relay
     replay floor, parsed transcript events stay as event objects, and this layer only adds
@@ -689,10 +522,6 @@ They do not imply:
 - `legacy_dm_subscription_turn_client.zig`
   - goal: start one live legacy kind-`4` subscription turn explicitly, then decrypt transcript
     events through one bounded intake adapter
-  - related SDK symbols: `noztr_sdk.client`, `LegacyDmSubscriptionTurnClient`,
-    `LegacyDmSubscriptionTurnClientStorage`, `LegacyDmSubscriptionTurnRequest`,
-    `LegacyDmSubscriptionTurnIntake`, `LegacyDmSubscriptionTurnResult`,
-    `LegacyDmMessageOutcome`, `noztr_sdk.runtime.RelaySubscriptionSpec`
   - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
   - control points: live transcript close posture still routes through the shared subscription
     turn floor, parsed transcript events stay as event objects, and this layer only adds
@@ -702,11 +531,6 @@ They do not imply:
     orchestration helper above that runtime plus one caller-owned replay-refresh cadence helper,
     then drive durable resume export/restore, explicit reconnect, subscribe, and live receive
     posture
-  - related SDK symbols: `noztr_sdk.client.dm.legacy.sync_runtime`, `Client`, `Storage`,
-    `ResumeStorage`, `ResumeState`, `OrchestrationStorage`, `CadenceStorage`,
-    `AuthEventStorage`, `ReplayRequest`, `SubscriptionRequest`,
-    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
-    `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
   - control points: replay and live turns still route through the bounded legacy-DM turn floors,
     auth event authoring stays explicit and caller-owned, replay catch-up completion is caller-set
@@ -718,12 +542,6 @@ They do not imply:
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a
     recipient mailbox session, then build one outbound file message once, plan its delivery, and
     drive that same mailbox workflow surface explicitly
-  - related SDK symbols: `MailboxSession`, `MailboxDeliveryStorage`, `MailboxDeliveryRole`,
-    `MailboxDeliveryPlan`, `MailboxDeliveryStep`, `MailboxRuntimeAction`, `MailboxRuntimeStorage`,
-    `MailboxRuntimePlan`, `MailboxRuntimeStep`, `MailboxWorkflowAction`, `MailboxWorkflowStorage`,
-    `MailboxWorkflowPlan`, `MailboxWorkflowStep`, `MailboxRelayPoolRuntimeStorage`,
-    `MailboxFileDimensions`, `MailboxFileMessageRequest`, `MailboxEnvelopeOutcome`,
-    `MailboxFileMessageOutcome`, `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip44`, `noztr.nostr_keys`
   - control points: caller verifies the recipient relay list, optionally verifies sender-copy
     relays, builds one outbound wrap explicitly, receives the deduplicated publish-relay plan with
@@ -742,7 +560,6 @@ They do not imply:
 - `mailbox_event_intake.zig`
   - goal: parse one wrapped event object once, then feed that event object directly into the
     mailbox intake floor without reserializing it back into JSON
-  - related SDK symbols: `MailboxSession`, `MailboxEnvelopeOutcome`
   - kernel fixture help: `noztr.nip01_event`, `noztr.nip17_private_messages`
   - control points: parsed relay transcript events can stay as event objects, mailbox unwrap still
     routes through the SDK workflow floor, and replay-driven inbox sync does not need to rebuild
@@ -750,8 +567,6 @@ They do not imply:
 - `mailbox_receive_turn.zig`
   - goal: select one ready mailbox relay explicitly, then accept one wrapped envelope through one
     bounded receive-turn floor
-  - related SDK symbols: `MailboxSession`, `MailboxReceiveTurnStorage`,
-    `MailboxReceiveTurnRequest`, `MailboxReceiveTurnResult`, `MailboxEnvelopeOutcome`
   - kernel fixture help: `noztr.nip17_private_messages`
   - control points: ready-relay selection still routes through mailbox runtime inspection, intake
     still routes through the mailbox unwrap floor, and this layer only closes one receive turn
@@ -759,8 +574,6 @@ They do not imply:
 - `mailbox_sync_turn.zig`
   - goal: promote one pending mailbox delivery into one explicit publish step, and fall back to
     one bounded receive step when no delivery is pending
-  - related SDK symbols: `MailboxSession`, `MailboxSyncTurnStorage`, `MailboxSyncTurnRequest`,
-    `MailboxSyncTurnResult`, `MailboxDeliveryPlan`, `MailboxReceiveTurnResult`
   - kernel fixture help: `noztr.nip17_private_messages`
   - control points: mailbox workflow inspection still owns next-step ordering, publish work stays
     explicit instead of hidden behind a send loop, receive work still routes through the bounded
@@ -768,9 +581,6 @@ They do not imply:
     inventing a daemon or background mailbox scheduler
 - `mailbox_job_client.zig`
   - goal: drive mailbox auth, publish, and receive work through one command-ready job surface
-  - related SDK symbols: `noztr_sdk.client`, `MailboxJobClient`, `MailboxJobClientStorage`,
-    `MailboxJobAuthEventStorage`, `PreparedMailboxJobAuthEvent`, `MailboxJobReady`,
-    `MailboxJobResult`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`
   - control points: mailbox relay state still lives in the mailbox workflow floor, auth event
     creation stays explicit and caller-owned, delivery planning still routes through the mailbox
@@ -780,11 +590,6 @@ They do not imply:
 - `mailbox_signer_job_client.zig`
   - goal: walk one remote signer through mailbox direct-message authoring explicitly, then return
     one bounded mailbox delivery plan for caller-owned publish work
-  - related SDK symbols: `noztr_sdk.client.dm.mailbox.signer_job`, `MailboxSignerJobClient`,
-    `MailboxSignerJobClientStorage`, `MailboxSignerJobAuthEventStorage`,
-    `PreparedMailboxSignerJobAuthEvent`, `MailboxSignerJobReady`,
-    `MailboxSignerDirectMessageRequest`, `MailboxSignerDirectMessageProgress`,
-    `PreparedMailboxSignerDirectMessage`, `MailboxSignerDirectMessageResult`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip46_remote_signing`
   - control points: signer relay/auth state still lives on the bounded signer client, mailbox
     delivery planning still verifies relay-list events before trust, each authoring stage stays
@@ -793,10 +598,6 @@ They do not imply:
 - `mailbox_subscription_turn_client.zig`
   - goal: start one live mailbox subscription turn explicitly, classify wrapped transcript events
     through mailbox intake, then close the live turn explicitly
-  - related SDK symbols: `noztr_sdk.client`, `MailboxSubscriptionTurnClient`,
-    `MailboxSubscriptionTurnClientStorage`, `MailboxSubscriptionTurnRequest`,
-    `MailboxSubscriptionTurnIntake`, `MailboxSubscriptionTurnResult`,
-    `noztr_sdk.runtime.RelaySubscriptionSpec`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip01_filter`,
     `noztr.nip01_message`
   - control points: live subscription request/close still route through the shared subscription
@@ -807,11 +608,6 @@ They do not imply:
 - `mailbox_subscription_job_client.zig`
   - goal: prepare one mailbox live-subscription job that either yields one auth event or one
     bounded mailbox subscription request, then close the turn explicitly
-  - related SDK symbols: `noztr_sdk.client`, `MailboxSubscriptionJobClient`,
-    `MailboxSubscriptionJobClientStorage`, `MailboxSubscriptionJobAuthEventStorage`,
-    `PreparedMailboxSubscriptionJobAuthEvent`, `MailboxSubscriptionJobRequest`,
-    `MailboxSubscriptionJobIntake`, `MailboxSubscriptionJobReady`,
-    `MailboxSubscriptionJobResult`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
     `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: auth handling still routes through shared relay auth state, live mailbox
@@ -823,10 +619,6 @@ They do not imply:
     helper above that runtime plus one caller-owned DM cadence/backoff helper, then drive durable
     resume export/restore, explicit reconnect, resubscribe, and live receive posture without
     inventing a daemon
-  - related SDK symbols: `noztr_sdk.client.dm.mailbox.sync_runtime`, `Client`, `Storage`,
-    `ResumeStorage`, `ResumeState`, `OrchestrationStorage`, `CadenceStorage`,
-    `AuthEventStorage`, `ReplayRequest`, `ReplayIntake`, `SubscriptionRequest`,
-    `SubscriptionIntake`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
     `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: caller still owns the decision to declare replay catch-up complete, replay and
@@ -838,10 +630,6 @@ They do not imply:
 - `mailbox_replay_turn_client.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result
-  - related SDK symbols: `noztr_sdk.client`, `MailboxReplayTurnClient`,
-    `MailboxReplayTurnClientConfig`, `MailboxReplayTurnClientStorage`,
-    `MailboxReplayTurnRequest`, `MailboxReplayTurnIntake`, `MailboxReplayTurnResult`,
-    `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip01_message`
   - control points: replay cursor planning still routes through the shared replay turn floor,
     wrapped transcript events stay as parsed event objects instead of being reserialized back into
@@ -850,10 +638,6 @@ They do not imply:
 - `mailbox_replay_job_client.zig`
   - goal: prepare mailbox replay work that either yields one auth event or one bounded mailbox
     replay request, then close that replay with explicit mailbox intake and checkpoint posture
-  - related SDK symbols: `noztr_sdk.client`, `MailboxReplayJobClient`,
-    `MailboxReplayJobClientStorage`, `MailboxReplayJobAuthEventStorage`,
-    `PreparedMailboxReplayJobAuthEvent`, `MailboxReplayJobRequest`,
-    `MailboxReplayJobIntake`, `MailboxReplayJobReady`, `MailboxReplayJobResult`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`, `noztr.nip01_message`
   - control points: auth handling still routes through shared relay auth state, replay request and
     checkpoint closure still route through the bounded mailbox replay turn floor, wrapped replay
@@ -867,9 +651,6 @@ They do not imply:
     selection, refresh readiness over the explicit archive seam, turn-policy, and refresh policy,
     plan refresh for stale remembered verifications, and recover the latest remembered
     verification for the same target event
-  - related SDK symbols: `noztr_sdk.workflows.proof.nip03`, `OpenTimestampsVerifier`,
-    `Planning`, `MemoryOpenTimestampsProofStore`, `MemoryOpenTimestampsVerificationStore`,
-    `noztr_sdk.store.EventArchive`, `transport.HttpClient`
   - kernel fixture help: `noztr.nostr_keys`
   - control points: caller supplies the target event, attestation event, detached proof URL,
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
@@ -889,8 +670,6 @@ They do not imply:
     remembered-proof runtime, grouped target policy, refresh-cadence, refresh-batch selection,
     refresh readiness over the explicit archive seam, turn-policy, and refresh planning through
     the client surface
-  - related SDK symbols: `noztr_sdk.client.proof.nip03`, `Nip03VerifyClient`,
-    `Nip03VerifyClientStorage`, `Planning`, `noztr_sdk.store.EventArchive`
   - kernel fixture help: `noztr.nostr_keys`, `noztr.nip03_opentimestamps`
   - control points: the client only assembles remote-proof request posture above the existing
     OpenTimestamps workflow, HTTP and store ownership stay explicit, and remembered-proof runtime,
@@ -900,8 +679,6 @@ They do not imply:
 - `nip05_verify_client.zig`
   - goal: prepare and run one command-ready `NIP-05` verify job, remember the verified
     resolution, and inspect one bounded refresh plan over the public HTTP seam
-  - related SDK symbols: `noztr_sdk.client`, `Nip05VerifyClient`, `Nip05VerifyClientStorage`,
-    `Nip05VerifyJob`, `Nip05VerifyJobResult`, `Nip05RememberedResolutionPlanning`
   - kernel fixture help: none beyond the SDK result surface
   - control points: the client assembles command-ready lookup storage plus remembered successful
     resolution and bounded refresh planning above the existing resolver workflow, transport stays
@@ -912,8 +689,6 @@ They do not imply:
     public HTTP seam with explicit cache and profile-store seams, then inspect remembered-identity
     latest freshness, refresh cadence, refresh batch, and one bounded stored watched-target
     long-lived planning route through the client surface
-  - related SDK symbols: `noztr_sdk.client.identity.nip39`, `Nip39VerifyClient`,
-    `Nip39VerifyClientStorage`, `Planning`, `MemoryIdentityWatchedTargetStore`
   - kernel fixture help: `noztr.nip39_external_identities`
   - control points: the client assembles one profile verification job plus remembered-identity
     strategy helpers over the explicit profile store and one watched-target-store-backed long-lived
@@ -932,9 +707,6 @@ They do not imply:
     policy views plus refresh-cadence, refresh-batch, turn-policy, and turn-bucket views across
     that watched set, inspect one typed remembered runtime step explicitly, plan refresh for stale
     remembered profiles explicitly, and replay the same identity from remembered state
-  - related SDK symbols: `noztr_sdk.workflows.identity.verify`, `IdentityVerifier`, `Planning`,
-    `MemoryIdentityVerificationCache`, `MemoryIdentityProfileStore`,
-    `MemoryIdentityWatchedTargetStore`, `transport.HttpClient`
   - kernel fixture help: `noztr.nip39_external_identities`
   - control points: caller provides the HTTP client, the signed identity event, the target pubkey,
     caller-owned per-claim verification storage, caller-owned cache records, caller-owned profile
@@ -958,9 +730,6 @@ They do not imply:
 - `nip05_resolution.zig`
   - goal: resolve and verify one `NIP-05` address, remember the successful resolution, and inspect
     one bounded refresh plan over the public HTTP seam
-  - related SDK symbols: `Nip05Resolver`, `Nip05RememberedResolutionStore`,
-    `MemoryNip05RememberedResolutionStore`, `Nip05LatestRememberedResolutionTargetRequest`,
-    `Nip05RememberedResolutionRefreshRequest`, `transport.HttpClient`
   - kernel fixture help: none beyond the SDK result surface
   - control points: caller provides the HTTP client, one caller-owned lookup storage wrapper, one
     explicit remembered-resolution store, and the scratch allocator; refresh work remains explicit
@@ -968,9 +737,6 @@ They do not imply:
 - `group_session.zig`
   - goal: author a canonical `NIP-29` snapshot, export one checkpoint, restore it into a receiver
     client, select valid `previous` refs, build one outbound moderation event, then replay it
-  - related SDK symbols: `GroupClient`, `GroupClientStorage`, `GroupCheckpointBuffers`,
-    `GroupCheckpointContext`, `GroupPublishContext`, `GroupMetadataDraft`, `GroupRolesDraft`,
-    `GroupMembersDraft`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller provides named caller-owned session plus previous-ref storage, marks
     relay readiness, authors the snapshot state explicitly, exports and restores one checkpoint,
@@ -984,17 +750,6 @@ They do not imply:
     merge divergent relay-local components by explicit relay selection, run one explicit targeted
     baseline-to-target reconcile step, then select one next moderation publish relay and one
     explicit background relay from the resulting fanout
-  - related SDK symbols: `GroupFleet`, `GroupClient`, `GroupClientStorage`,
-    `GroupRelayState`, `GroupFleetRuntimeAction`, `GroupFleetBackgroundAction`,
-    `GroupFleetRuntimeStorage`, `GroupFleetBackgroundRuntimeStorage`, `GroupFleetRuntimePlan`,
-    `GroupFleetBackgroundRuntimePlan`,
-    `GroupFleetCheckpointStorage`, `GroupFleetCheckpointContext`,
-    `GroupFleetMergeStorage`, `GroupFleetMergeContext`, `GroupFleetMergeSelection`,
-    `GroupFleetMergedCheckpoint`, `GroupFleetTargetReconcileOutcome`,
-    `GroupFleetCheckpointRecord`, `MemoryGroupFleetCheckpointStore`,
-    `GroupFleetStorePersistOutcome`, `GroupFleetStoreRestoreOutcome`,
-    `GroupFleetPublishStorage`, `GroupFleetPublishContext`, `GroupFleetRuntimeStep`,
-    `GroupFleetBackgroundRuntimeStep`, `GroupFleetPublishStep`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller still owns the relay-local clients, chooses relay URLs explicitly,
     persists relay-local checkpoints into a bounded store through the fleet, restores only the
@@ -1016,14 +771,6 @@ They do not imply:
     a fresh client from that store, reconcile one target relay from the chosen baseline, build and
     apply one merged checkpoint from explicit relay selection, build one explicit publish fanout,
     and inspect one explicit background-runtime step
-  - related SDK symbols: `noztr_sdk.client`, `GroupFleetClient`, `GroupFleetClientStorage`,
-    `GroupFleetClientCheckpointStorage`, `GroupFleetClientBackgroundRequest`,
-    `GroupFleetClientCheckpointRequest`, `GroupFleetClientMergeSelection`,
-    `GroupFleetClientMergeStorage`, `GroupFleetClientMergeRequest`,
-    `GroupFleetClientPublishStorage`, `GroupFleetClientPutUserDraft`,
-    `GroupFleetClientRemoveUserDraft`, `GroupFleetClientPublishRequest`,
-    `GroupFleetRuntimePlan`, `GroupFleetConsistencyReport`, `GroupFleetBackgroundRuntimePlan`,
-    `MemoryGroupFleetCheckpointStore`
   - kernel fixture help: `noztr.nip29_relay_groups`, `noztr.nostr_keys`
   - control points: caller still owns the relay-local `GroupClient` members and the scheduler,
     while the client layer packages bounded runtime/background/consistency plus checkpoint-store
@@ -1034,7 +781,6 @@ They do not imply:
 
 - `group_session_adversarial_example.zig`
   - goal: prove wrong-group `NIP-29` replay is rejected before state mutation
-  - related SDK symbols: `GroupSession`
   - failure control point: `error.EventGroupMismatch`
 
 ## Deferred After The HTTP-Seam Refinement
