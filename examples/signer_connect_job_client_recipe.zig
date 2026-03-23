@@ -72,7 +72,7 @@ test "recipe: signer connect job stays explicit across auth and connect" {
     const connect_result = try client.acceptConnectResponseJson(
         try serializeResponseJson(response_storage[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         response_scratch.allocator(),
     );

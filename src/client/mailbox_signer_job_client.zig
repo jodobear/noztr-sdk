@@ -803,7 +803,7 @@ test "mailbox signer job client drives signer-backed mailbox direct-message auth
     try client.acceptConnectResponseJson(
         try serializeResponseJson(connect_response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         connect_response_scratch.allocator(),
     );
@@ -1046,7 +1046,7 @@ test "mailbox signer job client prefers auth event over direct-message step when
     try client.acceptConnectResponseJson(
         try serializeResponseJson(connect_response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         connect_response_scratch.allocator(),
     );
@@ -1092,7 +1092,7 @@ fn textResponse(
 ) workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
-        .result = .{ .value = .{ .text = text } },
+        .result = .{ .text = text },
     });
 }
 

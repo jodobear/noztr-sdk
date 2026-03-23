@@ -223,7 +223,7 @@ fn establishSignerSession(
     try client.acceptConnectResponseJson(
         try serializeResponseJson(response_storage[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = secret_text } },
+            .result = .{ .text = secret_text },
         }),
         scratch,
     );
@@ -293,7 +293,7 @@ fn textResponse(
 ) ![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
-        .result = .{ .value = .{ .text = text } },
+        .result = .{ .text = text },
     });
 }
 

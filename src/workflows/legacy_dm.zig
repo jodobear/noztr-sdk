@@ -17,7 +17,7 @@ pub const max_tag_items: u8 = 2;
 pub const LegacyDmDirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
-    reply_to: ?noztr.nip04.Nip04ReplyRef = null,
+    reply_to: ?noztr.nip04.ReplyRef = null,
     content: []const u8,
     created_at: u64,
     iv: [noztr.limits.nip04_iv_bytes]u8,
@@ -49,7 +49,7 @@ pub const PreparedLegacyDmEvent = struct {
 /// `plaintext` borrows from caller-provided plaintext output.
 pub const LegacyDmMessageOutcome = struct {
     event: noztr.nip01_event.Event,
-    message: noztr.nip04.Nip04MessageInfo,
+    message: noztr.nip04.MessageInfo,
     plaintext: []const u8,
 };
 
@@ -164,7 +164,7 @@ fn buildRecipientTag(
 
 fn buildReplyTag(
     storage: *LegacyDmOutboundStorage,
-    reply_to: *const noztr.nip04.Nip04ReplyRef,
+    reply_to: *const noztr.nip04.ReplyRef,
 ) LegacyDmError!noztr.nip01_event.EventTag {
     const event_id_hex = std.fmt.bytesToHex(reply_to.event_id, .lower);
     @memcpy(storage.reply_event_id_hex[0..], event_id_hex[0..]);

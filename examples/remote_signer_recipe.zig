@@ -112,7 +112,7 @@ fn textResponse(
 ) noztr.nip46_remote_signing.RemoteSigningError![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
-        .result = .{ .value = .{ .text = text } },
+        .result = .{ .text = text },
     });
 }
 

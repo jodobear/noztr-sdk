@@ -663,7 +663,7 @@ fn mailboxReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip17_privat
     };
 }
 
-fn legacyReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip04.Nip04ReplyRef {
+fn legacyReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip04.ReplyRef {
     const reply = reply_to orelse return null;
     return .{
         .event_id = reply.event_id,
@@ -728,7 +728,7 @@ fn observedReplyFromMailbox(
 }
 
 fn observedReplyFromLegacy(
-    reply_to: ?noztr.nip04.Nip04ReplyRef,
+    reply_to: ?noztr.nip04.ReplyRef,
 ) ?MixedDmObservedReplyRef {
     const reply = reply_to orelse return null;
     return .{

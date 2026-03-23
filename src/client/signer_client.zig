@@ -390,7 +390,7 @@ test "signer client composes connect get_public_key and nip44 encrypt without ca
     const connect_outcome = try client.acceptResponseJson(
         try serializeResponseJson(connect_response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         connect_response_scratch.allocator(),
     );
@@ -492,7 +492,7 @@ test "signer client restores durable resume state" {
     _ = try client.acceptResponseJson(
         try serializeResponseJson(connect_response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "ack" } },
+            .result = .{ .text = "ack" },
         }),
         connect_response_scratch.allocator(),
     );
@@ -508,7 +508,7 @@ test "signer client restores durable resume state" {
     _ = try client.acceptResponseJson(
         try serializeResponseJson(switch_response_json[0..], .{
             .id = "signer-2",
-            .result = .{ .value = .{ .relay_list = next_relays[0..] } },
+            .result = .{ .relays = next_relays[0..] },
         }),
         switch_response_scratch.allocator(),
     );
@@ -573,7 +573,7 @@ test "signer client adapts onto the signer capability surface" {
     _ = try client.acceptResponseJson(
         try serializeResponseJson(connect_response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         connect_response_scratch.allocator(),
     );
@@ -611,7 +611,7 @@ test "signer client adapts onto the signer capability surface" {
         client.acceptSignerCapabilityResponseJson(
             try serializeResponseJson(unexpected_response_json[0..], .{
                 .id = "signer-99",
-                .result = .{ .value = .{ .text = "secret" } },
+                .result = .{ .text = "secret" },
             }),
             unexpected_response_scratch.allocator(),
         ),
@@ -629,7 +629,7 @@ test "signer client adapts onto the signer capability surface" {
         client.acceptSignerCapabilityResponseJson(
             try serializeResponseJson(pong_response_json[0..], .{
                 .id = "signer-3",
-                .result = .{ .value = .{ .text = "pong" } },
+                .result = .{ .text = "pong" },
             }),
             pong_response_scratch.allocator(),
         ),
@@ -643,7 +643,7 @@ fn textResponse(
 ) workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
-        .result = .{ .value = .{ .text = text } },
+        .result = .{ .text = text },
     });
 }
 

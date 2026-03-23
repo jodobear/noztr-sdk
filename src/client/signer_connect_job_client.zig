@@ -292,7 +292,7 @@ test "signer connect job client prepares connect work without auth gating" {
     const result = try client.acceptConnectResponseJson(
         try serializeResponseJson(response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         response_scratch.allocator(),
     );
@@ -367,7 +367,7 @@ test "signer connect job client drives auth-gated connect progression through on
     const connect_result = try client.acceptConnectResponseJson(
         try serializeResponseJson(response_json[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         }),
         response_scratch.allocator(),
     );

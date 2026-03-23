@@ -90,7 +90,7 @@ fn establishSignerSession(
     _ = try signer.acceptResponseJson(
         try serializeResponseJson(response_storage[0..], .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = secret_text } },
+            .result = .{ .text = secret_text },
         }),
         scratch,
     );
@@ -103,7 +103,7 @@ fn textResponse(
 ) noztr_sdk.workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
-        .result = .{ .value = .{ .text = text } },
+        .result = .{ .text = text },
     });
 }
 

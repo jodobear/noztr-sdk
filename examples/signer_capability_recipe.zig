@@ -68,7 +68,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
         connect_response_json_output[0..],
         .{ .response = .{
             .id = "signer-1",
-            .result = .{ .value = .{ .text = "secret" } },
+            .result = .{ .text = "secret" },
         } },
     );
     var connect_response_scratch_storage: [2048]u8 = undefined;
@@ -96,7 +96,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
         response_json_output[0..],
         .{ .response = .{
             .id = "signer-2",
-            .result = .{ .value = .{ .text = remote_pubkey_hex[0..] } },
+            .result = .{ .text = remote_pubkey_hex[0..] },
         } },
     );
     var response_scratch_storage: [2048]u8 = undefined;
