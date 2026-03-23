@@ -3,6 +3,10 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
+const identity_client = noztr_sdk.client.identity.nip39;
+const identity_workflow = noztr_sdk.workflows.identity.verify;
+const Planning = identity_client.Planning;
+
 // Prepare one command-ready NIP-39 profile-verify job over caller-owned buffers, run it over the
 // explicit public HTTP seam, then inspect both bounded remembered-identity strategy helpers and
 // one stored watched-target long-lived planning route through the client surface.
@@ -45,20 +49,20 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     var url_buffers: [1][256]u8 = undefined;
     var expected_buffers: [1][256]u8 = undefined;
     var body_buffers: [1][512]u8 = undefined;
-    var verification: [1]noztr_sdk.workflows.identity.verify.IdentityVerificationStorage = undefined;
-    verification[0] = noztr_sdk.workflows.identity.verify.IdentityVerificationStorage.init(
+    var verification: [1]identity_workflow.IdentityVerificationStorage = undefined;
+    verification[0] = identity_workflow.IdentityVerificationStorage.init(
         url_buffers[0][0..],
         expected_buffers[0][0..],
         body_buffers[0][0..],
     );
-    var results: [1]noztr_sdk.workflows.identity.verify.IdentityClaimVerification = undefined;
-    var cache_records: [1]noztr_sdk.workflows.identity.verify.IdentityVerificationCacheRecord = undefined;
-    var cache = noztr_sdk.workflows.identity.verify.MemoryIdentityVerificationCache.init(cache_records[0..]);
-    var profile_records: [2]noztr_sdk.workflows.identity.verify.IdentityProfileRecord = undefined;
-    var profile_store = noztr_sdk.workflows.identity.verify.MemoryIdentityProfileStore.init(profile_records[0..]);
+    var results: [1]identity_workflow.IdentityClaimVerification = undefined;
+    var cache_records: [1]identity_workflow.IdentityVerificationCacheRecord = undefined;
+    var cache = identity_workflow.MemoryIdentityVerificationCache.init(cache_records[0..]);
+    var profile_records: [2]identity_workflow.IdentityProfileRecord = undefined;
+    var profile_store = identity_workflow.MemoryIdentityProfileStore.init(profile_records[0..]);
 
-    const client = noztr_sdk.client.identity.nip39.Nip39VerifyClient.init(.{});
-    var storage = noztr_sdk.client.identity.nip39.Nip39VerifyClientStorage.init(
+    const client = identity_client.Nip39VerifyClient.init(.{});
+    var storage = identity_client.Nip39VerifyClientStorage.init(
         claims[0..],
         verification[0..],
         results[0..],
@@ -74,13 +78,13 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     try std.testing.expectEqual(@as(usize, 1), result.summary.verified_count);
     try std.testing.expectEqual(@as(usize, 1), result.summary.network_fetch_count);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.identity.verify.IdentityProfileStorePutOutcome.stored,
+        identity_workflow.IdentityProfileStorePutOutcome.stored,
         result.store_outcome,
     );
 
     const stale_pubkey = [_]u8{0x44} ** 32;
-    const stale_summary = noztr_sdk.workflows.identity.verify.IdentityProfileVerificationSummary{
-        .claims = &[_]noztr_sdk.workflows.identity.verify.IdentityClaimVerification{
+    const stale_summary = identity_workflow.IdentityProfileVerificationSummary{
+        .claims = &[_]identity_workflow.IdentityClaimVerification{
             .{
                 .claim = .{
                     .provider = .github,
@@ -97,15 +101,15 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
         },
         .verified_count = 1,
     };
-    _ = try noztr_sdk.workflows.identity.verify.IdentityVerifier.rememberProfileSummary(
+    _ = try identity_workflow.IdentityVerifier.rememberProfileSummary(
         profile_store.asStore(),
         &stale_pubkey,
         5,
         &stale_summary,
     );
 
-    var watched_target_records: [4]noztr_sdk.workflows.identity.verify.IdentityWatchedTargetRecord = undefined;
-    var watched_target_store = noztr_sdk.workflows.identity.verify.MemoryIdentityWatchedTargetStore.init(
+    var watched_target_records: [4]identity_workflow.IdentityWatchedTargetRecord = undefined;
+    var watched_target_store = identity_workflow.MemoryIdentityWatchedTargetStore.init(
         watched_target_records[0..],
     );
     _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "carol" });
@@ -113,39 +117,39 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
     _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
 
-    var listed_records: [4]noztr_sdk.client.identity.nip39.Planning.WatchedTargetRecord = undefined;
-    var targets: [4]noztr_sdk.client.identity.nip39.Planning.Target = undefined;
-    var matches: [2]noztr_sdk.client.identity.nip39.Planning.ProfileMatch = undefined;
-    var latest_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var policy_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]noztr_sdk.client.identity.nip39.Planning.TargetPolicyGroup = undefined;
-    var cadence_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]noztr_sdk.client.identity.nip39.Planning.TargetCadenceGroup = undefined;
-    var batch_latest_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var batch_cadence_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetCadenceEntry = undefined;
-    var batch_cadence_groups: [5]noztr_sdk.client.identity.nip39.Planning.TargetCadenceGroup = undefined;
-    var orchestration_policy_matches: [2]noztr_sdk.client.identity.nip39.Planning.ProfileMatch = undefined;
-    var orchestration_policy_latest_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var orchestration_policy_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetPolicyEntry = undefined;
-    var orchestration_policy_groups: [4]noztr_sdk.client.identity.nip39.Planning.TargetPolicyGroup = undefined;
-    var orchestration_cadence_matches: [2]noztr_sdk.client.identity.nip39.Planning.ProfileMatch = undefined;
-    var orchestration_cadence_latest_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var orchestration_cadence_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetCadenceEntry = undefined;
-    var orchestration_cadence_groups: [5]noztr_sdk.client.identity.nip39.Planning.TargetCadenceGroup = undefined;
-    var orchestration_batch_matches: [2]noztr_sdk.client.identity.nip39.Planning.ProfileMatch = undefined;
-    var orchestration_batch_latest_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var orchestration_batch_cadence_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetCadenceEntry = undefined;
-    var orchestration_batch_cadence_groups: [5]noztr_sdk.client.identity.nip39.Planning.TargetCadenceGroup = undefined;
-    var orchestration_turn_matches: [2]noztr_sdk.client.identity.nip39.Planning.ProfileMatch = undefined;
-    var orchestration_turn_latest_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var orchestration_turn_policy_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetPolicyEntry = undefined;
-    var orchestration_turn_policy_groups: [4]noztr_sdk.client.identity.nip39.Planning.TargetPolicyGroup = undefined;
-    var orchestration_turn_cadence_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetCadenceEntry = undefined;
-    var orchestration_turn_cadence_groups: [5]noztr_sdk.client.identity.nip39.Planning.TargetCadenceGroup = undefined;
-    var turn_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetTurnPolicyEntry = undefined;
-    var turn_groups: [4]noztr_sdk.client.identity.nip39.Planning.TargetTurnPolicyGroup = undefined;
-    var orchestration_turn_entries: [4]noztr_sdk.client.identity.nip39.Planning.TargetTurnPolicyEntry = undefined;
-    var orchestration_turn_groups: [4]noztr_sdk.client.identity.nip39.Planning.TargetTurnPolicyGroup = undefined;
+    var listed_records: [4]Planning.WatchedTargetRecord = undefined;
+    var targets: [4]Planning.Target = undefined;
+    var matches: [2]Planning.ProfileMatch = undefined;
+    var latest_entries: [4]Planning.TargetLatestEntry = undefined;
+    var policy_entries: [4]Planning.TargetPolicyEntry = undefined;
+    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
+    var cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
+    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var batch_latest_entries: [4]Planning.TargetLatestEntry = undefined;
+    var batch_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
+    var batch_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var orchestration_policy_matches: [2]Planning.ProfileMatch = undefined;
+    var orchestration_policy_latest_entries: [4]Planning.TargetLatestEntry = undefined;
+    var orchestration_policy_entries: [4]Planning.TargetPolicyEntry = undefined;
+    var orchestration_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
+    var orchestration_cadence_matches: [2]Planning.ProfileMatch = undefined;
+    var orchestration_cadence_latest_entries: [4]Planning.TargetLatestEntry = undefined;
+    var orchestration_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
+    var orchestration_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var orchestration_batch_matches: [2]Planning.ProfileMatch = undefined;
+    var orchestration_batch_latest_entries: [4]Planning.TargetLatestEntry = undefined;
+    var orchestration_batch_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
+    var orchestration_batch_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var orchestration_turn_matches: [2]Planning.ProfileMatch = undefined;
+    var orchestration_turn_latest_entries: [4]Planning.TargetLatestEntry = undefined;
+    var orchestration_turn_policy_entries: [4]Planning.TargetPolicyEntry = undefined;
+    var orchestration_turn_policy_groups: [4]Planning.TargetPolicyGroup = undefined;
+    var orchestration_turn_cadence_entries: [4]Planning.TargetCadenceEntry = undefined;
+    var orchestration_turn_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var turn_entries: [4]Planning.TargetTurnPolicyEntry = undefined;
+    var turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
+    var orchestration_turn_entries: [4]Planning.TargetTurnPolicyEntry = undefined;
+    var orchestration_turn_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
 
     const cadence = try client.inspectWatchedCadence(
         profile_store.asStore(),
@@ -155,10 +159,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.identity.nip39.Planning.WatchedCadenceStorage.init(
+            .storage = Planning.WatchedCadenceStorage.init(
                 listed_records[0..],
                 targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetCadenceStorage.init(
+                Planning.TargetCadenceStorage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],
@@ -184,10 +188,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.identity.nip39.Planning.WatchedBatchStorage.init(
+            .storage = Planning.WatchedBatchStorage.init(
                 listed_records[0..],
                 targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetBatchStorage.init(
+                Planning.TargetBatchStorage.init(
                     matches[0..],
                     batch_latest_entries[0..],
                     batch_cadence_entries[0..],
@@ -212,10 +216,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 3,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.identity.nip39.Planning.WatchedTurnPolicyStorage.init(
+            .storage = Planning.WatchedTurnPolicyStorage.init(
                 listed_records[0..],
                 targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetTurnPolicyStorage.init(
+                Planning.TargetTurnPolicyStorage.init(
                     matches[0..],
                     latest_entries[0..],
                     policy_entries[0..],
@@ -247,28 +251,28 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.identity.nip39.Planning.WatchedOrchestrationStorage.init(
+            .storage = Planning.WatchedOrchestrationStorage.init(
                 listed_records[0..],
                 targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetPolicyStorage.init(
+                Planning.TargetPolicyStorage.init(
                     orchestration_policy_matches[0..],
                     orchestration_policy_latest_entries[0..],
                     orchestration_policy_entries[0..],
                     orchestration_policy_groups[0..],
                 ),
-                noztr_sdk.client.identity.nip39.Planning.TargetCadenceStorage.init(
+                Planning.TargetCadenceStorage.init(
                     orchestration_cadence_matches[0..],
                     orchestration_cadence_latest_entries[0..],
                     orchestration_cadence_entries[0..],
                     orchestration_cadence_groups[0..],
                 ),
-                noztr_sdk.client.identity.nip39.Planning.TargetBatchStorage.init(
+                Planning.TargetBatchStorage.init(
                     orchestration_batch_matches[0..],
                     orchestration_batch_latest_entries[0..],
                     orchestration_batch_cadence_entries[0..],
                     orchestration_batch_cadence_groups[0..],
                 ),
-                noztr_sdk.client.identity.nip39.Planning.TargetTurnPolicyStorage.init(
+                Planning.TargetTurnPolicyStorage.init(
                     orchestration_turn_matches[0..],
                     orchestration_turn_latest_entries[0..],
                     orchestration_turn_policy_entries[0..],
@@ -301,22 +305,22 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     try std.testing.expectEqualStrings("alice", orchestration.useCachedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("bob", orchestration.deferredEntries()[0].target.identity);
 
-    var remembered_records: [2]noztr_sdk.client.identity.nip39.Planning.RememberedIdentityRecord = undefined;
-    var remembered_targets: [2]noztr_sdk.client.identity.nip39.Planning.Target = undefined;
-    var remembered_matches: [1]noztr_sdk.client.identity.nip39.Planning.ProfileMatch = undefined;
-    var remembered_latest_entries: [2]noztr_sdk.client.identity.nip39.Planning.TargetLatestEntry = undefined;
-    var remembered_cadence_entries: [2]noztr_sdk.client.identity.nip39.Planning.TargetCadenceEntry = undefined;
-    var remembered_cadence_groups: [5]noztr_sdk.client.identity.nip39.Planning.TargetCadenceGroup = undefined;
+    var remembered_records: [2]Planning.RememberedIdentityRecord = undefined;
+    var remembered_targets: [2]Planning.Target = undefined;
+    var remembered_matches: [1]Planning.ProfileMatch = undefined;
+    var remembered_latest_entries: [2]Planning.TargetLatestEntry = undefined;
+    var remembered_cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var remembered_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
 
     const remembered_freshness = try client.inspectRememberedLatest(
         profile_store.asStore(),
         .{
             .now_unix_seconds = 50,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.identity.nip39.Planning.RememberedLatestStorage.init(
+            .storage = Planning.RememberedLatestStorage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetLatestStorage.init(
+                Planning.TargetLatestStorage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                 ),
@@ -335,10 +339,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.identity.nip39.Planning.RememberedCadenceStorage.init(
+            .storage = Planning.RememberedCadenceStorage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetCadenceStorage.init(
+                Planning.TargetCadenceStorage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                     remembered_cadence_entries[0..],
@@ -363,10 +367,10 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.identity.nip39.Planning.RememberedBatchStorage.init(
+            .storage = Planning.RememberedBatchStorage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                noztr_sdk.client.identity.nip39.Planning.TargetBatchStorage.init(
+                Planning.TargetBatchStorage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                     remembered_cadence_entries[0..],

@@ -3,6 +3,10 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 const http_fake = @import("http_fake.zig");
 
+const proof_client = noztr_sdk.client.proof.nip03;
+const proof_workflow = noztr_sdk.workflows.proof.nip03;
+const Planning = proof_client.Planning;
+
 const ots_header_magic = [_]u8{
     0x00, 0x4f, 0x70, 0x65, 0x6e, 0x54, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70,
     0x73, 0x00, 0x00, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x00, 0xbf, 0x89, 0xe2, 0xe8, 0x84,
@@ -29,9 +33,9 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     try noztr.nostr_keys.nostr_sign_event(&signer_secret, &target);
 
     var proof_bytes: [96]u8 = undefined;
-    const proof = buildLocalBitcoinProof(proof_bytes[0..], &target.id);
+    const proof_doc = buildLocalBitcoinProof(proof_bytes[0..], &target.id);
     var proof_b64: [256]u8 = undefined;
-    const encoded = std.base64.standard.Encoder.encode(proof_b64[0..], proof);
+    const encoded = std.base64.standard.Encoder.encode(proof_b64[0..], proof_doc);
     const event_id_hex = std.fmt.bytesToHex(target.id, .lower);
     const tags = [_]noztr.nip01_event.EventTag{
         .{ .items = &.{ "e", event_id_hex[0..] } },
@@ -47,19 +51,17 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         .tags = tags[0..],
     };
 
-    var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof);
+    var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof_doc);
     var fetched_proof: [128]u8 = undefined;
-    var storage = noztr_sdk.client.proof.nip03.Nip03VerifyClientStorage.init(fetched_proof[0..]);
-    var proof_store_records: [1]noztr_sdk.workflows.proof.nip03.OpenTimestampsProofRecord =
-        [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsProofRecord{.{}} ** 1;
-    var proof_store =
-        noztr_sdk.workflows.proof.nip03.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [2]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
-        [_]noztr_sdk.workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
-    var verification_store =
-        noztr_sdk.workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    var storage = proof_client.Nip03VerifyClientStorage.init(fetched_proof[0..]);
+    var proof_store_records: [1]proof_workflow.OpenTimestampsProofRecord =
+        [_]proof_workflow.OpenTimestampsProofRecord{.{}} ** 1;
+    var proof_store = proof_workflow.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
+    var verification_store_records: [2]proof_workflow.OpenTimestampsStoredVerificationRecord =
+        [_]proof_workflow.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
+    var verification_store = proof_workflow.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
-    const client = noztr_sdk.client.proof.nip03.Nip03VerifyClient.init(.{});
+    const client = proof_client.Nip03VerifyClient.init(.{});
     const job = client.prepareVerifyJob(
         &storage,
         &target,
@@ -75,7 +77,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
 
     try std.testing.expect(result == .verified);
     try std.testing.expectEqual(
-        noztr_sdk.workflows.proof.nip03.OpenTimestampsVerificationStorePutOutcome.stored,
+        proof_workflow.OpenTimestampsVerificationStorePutOutcome.stored,
         result.verified.store_outcome,
     );
 
@@ -90,8 +92,8 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         stale_proof,
     );
 
-    var runtime_matches: [2]noztr_sdk.client.proof.nip03.Planning.Match = undefined;
-    var runtime_entries: [2]noztr_sdk.client.proof.nip03.Planning.DiscoveryFreshnessEntry = undefined;
+    var runtime_matches: [2]Planning.Match = undefined;
+    var runtime_entries: [2]Planning.DiscoveryFreshnessEntry = undefined;
     const runtime = try client.inspectRuntime(
         verification_store.asStore(),
         .{
@@ -99,32 +101,32 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = noztr_sdk.client.proof.nip03.Planning.RuntimeStorage.init(
+            .storage = Planning.RuntimeStorage.init(
                 runtime_matches[0..],
                 runtime_entries[0..],
             ),
         },
     );
     try std.testing.expectEqual(
-        noztr_sdk.client.proof.nip03.Planning.RuntimeAction.use_preferred,
+        Planning.RuntimeAction.use_preferred,
         runtime.action,
     );
 
-    const targets = [_]noztr_sdk.client.proof.nip03.Planning.Target{
+    const targets = [_]Planning.Target{
         .{ .target_event_id = target.id },
         .{ .target_event_id = stale_target.id },
     };
-    var target_matches: [2]noztr_sdk.client.proof.nip03.Planning.Match = undefined;
-    var target_latest_entries: [2]noztr_sdk.client.proof.nip03.Planning.LatestTargetEntry = undefined;
-    var policy_entries: [2]noztr_sdk.client.proof.nip03.Planning.TargetPolicyEntry = undefined;
-    var policy_groups: [4]noztr_sdk.client.proof.nip03.Planning.TargetPolicyGroup = undefined;
+    var target_matches: [2]Planning.Match = undefined;
+    var target_latest_entries: [2]Planning.LatestTargetEntry = undefined;
+    var policy_entries: [2]Planning.TargetPolicyEntry = undefined;
+    var policy_groups: [4]Planning.TargetPolicyGroup = undefined;
     const policy_plan = try client.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.proof.nip03.Planning.TargetPolicyStorage.init(
+            .storage = Planning.TargetPolicyStorage.init(
                 target_matches[0..],
                 target_latest_entries[0..],
                 policy_entries[0..],
@@ -147,8 +149,8 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         policy_plan.usablePreferredEntries()[1].target.target_event_id[0..],
     );
 
-    var cadence_entries: [2]noztr_sdk.client.proof.nip03.Planning.TargetCadenceEntry = undefined;
-    var cadence_groups: [5]noztr_sdk.client.proof.nip03.Planning.TargetCadenceGroup = undefined;
+    var cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
     const cadence_plan = try client.inspectTargetCadence(
         verification_store.asStore(),
         .{
@@ -156,7 +158,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
-            .storage = noztr_sdk.client.proof.nip03.Planning.TargetCadenceStorage.init(
+            .storage = Planning.TargetCadenceStorage.init(
                 target_matches[0..],
                 target_latest_entries[0..],
                 cadence_entries[0..],
@@ -172,10 +174,10 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         cadence_plan.nextDueStep().?.entry.target.target_event_id[0..],
     );
 
-    var batch_target_matches: [2]noztr_sdk.client.proof.nip03.Planning.Match = undefined;
-    var batch_target_latest_entries: [2]noztr_sdk.client.proof.nip03.Planning.LatestTargetEntry = undefined;
-    var batch_entries: [2]noztr_sdk.client.proof.nip03.Planning.TargetCadenceEntry = undefined;
-    var batch_groups: [5]noztr_sdk.client.proof.nip03.Planning.TargetCadenceGroup = undefined;
+    var batch_target_matches: [2]Planning.Match = undefined;
+    var batch_target_latest_entries: [2]Planning.LatestTargetEntry = undefined;
+    var batch_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var batch_groups: [5]Planning.TargetCadenceGroup = undefined;
     const batch_plan = try client.inspectTargetBatch(
         verification_store.asStore(),
         .{
@@ -184,7 +186,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
-            .storage = noztr_sdk.client.proof.nip03.Planning.TargetBatchStorage.init(
+            .storage = Planning.TargetBatchStorage.init(
                 batch_target_matches[0..],
                 batch_target_latest_entries[0..],
                 batch_entries[0..],
@@ -200,12 +202,12 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         batch_plan.nextBatchStep().?.entry.target.target_event_id[0..],
     );
 
-    var turn_policy_matches: [2]noztr_sdk.client.proof.nip03.Planning.Match = undefined;
-    var turn_policy_latest_entries: [2]noztr_sdk.client.proof.nip03.Planning.LatestTargetEntry = undefined;
-    var turn_policy_cadence_entries: [2]noztr_sdk.client.proof.nip03.Planning.TargetCadenceEntry = undefined;
-    var turn_policy_cadence_groups: [5]noztr_sdk.client.proof.nip03.Planning.TargetCadenceGroup = undefined;
-    var turn_policy_entries: [2]noztr_sdk.client.proof.nip03.Planning.TargetTurnPolicyEntry = undefined;
-    var turn_policy_groups: [4]noztr_sdk.client.proof.nip03.Planning.TargetTurnPolicyGroup = undefined;
+    var turn_policy_matches: [2]Planning.Match = undefined;
+    var turn_policy_latest_entries: [2]Planning.LatestTargetEntry = undefined;
+    var turn_policy_cadence_entries: [2]Planning.TargetCadenceEntry = undefined;
+    var turn_policy_cadence_groups: [5]Planning.TargetCadenceGroup = undefined;
+    var turn_policy_entries: [2]Planning.TargetTurnPolicyEntry = undefined;
+    var turn_policy_groups: [4]Planning.TargetTurnPolicyGroup = undefined;
     const turn_policy_plan = try client.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
@@ -214,7 +216,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
-            .storage = noztr_sdk.client.proof.nip03.Planning.TargetTurnPolicyStorage.init(
+            .storage = Planning.TargetTurnPolicyStorage.init(
                 turn_policy_matches[0..],
                 turn_policy_latest_entries[0..],
                 turn_policy_cadence_entries[0..],
@@ -234,17 +236,17 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         turn_policy_plan.nextWorkStep().?.entry.target.target_event_id[0..],
     );
 
-    var refresh_target_matches: [2]noztr_sdk.client.proof.nip03.Planning.Match = undefined;
-    var refresh_target_latest_entries: [2]noztr_sdk.client.proof.nip03.Planning.LatestTargetEntry = undefined;
-    var refresh_entries: [2]noztr_sdk.client.proof.nip03.Planning.RefreshEntry = undefined;
-    var refresh_targets: [2]noztr_sdk.client.proof.nip03.Planning.TargetRefreshEntry = undefined;
+    var refresh_target_matches: [2]Planning.Match = undefined;
+    var refresh_target_latest_entries: [2]Planning.LatestTargetEntry = undefined;
+    var refresh_entries: [2]Planning.RefreshEntry = undefined;
+    var refresh_targets: [2]Planning.TargetRefreshEntry = undefined;
     const refresh_plan = try client.planTargetRefresh(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.proof.nip03.Planning.TargetRefreshStorage.init(
+            .storage = Planning.TargetRefreshStorage.init(
                 refresh_target_matches[0..],
                 refresh_target_latest_entries[0..],
                 refresh_entries[0..],
@@ -277,17 +279,17 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
     try archive.ingestEventJson(attestation_json, arena.allocator());
 
-    const refresh_readiness_targets = [_]noztr_sdk.client.proof.nip03.Planning.Target{
+    const refresh_readiness_targets = [_]Planning.Target{
         .{ .target_event_id = target.id },
     };
-    var readiness_matches: [1]noztr_sdk.client.proof.nip03.Planning.Match = undefined;
-    var readiness_latest_entries: [1]noztr_sdk.client.proof.nip03.Planning.LatestTargetEntry = undefined;
-    const readiness_refresh_entries = [_]noztr_sdk.client.proof.nip03.Planning.RefreshEntry{};
-    var readiness_target_refresh_entries: [1]noztr_sdk.client.proof.nip03.Planning.TargetRefreshEntry = undefined;
+    var readiness_matches: [1]Planning.Match = undefined;
+    var readiness_latest_entries: [1]Planning.LatestTargetEntry = undefined;
+    const readiness_refresh_entries = [_]Planning.RefreshEntry{};
+    var readiness_target_refresh_entries: [1]Planning.TargetRefreshEntry = undefined;
     var readiness_target_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var readiness_attestation_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
-    var readiness_entries: [1]noztr_sdk.client.proof.nip03.Planning.TargetReadinessEntry = undefined;
-    var readiness_groups: [4]noztr_sdk.client.proof.nip03.Planning.TargetReadinessGroup = undefined;
+    var readiness_entries: [1]Planning.TargetReadinessEntry = undefined;
+    var readiness_groups: [4]Planning.TargetReadinessGroup = undefined;
     const readiness_plan = try client.inspectTargetReadiness(
         verification_store.asStore(),
         archive,
@@ -295,7 +297,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .targets = refresh_readiness_targets[0..],
             .now_unix_seconds = 200,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.proof.nip03.Planning.TargetReadinessStorage.init(
+            .storage = Planning.TargetReadinessStorage.init(
                 readiness_matches[0..],
                 readiness_latest_entries[0..],
                 readiness_refresh_entries[0..],

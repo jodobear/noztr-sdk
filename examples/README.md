@@ -88,8 +88,8 @@ They do not imply:
 - `remote_signer_recipe.zig`
   - goal: explicit `NIP-46` connect plus `get_public_key`, one `nip44_encrypt` request, and one
     shared relay-pool inspect/select step
-  - related SDK symbols: `Session`, `RelayRuntimeStorage`,
-    `noztr_sdk.runtime.RelayPoolStep`
+  - related SDK symbols: `noztr_sdk.workflows.signer.remote`, `Session`, `RequestBuffer`,
+    `RelayRuntimeStorage`, `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip46_remote_signing`
   - control points: caller starts connect, caller starts later signer requests, caller feeds
     responses back in explicitly, caller reuses one request context shape instead of repeating
@@ -702,19 +702,9 @@ They do not imply:
     orchestration helper above that runtime plus one caller-owned replay-refresh cadence helper,
     then drive durable resume export/restore, explicit reconnect, subscribe, and live receive
     posture
-  - related SDK symbols: `noztr_sdk.client.dm.legacy.sync_runtime`, `LegacyDmReplayJobClient`,
-    `LegacyDmSubscriptionJobClient`, `Client`,
-    `Storage`, `ResumeStorage`,
-    `ResumeState`, `PlanStorage`,
-    `Plan`, `Step`,
-    `PolicyStorage`, `PolicyPlan`,
-    `PolicyStep`, `OrchestrationStorage`,
-    `OrchestrationPlan`, `OrchestrationStep`,
-    `CadenceRequest`, `CadenceStorage`,
-    `CadenceWaitReason`, `CadencePlan`,
-    `CadenceStep`,
-    `AuthEventStorage`, `PreparedAuthEvent`,
-    `ReplayRequest`, `SubscriptionRequest`,
+  - related SDK symbols: `noztr_sdk.client.dm.legacy.sync_runtime`, `Client`, `Storage`,
+    `ResumeStorage`, `ResumeState`, `OrchestrationStorage`, `CadenceStorage`,
+    `AuthEventStorage`, `ReplayRequest`, `SubscriptionRequest`,
     `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
     `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
@@ -833,19 +823,10 @@ They do not imply:
     helper above that runtime plus one caller-owned DM cadence/backoff helper, then drive durable
     resume export/restore, explicit reconnect, resubscribe, and live receive posture without
     inventing a daemon
-  - related SDK symbols: `noztr_sdk.client.dm.mailbox.sync_runtime`, `Client`,
-    `Storage`, `ResumeStorage`,
-    `ResumeState`, `PlanStorage`,
-    `Plan`, `Step`,
-    `PolicyStorage`, `PolicyPlan`,
-    `PolicyStep`, `OrchestrationStorage`,
-    `OrchestrationPlan`, `OrchestrationStep`,
-    `CadenceRequest`, `CadenceStorage`,
-    `CadenceWaitReason`, `CadencePlan`,
-    `CadenceStep`,
-    `AuthEventStorage`, `PreparedAuthEvent`,
-    `ReplayRequest`, `ReplayIntake`,
-    `SubscriptionRequest`, `SubscriptionIntake`
+  - related SDK symbols: `noztr_sdk.client.dm.mailbox.sync_runtime`, `Client`, `Storage`,
+    `ResumeStorage`, `ResumeState`, `OrchestrationStorage`, `CadenceStorage`,
+    `AuthEventStorage`, `ReplayRequest`, `ReplayIntake`, `SubscriptionRequest`,
+    `SubscriptionIntake`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
     `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: caller still owns the decision to declare replay catch-up complete, replay and
@@ -886,11 +867,9 @@ They do not imply:
     selection, refresh readiness over the explicit archive seam, turn-policy, and refresh policy,
     plan refresh for stale remembered verifications, and recover the latest remembered
     verification for the same target event
-  - related SDK symbols: `OpenTimestampsVerifier`, `OpenTimestampsRemoteProofRequest`,
-    `OpenTimestampsProofStore`, `MemoryOpenTimestampsProofStore`,
-    `OpenTimestampsVerificationStore`, `MemoryOpenTimestampsVerificationStore`,
-    `noztr_sdk.store.EventArchive`, `noztr_sdk.store.MemoryClientStore`,
-    `noztr_sdk.workflows.proof.nip03.Planning`, `transport.HttpClient`
+  - related SDK symbols: `noztr_sdk.workflows.proof.nip03`, `OpenTimestampsVerifier`,
+    `Planning`, `MemoryOpenTimestampsProofStore`, `MemoryOpenTimestampsVerificationStore`,
+    `noztr_sdk.store.EventArchive`, `transport.HttpClient`
   - kernel fixture help: `noztr.nostr_keys`
   - control points: caller supplies the target event, attestation event, detached proof URL,
     caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
@@ -910,10 +889,8 @@ They do not imply:
     remembered-proof runtime, grouped target policy, refresh-cadence, refresh-batch selection,
     refresh readiness over the explicit archive seam, turn-policy, and refresh planning through
     the client surface
-  - related SDK symbols: `noztr_sdk.client`, `Nip03VerifyClient`, `Nip03VerifyClientStorage`,
-    `Nip03VerifyJob`, `Nip03VerifyCachedResult`, `Nip03VerifyJobResult`,
-    `Planning`, `noztr_sdk.store.EventArchive`,
-    `noztr_sdk.store.MemoryClientStore`
+  - related SDK symbols: `noztr_sdk.client.proof.nip03`, `Nip03VerifyClient`,
+    `Nip03VerifyClientStorage`, `Planning`, `noztr_sdk.store.EventArchive`
   - kernel fixture help: `noztr.nostr_keys`, `noztr.nip03_opentimestamps`
   - control points: the client only assembles remote-proof request posture above the existing
     OpenTimestamps workflow, HTTP and store ownership stay explicit, and remembered-proof runtime,
@@ -935,9 +912,8 @@ They do not imply:
     public HTTP seam with explicit cache and profile-store seams, then inspect remembered-identity
     latest freshness, refresh cadence, refresh batch, and one bounded stored watched-target
     long-lived planning route through the client surface
-  - related SDK symbols: `noztr_sdk.client`, `Nip39VerifyClient`, `Nip39VerifyClientStorage`,
-    `Nip39VerifyJob`, `Nip39VerifySummary`, `Nip39VerifyJobResult`,
-    `Planning`, `MemoryIdentityWatchedTargetStore`
+  - related SDK symbols: `noztr_sdk.client.identity.nip39`, `Nip39VerifyClient`,
+    `Nip39VerifyClientStorage`, `Planning`, `MemoryIdentityWatchedTargetStore`
   - kernel fixture help: `noztr.nip39_external_identities`
   - control points: the client assembles one profile verification job plus remembered-identity
     strategy helpers over the explicit profile store and one watched-target-store-backed long-lived
@@ -956,10 +932,9 @@ They do not imply:
     policy views plus refresh-cadence, refresh-batch, turn-policy, and turn-bucket views across
     that watched set, inspect one typed remembered runtime step explicitly, plan refresh for stale
     remembered profiles explicitly, and replay the same identity from remembered state
-  - related SDK symbols: `IdentityVerifier`, `IdentityProfileVerificationStorage`,
-    `IdentityProviderDetails`, `MemoryIdentityVerificationCache`, `MemoryIdentityProfileStore`,
-    `MemoryIdentityWatchedTargetStore`, `noztr_sdk.workflows.identity.verify.Planning`,
-    `transport.HttpClient`
+  - related SDK symbols: `noztr_sdk.workflows.identity.verify`, `IdentityVerifier`, `Planning`,
+    `MemoryIdentityVerificationCache`, `MemoryIdentityProfileStore`,
+    `MemoryIdentityWatchedTargetStore`, `transport.HttpClient`
   - kernel fixture help: `noztr.nip39_external_identities`
   - control points: caller provides the HTTP client, the signed identity event, the target pubkey,
     caller-owned per-claim verification storage, caller-owned cache records, caller-owned profile

@@ -127,6 +127,15 @@ zig build
 
 These are separate on purpose: the Zig version is compatibility information, not the SDK version.
 
+## Pre-1.0 Migration Notes
+
+If you are updating an older downstream, check these before assuming a route still uses the older
+longer names:
+
+- [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
+- [remote signer naming migration](./reference/remote-signer-naming-migration.md)
+- [proof and identity planning migration](./reference/proof-identity-planning-migration.md)
+
 ## Add As A Local Dependency
 
 `build.zig.zon`:
