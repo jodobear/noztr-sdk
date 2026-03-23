@@ -2,6 +2,7 @@ const std = @import("std");
 const local_operator = @import("local_operator_client.zig");
 const publish_client = @import("publish_client.zig");
 const relay_query_client = @import("relay_query_client.zig");
+const social_support = @import("social_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 const noztr = @import("noztr");
@@ -30,15 +31,9 @@ pub const SocialProfileContentClientError =
         StoredNotePageStorageTooSmall,
     };
 
-pub const SocialProfileContentClientConfig = struct {
-    publish: publish_client.PublishClientConfig = .{},
-    query: relay_query_client.RelayQueryClientConfig = .{},
-};
+pub const SocialProfileContentClientConfig = social_support.ClientConfig;
 
-pub const SocialProfileContentClientStorage = struct {
-    publish: publish_client.PublishClientStorage = .{},
-    query: relay_query_client.RelayQueryClientStorage = .{},
-};
+pub const SocialProfileContentClientStorage = social_support.ClientStorage;
 
 pub const SocialProfileDraft = struct {
     created_at: u64,
@@ -89,12 +84,7 @@ pub const SocialLongFormDraftStorage = struct {
     }
 };
 
-pub const SocialEventQuery = struct {
-    authors: []const store.EventPubkeyHex = &.{},
-    since: ?u64 = null,
-    until: ?u64 = null,
-    limit: usize = 0,
-};
+pub const SocialEventQuery = social_support.AuthorTimeQuery;
 
 pub const SocialProfileSubscriptionRequest = struct {
     subscription_id: []const u8,
@@ -112,11 +102,7 @@ pub const SocialLongFormSubscriptionRequest = struct {
     include_drafts: bool = false,
 };
 
-pub const SocialSubscriptionPlanStorage = struct {
-    filters: [1]noztr.nip01_filter.Filter = [_]noztr.nip01_filter.Filter{.{}} ** 1,
-    specs: [1]runtime.RelaySubscriptionSpec = undefined,
-    relay_pool: runtime.RelayPoolSubscriptionStorage = .{},
-};
+pub const SocialSubscriptionPlanStorage = social_support.SubscriptionPlanStorage;
 
 pub const SocialProfileInspection = struct {
     extras: noztr.nip24_extra_metadata.MetadataExtras,
@@ -209,27 +195,21 @@ pub const SocialProfileContentClient = struct {
         self: *SocialProfileContentClient,
         relay_url_text: []const u8,
     ) SocialProfileContentClientError!runtime.RelayDescriptor {
-        const publish_descriptor = try self.publish.addRelay(relay_url_text);
-        const query_descriptor = try self.query.addRelay(relay_url_text);
-        std.debug.assert(publish_descriptor.relay_index == query_descriptor.relay_index);
-        std.debug.assert(std.mem.eql(u8, publish_descriptor.relay_url, query_descriptor.relay_url));
-        return query_descriptor;
+        return social_support.addRelay(&self.publish, &self.query, relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *SocialProfileContentClient,
         relay_index: u8,
     ) SocialProfileContentClientError!void {
-        try self.publish.markRelayConnected(relay_index);
-        try self.query.markRelayConnected(relay_index);
+        try social_support.markRelayConnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *SocialProfileContentClient,
         relay_index: u8,
     ) SocialProfileContentClientError!void {
-        try self.publish.noteRelayDisconnected(relay_index);
-        try self.query.noteRelayDisconnected(relay_index);
+        try social_support.noteRelayDisconnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -237,22 +217,26 @@ pub const SocialProfileContentClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) SocialProfileContentClientError!void {
-        try self.publish.noteRelayAuthChallenge(relay_index, challenge);
-        try self.query.noteRelayAuthChallenge(relay_index, challenge);
+        try social_support.noteRelayAuthChallenge(
+            &self.publish,
+            &self.query,
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const SocialProfileContentClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.query.inspectRelayRuntime(storage);
+        return social_support.inspectRelayRuntime(&self.query, storage);
     }
 
     pub fn inspectPublish(
         self: *const SocialProfileContentClient,
         storage: *runtime.RelayPoolPublishStorage,
     ) runtime.RelayPoolPublishPlan {
-        return self.publish.inspectPublish(storage);
+        return social_support.inspectPublish(&self.publish, storage);
     }
 
     pub fn buildProfileDraft(
@@ -400,7 +384,7 @@ pub const SocialProfileContentClient = struct {
         step: *const runtime.RelayPoolPublishStep,
         prepared: *const publish_client.PreparedPublishEvent,
     ) SocialProfileContentClientError!publish_client.TargetedPublishEvent {
-        return self.publish.composeTargetedPublish(output, step, prepared);
+        return social_support.composeTargetedPublish(&self.publish, output, step, prepared);
     }
 
     pub fn inspectProfileSubscription(
@@ -454,7 +438,7 @@ pub const SocialProfileContentClient = struct {
         output: []u8,
         step: *const runtime.RelayPoolSubscriptionStep,
     ) SocialProfileContentClientError!relay_query_client.TargetedSubscriptionRequest {
-        return self.query.composeTargetedSubscriptionRequest(output, step);
+        return social_support.composeTargetedSubscriptionRequest(&self.query, output, step);
     }
 
     pub fn composeTargetedCloseRequest(
@@ -463,7 +447,12 @@ pub const SocialProfileContentClient = struct {
         target: *const relay_query_client.RelayQueryTarget,
         subscription_id: []const u8,
     ) SocialProfileContentClientError!relay_query_client.TargetedCloseRequest {
-        return self.query.composeTargetedCloseRequest(output, target, subscription_id);
+        return social_support.composeTargetedCloseRequest(
+            &self.query,
+            output,
+            target,
+            subscription_id,
+        );
     }
 
     pub fn inspectProfileEvent(
@@ -653,12 +642,13 @@ pub const SocialProfileContentClient = struct {
         kinds: []const u32,
         storage: *SocialSubscriptionPlanStorage,
     ) SocialProfileContentClientError!runtime.RelayPoolSubscriptionPlan {
-        storage.filters[0] = try filterFromSocialEventQuery(query, kinds);
-        storage.specs[0] = .{
-            .subscription_id = subscription_id,
-            .filters = storage.filters[0..1],
-        };
-        return self.query.inspectSubscriptions(storage.specs[0..1], &storage.relay_pool);
+        return social_support.inspectSingleSubscription(
+            &self.query,
+            subscription_id,
+            query,
+            kinds,
+            storage,
+        );
     }
 };
 
@@ -670,36 +660,6 @@ fn longFormBuiltTagCount(draft: *const SocialLongFormDraft) usize {
     if (draft.published_at != null) count += 1;
     count += draft.hashtags.len;
     return count;
-}
-
-fn filterFromSocialEventQuery(
-    query: *const SocialEventQuery,
-    kinds: []const u32,
-) SocialProfileContentClientError!noztr.nip01_filter.Filter {
-    var filter = noztr.nip01_filter.Filter{};
-
-    if (query.authors.len > filter.authors.len) return error.TooManyAuthors;
-    for (query.authors, 0..) |author_hex, index| {
-        _ = std.fmt.hexToBytes(filter.authors[index][0..], author_hex[0..]) catch unreachable;
-        filter.authors_prefix_nibbles[index] = @intCast(author_hex.len);
-    }
-    filter.authors_count = @intCast(query.authors.len);
-
-    if (kinds.len > filter.kinds.len) return error.TooManyKinds;
-    for (kinds, 0..) |kind, index| {
-        filter.kinds[index] = kind;
-    }
-    filter.kinds_count = @intCast(kinds.len);
-
-    filter.since = query.since;
-    filter.until = query.until;
-    if (query.limit == 0) {
-        filter.limit = null;
-    } else {
-        if (query.limit > std.math.maxInt(u16)) return error.QueryLimitTooLarge;
-        filter.limit = @intCast(query.limit);
-    }
-    return filter;
 }
 
 fn parseVerifiedStoredSocialContentEventJson(

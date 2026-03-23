@@ -2,6 +2,7 @@ const std = @import("std");
 const local_operator = @import("local_operator_client.zig");
 const publish_client = @import("publish_client.zig");
 const relay_query_client = @import("relay_query_client.zig");
+const social_support = @import("social_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 const noztr = @import("noztr");
@@ -23,15 +24,9 @@ pub const SocialGraphWotClientError =
         ContactDraftStorageTooSmall,
     };
 
-pub const SocialGraphWotClientConfig = struct {
-    publish: publish_client.PublishClientConfig = .{},
-    query: relay_query_client.RelayQueryClientConfig = .{},
-};
+pub const SocialGraphWotClientConfig = social_support.ClientConfig;
 
-pub const SocialGraphWotClientStorage = struct {
-    publish: publish_client.PublishClientStorage = .{},
-    query: relay_query_client.RelayQueryClientStorage = .{},
-};
+pub const SocialGraphWotClientStorage = social_support.ClientStorage;
 
 pub const SocialContactDraft = struct {
     created_at: u64,
@@ -61,23 +56,14 @@ pub const SocialContactDraftStorage = struct {
     }
 };
 
-pub const SocialContactQuery = struct {
-    authors: []const store.EventPubkeyHex = &.{},
-    since: ?u64 = null,
-    until: ?u64 = null,
-    limit: usize = 0,
-};
+pub const SocialContactQuery = social_support.AuthorTimeQuery;
 
 pub const SocialContactSubscriptionRequest = struct {
     subscription_id: []const u8,
     query: SocialContactQuery = .{},
 };
 
-pub const SocialSubscriptionPlanStorage = struct {
-    filters: [1]noztr.nip01_filter.Filter = [_]noztr.nip01_filter.Filter{.{}} ** 1,
-    specs: [1]runtime.RelaySubscriptionSpec = undefined,
-    relay_pool: runtime.RelayPoolSubscriptionStorage = .{},
-};
+pub const SocialSubscriptionPlanStorage = social_support.SubscriptionPlanStorage;
 
 pub const SocialContactInspection = struct {
     contacts: []const noztr.nip02_contacts.ContactEntry,
@@ -157,27 +143,21 @@ pub const SocialGraphWotClient = struct {
         self: *SocialGraphWotClient,
         relay_url_text: []const u8,
     ) SocialGraphWotClientError!runtime.RelayDescriptor {
-        const publish_descriptor = try self.publish.addRelay(relay_url_text);
-        const query_descriptor = try self.query.addRelay(relay_url_text);
-        std.debug.assert(publish_descriptor.relay_index == query_descriptor.relay_index);
-        std.debug.assert(std.mem.eql(u8, publish_descriptor.relay_url, query_descriptor.relay_url));
-        return query_descriptor;
+        return social_support.addRelay(&self.publish, &self.query, relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *SocialGraphWotClient,
         relay_index: u8,
     ) SocialGraphWotClientError!void {
-        try self.publish.markRelayConnected(relay_index);
-        try self.query.markRelayConnected(relay_index);
+        try social_support.markRelayConnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *SocialGraphWotClient,
         relay_index: u8,
     ) SocialGraphWotClientError!void {
-        try self.publish.noteRelayDisconnected(relay_index);
-        try self.query.noteRelayDisconnected(relay_index);
+        try social_support.noteRelayDisconnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -185,22 +165,26 @@ pub const SocialGraphWotClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) SocialGraphWotClientError!void {
-        try self.publish.noteRelayAuthChallenge(relay_index, challenge);
-        try self.query.noteRelayAuthChallenge(relay_index, challenge);
+        try social_support.noteRelayAuthChallenge(
+            &self.publish,
+            &self.query,
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const SocialGraphWotClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.query.inspectRelayRuntime(storage);
+        return social_support.inspectRelayRuntime(&self.query, storage);
     }
 
     pub fn inspectPublish(
         self: *const SocialGraphWotClient,
         storage: *runtime.RelayPoolPublishStorage,
     ) runtime.RelayPoolPublishPlan {
-        return self.publish.inspectPublish(storage);
+        return social_support.inspectPublish(&self.publish, storage);
     }
 
     pub fn buildContactListDraft(
@@ -261,7 +245,7 @@ pub const SocialGraphWotClient = struct {
         step: *const runtime.RelayPoolPublishStep,
         prepared: *const publish_client.PreparedPublishEvent,
     ) SocialGraphWotClientError!publish_client.TargetedPublishEvent {
-        return self.publish.composeTargetedPublish(output, step, prepared);
+        return social_support.composeTargetedPublish(&self.publish, output, step, prepared);
     }
 
     pub fn inspectContactSubscription(
@@ -270,12 +254,13 @@ pub const SocialGraphWotClient = struct {
         storage: *SocialSubscriptionPlanStorage,
     ) SocialGraphWotClientError!runtime.RelayPoolSubscriptionPlan {
         const kinds = [_]u32{contact_list_event_kind};
-        storage.filters[0] = try filterFromSocialContactQuery(&request.query, kinds[0..]);
-        storage.specs[0] = .{
-            .subscription_id = request.subscription_id,
-            .filters = storage.filters[0..1],
-        };
-        return self.query.inspectSubscriptions(storage.specs[0..1], &storage.relay_pool);
+        return social_support.inspectSingleSubscription(
+            &self.query,
+            request.subscription_id,
+            &request.query,
+            kinds[0..],
+            storage,
+        );
     }
 
     pub fn composeTargetedSubscriptionRequest(
@@ -283,7 +268,7 @@ pub const SocialGraphWotClient = struct {
         output: []u8,
         step: *const runtime.RelayPoolSubscriptionStep,
     ) SocialGraphWotClientError!relay_query_client.TargetedSubscriptionRequest {
-        return self.query.composeTargetedSubscriptionRequest(output, step);
+        return social_support.composeTargetedSubscriptionRequest(&self.query, output, step);
     }
 
     pub fn composeTargetedCloseRequest(
@@ -292,7 +277,12 @@ pub const SocialGraphWotClient = struct {
         target: *const relay_query_client.RelayQueryTarget,
         subscription_id: []const u8,
     ) SocialGraphWotClientError!relay_query_client.TargetedCloseRequest {
-        return self.query.composeTargetedCloseRequest(output, target, subscription_id);
+        return social_support.composeTargetedCloseRequest(
+            &self.query,
+            output,
+            target,
+            subscription_id,
+        );
     }
 
     pub fn inspectContactEvent(
@@ -442,36 +432,6 @@ pub const SocialGraphWotClient = struct {
         };
     }
 };
-
-fn filterFromSocialContactQuery(
-    query: *const SocialContactQuery,
-    kinds: []const u32,
-) SocialGraphWotClientError!noztr.nip01_filter.Filter {
-    var filter = noztr.nip01_filter.Filter{};
-
-    if (query.authors.len > filter.authors.len) return error.TooManyAuthors;
-    for (query.authors, 0..) |author_hex, index| {
-        _ = std.fmt.hexToBytes(filter.authors[index][0..], author_hex[0..]) catch unreachable;
-        filter.authors_prefix_nibbles[index] = @intCast(author_hex.len);
-    }
-    filter.authors_count = @intCast(query.authors.len);
-
-    if (kinds.len > filter.kinds.len) return error.TooManyKinds;
-    for (kinds, 0..) |kind, index| {
-        filter.kinds[index] = kind;
-    }
-    filter.kinds_count = @intCast(kinds.len);
-
-    filter.since = query.since;
-    filter.until = query.until;
-    if (query.limit == 0) {
-        filter.limit = null;
-    } else {
-        if (query.limit > std.math.maxInt(u16)) return error.QueryLimitTooLarge;
-        filter.limit = @intCast(query.limit);
-    }
-    return filter;
-}
 
 fn parseVerifiedContactEventJson(
     event_json: []const u8,

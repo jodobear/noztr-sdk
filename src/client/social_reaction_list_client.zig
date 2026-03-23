@@ -2,6 +2,7 @@ const std = @import("std");
 const local_operator = @import("local_operator_client.zig");
 const publish_client = @import("publish_client.zig");
 const relay_query_client = @import("relay_query_client.zig");
+const social_support = @import("social_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 const noztr = @import("noztr");
@@ -29,15 +30,9 @@ pub const SocialReactionListClientError =
         InvalidReactionAuthorHint,
     };
 
-pub const SocialReactionListClientConfig = struct {
-    publish: publish_client.PublishClientConfig = .{},
-    query: relay_query_client.RelayQueryClientConfig = .{},
-};
+pub const SocialReactionListClientConfig = social_support.ClientConfig;
 
-pub const SocialReactionListClientStorage = struct {
-    publish: publish_client.PublishClientStorage = .{},
-    query: relay_query_client.RelayQueryClientStorage = .{},
-};
+pub const SocialReactionListClientStorage = social_support.ClientStorage;
 
 pub const SocialReactionEmojiReference = struct {
     image_url: []const u8,
@@ -87,12 +82,7 @@ pub const SocialListDraftStorage = struct {
     }
 };
 
-pub const SocialEventQuery = struct {
-    authors: []const store.EventPubkeyHex = &.{},
-    since: ?u64 = null,
-    until: ?u64 = null,
-    limit: usize = 0,
-};
+pub const SocialEventQuery = social_support.AuthorTimeQuery;
 
 pub const SocialReactionSubscriptionRequest = struct {
     subscription_id: []const u8,
@@ -105,11 +95,7 @@ pub const SocialListSubscriptionRequest = struct {
     query: SocialEventQuery = .{},
 };
 
-pub const SocialSubscriptionPlanStorage = struct {
-    filters: [1]noztr.nip01_filter.Filter = [_]noztr.nip01_filter.Filter{.{}} ** 1,
-    specs: [1]runtime.RelaySubscriptionSpec = undefined,
-    relay_pool: runtime.RelayPoolSubscriptionStorage = .{},
-};
+pub const SocialSubscriptionPlanStorage = social_support.SubscriptionPlanStorage;
 
 pub const StoredSocialListSelectionRequest = struct {
     author: store.EventPubkeyHex,
@@ -164,27 +150,21 @@ pub const SocialReactionListClient = struct {
         self: *SocialReactionListClient,
         relay_url_text: []const u8,
     ) SocialReactionListClientError!runtime.RelayDescriptor {
-        const publish_descriptor = try self.publish.addRelay(relay_url_text);
-        const query_descriptor = try self.query.addRelay(relay_url_text);
-        std.debug.assert(publish_descriptor.relay_index == query_descriptor.relay_index);
-        std.debug.assert(std.mem.eql(u8, publish_descriptor.relay_url, query_descriptor.relay_url));
-        return query_descriptor;
+        return social_support.addRelay(&self.publish, &self.query, relay_url_text);
     }
 
     pub fn markRelayConnected(
         self: *SocialReactionListClient,
         relay_index: u8,
     ) SocialReactionListClientError!void {
-        try self.publish.markRelayConnected(relay_index);
-        try self.query.markRelayConnected(relay_index);
+        try social_support.markRelayConnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayDisconnected(
         self: *SocialReactionListClient,
         relay_index: u8,
     ) SocialReactionListClientError!void {
-        try self.publish.noteRelayDisconnected(relay_index);
-        try self.query.noteRelayDisconnected(relay_index);
+        try social_support.noteRelayDisconnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
@@ -192,22 +172,26 @@ pub const SocialReactionListClient = struct {
         relay_index: u8,
         challenge: []const u8,
     ) SocialReactionListClientError!void {
-        try self.publish.noteRelayAuthChallenge(relay_index, challenge);
-        try self.query.noteRelayAuthChallenge(relay_index, challenge);
+        try social_support.noteRelayAuthChallenge(
+            &self.publish,
+            &self.query,
+            relay_index,
+            challenge,
+        );
     }
 
     pub fn inspectRelayRuntime(
         self: *const SocialReactionListClient,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
-        return self.query.inspectRelayRuntime(storage);
+        return social_support.inspectRelayRuntime(&self.query, storage);
     }
 
     pub fn inspectPublish(
         self: *const SocialReactionListClient,
         storage: *runtime.RelayPoolPublishStorage,
     ) runtime.RelayPoolPublishPlan {
-        return self.publish.inspectPublish(storage);
+        return social_support.inspectPublish(&self.publish, storage);
     }
 
     pub fn buildReactionDraft(
@@ -405,7 +389,7 @@ pub const SocialReactionListClient = struct {
         output: []u8,
         step: *const runtime.RelayPoolSubscriptionStep,
     ) SocialReactionListClientError!relay_query_client.TargetedSubscriptionRequest {
-        return self.query.composeTargetedSubscriptionRequest(output, step);
+        return social_support.composeTargetedSubscriptionRequest(&self.query, output, step);
     }
 
     pub fn composeTargetedCloseRequest(
@@ -414,7 +398,12 @@ pub const SocialReactionListClient = struct {
         target: *const relay_query_client.RelayQueryTarget,
         subscription_id: []const u8,
     ) SocialReactionListClientError!relay_query_client.TargetedCloseRequest {
-        return self.query.composeTargetedCloseRequest(output, target, subscription_id);
+        return social_support.composeTargetedCloseRequest(
+            &self.query,
+            output,
+            target,
+            subscription_id,
+        );
     }
 
     pub fn inspectReactionEvent(
@@ -501,44 +490,15 @@ pub const SocialReactionListClient = struct {
         kinds: []const u32,
         storage: *SocialSubscriptionPlanStorage,
     ) SocialReactionListClientError!runtime.RelayPoolSubscriptionPlan {
-        storage.filters[0] = try filterFromSocialEventQuery(query, kinds);
-        storage.specs[0] = .{
-            .subscription_id = subscription_id,
-            .filters = storage.filters[0..1],
-        };
-        return self.query.inspectSubscriptions(storage.specs[0..1], &storage.relay_pool);
+        return social_support.inspectSingleSubscription(
+            &self.query,
+            subscription_id,
+            query,
+            kinds,
+            storage,
+        );
     }
 };
-
-fn filterFromSocialEventQuery(
-    query: *const SocialEventQuery,
-    kinds: []const u32,
-) SocialReactionListClientError!noztr.nip01_filter.Filter {
-    var filter = noztr.nip01_filter.Filter{};
-
-    if (query.authors.len > filter.authors.len) return error.TooManyAuthors;
-    for (query.authors, 0..) |author_hex, index| {
-        _ = std.fmt.hexToBytes(filter.authors[index][0..], author_hex[0..]) catch unreachable;
-        filter.authors_prefix_nibbles[index] = @intCast(author_hex.len);
-    }
-    filter.authors_count = @intCast(query.authors.len);
-
-    if (kinds.len > filter.kinds.len) return error.TooManyKinds;
-    for (kinds, 0..) |kind, index| {
-        filter.kinds[index] = kind;
-    }
-    filter.kinds_count = @intCast(kinds.len);
-
-    filter.since = query.since;
-    filter.until = query.until;
-    if (query.limit == 0) {
-        filter.limit = null;
-    } else {
-        if (query.limit > std.math.maxInt(u16)) return error.QueryLimitTooLarge;
-        filter.limit = @intCast(query.limit);
-    }
-    return filter;
-}
 
 fn listKindRequiresIdentifier(kind: noztr.nip51_lists.ListKind) bool {
     return switch (kind) {
