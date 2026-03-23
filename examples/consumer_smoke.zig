@@ -12,6 +12,7 @@ test "consumer smoke: import the sdk workflow namespace" {
     try std.testing.expect(@TypeOf(noztr_sdk.client.signer.browser.Nip07BrowserProvider) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.relay.session.RelaySessionClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.identity.nip39.Nip39VerifyClient) == type);
+    try std.testing.expect(@TypeOf(noztr_sdk.client.social.graph_wot.SocialGraphWotClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.social.profile_content.SocialProfileContentClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.social.reaction_list.SocialReactionListClient) == type);
 }

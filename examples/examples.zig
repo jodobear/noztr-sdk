@@ -28,6 +28,7 @@ comptime {
     _ = @import("relay_query_client_recipe.zig");
     _ = @import("relay_session_client_recipe.zig");
     _ = @import("relay_workspace_client_recipe.zig");
+    _ = @import("social_graph_wot_client_recipe.zig");
     _ = @import("social_profile_content_client_recipe.zig");
     _ = @import("social_reaction_list_client_recipe.zig");
     _ = @import("replay_job_client_recipe.zig");
