@@ -7,37 +7,37 @@ const workflows = @import("../workflows/mod.zig");
 
 const mailbox_wrap_event_kind: u32 = 1059;
 
-pub const MailboxSubscriptionTurnClientError =
+pub const Error =
     subscription_turn.SubscriptionTurnClientError ||
     workflows.dm.mailbox.MailboxError;
 
-pub const MailboxSubscriptionTurnClientConfig = struct {
+pub const Config = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
     subscription_turn: subscription_turn.SubscriptionTurnClientConfig = .{},
 };
 
-pub const MailboxSubscriptionTurnClientStorage = struct {
+pub const Storage = struct {
     mailbox: workflows.dm.mailbox.MailboxSession = undefined,
     subscription_turn: subscription_turn.SubscriptionTurnClientStorage = .{},
 };
 
-pub const MailboxSubscriptionTurnRequest = subscription_turn.SubscriptionTurnRequest;
-pub const MailboxSubscriptionTurnResult = subscription_turn.SubscriptionTurnResult;
+pub const Request = subscription_turn.SubscriptionTurnRequest;
+pub const Result = subscription_turn.SubscriptionTurnResult;
 
-pub const MailboxSubscriptionTurnIntake = struct {
+pub const Intake = struct {
     subscription: subscription_turn.SubscriptionTurnIntake,
     envelope: ?workflows.dm.mailbox.MailboxEnvelopeOutcome,
 };
 
-pub const MailboxSubscriptionTurnClient = struct {
-    config: MailboxSubscriptionTurnClientConfig,
-    storage: *MailboxSubscriptionTurnClientStorage,
+pub const Client = struct {
+    config: Config,
+    storage: *Storage,
     subscription_turn: subscription_turn.SubscriptionTurnClient,
 
     pub fn init(
-        config: MailboxSubscriptionTurnClientConfig,
-        storage: *MailboxSubscriptionTurnClientStorage,
-    ) MailboxSubscriptionTurnClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{
             .mailbox = workflows.dm.mailbox.MailboxSession.init(&config.recipient_private_key),
         };
@@ -52,9 +52,9 @@ pub const MailboxSubscriptionTurnClient = struct {
     }
 
     pub fn attach(
-        config: MailboxSubscriptionTurnClientConfig,
-        storage: *MailboxSubscriptionTurnClientStorage,
-    ) MailboxSubscriptionTurnClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .storage = storage,
@@ -65,23 +65,23 @@ pub const MailboxSubscriptionTurnClient = struct {
         };
     }
 
-    pub fn relayCount(self: *const MailboxSubscriptionTurnClient) u8 {
+    pub fn relayCount(self: *const Client) u8 {
         return self.storage.mailbox.relayCount();
     }
 
-    pub fn currentRelayUrl(self: *const MailboxSubscriptionTurnClient) ?[]const u8 {
+    pub fn currentRelayUrl(self: *const Client) ?[]const u8 {
         return self.storage.mailbox.currentRelayUrl();
     }
 
-    pub fn currentRelayAuthChallenge(self: *const MailboxSubscriptionTurnClient) ?[]const u8 {
+    pub fn currentRelayAuthChallenge(self: *const Client) ?[]const u8 {
         return self.storage.mailbox.currentRelayAuthChallenge();
     }
 
     pub fn hydrateRelayListEventJson(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxSubscriptionTurnClientError!u8 {
+    ) Error!u8 {
         const relay_count = try self.storage.mailbox.hydrateRelayListEventJson(event_json, scratch);
         self.subscription_turn = subscription_turn.SubscriptionTurnClient.init(
             self.config.subscription_turn,
@@ -100,47 +100,47 @@ pub const MailboxSubscriptionTurnClient = struct {
     }
 
     pub fn selectRelay(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxSubscriptionTurnClientError![]const u8 {
+    ) Error![]const u8 {
         return self.storage.mailbox.selectRelay(relay_index);
     }
 
     pub fn markRelayConnected(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxSubscriptionTurnClientError!void {
+    ) Error!void {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.markCurrentRelayConnected();
         try self.subscription_turn.markRelayConnected(relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxSubscriptionTurnClientError!void {
+    ) Error!void {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.noteCurrentRelayDisconnected();
         try self.subscription_turn.noteRelayDisconnected(relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) MailboxSubscriptionTurnClientError!void {
+    ) Error!void {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.noteCurrentRelayAuthChallenge(challenge);
         try self.subscription_turn.noteRelayAuthChallenge(relay_index, challenge);
     }
 
     pub fn acceptRelayAuthEvent(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
         auth_event: *const noztr.nip01_event.Event,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) MailboxSubscriptionTurnClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.acceptCurrentRelayAuthEvent(
             auth_event,
@@ -159,32 +159,32 @@ pub const MailboxSubscriptionTurnClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const MailboxSubscriptionTurnClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return self.subscription_turn.inspectRelayRuntime(storage);
     }
 
     pub fn inspectAuth(
-        self: *const MailboxSubscriptionTurnClient,
+        self: *const Client,
         storage: *runtime.RelayPoolAuthStorage,
     ) runtime.RelayPoolAuthPlan {
         return self.subscription_turn.relay_exchange.relay_pool.inspectAuth(storage);
     }
 
     pub fn inspectSubscriptions(
-        self: *const MailboxSubscriptionTurnClient,
+        self: *const Client,
         specs: []const runtime.RelaySubscriptionSpec,
         storage: *runtime.RelayPoolSubscriptionStorage,
-    ) MailboxSubscriptionTurnClientError!runtime.RelayPoolSubscriptionPlan {
+    ) Error!runtime.RelayPoolSubscriptionPlan {
         return self.subscription_turn.inspectSubscriptions(specs, storage);
     }
 
     pub fn beginTurn(
-        self: *MailboxSubscriptionTurnClient,
+        self: *Client,
         output: []u8,
         specs: []const runtime.RelaySubscriptionSpec,
-    ) MailboxSubscriptionTurnClientError!MailboxSubscriptionTurnRequest {
+    ) Error!Request {
         const request = try self.subscription_turn.beginTurn(
             &self.storage.subscription_turn,
             output,
@@ -195,14 +195,14 @@ pub const MailboxSubscriptionTurnClient = struct {
     }
 
     pub fn acceptSubscriptionMessageJson(
-        self: *MailboxSubscriptionTurnClient,
-        request: *const MailboxSubscriptionTurnRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxSubscriptionTurnClientError!MailboxSubscriptionTurnIntake {
+    ) Error!Intake {
         const subscription = try self.subscription_turn.acceptSubscriptionMessageJson(
             &self.storage.subscription_turn,
             request,
@@ -230,10 +230,10 @@ pub const MailboxSubscriptionTurnClient = struct {
     }
 
     pub fn completeTurn(
-        self: *const MailboxSubscriptionTurnClient,
+        self: *const Client,
         output: []u8,
-        request: *const MailboxSubscriptionTurnRequest,
-    ) MailboxSubscriptionTurnClientError!MailboxSubscriptionTurnResult {
+        request: *const Request,
+    ) Error!Result {
         return self.subscription_turn.completeTurn(
             &self.storage.subscription_turn,
             output,
@@ -243,8 +243,8 @@ pub const MailboxSubscriptionTurnClient = struct {
 };
 
 test "mailbox subscription turn client exposes caller-owned config and storage" {
-    var storage = MailboxSubscriptionTurnClientStorage{};
-    var client = MailboxSubscriptionTurnClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
@@ -259,8 +259,8 @@ test "mailbox subscription turn client accepts live transcript events through ma
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var client_storage = MailboxSubscriptionTurnClientStorage{};
-    var client = MailboxSubscriptionTurnClient.init(.{
+    var client_storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 

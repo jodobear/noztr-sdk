@@ -13,8 +13,8 @@ test "recipe: mailbox subscription job client authenticates then subscribes expl
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.dm.mailbox.subscription_job.MailboxSubscriptionJobClientStorage{};
-    var client = noztr_sdk.client.dm.mailbox.subscription_job.MailboxSubscriptionJobClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.subscription_job.Storage{};
+    var client = noztr_sdk.client.dm.mailbox.subscription_job.Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -63,7 +63,7 @@ test "recipe: mailbox subscription job client authenticates then subscribes expl
         .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var auth_storage = noztr_sdk.client.dm.mailbox.subscription_job.MailboxSubscriptionJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.subscription_job.AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

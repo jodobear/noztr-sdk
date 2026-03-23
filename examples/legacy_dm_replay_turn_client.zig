@@ -26,8 +26,8 @@ test "recipe: legacy dm replay turn client classifies replay events through dm i
         .iv = [_]u8{0x55} ** noztr.limits.nip04_iv_bytes,
     });
 
-    var storage = noztr_sdk.client.dm.legacy.replay_turn.LegacyDmReplayTurnClientStorage{};
-    var client = noztr_sdk.client.dm.legacy.replay_turn.LegacyDmReplayTurnClient.init(.{
+    var storage = noztr_sdk.client.dm.legacy.replay_turn.Storage{};
+    var client = noztr_sdk.client.dm.legacy.replay_turn.Client.init(.{
         .owner_private_key = recipient_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");

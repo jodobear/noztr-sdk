@@ -17,8 +17,8 @@ test "recipe: mailbox replay turn client accepts wrapped replay events and retur
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.dm.mailbox.replay_turn.MailboxReplayTurnClientStorage{};
-    var client = noztr_sdk.client.dm.mailbox.replay_turn.MailboxReplayTurnClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.replay_turn.Storage{};
+    var client = noztr_sdk.client.dm.mailbox.replay_turn.Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 

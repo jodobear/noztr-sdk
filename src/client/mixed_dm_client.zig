@@ -429,7 +429,7 @@ pub const MixedDmClient = struct {
 
     pub fn observeMailboxReplayIntake(
         self: MixedDmClient,
-        intake: *const mailbox_replay_turn.MailboxReplayTurnIntake,
+        intake: *const mailbox_replay_turn.Intake,
     ) MixedDmClientError!?MixedDmObservedMessage {
         const envelope = intake.envelope orelse return null;
         return try self.observeMailboxEnvelope(&envelope);
@@ -437,7 +437,7 @@ pub const MixedDmClient = struct {
 
     pub fn observeMailboxSubscriptionIntake(
         self: MixedDmClient,
-        intake: *const mailbox_subscription_turn.MailboxSubscriptionTurnIntake,
+        intake: *const mailbox_subscription_turn.Intake,
     ) MixedDmClientError!?MixedDmObservedMessage {
         const envelope = intake.envelope orelse return null;
         return try self.observeMailboxEnvelope(&envelope);
@@ -445,7 +445,7 @@ pub const MixedDmClient = struct {
 
     pub fn observeLegacyReplayIntake(
         self: MixedDmClient,
-        intake: *const legacy_dm_replay_turn.LegacyDmReplayTurnIntake,
+        intake: *const legacy_dm_replay_turn.Intake,
     ) ?MixedDmObservedMessage {
         const message = intake.message orelse return null;
         return self.observeLegacyMessage(&message);
@@ -453,7 +453,7 @@ pub const MixedDmClient = struct {
 
     pub fn observeLegacySubscriptionIntake(
         self: MixedDmClient,
-        intake: *const legacy_dm_subscription_turn.LegacyDmSubscriptionTurnIntake,
+        intake: *const legacy_dm_subscription_turn.Intake,
     ) ?MixedDmObservedMessage {
         const message = intake.message orelse return null;
         return self.observeLegacyMessage(&message);
@@ -904,13 +904,13 @@ test "mixed dm client keeps replay and subscription intake normalization bounded
         arena.allocator(),
     );
 
-    const mailbox_replay_intake = mailbox_replay_turn.MailboxReplayTurnIntake{
+    const mailbox_replay_intake = mailbox_replay_turn.Intake{
         .replay = undefined,
         .envelope = mailbox_envelope,
     };
     try std.testing.expect((try client.observeMailboxReplayIntake(&mailbox_replay_intake)) != null);
 
-    const mailbox_subscription_intake = mailbox_subscription_turn.MailboxSubscriptionTurnIntake{
+    const mailbox_subscription_intake = mailbox_subscription_turn.Intake{
         .subscription = undefined,
         .envelope = mailbox_envelope,
     };
@@ -931,13 +931,13 @@ test "mixed dm client keeps replay and subscription intake normalization bounded
         plaintext_output[0..],
     );
 
-    const legacy_replay_intake = legacy_dm_replay_turn.LegacyDmReplayTurnIntake{
+    const legacy_replay_intake = legacy_dm_replay_turn.Intake{
         .replay = undefined,
         .message = legacy_message,
     };
     try std.testing.expect(client.observeLegacyReplayIntake(&legacy_replay_intake) != null);
 
-    const legacy_subscription_intake = legacy_dm_subscription_turn.LegacyDmSubscriptionTurnIntake{
+    const legacy_subscription_intake = legacy_dm_subscription_turn.Intake{
         .subscription = undefined,
         .message = legacy_message,
     };

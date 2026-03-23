@@ -22,8 +22,8 @@ test "recipe: legacy dm subscription turn client classifies live events through 
         .iv = [_]u8{0x44} ** noztr.limits.nip04_iv_bytes,
     });
 
-    var storage = noztr_sdk.client.dm.legacy.subscription_turn.LegacyDmSubscriptionTurnClientStorage{};
-    var client = noztr_sdk.client.dm.legacy.subscription_turn.LegacyDmSubscriptionTurnClient.init(.{
+    var storage = noztr_sdk.client.dm.legacy.subscription_turn.Storage{};
+    var client = noztr_sdk.client.dm.legacy.subscription_turn.Client.init(.{
         .owner_private_key = recipient_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");

@@ -8,8 +8,8 @@ const relay_auth_support = @import("relay_auth_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
-pub const LegacyDmReplayJobClientError =
-    legacy_dm_replay_turn.LegacyDmReplayTurnClientError ||
+pub const Error =
+    legacy_dm_replay_turn.Error ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -18,45 +18,45 @@ pub const LegacyDmReplayJobClientError =
         RelayNotReady,
     };
 
-pub const LegacyDmReplayJobClientConfig = struct {
+pub const Config = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
-    replay_turn: legacy_dm_replay_turn.LegacyDmReplayTurnClientConfig = undefined,
+    replay_turn: legacy_dm_replay_turn.Config = undefined,
 };
 
-pub const LegacyDmReplayJobClientStorage = struct {
-    replay_turn: legacy_dm_replay_turn.LegacyDmReplayTurnClientStorage = .{},
+pub const Storage = struct {
+    replay_turn: legacy_dm_replay_turn.Storage = .{},
 };
 
-pub const LegacyDmReplayJobAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
-pub const PreparedLegacyDmReplayJobAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const LegacyDmReplayJobRequest = legacy_dm_replay_turn.LegacyDmReplayTurnRequest;
-pub const LegacyDmReplayJobIntake = legacy_dm_replay_turn.LegacyDmReplayTurnIntake;
+pub const AuthStorage = relay_auth_client.RelayAuthEventStorage;
+pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
+pub const Request = legacy_dm_replay_turn.Request;
+pub const Intake = legacy_dm_replay_turn.Intake;
 
-pub const LegacyDmReplayJobReady = union(enum) {
-    authenticate: PreparedLegacyDmReplayJobAuthEvent,
-    replay: LegacyDmReplayJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    replay: Request,
 };
 
-pub const LegacyDmReplayJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: runtime.RelayDescriptor,
-    replayed: legacy_dm_replay_turn.LegacyDmReplayTurnResult,
+    replayed: legacy_dm_replay_turn.Result,
 };
 
-pub const LegacyDmReplayJobClient = struct {
-    config: LegacyDmReplayJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    replay_turn: legacy_dm_replay_turn.LegacyDmReplayTurnClient,
+    replay_turn: legacy_dm_replay_turn.Client,
 
     pub fn init(
-        config: LegacyDmReplayJobClientConfig,
-        storage: *LegacyDmReplayJobClientStorage,
-    ) LegacyDmReplayJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = configWithReplayTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .replay_turn = legacy_dm_replay_turn.LegacyDmReplayTurnClient.init(
+            .replay_turn = legacy_dm_replay_turn.Client.init(
                 configWithReplayTurn(config).replay_turn,
                 &storage.replay_turn,
             ),
@@ -64,13 +64,13 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     pub fn attach(
-        config: LegacyDmReplayJobClientConfig,
-        storage: *LegacyDmReplayJobClientStorage,
-    ) LegacyDmReplayJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = configWithReplayTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .replay_turn = legacy_dm_replay_turn.LegacyDmReplayTurnClient.attach(
+            .replay_turn = legacy_dm_replay_turn.Client.attach(
                 configWithReplayTurn(config).replay_turn,
                 &storage.replay_turn,
             ),
@@ -78,31 +78,31 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     pub fn addRelay(
-        self: *LegacyDmReplayJobClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) LegacyDmReplayJobClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         return relay_lifecycle_support.addRelay(self, "replay_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
-        self: *LegacyDmReplayJobClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmReplayJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.markRelayConnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *LegacyDmReplayJobClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmReplayJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayDisconnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *LegacyDmReplayJobClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) LegacyDmReplayJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayAuthChallenge(
             self,
             "replay_turn",
@@ -112,15 +112,15 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const LegacyDmReplayJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return relay_lifecycle_support.inspectRelayRuntime(self, "replay_turn", storage);
     }
 
     pub fn prepareJob(
-        self: *LegacyDmReplayJobClient,
-        auth_storage: *LegacyDmReplayJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         request_output: []u8,
@@ -128,7 +128,7 @@ pub const LegacyDmReplayJobClient = struct {
         subscription_id: []const u8,
         specs: []const runtime.RelayReplaySpec,
         created_at: u64,
-    ) LegacyDmReplayJobClientError!LegacyDmReplayJobReady {
+    ) Error!Ready {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const auth_plan = self.replay_turn.inspectAuth(&auth_storage_buf);
         if (auth_plan.nextStep()) |step| {
@@ -161,11 +161,11 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *LegacyDmReplayJobClient,
-        prepared: *const PreparedLegacyDmReplayJobAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) LegacyDmReplayJobClientError!LegacyDmReplayJobResult {
+    ) Error!Result {
         const descriptor = try self.replay_turn.acceptRelayAuthEvent(
             prepared.relay.relay_index,
             &prepared.event,
@@ -176,12 +176,12 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     pub fn acceptReplayMessageJson(
-        self: *LegacyDmReplayJobClient,
-        request: *const LegacyDmReplayJobRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         plaintext_output: []u8,
         scratch: std.mem.Allocator,
-    ) LegacyDmReplayJobClientError!LegacyDmReplayJobIntake {
+    ) Error!Intake {
         return self.replay_turn.acceptReplayMessageJson(
             request,
             relay_message_json,
@@ -191,29 +191,29 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     pub fn completeReplayJob(
-        self: *LegacyDmReplayJobClient,
+        self: *Client,
         output: []u8,
-        request: *const LegacyDmReplayJobRequest,
-    ) LegacyDmReplayJobClientError!LegacyDmReplayJobResult {
+        request: *const Request,
+    ) Error!Result {
         return .{ .replayed = try self.replay_turn.completeTurn(output, request) };
     }
 
     pub fn saveJobResult(
-        self: *LegacyDmReplayJobClient,
+        self: *Client,
         archive: store.RelayCheckpointArchive,
-        result: *const legacy_dm_replay_turn.LegacyDmReplayTurnResult,
-    ) LegacyDmReplayJobClientError!void {
+        result: *const legacy_dm_replay_turn.Result,
+    ) Error!void {
         return self.replay_turn.saveTurnResult(archive, result);
     }
 
     fn prepareAuthEvent(
-        self: *LegacyDmReplayJobClient,
-        auth_storage: *LegacyDmReplayJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
-    ) LegacyDmReplayJobClientError!PreparedLegacyDmReplayJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         const target = try self.selectAuthTarget(step);
         const payload = try relay_auth_support.buildSignedAuthPayload(
             &self.local_operator,
@@ -235,9 +235,9 @@ pub const LegacyDmReplayJobClient = struct {
     }
 
     fn selectAuthTarget(
-        self: *const LegacyDmReplayJobClient,
+        self: *const Client,
         step: *const runtime.RelayPoolAuthStep,
-    ) LegacyDmReplayJobClientError!relay_auth_client.RelayAuthTarget {
+    ) Error!relay_auth_client.RelayAuthTarget {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const plan = self.replay_turn.inspectAuth(&auth_storage_buf);
         return relay_auth_support.selectAuthTarget(
@@ -248,7 +248,7 @@ pub const LegacyDmReplayJobClient = struct {
     }
 };
 
-fn configWithReplayTurn(config: LegacyDmReplayJobClientConfig) LegacyDmReplayJobClientConfig {
+fn configWithReplayTurn(config: Config) Config {
     var updated = config;
     updated.replay_turn = .{
         .owner_private_key = config.owner_private_key,

@@ -6,7 +6,7 @@ const workflows = @import("../workflows/mod.zig");
 const runtime = @import("../runtime/mod.zig");
 const noztr = @import("noztr");
 
-pub const MailboxJobClientError =
+pub const Error =
     workflows.dm.mailbox.MailboxError ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
@@ -15,19 +15,19 @@ pub const MailboxJobClientError =
         RelayNotReady,
     };
 
-pub const MailboxJobClientConfig = struct {
+pub const Config = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
 
-pub const MailboxJobClientStorage = struct {
+pub const Storage = struct {
     session: workflows.dm.mailbox.MailboxSession = undefined,
     sync: workflows.dm.mailbox.MailboxSyncTurnStorage = .{},
 };
 
-pub const MailboxJobAuthEventStorage = relay_auth.RelayAuthEventStorage;
+pub const AuthStorage = relay_auth.RelayAuthEventStorage;
 
-pub const PreparedMailboxJobAuthEvent = struct {
+pub const PreparedAuthEvent = struct {
     relay_index: u8,
     relay_url: []const u8,
     challenge: []const u8,
@@ -36,27 +36,27 @@ pub const PreparedMailboxJobAuthEvent = struct {
     auth_message_json: []const u8,
 };
 
-pub const MailboxJobReady = union(enum) {
+pub const Ready = union(enum) {
     connect: workflows.dm.mailbox.MailboxWorkflowEntry,
-    authenticate: PreparedMailboxJobAuthEvent,
+    authenticate: PreparedAuthEvent,
     publish: workflows.dm.mailbox.MailboxDeliveryStep,
     receive: workflows.dm.mailbox.MailboxReceiveTurnRequest,
 };
 
-pub const MailboxJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: workflows.dm.mailbox.MailboxWorkflowEntry,
     received: workflows.dm.mailbox.MailboxReceiveTurnResult,
 };
 
-pub const MailboxJobClient = struct {
-    config: MailboxJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    storage: *MailboxJobClientStorage,
+    storage: *Storage,
 
     pub fn init(
-        config: MailboxJobClientConfig,
-        storage: *MailboxJobClientStorage,
-    ) MailboxJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{
             .session = workflows.dm.mailbox.MailboxSession.init(&config.recipient_private_key),
         };
@@ -68,9 +68,9 @@ pub const MailboxJobClient = struct {
     }
 
     pub fn attach(
-        config: MailboxJobClientConfig,
-        storage: *MailboxJobClientStorage,
-    ) MailboxJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
@@ -78,87 +78,87 @@ pub const MailboxJobClient = struct {
         };
     }
 
-    pub fn relayCount(self: *const MailboxJobClient) u8 {
+    pub fn relayCount(self: *const Client) u8 {
         return self.storage.session.relayCount();
     }
 
-    pub fn currentRelayUrl(self: *const MailboxJobClient) ?[]const u8 {
+    pub fn currentRelayUrl(self: *const Client) ?[]const u8 {
         return self.storage.session.currentRelayUrl();
     }
 
-    pub fn currentRelayCanReceive(self: *const MailboxJobClient) bool {
+    pub fn currentRelayCanReceive(self: *const Client) bool {
         return self.storage.session.currentRelayCanReceive();
     }
 
     pub fn hydrateRelayListEventJson(
-        self: *MailboxJobClient,
+        self: *Client,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxJobClientError!u8 {
+    ) Error!u8 {
         return self.storage.session.hydrateRelayListEventJson(event_json, scratch);
     }
 
-    pub fn markCurrentRelayConnected(self: *MailboxJobClient) MailboxJobClientError!void {
+    pub fn markCurrentRelayConnected(self: *Client) Error!void {
         return self.storage.session.markCurrentRelayConnected();
     }
 
-    pub fn noteCurrentRelayDisconnected(self: *MailboxJobClient) MailboxJobClientError!void {
+    pub fn noteCurrentRelayDisconnected(self: *Client) Error!void {
         return self.storage.session.noteCurrentRelayDisconnected();
     }
 
     pub fn noteCurrentRelayAuthChallenge(
-        self: *MailboxJobClient,
+        self: *Client,
         challenge: []const u8,
-    ) MailboxJobClientError!void {
+    ) Error!void {
         return self.storage.session.noteCurrentRelayAuthChallenge(challenge);
     }
 
     pub fn selectRelay(
-        self: *MailboxJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxJobClientError![]const u8 {
+    ) Error![]const u8 {
         return self.storage.session.selectRelay(relay_index);
     }
 
     pub fn inspectRelayPoolRuntime(
-        self: *const MailboxJobClient,
+        self: *const Client,
         storage: *workflows.dm.mailbox.MailboxRelayPoolRuntimeStorage,
     ) runtime.RelayPoolPlan {
         return self.storage.session.inspectRelayPoolRuntime(storage);
     }
 
     pub fn inspectRuntime(
-        self: *const MailboxJobClient,
+        self: *const Client,
         storage: *workflows.dm.mailbox.MailboxRuntimeStorage,
-    ) MailboxJobClientError!workflows.dm.mailbox.MailboxRuntimePlan {
+    ) Error!workflows.dm.mailbox.MailboxRuntimePlan {
         return self.storage.session.inspectRuntime(storage);
     }
 
     pub fn inspectWorkflow(
-        self: *const MailboxJobClient,
+        self: *const Client,
         request: workflows.dm.mailbox.MailboxWorkflowRequest,
-    ) MailboxJobClientError!workflows.dm.mailbox.MailboxWorkflowPlan {
+    ) Error!workflows.dm.mailbox.MailboxWorkflowPlan {
         return self.storage.session.inspectWorkflow(request);
     }
 
     pub fn beginDirectMessage(
-        self: *MailboxJobClient,
+        self: *Client,
         buffer: *workflows.dm.mailbox.MailboxOutboundBuffer,
         request: *const workflows.dm.mailbox.MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxJobClientError!workflows.dm.mailbox.MailboxOutboundMessage {
+    ) Error!workflows.dm.mailbox.MailboxOutboundMessage {
         return self.storage.session.beginDirectMessage(buffer, request, scratch);
     }
 
     pub fn planDirectMessageDelivery(
-        self: *MailboxJobClient,
+        self: *Client,
         buffer: *workflows.dm.mailbox.MailboxOutboundBuffer,
         delivery_storage: *workflows.dm.mailbox.MailboxDeliveryStorage,
         recipient_relay_list_event_json: []const u8,
         sender_relay_list_event_json: ?[]const u8,
         request: *const workflows.dm.mailbox.MailboxDirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxJobClientError!workflows.dm.mailbox.MailboxDeliveryPlan {
+    ) Error!workflows.dm.mailbox.MailboxDeliveryPlan {
         return self.storage.session.planDirectMessageDelivery(
             buffer,
             delivery_storage,
@@ -170,13 +170,13 @@ pub const MailboxJobClient = struct {
     }
 
     pub fn prepareJob(
-        self: *MailboxJobClient,
-        auth_storage: *MailboxJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         pending_delivery: ?*const workflows.dm.mailbox.MailboxDeliveryPlan,
         created_at: u64,
-    ) MailboxJobClientError!MailboxJobReady {
+    ) Error!Ready {
         const sync_request = try self.storage.session.beginSyncTurn(.{
             .pending_delivery = pending_delivery,
             .storage = &self.storage.sync.workflow,
@@ -198,11 +198,11 @@ pub const MailboxJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *MailboxJobClient,
-        prepared: *const PreparedMailboxJobAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) MailboxJobClientError!MailboxJobResult {
+    ) Error!Result {
         const current_relay_url = self.storage.session.currentRelayUrl() orelse return error.StaleAuthStep;
         if (!std.mem.eql(u8, current_relay_url, prepared.relay_url)) return error.StaleAuthStep;
         const challenge = self.storage.session.currentRelayAuthChallenge() orelse return error.RelayNotReady;
@@ -224,14 +224,14 @@ pub const MailboxJobClient = struct {
     }
 
     pub fn acceptReceiveEnvelopeJson(
-        self: *MailboxJobClient,
+        self: *Client,
         request: *const workflows.dm.mailbox.MailboxReceiveTurnRequest,
         wrap_event_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxJobClientError!MailboxJobResult {
+    ) Error!Result {
         const result = try self.storage.session.acceptReceiveEnvelopeJson(
             request,
             wrap_event_json,
@@ -244,13 +244,13 @@ pub const MailboxJobClient = struct {
     }
 
     fn prepareAuthEvent(
-        self: *MailboxJobClient,
-        auth_storage: *MailboxJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         entry: *const workflows.dm.mailbox.MailboxWorkflowEntry,
         created_at: u64,
-    ) MailboxJobClientError!PreparedMailboxJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         if (entry.action != .authenticate) return error.RelayNotReady;
 
         const relay_url_text = self.storage.session.currentRelayUrl() orelse return error.StaleAuthStep;
@@ -279,8 +279,8 @@ pub const MailboxJobClient = struct {
 };
 
 test "mailbox job client exposes caller-owned config and storage" {
-    var storage = MailboxJobClientStorage{};
-    var client = MailboxJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
@@ -295,8 +295,8 @@ test "mailbox job client prepares auth and receive work through one job surface"
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var storage = MailboxJobClientStorage{};
-    var client = MailboxJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &storage);
 
@@ -311,7 +311,7 @@ test "mailbox job client prepares auth and receive work through one job surface"
     try client.markCurrentRelayConnected();
     try client.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var auth_storage = MailboxJobAuthEventStorage{};
+    var auth_storage = AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const first_ready = try client.prepareJob(
@@ -385,8 +385,8 @@ test "mailbox job client surfaces pending delivery as one publish job" {
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var storage = MailboxJobClientStorage{};
-    var client = MailboxJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = sender_secret,
     }, &storage);
 
@@ -426,7 +426,7 @@ test "mailbox job client surfaces pending delivery as one publish job" {
         arena.allocator(),
     );
 
-    var auth_storage = MailboxJobAuthEventStorage{};
+    var auth_storage = AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const ready = try client.prepareJob(

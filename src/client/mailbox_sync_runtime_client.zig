@@ -12,8 +12,8 @@ const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
 pub const ClientError =
-    mailbox_replay_job.MailboxReplayJobClientError ||
-    mailbox_subscription_job.MailboxSubscriptionJobClientError ||
+    mailbox_replay_job.Error ||
+    mailbox_subscription_job.Error ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -25,16 +25,16 @@ pub const ClientError =
 pub const Config = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
-    replay_turn: mailbox_replay_job.MailboxReplayJobClientConfig = undefined,
-    subscription_turn: mailbox_subscription_job.MailboxSubscriptionJobClientConfig = undefined,
+    replay_turn: mailbox_replay_job.Config = undefined,
+    subscription_turn: mailbox_subscription_job.Config = undefined,
 };
 
 pub const Storage = struct {
-    replay_job: mailbox_replay_job.MailboxReplayJobClientStorage = .{},
-    subscription_job: mailbox_subscription_job.MailboxSubscriptionJobClientStorage = .{},
+    replay_job: mailbox_replay_job.Storage = .{},
+    subscription_job: mailbox_subscription_job.Storage = .{},
     replay_phase_complete: bool = false,
     live_subscription_active: bool = false,
-    live_subscription_request: mailbox_subscription_job.MailboxSubscriptionJobRequest = undefined,
+    live_subscription_request: mailbox_subscription_job.Request = undefined,
 };
 
 pub const PlanStorage = dm_sync_runtime_support.PlanStorage;
@@ -56,40 +56,40 @@ pub const ResumeState = struct {
 };
 
 pub const Step =
-    dm_sync_runtime_support.Step(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.Step(mailbox_subscription_job.Request);
 pub const Plan =
-    dm_sync_runtime_support.Plan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.Plan(mailbox_subscription_job.Request);
 pub const PolicyStorage = dm_sync_runtime_support.PolicyStorage;
 pub const PolicyStep =
-    dm_sync_runtime_support.PolicyStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.PolicyStep(mailbox_subscription_job.Request);
 pub const PolicyPlan =
-    dm_sync_runtime_support.PolicyPlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.PolicyPlan(mailbox_subscription_job.Request);
 pub const OrchestrationStorage = dm_sync_runtime_support.OrchestrationStorage;
 pub const OrchestrationStep =
-    dm_sync_runtime_support.OrchestrationStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.OrchestrationStep(mailbox_subscription_job.Request);
 pub const OrchestrationPlan =
-    dm_sync_runtime_support.OrchestrationPlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.OrchestrationPlan(mailbox_subscription_job.Request);
 pub const CadenceRequest = dm_sync_runtime_support.CadenceRequest;
 pub const CadenceStorage = dm_sync_runtime_support.CadenceStorage;
 pub const CadenceWaitReason = dm_sync_runtime_support.CadenceWaitReason;
 pub const CadenceWait = dm_sync_runtime_support.CadenceWait;
 pub const CadenceStep =
-    dm_sync_runtime_support.CadenceStep(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.CadenceStep(mailbox_subscription_job.Request);
 pub const CadencePlan =
-    dm_sync_runtime_support.CadencePlan(mailbox_subscription_job.MailboxSubscriptionJobRequest);
+    dm_sync_runtime_support.CadencePlan(mailbox_subscription_job.Request);
 
 pub const AuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const ReplayRequest = mailbox_replay_job.MailboxReplayJobRequest;
-pub const ReplayIntake = mailbox_replay_job.MailboxReplayJobIntake;
-pub const SubscriptionRequest = mailbox_subscription_job.MailboxSubscriptionJobRequest;
-pub const SubscriptionIntake = mailbox_subscription_job.MailboxSubscriptionJobIntake;
+pub const ReplayRequest = mailbox_replay_job.Request;
+pub const ReplayIntake = mailbox_replay_job.Intake;
+pub const SubscriptionRequest = mailbox_subscription_job.Request;
+pub const SubscriptionIntake = mailbox_subscription_job.Intake;
 
 pub const Client = struct {
     config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    replay_job: mailbox_replay_job.MailboxReplayJobClient,
-    subscription_job: mailbox_subscription_job.MailboxSubscriptionJobClient,
+    replay_job: mailbox_replay_job.Client,
+    subscription_job: mailbox_subscription_job.Client,
     storage: *Storage,
 
     pub fn init(
@@ -101,11 +101,11 @@ pub const Client = struct {
         return .{
             .config = normalized,
             .local_operator = local_operator.LocalOperatorClient.init(normalized.local_operator),
-            .replay_job = mailbox_replay_job.MailboxReplayJobClient.init(
+            .replay_job = mailbox_replay_job.Client.init(
                 normalized.replay_turn,
                 &storage.replay_job,
             ),
-            .subscription_job = mailbox_subscription_job.MailboxSubscriptionJobClient.init(
+            .subscription_job = mailbox_subscription_job.Client.init(
                 normalized.subscription_turn,
                 &storage.subscription_job,
             ),
@@ -121,11 +121,11 @@ pub const Client = struct {
         return .{
             .config = normalized,
             .local_operator = local_operator.LocalOperatorClient.init(normalized.local_operator),
-            .replay_job = mailbox_replay_job.MailboxReplayJobClient.attach(
+            .replay_job = mailbox_replay_job.Client.attach(
                 normalized.replay_turn,
                 &storage.replay_job,
             ),
-            .subscription_job = mailbox_subscription_job.MailboxSubscriptionJobClient.attach(
+            .subscription_job = mailbox_subscription_job.Client.attach(
                 normalized.subscription_turn,
                 &storage.subscription_job,
             ),
@@ -268,7 +268,7 @@ pub const Client = struct {
         );
 
         return dm_sync_runtime_support.buildPlan(
-            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            mailbox_subscription_job.Request,
             auth_plan,
             replay_plan,
             subscription_plan,
@@ -294,7 +294,7 @@ pub const Client = struct {
         );
 
         return dm_sync_runtime_support.classifyPolicy(
-            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            mailbox_subscription_job.Request,
             self.relayCount(),
             relay_runtime,
             runtime_plan,
@@ -316,7 +316,7 @@ pub const Client = struct {
             &storage.policy,
         );
         return dm_sync_runtime_support.buildOrchestration(
-            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            mailbox_subscription_job.Request,
             policy_plan,
         );
     }
@@ -336,7 +336,7 @@ pub const Client = struct {
             &storage.orchestration,
         );
         return dm_sync_runtime_support.buildCadence(
-            mailbox_subscription_job.MailboxSubscriptionJobRequest,
+            mailbox_subscription_job.Request,
             orchestration,
             request,
         );
@@ -421,14 +421,14 @@ pub const Client = struct {
         self: *Client,
         output: []u8,
         request: *const ReplayRequest,
-    ) ClientError!mailbox_replay_job.MailboxReplayJobResult {
+    ) ClientError!mailbox_replay_job.Result {
         return self.replay_job.completeReplayJob(output, request);
     }
 
     pub fn saveReplayTurnResult(
         self: *Client,
         archive: store.RelayCheckpointArchive,
-        result: *const mailbox_replay_turn.MailboxReplayTurnResult,
+        result: *const mailbox_replay_turn.Result,
     ) ClientError!void {
         return self.replay_job.saveJobResult(archive, result);
     }
@@ -467,7 +467,7 @@ pub const Client = struct {
         self: *Client,
         output: []u8,
         request: *const SubscriptionRequest,
-    ) ClientError!mailbox_subscription_job.MailboxSubscriptionJobResult {
+    ) ClientError!mailbox_subscription_job.Result {
         const result = try self.subscription_job.completeSubscriptionJob(output, request);
         if (sameSubscriptionRequest(&self.storage.live_subscription_request, request)) {
             self.storage.live_subscription_active = false;
@@ -507,7 +507,7 @@ fn sameSubscriptionRequest(
 }
 
 fn restoreReplayTurnMembers(
-    replay_turn: *mailbox_replay_turn.MailboxReplayTurnClient,
+    replay_turn: *mailbox_replay_turn.Client,
     members: *const runtime.RelayPoolMemberSet,
     current_relay_index: u8,
 ) ClientError!void {
@@ -522,7 +522,7 @@ fn restoreReplayTurnMembers(
 }
 
 fn restoreSubscriptionTurnMembers(
-    subscription_turn: *mailbox_subscription_turn.MailboxSubscriptionTurnClient,
+    subscription_turn: *mailbox_subscription_turn.Client,
     members: *const runtime.RelayPoolMemberSet,
     current_relay_index: u8,
 ) ClientError!void {
@@ -537,7 +537,7 @@ fn restoreSubscriptionTurnMembers(
 }
 
 fn runtimeRelayReplayTurnClient(
-    replay_turn: *mailbox_replay_turn.MailboxReplayTurnClient,
+    replay_turn: *mailbox_replay_turn.Client,
 ) @TypeOf(replay_turn.replay_turn) {
     return @TypeOf(replay_turn.replay_turn).init(
         replay_turn.config.replay_turn,
@@ -546,7 +546,7 @@ fn runtimeRelayReplayTurnClient(
 }
 
 fn runtimeSubscriptionTurnClient(
-    subscription_turn: *mailbox_subscription_turn.MailboxSubscriptionTurnClient,
+    subscription_turn: *mailbox_subscription_turn.Client,
 ) @TypeOf(subscription_turn.subscription_turn) {
     return @TypeOf(subscription_turn.subscription_turn).init(
         subscription_turn.config.subscription_turn,

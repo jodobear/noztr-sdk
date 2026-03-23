@@ -13,8 +13,8 @@ test "recipe: mailbox subscription turn client accepts live transcript events an
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClientStorage{};
-    var client = noztr_sdk.client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.subscription_turn.Storage{};
+    var client = noztr_sdk.client.dm.mailbox.subscription_turn.Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 

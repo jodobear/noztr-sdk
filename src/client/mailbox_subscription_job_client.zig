@@ -7,8 +7,8 @@ const relay_auth_client = @import("relay_auth_client.zig");
 const relay_auth_support = @import("relay_auth_support.zig");
 const runtime = @import("../runtime/mod.zig");
 
-pub const MailboxSubscriptionJobClientError =
-    mailbox_subscription_turn.MailboxSubscriptionTurnClientError ||
+pub const Error =
+    mailbox_subscription_turn.Error ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -17,45 +17,45 @@ pub const MailboxSubscriptionJobClientError =
         RelayNotReady,
     };
 
-pub const MailboxSubscriptionJobClientConfig = struct {
+pub const Config = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
-    subscription_turn: mailbox_subscription_turn.MailboxSubscriptionTurnClientConfig = undefined,
+    subscription_turn: mailbox_subscription_turn.Config = undefined,
 };
 
-pub const MailboxSubscriptionJobClientStorage = struct {
-    subscription_turn: mailbox_subscription_turn.MailboxSubscriptionTurnClientStorage = .{},
+pub const Storage = struct {
+    subscription_turn: mailbox_subscription_turn.Storage = .{},
 };
 
-pub const MailboxSubscriptionJobAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
-pub const PreparedMailboxSubscriptionJobAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const MailboxSubscriptionJobRequest = mailbox_subscription_turn.MailboxSubscriptionTurnRequest;
-pub const MailboxSubscriptionJobIntake = mailbox_subscription_turn.MailboxSubscriptionTurnIntake;
+pub const AuthStorage = relay_auth_client.RelayAuthEventStorage;
+pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
+pub const Request = mailbox_subscription_turn.Request;
+pub const Intake = mailbox_subscription_turn.Intake;
 
-pub const MailboxSubscriptionJobReady = union(enum) {
-    authenticate: PreparedMailboxSubscriptionJobAuthEvent,
-    subscription: MailboxSubscriptionJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    subscription: Request,
 };
 
-pub const MailboxSubscriptionJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: runtime.RelayDescriptor,
-    subscribed: mailbox_subscription_turn.MailboxSubscriptionTurnResult,
+    subscribed: mailbox_subscription_turn.Result,
 };
 
-pub const MailboxSubscriptionJobClient = struct {
-    config: MailboxSubscriptionJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    subscription_turn: mailbox_subscription_turn.MailboxSubscriptionTurnClient,
+    subscription_turn: mailbox_subscription_turn.Client,
 
     pub fn init(
-        config: MailboxSubscriptionJobClientConfig,
-        storage: *MailboxSubscriptionJobClientStorage,
-    ) MailboxSubscriptionJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = configWithSubscriptionTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .subscription_turn = mailbox_subscription_turn.MailboxSubscriptionTurnClient.init(
+            .subscription_turn = mailbox_subscription_turn.Client.init(
                 configWithSubscriptionTurn(config).subscription_turn,
                 &storage.subscription_turn,
             ),
@@ -63,57 +63,57 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     pub fn attach(
-        config: MailboxSubscriptionJobClientConfig,
-        storage: *MailboxSubscriptionJobClientStorage,
-    ) MailboxSubscriptionJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = configWithSubscriptionTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .subscription_turn = mailbox_subscription_turn.MailboxSubscriptionTurnClient.attach(
+            .subscription_turn = mailbox_subscription_turn.Client.attach(
                 configWithSubscriptionTurn(config).subscription_turn,
                 &storage.subscription_turn,
             ),
         };
     }
 
-    pub fn relayCount(self: *const MailboxSubscriptionJobClient) u8 {
+    pub fn relayCount(self: *const Client) u8 {
         return self.subscription_turn.relayCount();
     }
 
-    pub fn currentRelayUrl(self: *const MailboxSubscriptionJobClient) ?[]const u8 {
+    pub fn currentRelayUrl(self: *const Client) ?[]const u8 {
         return self.subscription_turn.currentRelayUrl();
     }
 
-    pub fn currentRelayAuthChallenge(self: *const MailboxSubscriptionJobClient) ?[]const u8 {
+    pub fn currentRelayAuthChallenge(self: *const Client) ?[]const u8 {
         return self.subscription_turn.currentRelayAuthChallenge();
     }
 
     pub fn hydrateRelayListEventJson(
-        self: *MailboxSubscriptionJobClient,
+        self: *Client,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxSubscriptionJobClientError!u8 {
+    ) Error!u8 {
         return self.subscription_turn.hydrateRelayListEventJson(event_json, scratch);
     }
 
     pub fn selectRelay(
-        self: *MailboxSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxSubscriptionJobClientError![]const u8 {
+    ) Error![]const u8 {
         return self.subscription_turn.selectRelay(relay_index);
     }
 
     pub fn markRelayConnected(
-        self: *MailboxSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxSubscriptionJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *MailboxSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxSubscriptionJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayDisconnected(
             self,
             "subscription_turn",
@@ -122,10 +122,10 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *MailboxSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) MailboxSubscriptionJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayAuthChallenge(
             self,
             "subscription_turn",
@@ -135,21 +135,21 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const MailboxSubscriptionJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn prepareJob(
-        self: *MailboxSubscriptionJobClient,
-        auth_storage: *MailboxSubscriptionJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         request_output: []u8,
         specs: []const runtime.RelaySubscriptionSpec,
         created_at: u64,
-    ) MailboxSubscriptionJobClientError!MailboxSubscriptionJobReady {
+    ) Error!Ready {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const auth_plan = self.subscription_turn.inspectAuth(&auth_storage_buf);
         if (auth_plan.nextStep()) |step| {
@@ -179,11 +179,11 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *MailboxSubscriptionJobClient,
-        prepared: *const PreparedMailboxSubscriptionJobAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) MailboxSubscriptionJobClientError!MailboxSubscriptionJobResult {
+    ) Error!Result {
         const descriptor = try self.subscription_turn.acceptRelayAuthEvent(
             prepared.relay.relay_index,
             &prepared.event,
@@ -194,14 +194,14 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     pub fn acceptSubscriptionMessageJson(
-        self: *MailboxSubscriptionJobClient,
-        request: *const MailboxSubscriptionJobRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxSubscriptionJobClientError!MailboxSubscriptionJobIntake {
+    ) Error!Intake {
         return self.subscription_turn.acceptSubscriptionMessageJson(
             request,
             relay_message_json,
@@ -213,21 +213,21 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     pub fn completeSubscriptionJob(
-        self: *MailboxSubscriptionJobClient,
+        self: *Client,
         output: []u8,
-        request: *const MailboxSubscriptionJobRequest,
-    ) MailboxSubscriptionJobClientError!MailboxSubscriptionJobResult {
+        request: *const Request,
+    ) Error!Result {
         return .{ .subscribed = try self.subscription_turn.completeTurn(output, request) };
     }
 
     fn prepareAuthEvent(
-        self: *MailboxSubscriptionJobClient,
-        auth_storage: *MailboxSubscriptionJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
-    ) MailboxSubscriptionJobClientError!PreparedMailboxSubscriptionJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         const target = try self.selectAuthTarget(step);
         const payload = try relay_auth_support.buildSignedAuthPayload(
             &self.local_operator,
@@ -249,9 +249,9 @@ pub const MailboxSubscriptionJobClient = struct {
     }
 
     fn selectAuthTarget(
-        self: *const MailboxSubscriptionJobClient,
+        self: *const Client,
         step: *const runtime.RelayPoolAuthStep,
-    ) MailboxSubscriptionJobClientError!relay_auth_client.RelayAuthTarget {
+    ) Error!relay_auth_client.RelayAuthTarget {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const plan = self.subscription_turn.inspectAuth(&auth_storage_buf);
         return relay_auth_support.selectAuthTarget(
@@ -263,8 +263,8 @@ pub const MailboxSubscriptionJobClient = struct {
 };
 
 fn configWithSubscriptionTurn(
-    config: MailboxSubscriptionJobClientConfig,
-) MailboxSubscriptionJobClientConfig {
+    config: Config,
+) Config {
     var updated = config;
     updated.subscription_turn = .{
         .recipient_private_key = config.recipient_private_key,
@@ -274,8 +274,8 @@ fn configWithSubscriptionTurn(
 }
 
 test "mailbox subscription job client exposes caller-owned config and storage" {
-    var storage = MailboxSubscriptionJobClientStorage{};
-    var client = MailboxSubscriptionJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
@@ -290,8 +290,8 @@ test "mailbox subscription job client drives auth-gated live mailbox intake" {
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var storage_buf = MailboxSubscriptionJobClientStorage{};
-    var client = MailboxSubscriptionJobClient.init(.{
+    var storage_buf = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &storage_buf);
 
@@ -340,7 +340,7 @@ test "mailbox subscription job client drives auth-gated live mailbox intake" {
         .{ .subscription_id = "mailbox-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var auth_storage = MailboxSubscriptionJobAuthEventStorage{};
+    var auth_storage = AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

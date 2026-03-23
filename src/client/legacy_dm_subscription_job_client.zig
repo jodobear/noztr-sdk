@@ -7,8 +7,8 @@ const relay_auth_client = @import("relay_auth_client.zig");
 const relay_auth_support = @import("relay_auth_support.zig");
 const runtime = @import("../runtime/mod.zig");
 
-pub const LegacyDmSubscriptionJobClientError =
-    legacy_dm_subscription_turn.LegacyDmSubscriptionTurnClientError ||
+pub const Error =
+    legacy_dm_subscription_turn.Error ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -17,45 +17,45 @@ pub const LegacyDmSubscriptionJobClientError =
         RelayNotReady,
     };
 
-pub const LegacyDmSubscriptionJobClientConfig = struct {
+pub const Config = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
-    subscription_turn: legacy_dm_subscription_turn.LegacyDmSubscriptionTurnClientConfig = undefined,
+    subscription_turn: legacy_dm_subscription_turn.Config = undefined,
 };
 
-pub const LegacyDmSubscriptionJobClientStorage = struct {
-    subscription_turn: legacy_dm_subscription_turn.LegacyDmSubscriptionTurnClientStorage = .{},
+pub const Storage = struct {
+    subscription_turn: legacy_dm_subscription_turn.Storage = .{},
 };
 
-pub const LegacyDmSubscriptionJobAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
-pub const PreparedLegacyDmSubscriptionJobAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const LegacyDmSubscriptionJobRequest = legacy_dm_subscription_turn.LegacyDmSubscriptionTurnRequest;
-pub const LegacyDmSubscriptionJobIntake = legacy_dm_subscription_turn.LegacyDmSubscriptionTurnIntake;
+pub const AuthStorage = relay_auth_client.RelayAuthEventStorage;
+pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
+pub const Request = legacy_dm_subscription_turn.Request;
+pub const Intake = legacy_dm_subscription_turn.Intake;
 
-pub const LegacyDmSubscriptionJobReady = union(enum) {
-    authenticate: PreparedLegacyDmSubscriptionJobAuthEvent,
-    subscription: LegacyDmSubscriptionJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    subscription: Request,
 };
 
-pub const LegacyDmSubscriptionJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: runtime.RelayDescriptor,
-    subscribed: legacy_dm_subscription_turn.LegacyDmSubscriptionTurnResult,
+    subscribed: legacy_dm_subscription_turn.Result,
 };
 
-pub const LegacyDmSubscriptionJobClient = struct {
-    config: LegacyDmSubscriptionJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    subscription_turn: legacy_dm_subscription_turn.LegacyDmSubscriptionTurnClient,
+    subscription_turn: legacy_dm_subscription_turn.Client,
 
     pub fn init(
-        config: LegacyDmSubscriptionJobClientConfig,
-        storage: *LegacyDmSubscriptionJobClientStorage,
-    ) LegacyDmSubscriptionJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = configWithSubscriptionTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .subscription_turn = legacy_dm_subscription_turn.LegacyDmSubscriptionTurnClient.init(
+            .subscription_turn = legacy_dm_subscription_turn.Client.init(
                 configWithSubscriptionTurn(config).subscription_turn,
                 &storage.subscription_turn,
             ),
@@ -63,13 +63,13 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn attach(
-        config: LegacyDmSubscriptionJobClientConfig,
-        storage: *LegacyDmSubscriptionJobClientStorage,
-    ) LegacyDmSubscriptionJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = configWithSubscriptionTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .subscription_turn = legacy_dm_subscription_turn.LegacyDmSubscriptionTurnClient.attach(
+            .subscription_turn = legacy_dm_subscription_turn.Client.attach(
                 configWithSubscriptionTurn(config).subscription_turn,
                 &storage.subscription_turn,
             ),
@@ -77,23 +77,23 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn addRelay(
-        self: *LegacyDmSubscriptionJobClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) LegacyDmSubscriptionJobClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         return relay_lifecycle_support.addRelay(self, "subscription_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
-        self: *LegacyDmSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmSubscriptionJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *LegacyDmSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmSubscriptionJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayDisconnected(
             self,
             "subscription_turn",
@@ -102,10 +102,10 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *LegacyDmSubscriptionJobClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) LegacyDmSubscriptionJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayAuthChallenge(
             self,
             "subscription_turn",
@@ -115,21 +115,21 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const LegacyDmSubscriptionJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn prepareJob(
-        self: *LegacyDmSubscriptionJobClient,
-        auth_storage: *LegacyDmSubscriptionJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         request_output: []u8,
         specs: []const runtime.RelaySubscriptionSpec,
         created_at: u64,
-    ) LegacyDmSubscriptionJobClientError!LegacyDmSubscriptionJobReady {
+    ) Error!Ready {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const auth_plan = self.subscription_turn.inspectAuth(&auth_storage_buf);
         if (auth_plan.nextStep()) |step| {
@@ -156,11 +156,11 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *LegacyDmSubscriptionJobClient,
-        prepared: *const PreparedLegacyDmSubscriptionJobAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) LegacyDmSubscriptionJobClientError!LegacyDmSubscriptionJobResult {
+    ) Error!Result {
         const descriptor = try self.subscription_turn.acceptRelayAuthEvent(
             prepared.relay.relay_index,
             &prepared.event,
@@ -171,12 +171,12 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn acceptSubscriptionMessageJson(
-        self: *LegacyDmSubscriptionJobClient,
-        request: *const LegacyDmSubscriptionJobRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         plaintext_output: []u8,
         scratch: std.mem.Allocator,
-    ) LegacyDmSubscriptionJobClientError!LegacyDmSubscriptionJobIntake {
+    ) Error!Intake {
         return self.subscription_turn.acceptSubscriptionMessageJson(
             request,
             relay_message_json,
@@ -186,21 +186,21 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     pub fn completeSubscriptionJob(
-        self: *LegacyDmSubscriptionJobClient,
+        self: *Client,
         output: []u8,
-        request: *const LegacyDmSubscriptionJobRequest,
-    ) LegacyDmSubscriptionJobClientError!LegacyDmSubscriptionJobResult {
+        request: *const Request,
+    ) Error!Result {
         return .{ .subscribed = try self.subscription_turn.completeTurn(output, request) };
     }
 
     fn prepareAuthEvent(
-        self: *LegacyDmSubscriptionJobClient,
-        auth_storage: *LegacyDmSubscriptionJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
-    ) LegacyDmSubscriptionJobClientError!PreparedLegacyDmSubscriptionJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         const target = try self.selectAuthTarget(step);
         const payload = try relay_auth_support.buildSignedAuthPayload(
             &self.local_operator,
@@ -222,9 +222,9 @@ pub const LegacyDmSubscriptionJobClient = struct {
     }
 
     fn selectAuthTarget(
-        self: *const LegacyDmSubscriptionJobClient,
+        self: *const Client,
         step: *const runtime.RelayPoolAuthStep,
-    ) LegacyDmSubscriptionJobClientError!relay_auth_client.RelayAuthTarget {
+    ) Error!relay_auth_client.RelayAuthTarget {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const plan = self.subscription_turn.inspectAuth(&auth_storage_buf);
         return relay_auth_support.selectAuthTarget(
@@ -236,8 +236,8 @@ pub const LegacyDmSubscriptionJobClient = struct {
 };
 
 fn configWithSubscriptionTurn(
-    config: LegacyDmSubscriptionJobClientConfig,
-) LegacyDmSubscriptionJobClientConfig {
+    config: Config,
+) Config {
     var updated = config;
     updated.subscription_turn = .{
         .owner_private_key = config.owner_private_key,

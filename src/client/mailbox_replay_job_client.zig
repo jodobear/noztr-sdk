@@ -8,8 +8,8 @@ const relay_auth_support = @import("relay_auth_support.zig");
 const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 
-pub const MailboxReplayJobClientError =
-    mailbox_replay_turn.MailboxReplayTurnClientError ||
+pub const Error =
+    mailbox_replay_turn.Error ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -18,45 +18,45 @@ pub const MailboxReplayJobClientError =
         RelayNotReady,
     };
 
-pub const MailboxReplayJobClientConfig = struct {
+pub const Config = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
-    replay_turn: mailbox_replay_turn.MailboxReplayTurnClientConfig = undefined,
+    replay_turn: mailbox_replay_turn.Config = undefined,
 };
 
-pub const MailboxReplayJobClientStorage = struct {
-    replay_turn: mailbox_replay_turn.MailboxReplayTurnClientStorage = .{},
+pub const Storage = struct {
+    replay_turn: mailbox_replay_turn.Storage = .{},
 };
 
-pub const MailboxReplayJobAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
-pub const PreparedMailboxReplayJobAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const MailboxReplayJobRequest = mailbox_replay_turn.MailboxReplayTurnRequest;
-pub const MailboxReplayJobIntake = mailbox_replay_turn.MailboxReplayTurnIntake;
+pub const AuthStorage = relay_auth_client.RelayAuthEventStorage;
+pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
+pub const Request = mailbox_replay_turn.Request;
+pub const Intake = mailbox_replay_turn.Intake;
 
-pub const MailboxReplayJobReady = union(enum) {
-    authenticate: PreparedMailboxReplayJobAuthEvent,
-    replay: MailboxReplayJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    replay: Request,
 };
 
-pub const MailboxReplayJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: runtime.RelayDescriptor,
-    replayed: mailbox_replay_turn.MailboxReplayTurnResult,
+    replayed: mailbox_replay_turn.Result,
 };
 
-pub const MailboxReplayJobClient = struct {
-    config: MailboxReplayJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    replay_turn: mailbox_replay_turn.MailboxReplayTurnClient,
+    replay_turn: mailbox_replay_turn.Client,
 
     pub fn init(
-        config: MailboxReplayJobClientConfig,
-        storage: *MailboxReplayJobClientStorage,
-    ) MailboxReplayJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = configWithReplayTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .replay_turn = mailbox_replay_turn.MailboxReplayTurnClient.init(
+            .replay_turn = mailbox_replay_turn.Client.init(
                 configWithReplayTurn(config).replay_turn,
                 &storage.replay_turn,
             ),
@@ -64,65 +64,65 @@ pub const MailboxReplayJobClient = struct {
     }
 
     pub fn attach(
-        config: MailboxReplayJobClientConfig,
-        storage: *MailboxReplayJobClientStorage,
-    ) MailboxReplayJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = configWithReplayTurn(config),
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
-            .replay_turn = mailbox_replay_turn.MailboxReplayTurnClient.attach(
+            .replay_turn = mailbox_replay_turn.Client.attach(
                 configWithReplayTurn(config).replay_turn,
                 &storage.replay_turn,
             ),
         };
     }
 
-    pub fn relayCount(self: *const MailboxReplayJobClient) u8 {
+    pub fn relayCount(self: *const Client) u8 {
         return self.replay_turn.relayCount();
     }
 
-    pub fn currentRelayUrl(self: *const MailboxReplayJobClient) ?[]const u8 {
+    pub fn currentRelayUrl(self: *const Client) ?[]const u8 {
         return self.replay_turn.currentRelayUrl();
     }
 
-    pub fn currentRelayAuthChallenge(self: *const MailboxReplayJobClient) ?[]const u8 {
+    pub fn currentRelayAuthChallenge(self: *const Client) ?[]const u8 {
         return self.replay_turn.currentRelayAuthChallenge();
     }
 
     pub fn hydrateRelayListEventJson(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxReplayJobClientError!u8 {
+    ) Error!u8 {
         return self.replay_turn.hydrateRelayListEventJson(event_json, scratch);
     }
 
     pub fn selectRelay(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxReplayJobClientError![]const u8 {
+    ) Error![]const u8 {
         return self.replay_turn.selectRelay(relay_index);
     }
 
     pub fn markRelayConnected(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxReplayJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.markRelayConnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxReplayJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayDisconnected(self, "replay_turn", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) MailboxReplayJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayAuthChallenge(
             self,
             "replay_turn",
@@ -132,15 +132,15 @@ pub const MailboxReplayJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const MailboxReplayJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return relay_lifecycle_support.inspectRelayRuntime(self, "replay_turn", storage);
     }
 
     pub fn prepareJob(
-        self: *MailboxReplayJobClient,
-        auth_storage: *MailboxReplayJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         request_output: []u8,
@@ -148,7 +148,7 @@ pub const MailboxReplayJobClient = struct {
         subscription_id: []const u8,
         specs: []const runtime.RelayReplaySpec,
         created_at: u64,
-    ) MailboxReplayJobClientError!MailboxReplayJobReady {
+    ) Error!Ready {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const auth_plan = self.replay_turn.inspectAuth(&auth_storage_buf);
         if (auth_plan.nextStep()) |step| {
@@ -181,11 +181,11 @@ pub const MailboxReplayJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *MailboxReplayJobClient,
-        prepared: *const PreparedMailboxReplayJobAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) MailboxReplayJobClientError!MailboxReplayJobResult {
+    ) Error!Result {
         const descriptor = try self.replay_turn.acceptRelayAuthEvent(
             prepared.relay.relay_index,
             &prepared.event,
@@ -196,14 +196,14 @@ pub const MailboxReplayJobClient = struct {
     }
 
     pub fn acceptReplayMessageJson(
-        self: *MailboxReplayJobClient,
-        request: *const MailboxReplayJobRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxReplayJobClientError!MailboxReplayJobIntake {
+    ) Error!Intake {
         return self.replay_turn.acceptReplayMessageJson(
             request,
             relay_message_json,
@@ -215,29 +215,29 @@ pub const MailboxReplayJobClient = struct {
     }
 
     pub fn completeReplayJob(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         output: []u8,
-        request: *const MailboxReplayJobRequest,
-    ) MailboxReplayJobClientError!MailboxReplayJobResult {
+        request: *const Request,
+    ) Error!Result {
         return .{ .replayed = try self.replay_turn.completeTurn(output, request) };
     }
 
     pub fn saveJobResult(
-        self: *MailboxReplayJobClient,
+        self: *Client,
         archive: store.RelayCheckpointArchive,
-        result: *const mailbox_replay_turn.MailboxReplayTurnResult,
-    ) MailboxReplayJobClientError!void {
+        result: *const mailbox_replay_turn.Result,
+    ) Error!void {
         return self.replay_turn.saveTurnResult(archive, result);
     }
 
     fn prepareAuthEvent(
-        self: *MailboxReplayJobClient,
-        auth_storage: *MailboxReplayJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
-    ) MailboxReplayJobClientError!PreparedMailboxReplayJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         const target = try self.selectAuthTarget(step);
         const payload = try relay_auth_support.buildSignedAuthPayload(
             &self.local_operator,
@@ -259,9 +259,9 @@ pub const MailboxReplayJobClient = struct {
     }
 
     fn selectAuthTarget(
-        self: *const MailboxReplayJobClient,
+        self: *const Client,
         step: *const runtime.RelayPoolAuthStep,
-    ) MailboxReplayJobClientError!relay_auth_client.RelayAuthTarget {
+    ) Error!relay_auth_client.RelayAuthTarget {
         var auth_storage_buf = runtime.RelayPoolAuthStorage{};
         const plan = self.replay_turn.inspectAuth(&auth_storage_buf);
         return relay_auth_support.selectAuthTarget(
@@ -272,7 +272,7 @@ pub const MailboxReplayJobClient = struct {
     }
 };
 
-fn configWithReplayTurn(config: MailboxReplayJobClientConfig) MailboxReplayJobClientConfig {
+fn configWithReplayTurn(config: Config) Config {
     var updated = config;
     updated.replay_turn = .{
         .recipient_private_key = config.recipient_private_key,
@@ -282,8 +282,8 @@ fn configWithReplayTurn(config: MailboxReplayJobClientConfig) MailboxReplayJobCl
 }
 
 test "mailbox replay job client exposes caller-owned config and storage" {
-    var storage = MailboxReplayJobClientStorage{};
-    var client = MailboxReplayJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
@@ -302,8 +302,8 @@ test "mailbox replay job client drives auth-gated mailbox replay and checkpoint 
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var storage_buf = MailboxReplayJobClientStorage{};
-    var client = MailboxReplayJobClient.init(.{
+    var storage_buf = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &storage_buf);
 
@@ -352,7 +352,7 @@ test "mailbox replay job client drives auth-gated mailbox replay and checkpoint 
         },
     };
 
-    var auth_storage = MailboxReplayJobAuthEventStorage{};
+    var auth_storage = AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

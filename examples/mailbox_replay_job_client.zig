@@ -16,8 +16,8 @@ test "recipe: mailbox replay job client authenticates then replays mailbox intak
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.dm.mailbox.replay_job.MailboxReplayJobClientStorage{};
-    var client = noztr_sdk.client.dm.mailbox.replay_job.MailboxReplayJobClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.replay_job.Storage{};
+    var client = noztr_sdk.client.dm.mailbox.replay_job.Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -68,7 +68,7 @@ test "recipe: mailbox replay job client authenticates then replays mailbox intak
         },
     };
 
-    var auth_storage = noztr_sdk.client.dm.mailbox.replay_job.MailboxReplayJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.replay_job.AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;

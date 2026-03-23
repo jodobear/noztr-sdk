@@ -6,37 +6,37 @@ const runtime = @import("../runtime/mod.zig");
 const subscription_turn = @import("subscription_turn_client.zig");
 const workflows = @import("../workflows/mod.zig");
 
-pub const LegacyDmSubscriptionTurnClientError =
+pub const Error =
     subscription_turn.SubscriptionTurnClientError ||
     workflows.dm.legacy.LegacyDmError;
 
-pub const LegacyDmSubscriptionTurnClientConfig = struct {
+pub const Config = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
     subscription_turn: subscription_turn.SubscriptionTurnClientConfig = .{},
 };
 
-pub const LegacyDmSubscriptionTurnClientStorage = struct {
+pub const Storage = struct {
     session: workflows.dm.legacy.LegacyDmSession = undefined,
     subscription_turn: subscription_turn.SubscriptionTurnClientStorage = .{},
 };
 
-pub const LegacyDmSubscriptionTurnRequest = subscription_turn.SubscriptionTurnRequest;
-pub const LegacyDmSubscriptionTurnResult = subscription_turn.SubscriptionTurnResult;
+pub const Request = subscription_turn.SubscriptionTurnRequest;
+pub const Result = subscription_turn.SubscriptionTurnResult;
 
-pub const LegacyDmSubscriptionTurnIntake = struct {
+pub const Intake = struct {
     subscription: subscription_turn.SubscriptionTurnIntake,
     message: ?workflows.dm.legacy.LegacyDmMessageOutcome,
 };
 
-pub const LegacyDmSubscriptionTurnClient = struct {
-    config: LegacyDmSubscriptionTurnClientConfig,
-    storage: *LegacyDmSubscriptionTurnClientStorage,
+pub const Client = struct {
+    config: Config,
+    storage: *Storage,
     subscription_turn: subscription_turn.SubscriptionTurnClient,
 
     pub fn init(
-        config: LegacyDmSubscriptionTurnClientConfig,
-        storage: *LegacyDmSubscriptionTurnClientStorage,
-    ) LegacyDmSubscriptionTurnClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{
             .session = workflows.dm.legacy.LegacyDmSession.init(&config.owner_private_key),
         };
@@ -51,9 +51,9 @@ pub const LegacyDmSubscriptionTurnClient = struct {
     }
 
     pub fn attach(
-        config: LegacyDmSubscriptionTurnClientConfig,
-        storage: *LegacyDmSubscriptionTurnClientStorage,
-    ) LegacyDmSubscriptionTurnClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .storage = storage,
@@ -65,23 +65,23 @@ pub const LegacyDmSubscriptionTurnClient = struct {
     }
 
     pub fn addRelay(
-        self: *LegacyDmSubscriptionTurnClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) LegacyDmSubscriptionTurnClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         return relay_lifecycle_support.addRelay(self, "subscription_turn", relay_url_text);
     }
 
     pub fn markRelayConnected(
-        self: *LegacyDmSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmSubscriptionTurnClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.markRelayConnected(self, "subscription_turn", relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *LegacyDmSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmSubscriptionTurnClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayDisconnected(
             self,
             "subscription_turn",
@@ -90,10 +90,10 @@ pub const LegacyDmSubscriptionTurnClient = struct {
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *LegacyDmSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) LegacyDmSubscriptionTurnClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayAuthChallenge(
             self,
             "subscription_turn",
@@ -103,12 +103,12 @@ pub const LegacyDmSubscriptionTurnClient = struct {
     }
 
     pub fn acceptRelayAuthEvent(
-        self: *LegacyDmSubscriptionTurnClient,
+        self: *Client,
         relay_index: u8,
         auth_event: *const noztr.nip01_event.Event,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) LegacyDmSubscriptionTurnClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         try self.subscription_turn.relay_exchange.relay_pool.acceptRelayAuthEvent(
             relay_index,
             auth_event,
@@ -121,42 +121,42 @@ pub const LegacyDmSubscriptionTurnClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const LegacyDmSubscriptionTurnClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return relay_lifecycle_support.inspectRelayRuntime(self, "subscription_turn", storage);
     }
 
     pub fn inspectAuth(
-        self: *const LegacyDmSubscriptionTurnClient,
+        self: *const Client,
         storage: *runtime.RelayPoolAuthStorage,
     ) runtime.RelayPoolAuthPlan {
         return self.subscription_turn.relay_exchange.relay_pool.inspectAuth(storage);
     }
 
     pub fn inspectSubscriptions(
-        self: *const LegacyDmSubscriptionTurnClient,
+        self: *const Client,
         specs: []const runtime.RelaySubscriptionSpec,
         storage: *runtime.RelayPoolSubscriptionStorage,
-    ) LegacyDmSubscriptionTurnClientError!runtime.RelayPoolSubscriptionPlan {
+    ) Error!runtime.RelayPoolSubscriptionPlan {
         return self.subscription_turn.inspectSubscriptions(specs, storage);
     }
 
     pub fn beginTurn(
-        self: *const LegacyDmSubscriptionTurnClient,
+        self: *const Client,
         output: []u8,
         specs: []const runtime.RelaySubscriptionSpec,
-    ) LegacyDmSubscriptionTurnClientError!LegacyDmSubscriptionTurnRequest {
+    ) Error!Request {
         return self.subscription_turn.beginTurn(&self.storage.subscription_turn, output, specs);
     }
 
     pub fn acceptSubscriptionMessageJson(
-        self: *LegacyDmSubscriptionTurnClient,
-        request: *const LegacyDmSubscriptionTurnRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         plaintext_output: []u8,
         scratch: std.mem.Allocator,
-    ) LegacyDmSubscriptionTurnClientError!LegacyDmSubscriptionTurnIntake {
+    ) Error!Intake {
         const subscription = try self.subscription_turn.acceptSubscriptionMessageJson(
             &self.storage.subscription_turn,
             request,
@@ -181,10 +181,10 @@ pub const LegacyDmSubscriptionTurnClient = struct {
     }
 
     pub fn completeTurn(
-        self: *const LegacyDmSubscriptionTurnClient,
+        self: *const Client,
         output: []u8,
-        request: *const LegacyDmSubscriptionTurnRequest,
-    ) LegacyDmSubscriptionTurnClientError!LegacyDmSubscriptionTurnResult {
+        request: *const Request,
+    ) Error!Result {
         return self.subscription_turn.completeTurn(&self.storage.subscription_turn, output, request);
     }
 };
@@ -206,8 +206,8 @@ test "legacy dm subscription turn client accepts live transcript events through 
         .iv = [_]u8{0x44} ** noztr.limits.nip04_iv_bytes,
     });
 
-    var storage = LegacyDmSubscriptionTurnClientStorage{};
-    var client = LegacyDmSubscriptionTurnClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = recipient_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");

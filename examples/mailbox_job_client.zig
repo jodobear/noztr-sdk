@@ -13,8 +13,8 @@ test "recipe: mailbox job client prepares auth and receive work explicitly" {
     const sender_secret = [_]u8{0x11} ** 32;
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var client_storage = noztr_sdk.client.dm.mailbox.job.MailboxJobClientStorage{};
-    var client = noztr_sdk.client.dm.mailbox.job.MailboxJobClient.init(.{
+    var client_storage = noztr_sdk.client.dm.mailbox.job.Storage{};
+    var client = noztr_sdk.client.dm.mailbox.job.Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 
@@ -29,7 +29,7 @@ test "recipe: mailbox job client prepares auth and receive work explicitly" {
     try client.markCurrentRelayConnected();
     try client.noteCurrentRelayAuthChallenge("challenge-1");
 
-    var auth_storage = noztr_sdk.client.dm.mailbox.job.MailboxJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.job.AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const auth_ready = try client.prepareJob(

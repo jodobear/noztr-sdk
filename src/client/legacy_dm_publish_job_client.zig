@@ -8,7 +8,7 @@ const relay_response = @import("relay_response_client.zig");
 const runtime = @import("../runtime/mod.zig");
 const workflows = @import("../workflows/mod.zig");
 
-pub const LegacyDmPublishJobClientError =
+pub const Error =
     workflows.dm.legacy.LegacyDmError ||
     local_operator.LocalOperatorClientError ||
     relay_response.RelayResponseClientError ||
@@ -20,54 +20,54 @@ pub const LegacyDmPublishJobClientError =
         RelayNotReady,
     };
 
-pub const LegacyDmPublishJobClientConfig = struct {
+pub const Config = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
     relay_response: relay_response.RelayResponseClientConfig = .{},
 };
 
-pub const LegacyDmPublishJobClientStorage = struct {
+pub const Storage = struct {
     session: workflows.dm.legacy.LegacyDmSession = undefined,
     outbound: workflows.dm.legacy.LegacyDmOutboundStorage = .{},
     relay_pool: runtime.RelayPoolStorage = .{},
 };
 
-pub const LegacyDmPublishJobAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
-pub const PreparedLegacyDmPublishJobAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
+pub const AuthStorage = relay_auth_client.RelayAuthEventStorage;
+pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
 
-pub const LegacyDmPublishJobRequest = struct {
+pub const Request = struct {
     relay: runtime.RelayDescriptor,
     event: noztr.nip01_event.Event,
     event_json: []const u8,
     event_message_json: []const u8,
 };
 
-pub const LegacyDmPublishJobReady = union(enum) {
-    authenticate: PreparedLegacyDmPublishJobAuthEvent,
-    publish: LegacyDmPublishJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    publish: Request,
 };
 
-pub const LegacyDmPublishJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: runtime.RelayDescriptor,
     published: struct {
-        request: LegacyDmPublishJobRequest,
+        request: Request,
         event_id: [32]u8,
         accepted: bool,
         status: []const u8,
     },
 };
 
-pub const LegacyDmPublishJobClient = struct {
-    config: LegacyDmPublishJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
     relay_response: relay_response.RelayResponseClient,
     relay_pool: runtime.RelayPool,
-    storage: *LegacyDmPublishJobClientStorage,
+    storage: *Storage,
 
     pub fn init(
-        config: LegacyDmPublishJobClientConfig,
-        storage: *LegacyDmPublishJobClientStorage,
-    ) LegacyDmPublishJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{
             .session = workflows.dm.legacy.LegacyDmSession.init(&config.owner_private_key),
         };
@@ -81,9 +81,9 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     pub fn attach(
-        config: LegacyDmPublishJobClientConfig,
-        storage: *LegacyDmPublishJobClientStorage,
-    ) LegacyDmPublishJobClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .local_operator = local_operator.LocalOperatorClient.init(config.local_operator),
@@ -94,31 +94,31 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     pub fn addRelay(
-        self: *LegacyDmPublishJobClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) LegacyDmPublishJobClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         return relay_lifecycle_support.addRelay(self, "relay_pool", relay_url_text);
     }
 
     pub fn markRelayConnected(
-        self: *LegacyDmPublishJobClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmPublishJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.markRelayConnected(self, "relay_pool", relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *LegacyDmPublishJobClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmPublishJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayDisconnected(self, "relay_pool", relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *LegacyDmPublishJobClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) LegacyDmPublishJobClientError!void {
+    ) Error!void {
         return relay_lifecycle_support.noteRelayAuthChallenge(
             self,
             "relay_pool",
@@ -128,36 +128,36 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const LegacyDmPublishJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return relay_lifecycle_support.inspectRelayRuntime(self, "relay_pool", storage);
     }
 
     pub fn inspectAuth(
-        self: *const LegacyDmPublishJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolAuthStorage,
     ) runtime.RelayPoolAuthPlan {
         return self.relay_pool.inspectAuth(storage);
     }
 
     pub fn inspectPublish(
-        self: *const LegacyDmPublishJobClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPublishStorage,
     ) runtime.RelayPoolPublishPlan {
         return self.relay_pool.inspectPublish(storage);
     }
 
     pub fn prepareJob(
-        self: *LegacyDmPublishJobClient,
-        auth_storage: *LegacyDmPublishJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         event_json_output: []u8,
         event_message_output: []u8,
         request: *const workflows.dm.legacy.LegacyDmDirectMessageRequest,
         created_at: u64,
-    ) LegacyDmPublishJobClientError!LegacyDmPublishJobReady {
+    ) Error!Ready {
         var auth_plan_storage = runtime.RelayPoolAuthStorage{};
         const auth_plan = self.inspectAuth(&auth_plan_storage);
         if (auth_plan.nextStep()) |step| {
@@ -196,11 +196,11 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *LegacyDmPublishJobClient,
-        prepared: *const PreparedLegacyDmPublishJobAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) LegacyDmPublishJobClientError!LegacyDmPublishJobResult {
+    ) Error!Result {
         try self.requireCurrentAuth(prepared.relay, prepared.challenge);
         try self.relay_pool.acceptRelayAuthEvent(
             prepared.relay.relay_index,
@@ -212,11 +212,11 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     pub fn acceptPublishOkJson(
-        self: *const LegacyDmPublishJobClient,
-        request: *const LegacyDmPublishJobRequest,
+        self: *const Client,
+        request: *const Request,
         relay_message_json: []const u8,
         scratch: std.mem.Allocator,
-    ) LegacyDmPublishJobClientError!LegacyDmPublishJobResult {
+    ) Error!Result {
         const ok = try self.relay_response.acceptPublishOkJson(
             &request.event.id,
             relay_message_json,
@@ -233,13 +233,13 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     fn prepareAuthEvent(
-        self: *LegacyDmPublishJobClient,
-        auth_storage: *LegacyDmPublishJobAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
-    ) LegacyDmPublishJobClientError!PreparedLegacyDmPublishJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         const target = try self.selectAuthTarget(step);
         const payload = try relay_auth_support.buildSignedAuthPayload(
             &self.local_operator,
@@ -261,19 +261,19 @@ pub const LegacyDmPublishJobClient = struct {
     }
 
     fn selectAuthTarget(
-        self: *const LegacyDmPublishJobClient,
+        self: *const Client,
         step: *const runtime.RelayPoolAuthStep,
-    ) LegacyDmPublishJobClientError!relay_auth_client.RelayAuthTarget {
+    ) Error!relay_auth_client.RelayAuthTarget {
         var auth_storage = runtime.RelayPoolAuthStorage{};
         const plan = self.inspectAuth(&auth_storage);
         return relay_auth_support.selectAuthTarget(&self.relay_pool, plan, step);
     }
 
     fn requireCurrentAuth(
-        self: *const LegacyDmPublishJobClient,
+        self: *const Client,
         descriptor: runtime.RelayDescriptor,
         challenge: []const u8,
-    ) LegacyDmPublishJobClientError!void {
+    ) Error!void {
         var auth_storage = runtime.RelayPoolAuthStorage{};
         const plan = self.inspectAuth(&auth_storage);
         return relay_auth_support.requireCurrentAuth(plan, descriptor, challenge);
@@ -283,7 +283,7 @@ pub const LegacyDmPublishJobClient = struct {
 fn serializeEventClientMessage(
     output: []u8,
     event: *const noztr.nip01_event.Event,
-) LegacyDmPublishJobClientError![]const u8 {
+) Error![]const u8 {
     const prefix = "[\"EVENT\",";
     if (output.len < prefix.len + 1) return error.BufferTooSmall;
 
@@ -298,8 +298,8 @@ fn serializeEventClientMessage(
 }
 
 test "legacy dm publish job client exposes caller-owned config and storage" {
-    var storage = LegacyDmPublishJobClientStorage{};
-    var client = LegacyDmPublishJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = [_]u8{0x41} ** 32,
     }, &storage);
 
@@ -310,8 +310,8 @@ test "legacy dm publish job client prepares ready publish work without auth gati
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = LegacyDmPublishJobClientStorage{};
-    var client = LegacyDmPublishJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = [_]u8{0x51} ** 32,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");
@@ -319,7 +319,7 @@ test "legacy dm publish job client prepares ready publish work without auth gati
 
     const recipient_secret = [_]u8{0x61} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
-    var auth_storage = LegacyDmPublishJobAuthEventStorage{};
+    var auth_storage = AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var event_json_output: [noztr.limits.event_json_max]u8 = undefined;
@@ -355,8 +355,8 @@ test "legacy dm publish job client drives auth-gated publish progression explici
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    var storage = LegacyDmPublishJobClientStorage{};
-    var client = LegacyDmPublishJobClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = [_]u8{0x71} ** 32,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");
@@ -365,7 +365,7 @@ test "legacy dm publish job client drives auth-gated publish progression explici
 
     const recipient_secret = [_]u8{0x81} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
-    var auth_storage = LegacyDmPublishJobAuthEventStorage{};
+    var auth_storage = AuthStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var event_json_output: [noztr.limits.event_json_max]u8 = undefined;

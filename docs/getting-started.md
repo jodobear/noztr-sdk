@@ -133,6 +133,7 @@ If you are updating an older downstream, check these before assuming a route sti
 longer names:
 
 - [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
+- [DM orchestration naming migration](./reference/dm-orchestration-naming-migration.md)
 - [remote signer naming migration](./reference/remote-signer-naming-migration.md)
 - [proof, identity, and NIP-05 planning migration](./reference/proof-identity-planning-migration.md)
 - [examples filename migration](./reference/examples-filename-migration.md)

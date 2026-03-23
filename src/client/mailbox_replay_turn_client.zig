@@ -8,37 +8,37 @@ const workflows = @import("../workflows/mod.zig");
 
 const mailbox_wrap_event_kind: u32 = 1059;
 
-pub const MailboxReplayTurnClientError =
+pub const Error =
     relay_replay_turn.RelayReplayTurnClientError ||
     workflows.dm.mailbox.MailboxError;
 
-pub const MailboxReplayTurnClientConfig = struct {
+pub const Config = struct {
     recipient_private_key: [local_operator.secret_key_bytes]u8,
     replay_turn: relay_replay_turn.RelayReplayTurnClientConfig = .{},
 };
 
-pub const MailboxReplayTurnClientStorage = struct {
+pub const Storage = struct {
     mailbox: workflows.dm.mailbox.MailboxSession = undefined,
     replay_turn: relay_replay_turn.RelayReplayTurnClientStorage = .{},
 };
 
-pub const MailboxReplayTurnRequest = relay_replay_turn.ReplayTurnRequest;
-pub const MailboxReplayTurnResult = relay_replay_turn.ReplayTurnResult;
+pub const Request = relay_replay_turn.ReplayTurnRequest;
+pub const Result = relay_replay_turn.ReplayTurnResult;
 
-pub const MailboxReplayTurnIntake = struct {
+pub const Intake = struct {
     replay: relay_replay_turn.ReplayTurnIntake,
     envelope: ?workflows.dm.mailbox.MailboxEnvelopeOutcome,
 };
 
-pub const MailboxReplayTurnClient = struct {
-    config: MailboxReplayTurnClientConfig,
-    storage: *MailboxReplayTurnClientStorage,
+pub const Client = struct {
+    config: Config,
+    storage: *Storage,
     replay_turn: relay_replay_turn.RelayReplayTurnClient,
 
     pub fn init(
-        config: MailboxReplayTurnClientConfig,
-        storage: *MailboxReplayTurnClientStorage,
-    ) MailboxReplayTurnClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{
             .mailbox = workflows.dm.mailbox.MailboxSession.init(&config.recipient_private_key),
         };
@@ -53,9 +53,9 @@ pub const MailboxReplayTurnClient = struct {
     }
 
     pub fn attach(
-        config: MailboxReplayTurnClientConfig,
-        storage: *MailboxReplayTurnClientStorage,
-    ) MailboxReplayTurnClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .storage = storage,
@@ -66,23 +66,23 @@ pub const MailboxReplayTurnClient = struct {
         };
     }
 
-    pub fn relayCount(self: *const MailboxReplayTurnClient) u8 {
+    pub fn relayCount(self: *const Client) u8 {
         return self.storage.mailbox.relayCount();
     }
 
-    pub fn currentRelayUrl(self: *const MailboxReplayTurnClient) ?[]const u8 {
+    pub fn currentRelayUrl(self: *const Client) ?[]const u8 {
         return self.storage.mailbox.currentRelayUrl();
     }
 
-    pub fn currentRelayAuthChallenge(self: *const MailboxReplayTurnClient) ?[]const u8 {
+    pub fn currentRelayAuthChallenge(self: *const Client) ?[]const u8 {
         return self.storage.mailbox.currentRelayAuthChallenge();
     }
 
     pub fn hydrateRelayListEventJson(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxReplayTurnClientError!u8 {
+    ) Error!u8 {
         const relay_count = try self.storage.mailbox.hydrateRelayListEventJson(event_json, scratch);
         self.replay_turn = relay_replay_turn.RelayReplayTurnClient.init(
             self.config.replay_turn,
@@ -101,47 +101,47 @@ pub const MailboxReplayTurnClient = struct {
     }
 
     pub fn selectRelay(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxReplayTurnClientError![]const u8 {
+    ) Error![]const u8 {
         return self.storage.mailbox.selectRelay(relay_index);
     }
 
     pub fn markRelayConnected(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxReplayTurnClientError!void {
+    ) Error!void {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.markCurrentRelayConnected();
         try self.replay_turn.markRelayConnected(relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         relay_index: u8,
-    ) MailboxReplayTurnClientError!void {
+    ) Error!void {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.noteCurrentRelayDisconnected();
         try self.replay_turn.noteRelayDisconnected(relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) MailboxReplayTurnClientError!void {
+    ) Error!void {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.noteCurrentRelayAuthChallenge(challenge);
         try self.replay_turn.noteRelayAuthChallenge(relay_index, challenge);
     }
 
     pub fn acceptRelayAuthEvent(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         relay_index: u8,
         auth_event: *const noztr.nip01_event.Event,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) MailboxReplayTurnClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         _ = try self.storage.mailbox.selectRelay(relay_index);
         try self.storage.mailbox.acceptCurrentRelayAuthEvent(
             auth_event,
@@ -160,35 +160,35 @@ pub const MailboxReplayTurnClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const MailboxReplayTurnClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return self.replay_turn.inspectRelayRuntime(storage);
     }
 
     pub fn inspectAuth(
-        self: *const MailboxReplayTurnClient,
+        self: *const Client,
         storage: *runtime.RelayPoolAuthStorage,
     ) runtime.RelayPoolAuthPlan {
         return self.replay_turn.replay_exchange.replay.relay_pool.inspectAuth(storage);
     }
 
     pub fn inspectReplay(
-        self: *const MailboxReplayTurnClient,
+        self: *const Client,
         checkpoint_store: store.ClientCheckpointStore,
         specs: []const runtime.RelayReplaySpec,
         storage: *runtime.RelayPoolReplayStorage,
-    ) MailboxReplayTurnClientError!runtime.RelayPoolReplayPlan {
+    ) Error!runtime.RelayPoolReplayPlan {
         return self.replay_turn.inspectReplay(checkpoint_store, specs, storage);
     }
 
     pub fn beginTurn(
-        self: *MailboxReplayTurnClient,
+        self: *Client,
         checkpoint_store: store.ClientCheckpointStore,
         output: []u8,
         subscription_id: []const u8,
         specs: []const runtime.RelayReplaySpec,
-    ) MailboxReplayTurnClientError!MailboxReplayTurnRequest {
+    ) Error!Request {
         const request = try self.replay_turn.beginTurn(
             &self.storage.replay_turn,
             checkpoint_store,
@@ -201,14 +201,14 @@ pub const MailboxReplayTurnClient = struct {
     }
 
     pub fn acceptReplayMessageJson(
-        self: *MailboxReplayTurnClient,
-        request: *const MailboxReplayTurnRequest,
+        self: *Client,
+        request: *const Request,
         relay_message_json: []const u8,
         recipients_out: []noztr.nip17_private_messages.DmRecipient,
         thumbs_out: [][]const u8,
         fallbacks_out: [][]const u8,
         scratch: std.mem.Allocator,
-    ) MailboxReplayTurnClientError!MailboxReplayTurnIntake {
+    ) Error!Intake {
         const replay = try self.replay_turn.acceptReplayMessageJson(
             &self.storage.replay_turn,
             request,
@@ -236,25 +236,25 @@ pub const MailboxReplayTurnClient = struct {
     }
 
     pub fn completeTurn(
-        self: *const MailboxReplayTurnClient,
+        self: *const Client,
         output: []u8,
-        request: *const MailboxReplayTurnRequest,
-    ) MailboxReplayTurnClientError!MailboxReplayTurnResult {
+        request: *const Request,
+    ) Error!Result {
         return self.replay_turn.completeTurn(&self.storage.replay_turn, output, request);
     }
 
     pub fn saveTurnResult(
-        self: *const MailboxReplayTurnClient,
+        self: *const Client,
         archive: store.RelayCheckpointArchive,
-        result: *const MailboxReplayTurnResult,
-    ) MailboxReplayTurnClientError!void {
+        result: *const Result,
+    ) Error!void {
         return self.replay_turn.saveTurnResult(archive, result);
     }
 };
 
 test "mailbox replay turn client exposes caller-owned config and storage" {
-    var storage = MailboxReplayTurnClientStorage{};
-    var client = MailboxReplayTurnClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
@@ -273,8 +273,8 @@ test "mailbox replay turn client accepts replay transcript events through mailbo
     const recipient_secret = [_]u8{0x33} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var client_storage = MailboxReplayTurnClientStorage{};
-    var client = MailboxReplayTurnClient.init(.{
+    var client_storage = Storage{};
+    var client = Client.init(.{
         .recipient_private_key = recipient_secret,
     }, &client_storage);
 

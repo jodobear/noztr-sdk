@@ -12,8 +12,8 @@ const store = @import("../store/mod.zig");
 const workflows = @import("../workflows/mod.zig");
 
 pub const ClientError =
-    legacy_dm_replay_job.LegacyDmReplayJobClientError ||
-    legacy_dm_subscription_job.LegacyDmSubscriptionJobClientError ||
+    legacy_dm_replay_job.Error ||
+    legacy_dm_subscription_job.Error ||
     local_operator.LocalOperatorClientError ||
     noztr.nip01_message.MessageEncodeError ||
     error{
@@ -25,16 +25,16 @@ pub const ClientError =
 pub const Config = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
-    replay_turn: legacy_dm_replay_job.LegacyDmReplayJobClientConfig = undefined,
-    subscription_turn: legacy_dm_subscription_job.LegacyDmSubscriptionJobClientConfig = undefined,
+    replay_turn: legacy_dm_replay_job.Config = undefined,
+    subscription_turn: legacy_dm_subscription_job.Config = undefined,
 };
 
 pub const Storage = struct {
-    replay_job: legacy_dm_replay_job.LegacyDmReplayJobClientStorage = .{},
-    subscription_job: legacy_dm_subscription_job.LegacyDmSubscriptionJobClientStorage = .{},
+    replay_job: legacy_dm_replay_job.Storage = .{},
+    subscription_job: legacy_dm_subscription_job.Storage = .{},
     replay_phase_complete: bool = false,
     live_subscription_active: bool = false,
-    live_subscription_request: legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest = undefined,
+    live_subscription_request: legacy_dm_subscription_job.Request = undefined,
 };
 
 pub const PlanStorage = dm_sync_runtime_support.PlanStorage;
@@ -55,42 +55,42 @@ pub const ResumeState = struct {
 };
 
 pub const Step =
-    dm_sync_runtime_support.Step(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.Step(legacy_dm_subscription_job.Request);
 pub const Plan =
-    dm_sync_runtime_support.Plan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.Plan(legacy_dm_subscription_job.Request);
 pub const PolicyStorage = dm_sync_runtime_support.PolicyStorage;
 pub const PolicyStep =
-    dm_sync_runtime_support.PolicyStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.PolicyStep(legacy_dm_subscription_job.Request);
 pub const PolicyPlan =
-    dm_sync_runtime_support.PolicyPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.PolicyPlan(legacy_dm_subscription_job.Request);
 pub const OrchestrationStorage = dm_sync_runtime_support.OrchestrationStorage;
 pub const OrchestrationStep =
-    dm_sync_runtime_support.OrchestrationStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.OrchestrationStep(legacy_dm_subscription_job.Request);
 pub const OrchestrationPlan =
-    dm_sync_runtime_support.OrchestrationPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.OrchestrationPlan(legacy_dm_subscription_job.Request);
 pub const CadenceRequest = dm_sync_runtime_support.CadenceRequest;
 pub const CadenceStorage = dm_sync_runtime_support.CadenceStorage;
 pub const CadenceWaitReason = dm_sync_runtime_support.CadenceWaitReason;
 pub const CadenceWait = dm_sync_runtime_support.CadenceWait;
 pub const CadenceStep =
-    dm_sync_runtime_support.CadenceStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.CadenceStep(legacy_dm_subscription_job.Request);
 pub const CadencePlan =
-    dm_sync_runtime_support.CadencePlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+    dm_sync_runtime_support.CadencePlan(legacy_dm_subscription_job.Request);
 
 pub const AuthEventStorage = relay_auth_client.RelayAuthEventStorage;
 pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const ReplayRequest = legacy_dm_replay_job.LegacyDmReplayJobRequest;
-pub const ReplayIntake = legacy_dm_replay_job.LegacyDmReplayJobIntake;
+pub const ReplayRequest = legacy_dm_replay_job.Request;
+pub const ReplayIntake = legacy_dm_replay_job.Intake;
 pub const SubscriptionRequest =
-    legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest;
+    legacy_dm_subscription_job.Request;
 pub const SubscriptionIntake =
-    legacy_dm_subscription_job.LegacyDmSubscriptionJobIntake;
+    legacy_dm_subscription_job.Intake;
 
 pub const Client = struct {
     config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    replay_job: legacy_dm_replay_job.LegacyDmReplayJobClient,
-    subscription_job: legacy_dm_subscription_job.LegacyDmSubscriptionJobClient,
+    replay_job: legacy_dm_replay_job.Client,
+    subscription_job: legacy_dm_subscription_job.Client,
     storage: *Storage,
 
     pub fn init(
@@ -102,11 +102,11 @@ pub const Client = struct {
         return .{
             .config = normalized,
             .local_operator = local_operator.LocalOperatorClient.init(normalized.local_operator),
-            .replay_job = legacy_dm_replay_job.LegacyDmReplayJobClient.init(
+            .replay_job = legacy_dm_replay_job.Client.init(
                 normalized.replay_turn,
                 &storage.replay_job,
             ),
-            .subscription_job = legacy_dm_subscription_job.LegacyDmSubscriptionJobClient.init(
+            .subscription_job = legacy_dm_subscription_job.Client.init(
                 normalized.subscription_turn,
                 &storage.subscription_job,
             ),
@@ -122,11 +122,11 @@ pub const Client = struct {
         return .{
             .config = normalized,
             .local_operator = local_operator.LocalOperatorClient.init(normalized.local_operator),
-            .replay_job = legacy_dm_replay_job.LegacyDmReplayJobClient.attach(
+            .replay_job = legacy_dm_replay_job.Client.attach(
                 normalized.replay_turn,
                 &storage.replay_job,
             ),
-            .subscription_job = legacy_dm_subscription_job.LegacyDmSubscriptionJobClient.attach(
+            .subscription_job = legacy_dm_subscription_job.Client.attach(
                 normalized.subscription_turn,
                 &storage.subscription_job,
             ),
@@ -239,7 +239,7 @@ pub const Client = struct {
         );
 
         return dm_sync_runtime_support.buildPlan(
-            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            legacy_dm_subscription_job.Request,
             auth_plan,
             replay_plan,
             subscription_plan,
@@ -265,7 +265,7 @@ pub const Client = struct {
         );
 
         return dm_sync_runtime_support.classifyPolicy(
-            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            legacy_dm_subscription_job.Request,
             self.relayCount(),
             relay_runtime,
             runtime_plan,
@@ -287,7 +287,7 @@ pub const Client = struct {
             &storage.policy,
         );
         return dm_sync_runtime_support.buildOrchestration(
-            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            legacy_dm_subscription_job.Request,
             policy_plan,
         );
     }
@@ -307,7 +307,7 @@ pub const Client = struct {
             &storage.orchestration,
         );
         return dm_sync_runtime_support.buildCadence(
-            legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
+            legacy_dm_subscription_job.Request,
             orchestration,
             request,
         );
@@ -388,14 +388,14 @@ pub const Client = struct {
         self: *Client,
         output: []u8,
         request: *const ReplayRequest,
-    ) ClientError!legacy_dm_replay_job.LegacyDmReplayJobResult {
+    ) ClientError!legacy_dm_replay_job.Result {
         return self.replay_job.completeReplayJob(output, request);
     }
 
     pub fn saveReplayTurnResult(
         self: *Client,
         archive: store.RelayCheckpointArchive,
-        result: *const legacy_dm_replay_turn.LegacyDmReplayTurnResult,
+        result: *const legacy_dm_replay_turn.Result,
     ) ClientError!void {
         return self.replay_job.saveJobResult(archive, result);
     }
@@ -430,7 +430,7 @@ pub const Client = struct {
         self: *Client,
         output: []u8,
         request: *const SubscriptionRequest,
-    ) ClientError!legacy_dm_subscription_job.LegacyDmSubscriptionJobResult {
+    ) ClientError!legacy_dm_subscription_job.Result {
         const result = try self.subscription_job.completeSubscriptionJob(output, request);
         if (sameSubscriptionRequest(&self.storage.live_subscription_request, request)) {
             self.storage.live_subscription_active = false;
@@ -470,7 +470,7 @@ fn sameSubscriptionRequest(
 }
 
 fn restoreReplayTurnMembers(
-    replay_turn: *legacy_dm_replay_turn.LegacyDmReplayTurnClient,
+    replay_turn: *legacy_dm_replay_turn.Client,
     members: *const runtime.RelayPoolMemberSet,
 ) ClientError!void {
     replay_turn.replay_turn.replay_exchange.replay.relay_pool.restoreMembers(members) catch |err| {
@@ -482,7 +482,7 @@ fn restoreReplayTurnMembers(
 }
 
 fn restoreSubscriptionTurnMembers(
-    subscription_turn: *legacy_dm_subscription_job.LegacyDmSubscriptionJobClient,
+    subscription_turn: *legacy_dm_subscription_job.Client,
     members: *const runtime.RelayPoolMemberSet,
 ) ClientError!void {
     subscription_turn.subscription_turn.subscription_turn.relay_exchange.relay_pool.restoreMembers(
