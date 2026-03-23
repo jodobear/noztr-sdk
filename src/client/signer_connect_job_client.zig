@@ -22,7 +22,7 @@ pub const SignerConnectJobClientStorage = struct {
 
 pub const SignerConnectJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
 pub const PreparedSignerConnectJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
-pub const SignerConnectJobRequest = workflows.signer.remote.RemoteSignerOutboundRequest;
+pub const SignerConnectJobRequest = workflows.signer.remote.OutboundRequest;
 
 pub const SignerConnectJobReady = union(enum) {
     authenticate: PreparedSignerConnectJobAuthEvent,
@@ -378,7 +378,7 @@ test "signer connect job client drives auth-gated connect progression through on
 fn serializeResponseJson(
     output: []u8,
     response: @import("noztr").nip46_remote_signing.Response,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return @import("noztr").nip46_remote_signing.message_serialize_json(
         output,
         .{ .response = response },

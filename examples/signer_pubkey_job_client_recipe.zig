@@ -79,7 +79,7 @@ fn establishSignerSession(
     storage: *noztr_sdk.client.signer.session.SignerClientStorage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
-) noztr_sdk.workflows.signer.remote.RemoteSignerError!void {
+) noztr_sdk.workflows.signer.remote.Error!void {
     signer.markCurrentRelayConnected();
 
     var request_scratch_storage: [1024]u8 = undefined;
@@ -100,7 +100,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) noztr_sdk.workflows.signer.remote.RemoteSignerError![]const u8 {
+) noztr_sdk.workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },

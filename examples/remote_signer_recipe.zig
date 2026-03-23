@@ -11,13 +11,13 @@ test "recipe: remote signer session stays explicit from connect to get_public_ke
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two&secret=secret";
-    var session = try noztr_sdk.workflows.signer.remote.RemoteSignerSession.initFromBunkerUriText(
+    var session = try noztr_sdk.workflows.signer.remote.Session.initFromBunkerUriText(
         bunker_uri,
         arena.allocator(),
     );
     session.markCurrentRelayConnected();
 
-    var connect_buffer = noztr_sdk.workflows.signer.remote.RemoteSignerRequestBuffer{};
+    var connect_buffer = noztr_sdk.workflows.signer.remote.RequestBuffer{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     const outbound_connect = try session.beginConnect(
@@ -38,7 +38,7 @@ test "recipe: remote signer session stays explicit from connect to get_public_ke
     try std.testing.expect(connect_outcome == .connected);
     try std.testing.expect(session.isConnected());
 
-    var get_pubkey_buffer = noztr_sdk.workflows.signer.remote.RemoteSignerRequestBuffer{};
+    var get_pubkey_buffer = noztr_sdk.workflows.signer.remote.RequestBuffer{};
     var get_pubkey_scratch_storage: [1024]u8 = undefined;
     var get_pubkey_scratch = std.heap.FixedBufferAllocator.init(&get_pubkey_scratch_storage);
     const outbound_get_pubkey = try session.beginGetPublicKey(
@@ -64,7 +64,7 @@ test "recipe: remote signer session stays explicit from connect to get_public_ke
     try std.testing.expect(std.mem.eql(u8, &user_pubkey, &session.getUserPubkey().?));
 
     const peer_pubkey = [_]u8{0x22} ** 32;
-    var nip44_buffer = noztr_sdk.workflows.signer.remote.RemoteSignerRequestBuffer{};
+    var nip44_buffer = noztr_sdk.workflows.signer.remote.RequestBuffer{};
     var nip44_scratch_storage: [1024]u8 = undefined;
     var nip44_scratch = std.heap.FixedBufferAllocator.init(&nip44_scratch_storage);
     const outbound_nip44_encrypt = try session.beginNip44Encrypt(
@@ -91,7 +91,7 @@ test "recipe: remote signer session stays explicit from connect to get_public_ke
     try std.testing.expectEqual(.nip44_encrypt, nip44_outcome.text_response.method);
     try std.testing.expectEqualStrings("ciphertext", nip44_outcome.text_response.text);
 
-    var runtime_storage = noztr_sdk.workflows.signer.remote.RemoteSignerRelayPoolRuntimeStorage{};
+    var runtime_storage = noztr_sdk.workflows.signer.remote.RelayRuntimeStorage{};
     const runtime_plan = session.inspectRelayPoolRuntime(&runtime_storage);
     try std.testing.expectEqual(@as(u8, 1), runtime_plan.ready_count);
     try std.testing.expectEqual(@as(u8, 1), runtime_plan.connect_count);

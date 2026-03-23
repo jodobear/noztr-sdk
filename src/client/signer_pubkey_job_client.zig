@@ -22,7 +22,7 @@ pub const SignerPubkeyJobClientStorage = struct {
 
 pub const SignerPubkeyJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
 pub const PreparedSignerPubkeyJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
-pub const SignerPubkeyJobRequest = workflows.signer.remote.RemoteSignerOutboundRequest;
+pub const SignerPubkeyJobRequest = workflows.signer.remote.OutboundRequest;
 
 pub const SignerPubkeyJobReady = union(enum) {
     authenticate: PreparedSignerPubkeyJobAuthEvent,
@@ -371,7 +371,7 @@ fn establishSignerSession(
     storage: *signer_client.SignerClientStorage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
-) workflows.signer.remote.RemoteSignerError!void {
+) workflows.signer.remote.Error!void {
     signer.markCurrentRelayConnected();
 
     var request_scratch_bytes: [1024]u8 = undefined;
@@ -392,7 +392,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },
@@ -402,7 +402,7 @@ fn textResponse(
 fn serializeResponseJson(
     output: []u8,
     response: @import("noztr").nip46_remote_signing.Response,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return @import("noztr").nip46_remote_signing.message_serialize_json(
         output,
         .{ .response = response },

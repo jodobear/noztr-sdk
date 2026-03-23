@@ -45,11 +45,11 @@ pub const PreparedMailboxSignerJobAuthEvent = signer_job_support.PreparedSignerJ
 
 pub const MailboxSignerJobReady = union(enum) {
     authenticate: PreparedMailboxSignerJobAuthEvent,
-    get_public_key: workflows.signer.remote.RemoteSignerOutboundRequest,
-    encrypt_rumor: workflows.signer.remote.RemoteSignerOutboundRequest,
-    sign_seal: workflows.signer.remote.RemoteSignerOutboundRequest,
-    encrypt_seal: workflows.signer.remote.RemoteSignerOutboundRequest,
-    sign_wrap: workflows.signer.remote.RemoteSignerOutboundRequest,
+    get_public_key: workflows.signer.remote.OutboundRequest,
+    encrypt_rumor: workflows.signer.remote.OutboundRequest,
+    sign_seal: workflows.signer.remote.OutboundRequest,
+    encrypt_seal: workflows.signer.remote.OutboundRequest,
+    sign_wrap: workflows.signer.remote.OutboundRequest,
 };
 
 pub const MailboxSignerDirectMessageRequest = struct {
@@ -283,7 +283,7 @@ pub const MailboxSignerJobClient = struct {
         storage: *MailboxSignerJobClientStorage,
         scratch: std.mem.Allocator,
         requested_permissions: []const workflows.signer.remote.Permission,
-    ) MailboxSignerJobClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) MailboxSignerJobClientError!workflows.signer.remote.OutboundRequest {
         return self.signer.beginConnect(&storage.signer, scratch, requested_permissions);
     }
 
@@ -1089,7 +1089,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },
@@ -1099,7 +1099,7 @@ fn textResponse(
 fn serializeResponseJson(
     output: []u8,
     response: noztr.nip46_remote_signing.Response,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return noztr.nip46_remote_signing.message_serialize_json(output, .{ .response = response });
 }
 

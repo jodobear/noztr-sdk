@@ -5,7 +5,7 @@ const signer_capability = @import("signer_capability.zig");
 
 pub const signer_client_request_id_max_bytes: u8 = 32;
 
-pub const SignerClientError = workflows.signer.remote.RemoteSignerError;
+pub const SignerClientError = workflows.signer.remote.Error;
 pub const SignerClientCapabilityError = SignerClientError || error{
     UnexpectedCapabilityOutcome,
 };
@@ -13,7 +13,7 @@ pub const SignerClientCapabilityError = SignerClientError || error{
 pub const SignerClientConfig = struct {};
 
 pub const SignerClientRequestStorage = struct {
-    buffer: workflows.signer.remote.RemoteSignerRequestBuffer = .{},
+    buffer: workflows.signer.remote.RequestBuffer = .{},
     request_id: [signer_client_request_id_max_bytes]u8 =
         [_]u8{0} ** signer_client_request_id_max_bytes,
     request_sequence: u64 = 0,
@@ -23,7 +23,7 @@ pub const SignerClientRequestStorage = struct {
     pub fn nextRequestContext(
         self: *SignerClientRequestStorage,
         scratch: std.mem.Allocator,
-    ) workflows.signer.remote.RemoteSignerRequestContext {
+    ) workflows.signer.remote.RequestContext {
         return .init(self.nextRequestId(), &self.buffer, scratch);
     }
 
@@ -40,27 +40,27 @@ pub const SignerClientRequestStorage = struct {
 
 pub const SignerClientStorage = struct {
     request: SignerClientRequestStorage = .{},
-    relay_runtime: workflows.signer.remote.RemoteSignerRelayPoolRuntimeStorage = .{},
+    relay_runtime: workflows.signer.remote.RelayRuntimeStorage = .{},
 };
 
-pub const SignerClientResumeStorage = workflows.signer.remote.RemoteSignerResumeStorage;
-pub const SignerClientResumeState = workflows.signer.remote.RemoteSignerResumeState;
-pub const SignerClientSessionPolicyAction = workflows.signer.remote.RemoteSignerSessionPolicyAction;
-pub const SignerClientSessionPolicyStep = workflows.signer.remote.RemoteSignerSessionPolicyStep;
-pub const SignerClientSessionPolicyPlan = workflows.signer.remote.RemoteSignerSessionPolicyPlan;
-pub const SignerClientSessionCadenceRequest = workflows.signer.remote.RemoteSignerSessionCadenceRequest;
-pub const SignerClientSessionCadenceWaitReason = workflows.signer.remote.RemoteSignerSessionCadenceWaitReason;
-pub const SignerClientSessionCadenceWait = workflows.signer.remote.RemoteSignerSessionCadenceWait;
-pub const SignerClientSessionCadenceStep = workflows.signer.remote.RemoteSignerSessionCadenceStep;
-pub const SignerClientSessionCadencePlan = workflows.signer.remote.RemoteSignerSessionCadencePlan;
+pub const SignerClientResumeStorage = workflows.signer.remote.ResumeStorage;
+pub const SignerClientResumeState = workflows.signer.remote.ResumeState;
+pub const SignerClientSessionPolicyAction = workflows.signer.remote.PolicyAction;
+pub const SignerClientSessionPolicyStep = workflows.signer.remote.PolicyStep;
+pub const SignerClientSessionPolicyPlan = workflows.signer.remote.PolicyPlan;
+pub const SignerClientSessionCadenceRequest = workflows.signer.remote.CadenceRequest;
+pub const SignerClientSessionCadenceWaitReason = workflows.signer.remote.CadenceWaitReason;
+pub const SignerClientSessionCadenceWait = workflows.signer.remote.CadenceWait;
+pub const SignerClientSessionCadenceStep = workflows.signer.remote.CadenceStep;
+pub const SignerClientSessionCadencePlan = workflows.signer.remote.CadencePlan;
 
 pub const SignerClient = struct {
     config: SignerClientConfig,
-    session: workflows.signer.remote.RemoteSignerSession,
+    session: workflows.signer.remote.Session,
 
     pub fn init(
         config: SignerClientConfig,
-        session: workflows.signer.remote.RemoteSignerSession,
+        session: workflows.signer.remote.Session,
     ) SignerClient {
         return .{
             .config = config,
@@ -75,7 +75,7 @@ pub const SignerClient = struct {
     ) SignerClientError!SignerClient {
         return .{
             .config = config,
-            .session = try workflows.signer.remote.RemoteSignerSession.initFromBunkerUriText(uri_text, scratch),
+            .session = try workflows.signer.remote.Session.initFromBunkerUriText(uri_text, scratch),
         };
     }
 
@@ -188,7 +188,7 @@ pub const SignerClient = struct {
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
         requested_permissions: []const workflows.signer.remote.Permission,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginConnect(
             storage.request.nextRequestContext(scratch),
             requested_permissions,
@@ -199,7 +199,7 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginGetPublicKey(storage.request.nextRequestContext(scratch));
     }
 
@@ -208,7 +208,7 @@ pub const SignerClient = struct {
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
         unsigned_event_json: []const u8,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginSignEvent(
             storage.request.nextRequestContext(scratch),
             unsigned_event_json,
@@ -219,7 +219,7 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginSwitchRelays(storage.request.nextRequestContext(scratch));
     }
 
@@ -227,8 +227,8 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-        request: *const workflows.signer.remote.RemoteSignerPubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+        request: *const workflows.signer.remote.PubkeyTextRequest,
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip04Encrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -239,8 +239,8 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-        request: *const workflows.signer.remote.RemoteSignerPubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+        request: *const workflows.signer.remote.PubkeyTextRequest,
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip04Decrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -251,8 +251,8 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-        request: *const workflows.signer.remote.RemoteSignerPubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+        request: *const workflows.signer.remote.PubkeyTextRequest,
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip44Encrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -263,8 +263,8 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-        request: *const workflows.signer.remote.RemoteSignerPubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+        request: *const workflows.signer.remote.PubkeyTextRequest,
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip44Decrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -275,7 +275,7 @@ pub const SignerClient = struct {
         self: *SignerClient,
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return self.session.beginPing(storage.request.nextRequestContext(scratch));
     }
 
@@ -284,7 +284,7 @@ pub const SignerClient = struct {
         storage: *SignerClientStorage,
         scratch: std.mem.Allocator,
         request: *const signer_capability.SignerOperationRequest,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerOutboundRequest {
+    ) SignerClientError!workflows.signer.remote.OutboundRequest {
         return switch (request.*) {
             .get_public_key => self.beginGetPublicKey(storage, scratch),
             .sign_event => |unsigned_event_json| self.beginSignEvent(
@@ -303,7 +303,7 @@ pub const SignerClient = struct {
         self: *SignerClient,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.RemoteSignerResponseOutcome {
+    ) SignerClientError!workflows.signer.remote.ResponseOutcome {
         return self.session.acceptResponseJson(response_json, scratch);
     }
 
@@ -332,7 +332,7 @@ pub const SignerClient = struct {
 };
 
 fn capabilityOperationFromRemoteMethod(
-    method: workflows.signer.remote.RemoteSignerMethod,
+    method: workflows.signer.remote.Method,
 ) ?signer_capability.SignerOperation {
     return switch (method) {
         .get_public_key => .get_public_key,
@@ -640,7 +640,7 @@ fn textResponse(
     output: []u8,
     id: []const u8,
     text: []const u8,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return serializeResponseJson(output, .{
         .id = id,
         .result = .{ .value = .{ .text = text } },
@@ -650,7 +650,7 @@ fn textResponse(
 fn serializeResponseJson(
     output: []u8,
     response: @import("noztr").nip46_remote_signing.Response,
-) workflows.signer.remote.RemoteSignerError![]const u8 {
+) workflows.signer.remote.Error![]const u8 {
     return @import("noztr").nip46_remote_signing.message_serialize_json(
         output,
         .{ .response = response },

@@ -88,7 +88,7 @@ They do not imply:
 - `remote_signer_recipe.zig`
   - goal: explicit `NIP-46` connect plus `get_public_key`, one `nip44_encrypt` request, and one
     shared relay-pool inspect/select step
-  - related SDK symbols: `RemoteSignerSession`, `RemoteSignerRelayPoolRuntimeStorage`,
+  - related SDK symbols: `Session`, `RelayRuntimeStorage`,
     `noztr_sdk.runtime.RelayPoolStep`
   - kernel fixture help: `noztr.nip46_remote_signing`
   - control points: caller starts connect, caller starts later signer requests, caller feeds

@@ -47,7 +47,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(workflows.proof) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerifier) == type);
     try std.testing.expect(@TypeOf(workflows.signer) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSession) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.Session) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientError) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientConfig) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientStorage) == type);
@@ -634,22 +634,22 @@ test "phase architecture relay policy hooks stay internal and explicit" {
 }
 
 test "phase4 exposes the remote signer workflow surface" {
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSession) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerPubkeyTextRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerRequestContext) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerTextResponse) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerRelayPoolStorage) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerRelayPoolRuntimeStorage) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerResumeStorage) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerResumeState) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionPolicyAction) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionPolicyStep) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionPolicyPlan) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionCadenceRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionCadenceWaitReason) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionCadenceWait) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionCadenceStep) == type);
-    try std.testing.expect(@TypeOf(workflows.signer.remote.RemoteSignerSessionCadencePlan) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.Session) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.PubkeyTextRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.RequestContext) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.TextResponse) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.RelayPoolStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.RelayRuntimeStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.ResumeStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.ResumeState) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.PolicyAction) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.PolicyStep) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.PolicyPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.CadenceRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.CadenceWaitReason) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.CadenceWait) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.CadenceStep) == type);
+    try std.testing.expect(@TypeOf(workflows.signer.remote.CadencePlan) == type);
 }
 
 test "phase4b exposes the legacy dm workflow surface" {

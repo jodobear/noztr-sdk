@@ -116,7 +116,7 @@ pub const SignerCapabilityProfile = struct {
     }
 };
 
-pub const SignerPubkeyTextRequest = workflows.signer.remote.RemoteSignerPubkeyTextRequest;
+pub const SignerPubkeyTextRequest = workflows.signer.remote.PubkeyTextRequest;
 
 /// Request payloads borrow caller-owned data.
 pub const SignerOperationRequest = union(SignerOperation) {
