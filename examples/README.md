@@ -146,7 +146,7 @@ They do not imply:
     instead of becoming a hidden background sync or opaque merge engine
 - `social_graph_wot_client_recipe.zig`
   - goal: compose one kind-`3` contact-list publish route, one bounded contact subscription
-    posture, and one explicit starter-WoT inspection over stored latest contact lists
+    posture, and one explicit starter-only WoT inspection over verified latest contact lists
   - related SDK symbols: `noztr_sdk.client.social.graph_wot`, `SocialGraphWotClient`,
     `SocialContactDraft`, `SocialContactDraftStorage`, `SocialContactTagStorage`,
     `SocialContactSubscriptionRequest`, `StoredSocialContactSelectionRequest`,
@@ -155,8 +155,9 @@ They do not imply:
   - kernel fixture help: `noztr.nip02_contacts`
   - control points: deterministic contact-tag parsing stays on `noztr`, contact-list publish and
     relay query posture still routes through the existing publish and query floors, stored latest
-    contact selection stays explicit over the archive seam, and the starter-WoT route remains
-    inspectable and bounded instead of becoming an opaque recommendation engine or hidden sync loop
+    contact selection stays explicit over the archive seam, contact events are verified before this
+    route trusts them, and the starter-WoT route remains a bounded heuristic instead of becoming an
+    opaque recommendation engine, hidden sync loop, or broader trust claim
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

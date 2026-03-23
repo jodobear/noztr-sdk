@@ -13,6 +13,7 @@ pub const SocialGraphWotClientError =
     relay_query_client.RelayQueryClientError ||
     store.EventArchiveError ||
     noztr.nip01_event.EventParseError ||
+    noztr.nip01_event.EventVerifyError ||
     noztr.nip02_contacts.ContactsError ||
     error{
         InvalidContactEventKind,
@@ -203,12 +204,10 @@ pub const SocialGraphWotClient = struct {
     }
 
     pub fn buildContactListDraft(
-        self: SocialGraphWotClient,
+        _: SocialGraphWotClient,
         storage: *SocialContactDraftStorage,
         draft: *const SocialContactDraft,
     ) SocialGraphWotClientError!local_operator.LocalEventDraft {
-        _ = self;
-
         if (draft.contacts.len > storage.tags.len) return error.ContactDraftStorageTooSmall;
         if (draft.contacts.len > storage.tag_items.len) return error.ContactDraftStorageTooSmall;
         if (draft.contacts.len > storage.pubkey_hex.len) return error.ContactDraftStorageTooSmall;
@@ -297,11 +296,10 @@ pub const SocialGraphWotClient = struct {
     }
 
     pub fn inspectContactEvent(
-        self: SocialGraphWotClient,
+        _: SocialGraphWotClient,
         event: *const noztr.nip01_event.Event,
         contacts_out: []noztr.nip02_contacts.ContactEntry,
     ) SocialGraphWotClientError!SocialContactInspection {
-        _ = self;
         if (event.kind != contact_list_event_kind) return error.InvalidContactEventKind;
         const count = try noztr.nip02_contacts.contacts_extract(event, contacts_out);
         return .{
@@ -311,12 +309,13 @@ pub const SocialGraphWotClient = struct {
     }
 
     pub fn storeContactEventJson(
-        self: SocialGraphWotClient,
+        _: SocialGraphWotClient,
         archive: store.EventArchive,
         event_json: []const u8,
         scratch: std.mem.Allocator,
     ) SocialGraphWotClientError!void {
-        _ = self;
+        const event = try parseVerifiedContactEventJson(event_json, scratch);
+        if (event.kind != contact_list_event_kind) return error.InvalidContactEventKind;
         return archive.ingestEventJson(event_json, scratch);
     }
 
@@ -328,8 +327,6 @@ pub const SocialGraphWotClient = struct {
         contacts_out: []noztr.nip02_contacts.ContactEntry,
         scratch: std.mem.Allocator,
     ) SocialGraphWotClientError!StoredSocialContactInspection {
-        _ = self;
-
         const authors = [_]store.EventPubkeyHex{request.author};
         const kinds = [_]u32{contact_list_event_kind};
         try archive.query(&.{
@@ -340,13 +337,13 @@ pub const SocialGraphWotClient = struct {
         }, page);
 
         for (page.slice()) |record| {
-            const event = try noztr.nip01_event.event_parse_json(record.eventJson(), scratch);
-            const count = try noztr.nip02_contacts.contacts_extract(&event, contacts_out);
+            const event = try parseVerifiedContactEventJson(record.eventJson(), scratch);
+            const inspection = try self.inspectContactEvent(&event, contacts_out);
             return .{
                 .selection = .{
                     .record = record,
                     .event = event,
-                    .contacts = contacts_out[0..count],
+                    .contacts = inspection.contacts,
                 },
                 .truncated = page.truncated,
                 .next_cursor = page.next_cursor,
@@ -392,16 +389,25 @@ pub const SocialGraphWotClient = struct {
         }
 
         const root_selection = root_inspection.selection.?;
-        const direct_follow = contactSliceContainsHex(root_selection.contacts, request.candidate);
 
+        var direct_follow = false;
+        var root_follow_count: usize = 0;
         var support_count: usize = 0;
         var expanded_follow_count: usize = 0;
         var supporter_count: usize = 0;
         var supporters_truncated = false;
 
-        for (root_selection.contacts) |contact| {
+        for (root_selection.contacts, 0..) |contact, index| {
             const contact_pubkey_hex = std.fmt.bytesToHex(contact.pubkey, .lower);
-            if (std.mem.eql(u8, contact_pubkey_hex[0..], request.candidate[0..])) continue;
+            if (contactHexSeenEarlier(root_selection.contacts[0..index], contact_pubkey_hex)) {
+                continue;
+            }
+
+            root_follow_count += 1;
+            if (std.mem.eql(u8, contact_pubkey_hex[0..], request.candidate[0..])) {
+                direct_follow = true;
+                continue;
+            }
 
             expanded_follow_count += 1;
             const peer_inspection = try self.inspectLatestStoredContacts(
@@ -426,7 +432,7 @@ pub const SocialGraphWotClient = struct {
         return .{
             .root = root_selection,
             .direct_follow = direct_follow,
-            .root_follow_count = root_selection.contacts.len,
+            .root_follow_count = root_follow_count,
             .expanded_follow_count = expanded_follow_count,
             .support_count = support_count,
             .supporters = supporters_out[0..supporter_count],
@@ -465,6 +471,22 @@ fn filterFromSocialContactQuery(
         filter.limit = @intCast(query.limit);
     }
     return filter;
+}
+
+fn parseVerifiedContactEventJson(
+    event_json: []const u8,
+    scratch: std.mem.Allocator,
+) SocialGraphWotClientError!noztr.nip01_event.Event {
+    const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
+    try noztr.nip01_event.event_verify(&event);
+    return event;
+}
+
+fn contactHexSeenEarlier(
+    earlier_contacts: []const noztr.nip02_contacts.ContactEntry,
+    candidate_hex: store.EventPubkeyHex,
+) bool {
+    return contactSliceContainsHex(earlier_contacts, candidate_hex);
 }
 
 fn contactSliceContainsHex(
@@ -669,4 +691,192 @@ test "social graph wot client inspects latest stored contacts and starter wot ex
     try std.testing.expectEqual(@as(usize, 1), wot.supporters.len);
     const expected_supporter = std.fmt.bytesToHex(bob_pubkey, .lower);
     try std.testing.expectEqualSlices(u8, expected_supporter[0..], wot.supporters[0].author[0..]);
+}
+
+test "social graph wot client rejects invalid contact signatures on social ingest" {
+    var storage = SocialGraphWotClientStorage{};
+    var client = SocialGraphWotClient.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x91} ** 32;
+    const candidate_pubkey = [_]u8{0xaa} ** 32;
+
+    var tags: [1]noztr.nip01_event.EventTag = undefined;
+    var tag_items: [1]SocialContactTagStorage = undefined;
+    var pubkeys: [1]store.EventPubkeyHex = undefined;
+    var draft_storage = SocialContactDraftStorage.init(
+        tags[0..],
+        tag_items[0..],
+        pubkeys[0..],
+    );
+    var event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try client.prepareContactListPublish(
+        event_json[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 10,
+            .contacts = &.{.{ .pubkey = candidate_pubkey }},
+        },
+    );
+
+    var invalid_json: [noztr.limits.event_json_max]u8 = undefined;
+    @memcpy(invalid_json[0..prepared.event_json.len], prepared.event_json);
+    corruptEventSignatureHex(invalid_json[0..prepared.event_json.len]);
+
+    var memory_store = store.MemoryClientStore{};
+    const archive = store.EventArchive.init(memory_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidSignature,
+        client.storeContactEventJson(archive, invalid_json[0..prepared.event_json.len], arena.allocator()),
+    );
+}
+
+test "social graph wot client rejects invalid stored contact signatures during inspection" {
+    var storage = SocialGraphWotClientStorage{};
+    var client = SocialGraphWotClient.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x92} ** 32;
+    const candidate_pubkey = [_]u8{0xbb} ** 32;
+
+    var tags: [1]noztr.nip01_event.EventTag = undefined;
+    var tag_items: [1]SocialContactTagStorage = undefined;
+    var pubkeys: [1]store.EventPubkeyHex = undefined;
+    var draft_storage = SocialContactDraftStorage.init(
+        tags[0..],
+        tag_items[0..],
+        pubkeys[0..],
+    );
+    var event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try client.prepareContactListPublish(
+        event_json[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 10,
+            .contacts = &.{.{ .pubkey = candidate_pubkey }},
+        },
+    );
+
+    var invalid_json: [noztr.limits.event_json_max]u8 = undefined;
+    @memcpy(invalid_json[0..prepared.event_json.len], prepared.event_json);
+    corruptEventSignatureHex(invalid_json[0..prepared.event_json.len]);
+
+    var memory_store = store.MemoryClientStore{};
+    const archive = store.EventArchive.init(memory_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try archive.ingestEventJson(invalid_json[0..prepared.event_json.len], arena.allocator());
+
+    const author_hex = std.fmt.bytesToHex(prepared.event.pubkey, .lower);
+    var page_storage: [1]store.ClientEventRecord = undefined;
+    var page = store.EventQueryResultPage.init(page_storage[0..]);
+    var contacts_out: [1]noztr.nip02_contacts.ContactEntry = undefined;
+
+    try std.testing.expectError(
+        error.InvalidSignature,
+        client.inspectLatestStoredContacts(
+            archive,
+            &.{ .author = author_hex, .limit = 1 },
+            &page,
+            contacts_out[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "social graph wot client dedupes starter wot follows and supporters" {
+    var storage = SocialGraphWotClientStorage{};
+    var client = SocialGraphWotClient.init(.{}, &storage);
+
+    const root_secret_key = [_]u8{0xa1} ** 32;
+    const supporter_secret_key = [_]u8{0xb1} ** 32;
+    const candidate_pubkey = [_]u8{0xc1} ** 32;
+    const candidate_hex = std.fmt.bytesToHex(candidate_pubkey, .lower);
+
+    var supporter_tags: [1]noztr.nip01_event.EventTag = undefined;
+    var supporter_tag_items: [1]SocialContactTagStorage = undefined;
+    var supporter_pubkeys: [1]store.EventPubkeyHex = undefined;
+    var supporter_draft_storage = SocialContactDraftStorage.init(
+        supporter_tags[0..],
+        supporter_tag_items[0..],
+        supporter_pubkeys[0..],
+    );
+    var supporter_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const supporter_prepared = try client.prepareContactListPublish(
+        supporter_event_json[0..],
+        &supporter_draft_storage,
+        &supporter_secret_key,
+        &.{
+            .created_at = 10,
+            .contacts = &.{.{ .pubkey = candidate_pubkey }},
+        },
+    );
+
+    const supporter_pubkey = supporter_prepared.event.pubkey;
+    var root_tags: [3]noztr.nip01_event.EventTag = undefined;
+    var root_tag_items: [3]SocialContactTagStorage = undefined;
+    var root_pubkeys: [3]store.EventPubkeyHex = undefined;
+    var root_draft_storage = SocialContactDraftStorage.init(
+        root_tags[0..],
+        root_tag_items[0..],
+        root_pubkeys[0..],
+    );
+    var root_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const root_prepared = try client.prepareContactListPublish(
+        root_event_json[0..],
+        &root_draft_storage,
+        &root_secret_key,
+        &.{
+            .created_at = 11,
+            .contacts = &.{
+                .{ .pubkey = candidate_pubkey },
+                .{ .pubkey = supporter_pubkey },
+                .{ .pubkey = supporter_pubkey },
+            },
+        },
+    );
+
+    var memory_store = store.MemoryClientStore{};
+    const archive = store.EventArchive.init(memory_store.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try client.storeContactEventJson(archive, supporter_prepared.event_json, arena.allocator());
+    try client.storeContactEventJson(archive, root_prepared.event_json, arena.allocator());
+
+    const root_author_hex = std.fmt.bytesToHex(root_prepared.event.pubkey, .lower);
+    var root_page_storage: [1]store.ClientEventRecord = undefined;
+    var peer_page_storage: [1]store.ClientEventRecord = undefined;
+    var root_page = store.EventQueryResultPage.init(root_page_storage[0..]);
+    var peer_page = store.EventQueryResultPage.init(peer_page_storage[0..]);
+    var root_contacts_out: [3]noztr.nip02_contacts.ContactEntry = undefined;
+    var peer_contacts_out: [1]noztr.nip02_contacts.ContactEntry = undefined;
+    var supporters_out: [1]SocialStarterWotSupport = undefined;
+    const inspection = try client.inspectStarterWot(
+        archive,
+        &.{
+            .root_author = root_author_hex,
+            .candidate = candidate_hex,
+        },
+        &root_page,
+        &peer_page,
+        root_contacts_out[0..],
+        peer_contacts_out[0..],
+        supporters_out[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(inspection.direct_follow);
+    try std.testing.expectEqual(@as(usize, 2), inspection.root_follow_count);
+    try std.testing.expectEqual(@as(usize, 1), inspection.expanded_follow_count);
+    try std.testing.expectEqual(@as(usize, 1), inspection.support_count);
+    try std.testing.expectEqual(@as(usize, 1), inspection.supporters.len);
+}
+
+fn corruptEventSignatureHex(event_json: []u8) void {
+    const signature_prefix = "\"sig\":\"";
+    const start = std.mem.indexOf(u8, event_json, signature_prefix).? + signature_prefix.len;
+    event_json[start] = if (event_json[start] == '0') '1' else '0';
 }

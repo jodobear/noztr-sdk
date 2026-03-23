@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-test "recipe: social graph wot client composes one contact route and one explicit starter WOT inspection" {
+test "recipe: social graph wot client composes one contact route and one explicit starter-only WOT inspection over verified latest contact lists" {
     var storage = noztr_sdk.client.social.graph_wot.SocialGraphWotClientStorage{};
     var client = noztr_sdk.client.social.graph_wot.SocialGraphWotClient.init(.{}, &storage);
 
@@ -86,6 +86,9 @@ test "recipe: social graph wot client composes one contact route and one explici
     const archive = noztr_sdk.store.EventArchive.init(memory_store.asClientStore());
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
+    // This helper verifies contact-list events before archive ingest. The starter-WoT route stays
+    // a bounded heuristic over those verified latest contact lists instead of claiming a broader
+    // trust engine.
     try client.storeContactEventJson(archive, supporter_prepared.event_json, arena.allocator());
     try client.storeContactEventJson(archive, root_prepared.event_json, arena.allocator());
 
