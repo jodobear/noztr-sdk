@@ -146,3 +146,31 @@ The grouped routes already carry:
 The older client-facing names kept restating too much of that route in every planning type and
 method name. This cleanup keeps the grouped routes stable and shortens the remaining names to the
 role that matters at the client layer.
+
+## Canonical Workflow Planning Route
+
+The follow-on workflow-support cleanup keeps the grouped workflow planning route as the canonical
+entry point for proof and identity planning families:
+
+- `noztr_sdk.workflows.proof.nip03.Planning`
+- `noztr_sdk.workflows.identity.verify.Planning`
+
+Use those grouped planning routes directly in downstream workflows, recipes, and examples instead
+of spelling long raw workflow type paths in every import site.
+
+Typical pattern:
+
+```zig
+const proof = noztr_sdk.workflows.proof.nip03;
+const ProofPlanning = proof.Planning;
+
+const identity = noztr_sdk.workflows.identity.verify;
+const IdentityPlanning = identity.Planning;
+```
+
+This follow-on does not introduce a second public migration file because it continues the same
+pre-`1.0` cleanup direction:
+
+- grouped route stays canonical
+- route-internal names stay shorter
+- dependent recipes and docs should teach the grouped planning route directly
