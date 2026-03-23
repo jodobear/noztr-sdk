@@ -17,6 +17,7 @@ pub const MailboxSignerJobClientError =
         PendingDirectMessageResponse,
         UnexpectedSignerOutcome,
         MissingAuthorPubkey,
+        InvalidReplyTag,
         InvalidSignedSealEvent,
         InvalidSignedWrapRecipientTag,
         InvalidSignedWrapAuthor,
@@ -54,6 +55,7 @@ pub const MailboxSignerJobReady = union(enum) {
 pub const MailboxSignerDirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
+    reply_to: ?noztr.nip17_private_messages.DmReplyRef = null,
     recipient_relay_list_event_json: []const u8,
     sender_relay_list_event_json: ?[]const u8 = null,
     content: []const u8,
@@ -542,13 +544,20 @@ fn buildDirectMessageRumorJson(
     request: *const MailboxSignerDirectMessageRequest,
 ) MailboxSignerJobClientError![]const u8 {
     var built_recipient_tag: noztr.nip17_private_messages.BuiltTag = .{};
+    var reply_tag_storage: MailboxSignerReplyTagStorage = .{};
     const recipient_hex = std.fmt.bytesToHex(request.recipient_pubkey, .lower);
     const recipient_tag = try noztr.nip17_private_messages.nip17_build_recipient_tag(
         &built_recipient_tag,
         recipient_hex[0..],
         request.recipient_relay_hint,
     );
-    const rumor_tags = [_]noztr.nip01_event.EventTag{recipient_tag};
+    var rumor_tags: [2]noztr.nip01_event.EventTag = undefined;
+    rumor_tags[0] = recipient_tag;
+    var rumor_tag_count: usize = 1;
+    if (request.reply_to) |reply_to| {
+        rumor_tags[1] = try buildReplyTag(&reply_tag_storage, &reply_to);
+        rumor_tag_count = 2;
+    }
     var rumor_event = noztr.nip01_event.Event{
         .id = [_]u8{0} ** 32,
         .pubkey = author_pubkey,
@@ -556,7 +565,7 @@ fn buildDirectMessageRumorJson(
         .kind = noztr.nip17_private_messages.dm_kind,
         .created_at = request.created_at,
         .content = request.content,
-        .tags = rumor_tags[0..],
+        .tags = rumor_tags[0..rumor_tag_count],
     };
     rumor_event.id = try noztr.nip01_event.event_compute_id_checked(&rumor_event);
     return noztr.nip01_event.event_serialize_json_object_unsigned(output, &rumor_event);
@@ -605,6 +614,32 @@ fn buildUnsignedWrapJson(
         .tags = wrap_tags[0..],
     };
     return noztr.nip01_event.event_serialize_json_object(output, &event);
+}
+
+const MailboxSignerReplyTagStorage = struct {
+    event_id_hex: [noztr.limits.pubkey_hex_length]u8 =
+        [_]u8{0} ** noztr.limits.pubkey_hex_length,
+    relay_hint_storage: [noztr.limits.tag_item_bytes_max]u8 =
+        [_]u8{0} ** noztr.limits.tag_item_bytes_max,
+    items: [4][]const u8 = undefined,
+};
+
+fn buildReplyTag(
+    storage: *MailboxSignerReplyTagStorage,
+    reply_to: *const noztr.nip17_private_messages.DmReplyRef,
+) MailboxSignerJobClientError!noztr.nip01_event.EventTag {
+    const event_id_hex = std.fmt.bytesToHex(reply_to.event_id, .lower);
+    @memcpy(storage.event_id_hex[0..], event_id_hex[0..]);
+    storage.items[0] = "e";
+    storage.items[1] = storage.event_id_hex[0..];
+    storage.items[2] = if (reply_to.relay_hint) |relay_hint| blk: {
+        try relay_url.relayUrlValidate(relay_hint);
+        if (relay_hint.len > storage.relay_hint_storage.len) return error.InvalidReplyTag;
+        @memcpy(storage.relay_hint_storage[0..relay_hint.len], relay_hint);
+        break :blk storage.relay_hint_storage[0..relay_hint.len];
+    } else "";
+    storage.items[3] = "reply";
+    return .{ .items = storage.items[0..4] };
 }
 
 fn validateSignedSealEvent(
@@ -796,6 +831,10 @@ test "mailbox signer job client drives signer-backed mailbox direct-message auth
     const request = MailboxSignerDirectMessageRequest{
         .recipient_pubkey = recipient_pubkey,
         .recipient_relay_hint = "wss://relay.shared",
+        .reply_to = .{
+            .event_id = [_]u8{0x77} ** 32,
+            .relay_hint = "wss://thread.example",
+        },
         .recipient_relay_list_event_json = recipient_relay_list_json,
         .sender_relay_list_event_json = sender_relay_list_json,
         .content = "hello signer mailbox",
@@ -953,6 +992,33 @@ test "mailbox signer job client drives signer-backed mailbox direct-message auth
     try std.testing.expect(final_result.ready.delivery.deliversSenderCopy(0));
     try std.testing.expect(final_result.ready.delivery.deliversToRecipient(1));
     try std.testing.expect(final_result.ready.delivery.deliversSenderCopy(2));
+}
+
+test "mailbox signer job rumor builder keeps reply refs in the rumor event shape" {
+    const author_secret = [_]u8{0x11} ** 32;
+    const author_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&author_secret);
+    const recipient_pubkey = [_]u8{0x22} ** 32;
+    const reply_event_id = [_]u8{0x77} ** 32;
+
+    var rumor_json_storage: [noztr.limits.event_json_max]u8 = undefined;
+    const rumor_json = try buildDirectMessageRumorJson(rumor_json_storage[0..], author_pubkey, &.{
+        .recipient_pubkey = recipient_pubkey,
+        .recipient_relay_hint = "wss://relay.shared",
+        .reply_to = .{
+            .event_id = reply_event_id,
+            .relay_hint = "wss://thread.example",
+        },
+        .recipient_relay_list_event_json = "unused",
+        .content = "hello",
+        .created_at = 100,
+        .seal_nonce = [_]u8{0x33} ** 32,
+        .wrap_nonce = [_]u8{0x44} ** 32,
+    });
+
+    try std.testing.expect(std.mem.indexOf(u8, rumor_json, "\"kind\":14") != null);
+    try std.testing.expect(std.mem.indexOf(u8, rumor_json, "thread.example") != null);
+    try std.testing.expect(std.mem.indexOf(u8, rumor_json, "\"reply\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, rumor_json, "7777777777777777777777777777777777777777777777777777777777777777") != null);
 }
 
 test "mailbox signer job client prefers auth event over direct-message step when relay challenge is active" {

@@ -21,6 +21,7 @@ pub const MailboxError =
     error{
         ChallengeEmpty,
         ChallengeTooLong,
+        InvalidReplyTag,
         InvalidRecipientPrivateKey,
         InvalidRecipientPubkey,
         InvalidWrapSignerPrivateKey,
@@ -83,6 +84,7 @@ pub const MailboxOutboundBuffer = struct {
 pub const MailboxDirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
+    reply_to: ?noztr.nip17_private_messages.DmReplyRef = null,
     content: []const u8,
     created_at: u64,
     wrap_signer_private_key: [32]u8,
@@ -1214,13 +1216,20 @@ pub const MailboxSession = struct {
             };
         };
         var built_recipient_tag: noztr.nip17_private_messages.BuiltTag = .{};
+        var reply_tag_storage: MailboxReplyTagStorage = .{};
         const recipient_hex = std.fmt.bytesToHex(request.recipient_pubkey, .lower);
         const recipient_tag = try noztr.nip17_private_messages.nip17_build_recipient_tag(
             &built_recipient_tag,
             recipient_hex[0..],
             request.recipient_relay_hint,
         );
-        const rumor_tags = [_]noztr.nip01_event.EventTag{recipient_tag};
+        var rumor_tags: [2]noztr.nip01_event.EventTag = undefined;
+        rumor_tags[0] = recipient_tag;
+        var rumor_tag_count: usize = 1;
+        if (request.reply_to) |reply_to| {
+            rumor_tags[1] = try buildReplyTag(&reply_tag_storage, &reply_to);
+            rumor_tag_count = 2;
+        }
         var rumor_event = noztr.nip01_event.Event{
             .id = [_]u8{0} ** 32,
             .pubkey = sender_pubkey,
@@ -1228,7 +1237,7 @@ pub const MailboxSession = struct {
             .kind = noztr.nip17_private_messages.dm_kind,
             .created_at = request.created_at,
             .content = request.content,
-            .tags = rumor_tags[0..],
+            .tags = rumor_tags[0..rumor_tag_count],
         };
         rumor_event.id = try noztr.nip01_event.event_compute_id_checked(&rumor_event);
         const rumor_json_storage = try scratch.alloc(u8, noztr.limits.event_json_max);
@@ -1625,6 +1634,44 @@ pub const MailboxSession = struct {
         self._state.seen_wrap_count += 1;
     }
 };
+
+const MailboxReplyTagStorage = struct {
+    event_id_hex: [noztr.limits.pubkey_hex_length]u8 =
+        [_]u8{0} ** noztr.limits.pubkey_hex_length,
+    relay_hint_storage: [noztr.limits.tag_item_bytes_max]u8 =
+        [_]u8{0} ** noztr.limits.tag_item_bytes_max,
+    items: [4][]const u8 = undefined,
+};
+
+fn buildReplyTag(
+    storage: *MailboxReplyTagStorage,
+    reply_to: *const noztr.nip17_private_messages.DmReplyRef,
+) MailboxError!noztr.nip01_event.EventTag {
+    const event_id_hex = std.fmt.bytesToHex(reply_to.event_id, .lower);
+    @memcpy(storage.event_id_hex[0..], event_id_hex[0..]);
+    storage.items[0] = "e";
+    storage.items[1] = storage.event_id_hex[0..];
+    var item_count: usize = 2;
+    if (reply_to.relay_hint) |hint| {
+        const copied = try copyReplyRelayHint(storage.relay_hint_storage[0..], hint);
+        storage.items[2] = copied;
+        storage.items[3] = "reply";
+        item_count = 4;
+    } else {
+        storage.items[2] = "";
+        storage.items[3] = "reply";
+        item_count = 4;
+    }
+    return .{ .items = storage.items[0..item_count] };
+}
+
+fn copyReplyRelayHint(output: []u8, relay_hint: []const u8) MailboxError![]const u8 {
+    if (relay_hint.len == 0) return error.InvalidReplyTag;
+    if (relay_hint.len > output.len) return error.InvalidReplyTag;
+    relay_url.relayUrlValidate(relay_hint) catch return error.InvalidReplyTag;
+    @memcpy(output[0..relay_hint.len], relay_hint);
+    return output[0..relay_hint.len];
+}
 
 fn relayListContainsEquivalent(relays: []const []const u8, candidate: []const u8) bool {
     for (relays) |relay| {
@@ -2311,6 +2358,73 @@ test "mailbox sync turn promotes pending delivery into one explicit publish step
     try std.testing.expect(sync_request == .publish);
     try std.testing.expectEqualStrings("wss://relay.two", sync_request.publish.relay_url);
     try std.testing.expect(sync_request.publish.role.recipient);
+}
+
+test "mailbox direct-message delivery keeps reply refs in the wrapped rumor" {
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const sender_secret = [_]u8{0x11} ** 32;
+    const recipient_secret = [_]u8{0x22} ** 32;
+    const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
+    const reply_event_id = [_]u8{0x77} ** 32;
+
+    var relay_list_storage: [4096]u8 = undefined;
+    const relay_list_json = try buildRelayListEventJsonOne(
+        relay_list_storage[0..],
+        "wss://relay.one",
+        1_710_000_051,
+        &recipient_secret,
+    );
+
+    var sender_session = MailboxSession.init(&sender_secret);
+    var outbound_buffer = MailboxOutboundBuffer{};
+    var delivery_storage = MailboxDeliveryStorage{};
+    const delivery = try sender_session.planDirectMessageDelivery(
+        &outbound_buffer,
+        &delivery_storage,
+        relay_list_json,
+        null,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .recipient_relay_hint = "wss://relay.one",
+            .reply_to = .{
+                .event_id = reply_event_id,
+                .relay_hint = "wss://thread.example",
+            },
+            .content = "reply over mailbox",
+            .created_at = 55,
+            .wrap_signer_private_key = [_]u8{0x33} ** 32,
+            .seal_nonce = [_]u8{0x44} ** 32,
+            .wrap_nonce = [_]u8{0x55} ** 32,
+        },
+        arena.allocator(),
+    );
+
+    var recipient_session = MailboxSession.init(&recipient_secret);
+    _ = try recipient_session.hydrateRelayListEventJson(relay_list_json, arena.allocator());
+    try recipient_session.markCurrentRelayConnected();
+    var recipients: [1]noztr.nip17_private_messages.DmRecipient = undefined;
+    var thumbs: [1][]const u8 = undefined;
+    var fallbacks: [1][]const u8 = undefined;
+    const envelope = try recipient_session.acceptWrappedEnvelopeJson(
+        delivery.wrap_event_json,
+        recipients[0..],
+        thumbs[0..],
+        fallbacks[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(envelope == .direct_message);
+    try std.testing.expect(envelope.direct_message.message.reply_to != null);
+    try std.testing.expectEqualSlices(
+        u8,
+        &reply_event_id,
+        &envelope.direct_message.message.reply_to.?.event_id,
+    );
+    try std.testing.expectEqualStrings(
+        "wss://thread.example",
+        envelope.direct_message.message.reply_to.?.relay_hint.?,
+    );
 }
 
 test "mailbox sync turn falls back to receive and reuses the receive turn floor" {
