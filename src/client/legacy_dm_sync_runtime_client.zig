@@ -11,7 +11,7 @@ const runtime = @import("../runtime/mod.zig");
 const store = @import("../store/mod.zig");
 const workflows = @import("../workflows/mod.zig");
 
-pub const LegacyDmSyncRuntimeClientError =
+pub const ClientError =
     legacy_dm_replay_job.LegacyDmReplayJobClientError ||
     legacy_dm_subscription_job.LegacyDmSubscriptionJobClientError ||
     local_operator.LocalOperatorClientError ||
@@ -22,14 +22,14 @@ pub const LegacyDmSyncRuntimeClientError =
         RuntimeNotEmpty,
     };
 
-pub const LegacyDmSyncRuntimeClientConfig = struct {
+pub const Config = struct {
     owner_private_key: [local_operator.secret_key_bytes]u8,
     local_operator: local_operator.LocalOperatorClientConfig = .{},
     replay_turn: legacy_dm_replay_job.LegacyDmReplayJobClientConfig = undefined,
     subscription_turn: legacy_dm_subscription_job.LegacyDmSubscriptionJobClientConfig = undefined,
 };
 
-pub const LegacyDmSyncRuntimeClientStorage = struct {
+pub const Storage = struct {
     replay_job: legacy_dm_replay_job.LegacyDmReplayJobClientStorage = .{},
     subscription_job: legacy_dm_subscription_job.LegacyDmSubscriptionJobClientStorage = .{},
     replay_phase_complete: bool = false,
@@ -37,66 +37,66 @@ pub const LegacyDmSyncRuntimeClientStorage = struct {
     live_subscription_request: legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest = undefined,
 };
 
-pub const LegacyDmSyncRuntimePlanStorage = dm_sync_runtime_support.SyncRuntimePlanStorage;
+pub const PlanStorage = dm_sync_runtime_support.PlanStorage;
 
-pub const LegacyDmSyncRuntimeResumeStorage = struct {
+pub const ResumeStorage = struct {
     relay_members: runtime.RelayPoolMemberStorage = .{},
 };
 
-pub const LegacyDmSyncRuntimeResumeState = struct {
+pub const ResumeState = struct {
     relay_count: u8 = 0,
     replay_phase_complete: bool = false,
-    _storage: *const LegacyDmSyncRuntimeResumeStorage,
+    _storage: *const ResumeStorage,
 
-    pub fn relayUrl(self: *const LegacyDmSyncRuntimeResumeState, index: u8) ?[]const u8 {
+    pub fn relayUrl(self: *const ResumeState, index: u8) ?[]const u8 {
         if (index >= self.relay_count) return null;
         return self._storage.relay_members.records[index].relayUrl();
     }
 };
 
-pub const LegacyDmSyncRuntimeStep =
-    dm_sync_runtime_support.SyncRuntimeStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmSyncRuntimePlan =
-    dm_sync_runtime_support.SyncRuntimePlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmLongLivedDmPolicyStorage = dm_sync_runtime_support.LongLivedDmPolicyStorage;
-pub const LegacyDmLongLivedDmPolicyStep =
-    dm_sync_runtime_support.LongLivedDmPolicyStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmLongLivedDmPolicyPlan =
-    dm_sync_runtime_support.LongLivedDmPolicyPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmOrchestrationStorage = dm_sync_runtime_support.DmOrchestrationStorage;
-pub const LegacyDmOrchestrationStep =
-    dm_sync_runtime_support.DmOrchestrationStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmOrchestrationPlan =
-    dm_sync_runtime_support.DmOrchestrationPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmRuntimeCadenceRequest = dm_sync_runtime_support.DmRuntimeCadenceRequest;
-pub const LegacyDmRuntimeCadenceStorage = dm_sync_runtime_support.DmRuntimeCadenceStorage;
-pub const LegacyDmRuntimeCadenceWaitReason = dm_sync_runtime_support.DmRuntimeCadenceWaitReason;
-pub const LegacyDmRuntimeCadenceWait = dm_sync_runtime_support.DmRuntimeCadenceWait;
-pub const LegacyDmRuntimeCadenceStep =
-    dm_sync_runtime_support.DmRuntimeCadenceStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
-pub const LegacyDmRuntimeCadencePlan =
-    dm_sync_runtime_support.DmRuntimeCadencePlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const Step =
+    dm_sync_runtime_support.Step(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const Plan =
+    dm_sync_runtime_support.Plan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const PolicyStorage = dm_sync_runtime_support.PolicyStorage;
+pub const PolicyStep =
+    dm_sync_runtime_support.PolicyStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const PolicyPlan =
+    dm_sync_runtime_support.PolicyPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const OrchestrationStorage = dm_sync_runtime_support.OrchestrationStorage;
+pub const OrchestrationStep =
+    dm_sync_runtime_support.OrchestrationStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const OrchestrationPlan =
+    dm_sync_runtime_support.OrchestrationPlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const CadenceRequest = dm_sync_runtime_support.CadenceRequest;
+pub const CadenceStorage = dm_sync_runtime_support.CadenceStorage;
+pub const CadenceWaitReason = dm_sync_runtime_support.CadenceWaitReason;
+pub const CadenceWait = dm_sync_runtime_support.CadenceWait;
+pub const CadenceStep =
+    dm_sync_runtime_support.CadenceStep(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
+pub const CadencePlan =
+    dm_sync_runtime_support.CadencePlan(legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest);
 
-pub const LegacyDmSyncRuntimeAuthEventStorage = relay_auth_client.RelayAuthEventStorage;
-pub const PreparedLegacyDmSyncRuntimeAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
-pub const LegacyDmSyncRuntimeReplayRequest = legacy_dm_replay_job.LegacyDmReplayJobRequest;
-pub const LegacyDmSyncRuntimeReplayIntake = legacy_dm_replay_job.LegacyDmReplayJobIntake;
-pub const LegacyDmSyncRuntimeSubscriptionRequest =
+pub const AuthEventStorage = relay_auth_client.RelayAuthEventStorage;
+pub const PreparedAuthEvent = relay_auth_client.PreparedRelayAuthEvent;
+pub const ReplayRequest = legacy_dm_replay_job.LegacyDmReplayJobRequest;
+pub const ReplayIntake = legacy_dm_replay_job.LegacyDmReplayJobIntake;
+pub const SubscriptionRequest =
     legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest;
-pub const LegacyDmSyncRuntimeSubscriptionIntake =
+pub const SubscriptionIntake =
     legacy_dm_subscription_job.LegacyDmSubscriptionJobIntake;
 
-pub const LegacyDmSyncRuntimeClient = struct {
-    config: LegacyDmSyncRuntimeClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
     replay_job: legacy_dm_replay_job.LegacyDmReplayJobClient,
     subscription_job: legacy_dm_subscription_job.LegacyDmSubscriptionJobClient,
-    storage: *LegacyDmSyncRuntimeClientStorage,
+    storage: *Storage,
 
     pub fn init(
-        config: LegacyDmSyncRuntimeClientConfig,
-        storage: *LegacyDmSyncRuntimeClientStorage,
-    ) LegacyDmSyncRuntimeClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         const normalized = normalizeConfig(config);
         return .{
@@ -115,9 +115,9 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn attach(
-        config: LegacyDmSyncRuntimeClientConfig,
-        storage: *LegacyDmSyncRuntimeClientStorage,
-    ) LegacyDmSyncRuntimeClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         const normalized = normalizeConfig(config);
         return .{
             .config = normalized,
@@ -135,46 +135,46 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn addRelay(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) LegacyDmSyncRuntimeClientError!runtime.RelayDescriptor {
+    ) ClientError!runtime.RelayDescriptor {
         return sync_runtime_support.addRelay(self, relay_url_text);
     }
 
-    pub fn relayCount(self: *const LegacyDmSyncRuntimeClient) u8 {
+    pub fn relayCount(self: *const Client) u8 {
         return self.replay_job.replay_turn.replay_turn.replay_exchange.replay.relay_pool.relayCount();
     }
 
     pub fn markRelayConnected(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmSyncRuntimeClientError!void {
+    ) ClientError!void {
         return sync_runtime_support.markRelayConnected(self, relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         relay_index: u8,
-    ) LegacyDmSyncRuntimeClientError!void {
+    ) ClientError!void {
         return sync_runtime_support.noteRelayDisconnected(self, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) LegacyDmSyncRuntimeClientError!void {
+    ) ClientError!void {
         return sync_runtime_support.noteRelayAuthChallenge(self, relay_index, challenge);
     }
 
-    pub fn replayPhaseComplete(self: *const LegacyDmSyncRuntimeClient) bool {
+    pub fn replayPhaseComplete(self: *const Client) bool {
         return self.storage.replay_phase_complete;
     }
 
     pub fn exportResumeState(
-        self: *const LegacyDmSyncRuntimeClient,
-        storage: *LegacyDmSyncRuntimeResumeStorage,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimeResumeState {
+        self: *const Client,
+        storage: *ResumeStorage,
+    ) ClientError!ResumeState {
         const members = self.replay_job.replay_turn.replay_turn.replay_exchange.replay.relay_pool.exportMembers(
             &storage.relay_members,
         ) catch unreachable;
@@ -186,9 +186,9 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn restoreResumeState(
-        self: *LegacyDmSyncRuntimeClient,
-        state: *const LegacyDmSyncRuntimeResumeState,
-    ) LegacyDmSyncRuntimeClientError!void {
+        self: *Client,
+        state: *const ResumeState,
+    ) ClientError!void {
         if (self.relayCount() != 0 or self.storage.replay_phase_complete or self.storage.live_subscription_active) {
             return error.RuntimeNotEmpty;
         }
@@ -209,24 +209,24 @@ pub const LegacyDmSyncRuntimeClient = struct {
         self.storage.live_subscription_active = false;
     }
 
-    pub fn liveSubscriptionActive(self: *const LegacyDmSyncRuntimeClient) bool {
+    pub fn liveSubscriptionActive(self: *const Client) bool {
         return self.storage.live_subscription_active;
     }
 
     pub fn inspectRelayRuntime(
-        self: *const LegacyDmSyncRuntimeClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return sync_runtime_support.inspectRelayRuntime(self, storage);
     }
 
     pub fn inspectRuntime(
-        self: *const LegacyDmSyncRuntimeClient,
+        self: *const Client,
         checkpoint_store: store.ClientCheckpointStore,
         replay_specs: []const runtime.RelayReplaySpec,
         subscription_specs: []const runtime.RelaySubscriptionSpec,
-        storage: *LegacyDmSyncRuntimePlanStorage,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimePlan {
+        storage: *PlanStorage,
+    ) ClientError!Plan {
         const auth_plan = self.replay_job.replay_turn.inspectAuth(&storage.auth);
         const replay_plan = try self.replay_job.replay_turn.inspectReplay(
             checkpoint_store,
@@ -238,7 +238,7 @@ pub const LegacyDmSyncRuntimeClient = struct {
             &storage.subscription,
         );
 
-        return dm_sync_runtime_support.buildSyncRuntimePlan(
+        return dm_sync_runtime_support.buildPlan(
             legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
             auth_plan,
             replay_plan,
@@ -249,13 +249,13 @@ pub const LegacyDmSyncRuntimeClient = struct {
         );
     }
 
-    pub fn inspectLongLivedDmPolicy(
-        self: *const LegacyDmSyncRuntimeClient,
+    pub fn inspectPolicy(
+        self: *const Client,
         checkpoint_store: store.ClientCheckpointStore,
         replay_specs: []const runtime.RelayReplaySpec,
         subscription_specs: []const runtime.RelaySubscriptionSpec,
-        storage: *LegacyDmLongLivedDmPolicyStorage,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmLongLivedDmPolicyPlan {
+        storage: *PolicyStorage,
+    ) ClientError!PolicyPlan {
         const relay_runtime = self.inspectRelayRuntime(&storage.relay_runtime);
         const runtime_plan = try self.inspectRuntime(
             checkpoint_store,
@@ -264,7 +264,7 @@ pub const LegacyDmSyncRuntimeClient = struct {
             &storage.runtime,
         );
 
-        return dm_sync_runtime_support.classifyLongLivedDmPolicy(
+        return dm_sync_runtime_support.classifyPolicy(
             legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
             self.relayCount(),
             relay_runtime,
@@ -273,62 +273,62 @@ pub const LegacyDmSyncRuntimeClient = struct {
         );
     }
 
-    pub fn inspectDmOrchestration(
-        self: *const LegacyDmSyncRuntimeClient,
+    pub fn inspectOrchestration(
+        self: *const Client,
         checkpoint_store: store.ClientCheckpointStore,
         replay_specs: []const runtime.RelayReplaySpec,
         subscription_specs: []const runtime.RelaySubscriptionSpec,
-        storage: *LegacyDmOrchestrationStorage,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmOrchestrationPlan {
-        const policy_plan = try self.inspectLongLivedDmPolicy(
+        storage: *OrchestrationStorage,
+    ) ClientError!OrchestrationPlan {
+        const policy_plan = try self.inspectPolicy(
             checkpoint_store,
             replay_specs,
             subscription_specs,
             &storage.policy,
         );
-        return dm_sync_runtime_support.buildDmOrchestration(
+        return dm_sync_runtime_support.buildOrchestration(
             legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
             policy_plan,
         );
     }
 
-    pub fn inspectDmRuntimeCadence(
-        self: *const LegacyDmSyncRuntimeClient,
+    pub fn inspectCadence(
+        self: *const Client,
         checkpoint_store: store.ClientCheckpointStore,
         replay_specs: []const runtime.RelayReplaySpec,
         subscription_specs: []const runtime.RelaySubscriptionSpec,
-        request: LegacyDmRuntimeCadenceRequest,
-        storage: *LegacyDmRuntimeCadenceStorage,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmRuntimeCadencePlan {
-        const orchestration = try self.inspectDmOrchestration(
+        request: CadenceRequest,
+        storage: *CadenceStorage,
+    ) ClientError!CadencePlan {
+        const orchestration = try self.inspectOrchestration(
             checkpoint_store,
             replay_specs,
             subscription_specs,
             &storage.orchestration,
         );
-        return dm_sync_runtime_support.buildDmRuntimeCadence(
+        return dm_sync_runtime_support.buildCadence(
             legacy_dm_subscription_job.LegacyDmSubscriptionJobRequest,
             orchestration,
             request,
         );
     }
 
-    pub fn markReplayCatchupComplete(self: *LegacyDmSyncRuntimeClient) void {
+    pub fn markReplayCatchupComplete(self: *Client) void {
         self.storage.replay_phase_complete = true;
     }
 
-    pub fn resetReplayCatchup(self: *LegacyDmSyncRuntimeClient) void {
+    pub fn resetReplayCatchup(self: *Client) void {
         self.storage.replay_phase_complete = false;
     }
 
     pub fn prepareAuthEvent(
-        self: *LegacyDmSyncRuntimeClient,
-        auth_storage: *LegacyDmSyncRuntimeAuthEventStorage,
+        self: *Client,
+        auth_storage: *AuthEventStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         step: *const runtime.RelayPoolAuthStep,
         created_at: u64,
-    ) LegacyDmSyncRuntimeClientError!PreparedLegacyDmSyncRuntimeAuthEvent {
+    ) ClientError!PreparedAuthEvent {
         return sync_runtime_support.prepareAuthEvent(
             self,
             auth_storage,
@@ -341,11 +341,11 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *LegacyDmSyncRuntimeClient,
-        prepared: *const PreparedLegacyDmSyncRuntimeAuthEvent,
+        self: *Client,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
-    ) LegacyDmSyncRuntimeClientError!runtime.RelayDescriptor {
+    ) ClientError!runtime.RelayDescriptor {
         return sync_runtime_support.acceptPreparedAuthEvent(
             self,
             prepared,
@@ -355,12 +355,12 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn beginReplayTurn(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         checkpoint_store: store.ClientCheckpointStore,
         output: []u8,
         subscription_id: []const u8,
         specs: []const runtime.RelayReplaySpec,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimeReplayRequest {
+    ) ClientError!ReplayRequest {
         return self.replay_job.replay_turn.beginTurn(
             checkpoint_store,
             output,
@@ -370,12 +370,12 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn acceptReplayMessageJson(
-        self: *LegacyDmSyncRuntimeClient,
-        request: *const LegacyDmSyncRuntimeReplayRequest,
+        self: *Client,
+        request: *const ReplayRequest,
         relay_message_json: []const u8,
         plaintext_output: []u8,
         scratch: std.mem.Allocator,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimeReplayIntake {
+    ) ClientError!ReplayIntake {
         return self.replay_job.acceptReplayMessageJson(
             request,
             relay_message_json,
@@ -385,26 +385,26 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn completeReplayTurn(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         output: []u8,
-        request: *const LegacyDmSyncRuntimeReplayRequest,
-    ) LegacyDmSyncRuntimeClientError!legacy_dm_replay_job.LegacyDmReplayJobResult {
+        request: *const ReplayRequest,
+    ) ClientError!legacy_dm_replay_job.LegacyDmReplayJobResult {
         return self.replay_job.completeReplayJob(output, request);
     }
 
     pub fn saveReplayTurnResult(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         archive: store.RelayCheckpointArchive,
         result: *const legacy_dm_replay_turn.LegacyDmReplayTurnResult,
-    ) LegacyDmSyncRuntimeClientError!void {
+    ) ClientError!void {
         return self.replay_job.saveJobResult(archive, result);
     }
 
     pub fn beginSubscriptionTurn(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         output: []u8,
         specs: []const runtime.RelaySubscriptionSpec,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimeSubscriptionRequest {
+    ) ClientError!SubscriptionRequest {
         const request = try self.subscription_job.subscription_turn.beginTurn(output, specs);
         self.storage.live_subscription_request = request;
         self.storage.live_subscription_active = true;
@@ -412,12 +412,12 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn acceptSubscriptionMessageJson(
-        self: *LegacyDmSyncRuntimeClient,
-        request: *const LegacyDmSyncRuntimeSubscriptionRequest,
+        self: *Client,
+        request: *const SubscriptionRequest,
         relay_message_json: []const u8,
         plaintext_output: []u8,
         scratch: std.mem.Allocator,
-    ) LegacyDmSyncRuntimeClientError!LegacyDmSyncRuntimeSubscriptionIntake {
+    ) ClientError!SubscriptionIntake {
         return self.subscription_job.acceptSubscriptionMessageJson(
             request,
             relay_message_json,
@@ -427,10 +427,10 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 
     pub fn completeSubscriptionTurn(
-        self: *LegacyDmSyncRuntimeClient,
+        self: *Client,
         output: []u8,
-        request: *const LegacyDmSyncRuntimeSubscriptionRequest,
-    ) LegacyDmSyncRuntimeClientError!legacy_dm_subscription_job.LegacyDmSubscriptionJobResult {
+        request: *const SubscriptionRequest,
+    ) ClientError!legacy_dm_subscription_job.LegacyDmSubscriptionJobResult {
         const result = try self.subscription_job.completeSubscriptionJob(output, request);
         if (sameSubscriptionRequest(&self.storage.live_subscription_request, request)) {
             self.storage.live_subscription_active = false;
@@ -439,7 +439,7 @@ pub const LegacyDmSyncRuntimeClient = struct {
     }
 };
 
-fn normalizeConfig(config: LegacyDmSyncRuntimeClientConfig) LegacyDmSyncRuntimeClientConfig {
+fn normalizeConfig(config: Config) Config {
     var updated = config;
     updated.replay_turn = .{
         .owner_private_key = config.owner_private_key,
@@ -461,8 +461,8 @@ fn normalizeConfig(config: LegacyDmSyncRuntimeClientConfig) LegacyDmSyncRuntimeC
 }
 
 fn sameSubscriptionRequest(
-    left: *const LegacyDmSyncRuntimeSubscriptionRequest,
-    right: *const LegacyDmSyncRuntimeSubscriptionRequest,
+    left: *const SubscriptionRequest,
+    right: *const SubscriptionRequest,
 ) bool {
     return left.subscription.relay.relay_index == right.subscription.relay.relay_index and
         std.mem.eql(u8, left.subscription.relay.relay_url, right.subscription.relay.relay_url) and
@@ -472,7 +472,7 @@ fn sameSubscriptionRequest(
 fn restoreReplayTurnMembers(
     replay_turn: *legacy_dm_replay_turn.LegacyDmReplayTurnClient,
     members: *const runtime.RelayPoolMemberSet,
-) LegacyDmSyncRuntimeClientError!void {
+) ClientError!void {
     replay_turn.replay_turn.replay_exchange.replay.relay_pool.restoreMembers(members) catch |err| {
         return switch (err) {
             error.PoolNotEmpty => error.RuntimeNotEmpty,
@@ -484,7 +484,7 @@ fn restoreReplayTurnMembers(
 fn restoreSubscriptionTurnMembers(
     subscription_turn: *legacy_dm_subscription_job.LegacyDmSubscriptionJobClient,
     members: *const runtime.RelayPoolMemberSet,
-) LegacyDmSyncRuntimeClientError!void {
+) ClientError!void {
     subscription_turn.subscription_turn.subscription_turn.relay_exchange.relay_pool.restoreMembers(
         members,
     ) catch |err| {
@@ -496,8 +496,8 @@ fn restoreSubscriptionTurnMembers(
 }
 
 test "legacy dm sync runtime client exposes caller-owned config and storage" {
-    var storage = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = [_]u8{0x33} ** 32,
     }, &storage);
 
@@ -514,22 +514,22 @@ test "legacy dm sync runtime client exports durable resume state and restores re
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
 
     const owner_secret = [_]u8{0x33} ** 32;
-    var client_storage = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var client_storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = owner_secret,
     }, &client_storage);
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
     client.markReplayCatchupComplete();
 
-    var resume_storage = LegacyDmSyncRuntimeResumeStorage{};
+    var resume_storage = ResumeStorage{};
     const resume_state = try client.exportResumeState(&resume_storage);
     try std.testing.expectEqual(@as(u8, 1), resume_state.relay_count);
     try std.testing.expectEqualStrings("wss://relay.one", resume_state.relayUrl(0).?);
     try std.testing.expect(resume_state.replay_phase_complete);
 
-    var restored_storage = LegacyDmSyncRuntimeClientStorage{};
-    var restored = LegacyDmSyncRuntimeClient.init(.{
+    var restored_storage = Storage{};
+    var restored = Client.init(.{
         .owner_private_key = owner_secret,
     }, &restored_storage);
     try restored.restoreResumeState(&resume_state);
@@ -545,7 +545,7 @@ test "legacy dm sync runtime client exports durable resume state and restores re
     const subscription_specs = [_]runtime.RelaySubscriptionSpec{
         .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
-    var runtime_storage = LegacyDmSyncRuntimePlanStorage{};
+    var runtime_storage = PlanStorage{};
     const plan = try restored.inspectRuntime(
         checkpoint_store,
         &.{},
@@ -559,8 +559,8 @@ test "legacy dm sync runtime client exports durable resume state and restores re
     try std.testing.expectEqual(@as(u8, 1), relay_runtime.relay_count);
     try std.testing.expect(relay_runtime.nextStep().?.entry.action == .connect);
 
-    var policy_storage = LegacyDmLongLivedDmPolicyStorage{};
-    const policy = try restored.inspectLongLivedDmPolicy(
+    var policy_storage = PolicyStorage{};
+    const policy = try restored.inspectPolicy(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
@@ -574,17 +574,17 @@ test "legacy dm sync runtime client exports durable resume state and restores re
 test "legacy dm sync runtime client rejects restoring resume state into a non-empty runtime" {
     const owner_secret = [_]u8{0x33} ** 32;
 
-    var source_storage = LegacyDmSyncRuntimeClientStorage{};
-    var source = LegacyDmSyncRuntimeClient.init(.{
+    var source_storage = Storage{};
+    var source = Client.init(.{
         .owner_private_key = owner_secret,
     }, &source_storage);
     _ = try source.addRelay("wss://relay.one");
 
-    var resume_storage = LegacyDmSyncRuntimeResumeStorage{};
+    var resume_storage = ResumeStorage{};
     const resume_state = try source.exportResumeState(&resume_storage);
 
-    var target_storage = LegacyDmSyncRuntimeClientStorage{};
-    var target = LegacyDmSyncRuntimeClient.init(.{
+    var target_storage = Storage{};
+    var target = Client.init(.{
         .owner_private_key = owner_secret,
     }, &target_storage);
     _ = try target.addRelay("wss://relay.two");
@@ -607,8 +607,8 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
     const recipient_secret = [_]u8{0x22} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var storage_buf = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var storage_buf = Storage{};
+    var client = Client.init(.{
         .owner_private_key = recipient_secret,
     }, &storage_buf);
 
@@ -648,8 +648,8 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
         .{ .subscription_id = "legacy-feed", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var runtime_storage = LegacyDmSyncRuntimePlanStorage{};
-    var policy_storage = LegacyDmLongLivedDmPolicyStorage{};
+    var runtime_storage = PlanStorage{};
+    var policy_storage = PolicyStorage{};
     const auth_plan = try client.inspectRuntime(
         checkpoint_store,
         replay_specs[0..],
@@ -657,7 +657,7 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
         &runtime_storage,
     );
     try std.testing.expect(auth_plan.nextStep() == .authenticate);
-    const auth_policy = try client.inspectLongLivedDmPolicy(
+    const auth_policy = try client.inspectPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
@@ -665,7 +665,7 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
     );
     try std.testing.expect(auth_policy.nextStep() == .authenticate);
 
-    var auth_storage = LegacyDmSyncRuntimeAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const prepared_auth = try client.prepareAuthEvent(
@@ -684,7 +684,7 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
         &runtime_storage,
     );
     try std.testing.expect(replay_plan.nextStep() == .replay);
-    const replay_policy = try client.inspectLongLivedDmPolicy(
+    const replay_policy = try client.inspectPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
@@ -740,7 +740,7 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
         &runtime_storage,
     );
     try std.testing.expect(subscribe_plan.nextStep() == .subscribe);
-    const subscribe_policy = try client.inspectLongLivedDmPolicy(
+    const subscribe_policy = try client.inspectPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
@@ -763,7 +763,7 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
         &receive_plan.nextStep().receive,
         &live_request,
     ));
-    const receive_policy = try client.inspectLongLivedDmPolicy(
+    const receive_policy = try client.inspectPolicy(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
@@ -807,15 +807,15 @@ test "legacy dm sync runtime client plans authenticate replay subscribe and rece
 }
 
 test "legacy dm sync runtime client returns idle when catchup is complete and no live specs remain" {
-    var client_storage = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var client_storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = [_]u8{0x33} ** 32,
     }, &client_storage);
     client.markReplayCatchupComplete();
 
     var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
-    var runtime_storage = LegacyDmSyncRuntimePlanStorage{};
+    var runtime_storage = PlanStorage{};
     const plan = try client.inspectRuntime(
         checkpoint_store,
         &.{},
@@ -826,16 +826,16 @@ test "legacy dm sync runtime client returns idle when catchup is complete and no
 }
 
 test "legacy dm sync runtime client exposes broader dm orchestration phases" {
-    var client_storage = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var client_storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = [_]u8{0x33} ** 32,
     }, &client_storage);
 
     var memory_store = @import("../store/client_memory.zig").MemoryClientStore{};
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
-    var orchestration_storage = LegacyDmOrchestrationStorage{};
+    var orchestration_storage = OrchestrationStorage{};
 
-    const empty = try client.inspectDmOrchestration(
+    const empty = try client.inspectOrchestration(
         checkpoint_store,
         &.{},
         &.{},
@@ -853,8 +853,8 @@ test "legacy dm sync runtime client cadence can reopen replay catchup before liv
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
 
     const owner_secret = [_]u8{0x33} ** 32;
-    var client_storage = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var client_storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = owner_secret,
     }, &client_storage);
     const relay = try client.addRelay("wss://relay.one");
@@ -875,8 +875,8 @@ test "legacy dm sync runtime client cadence can reopen replay catchup before liv
         .{ .subscription_id = "legacy-live", .filters = (&[_]noztr.nip01_filter.Filter{filter})[0..] },
     };
 
-    var cadence_storage = LegacyDmRuntimeCadenceStorage{};
-    const cadence = try client.inspectDmRuntimeCadence(
+    var cadence_storage = CadenceStorage{};
+    const cadence = try client.inspectCadence(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
@@ -890,8 +890,8 @@ test "legacy dm sync runtime client cadence can reopen replay catchup before liv
     try std.testing.expect(cadence.nextStep() == .reopen_replay_catchup);
 
     client.resetReplayCatchup();
-    var orchestration_storage = LegacyDmOrchestrationStorage{};
-    const orchestration = try client.inspectDmOrchestration(
+    var orchestration_storage = OrchestrationStorage{};
+    const orchestration = try client.inspectOrchestration(
         checkpoint_store,
         replay_specs[0..],
         subscription_specs[0..],
@@ -908,8 +908,8 @@ test "legacy dm sync runtime client long-lived policy falls back to reconnect af
     const checkpoint_store = memory_store.asClientStore().checkpoint_store.?;
 
     const owner_secret = [_]u8{0x33} ** 32;
-    var storage = LegacyDmSyncRuntimeClientStorage{};
-    var client = LegacyDmSyncRuntimeClient.init(.{
+    var storage = Storage{};
+    var client = Client.init(.{
         .owner_private_key = owner_secret,
     }, &storage);
     const relay = try client.addRelay("wss://relay.one");
@@ -930,8 +930,8 @@ test "legacy dm sync runtime client long-lived policy falls back to reconnect af
         subscription_specs[0..],
     );
 
-    var policy_storage = LegacyDmLongLivedDmPolicyStorage{};
-    const receive_policy = try client.inspectLongLivedDmPolicy(
+    var policy_storage = PolicyStorage{};
+    const receive_policy = try client.inspectPolicy(
         checkpoint_store,
         &.{},
         subscription_specs[0..],
@@ -944,7 +944,7 @@ test "legacy dm sync runtime client long-lived policy falls back to reconnect af
     ));
 
     try client.noteRelayDisconnected(0);
-    const reconnect_policy = try client.inspectLongLivedDmPolicy(
+    const reconnect_policy = try client.inspectPolicy(
         checkpoint_store,
         &.{},
         subscription_specs[0..],

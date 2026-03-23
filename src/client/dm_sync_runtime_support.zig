@@ -1,44 +1,44 @@
 const std = @import("std");
 const runtime = @import("../runtime/mod.zig");
 
-pub const SyncRuntimePlanStorage = struct {
+pub const PlanStorage = struct {
     auth: runtime.RelayPoolAuthStorage = .{},
     replay: runtime.RelayPoolReplayStorage = .{},
     subscription: runtime.RelayPoolSubscriptionStorage = .{},
 };
 
-pub const LongLivedDmPolicyStorage = struct {
+pub const PolicyStorage = struct {
     relay_runtime: runtime.RelayPoolPlanStorage = .{},
-    runtime: SyncRuntimePlanStorage = .{},
+    runtime: PlanStorage = .{},
 };
 
-pub const DmOrchestrationStorage = struct {
-    policy: LongLivedDmPolicyStorage = .{},
+pub const OrchestrationStorage = struct {
+    policy: PolicyStorage = .{},
 };
 
-pub const DmRuntimeCadenceRequest = struct {
+pub const CadenceRequest = struct {
     now_unix_seconds: u64,
     reconnect_not_before_unix_seconds: ?u64 = null,
     subscribe_resume_not_before_unix_seconds: ?u64 = null,
     replay_refresh_not_before_unix_seconds: ?u64 = null,
 };
 
-pub const DmRuntimeCadenceStorage = struct {
-    orchestration: DmOrchestrationStorage = .{},
+pub const CadenceStorage = struct {
+    orchestration: OrchestrationStorage = .{},
 };
 
-pub const DmRuntimeCadenceWaitReason = enum {
+pub const CadenceWaitReason = enum {
     reconnect_backoff,
     subscribe_resume_backoff,
     replay_refresh_not_due_yet,
 };
 
-pub const DmRuntimeCadenceWait = struct {
-    reason: DmRuntimeCadenceWaitReason,
+pub const CadenceWait = struct {
+    reason: CadenceWaitReason,
     due_at_unix_seconds: u64,
 };
 
-pub fn SyncRuntimeStep(comptime ReceiveRequest: type) type {
+pub fn Step(comptime ReceiveRequest: type) type {
     return union(enum) {
         authenticate: runtime.RelayPoolAuthStep,
         replay: runtime.RelayPoolReplayStep,
@@ -48,24 +48,24 @@ pub fn SyncRuntimeStep(comptime ReceiveRequest: type) type {
     };
 }
 
-pub fn SyncRuntimePlan(comptime ReceiveRequest: type) type {
+pub fn Plan(comptime ReceiveRequest: type) type {
     return struct {
-        const Step = SyncRuntimeStep(ReceiveRequest);
+        const NextStep = Step(ReceiveRequest);
 
         authenticate_count: u8 = 0,
         replay_count: u16 = 0,
         subscribe_count: u16 = 0,
         receive_count: u8 = 0,
         replay_phase_complete: bool = false,
-        next_step: Step = .idle,
+        next_step: NextStep = .idle,
 
-        pub fn nextStep(self: *const @This()) Step {
+        pub fn nextStep(self: *const @This()) NextStep {
             return self.next_step;
         }
     };
 }
 
-pub fn LongLivedDmPolicyStep(comptime ReceiveRequest: type) type {
+pub fn PolicyStep(comptime ReceiveRequest: type) type {
     return union(enum) {
         reconnect: runtime.RelayPoolStep,
         authenticate: runtime.RelayPoolAuthStep,
@@ -76,9 +76,9 @@ pub fn LongLivedDmPolicyStep(comptime ReceiveRequest: type) type {
     };
 }
 
-pub fn LongLivedDmPolicyPlan(comptime ReceiveRequest: type) type {
+pub fn PolicyPlan(comptime ReceiveRequest: type) type {
     return struct {
-        const Step = LongLivedDmPolicyStep(ReceiveRequest);
+        const NextStep = PolicyStep(ReceiveRequest);
 
         relay_count: u8 = 0,
         reconnect_count: u8 = 0,
@@ -88,15 +88,15 @@ pub fn LongLivedDmPolicyPlan(comptime ReceiveRequest: type) type {
         receive_count: u8 = 0,
         replay_phase_complete: bool = false,
         live_subscription_active: bool = false,
-        next_step: Step = .idle,
+        next_step: NextStep = .idle,
 
-        pub fn nextStep(self: *const @This()) Step {
+        pub fn nextStep(self: *const @This()) NextStep {
             return self.next_step;
         }
     };
 }
 
-pub fn DmOrchestrationStep(comptime ReceiveRequest: type) type {
+pub fn OrchestrationStep(comptime ReceiveRequest: type) type {
     return union(enum) {
         configure_relays,
         reconnect: runtime.RelayPoolStep,
@@ -108,9 +108,9 @@ pub fn DmOrchestrationStep(comptime ReceiveRequest: type) type {
     };
 }
 
-pub fn DmOrchestrationPlan(comptime ReceiveRequest: type) type {
+pub fn OrchestrationPlan(comptime ReceiveRequest: type) type {
     return struct {
-        const Step = DmOrchestrationStep(ReceiveRequest);
+        const NextStep = OrchestrationStep(ReceiveRequest);
 
         relay_count: u8 = 0,
         reconnect_count: u8 = 0,
@@ -126,17 +126,17 @@ pub fn DmOrchestrationPlan(comptime ReceiveRequest: type) type {
         needs_replay_catchup: bool = false,
         needs_live_subscription: bool = false,
         can_receive_live: bool = false,
-        next_step: Step = .idle,
+        next_step: NextStep = .idle,
 
-        pub fn nextStep(self: *const @This()) Step {
+        pub fn nextStep(self: *const @This()) NextStep {
             return self.next_step;
         }
     };
 }
 
-pub fn DmRuntimeCadenceStep(comptime ReceiveRequest: type) type {
+pub fn CadenceStep(comptime ReceiveRequest: type) type {
     return union(enum) {
-        wait: DmRuntimeCadenceWait,
+        wait: CadenceWait,
         reopen_replay_catchup,
         configure_relays,
         reconnect: runtime.RelayPoolStep,
@@ -148,9 +148,9 @@ pub fn DmRuntimeCadenceStep(comptime ReceiveRequest: type) type {
     };
 }
 
-pub fn DmRuntimeCadencePlan(comptime ReceiveRequest: type) type {
+pub fn CadencePlan(comptime ReceiveRequest: type) type {
     return struct {
-        const Step = DmRuntimeCadenceStep(ReceiveRequest);
+        const NextStep = CadenceStep(ReceiveRequest);
 
         relay_count: u8 = 0,
         reconnect_count: u8 = 0,
@@ -171,15 +171,15 @@ pub fn DmRuntimeCadencePlan(comptime ReceiveRequest: type) type {
         waiting_for_replay_refresh: bool = false,
         replay_refresh_due: bool = false,
         next_due_at_unix_seconds: ?u64 = null,
-        next_step: Step = .idle,
+        next_step: NextStep = .idle,
 
-        pub fn nextStep(self: *const @This()) Step {
+        pub fn nextStep(self: *const @This()) NextStep {
             return self.next_step;
         }
     };
 }
 
-pub fn buildSyncRuntimePlan(
+pub fn buildPlan(
     comptime ReceiveRequest: type,
     auth_plan: runtime.RelayPoolAuthPlan,
     replay_plan: runtime.RelayPoolReplayPlan,
@@ -187,8 +187,8 @@ pub fn buildSyncRuntimePlan(
     replay_phase_complete: bool,
     live_subscription_active: bool,
     live_subscription_request: ReceiveRequest,
-) SyncRuntimePlan(ReceiveRequest) {
-    var plan: SyncRuntimePlan(ReceiveRequest) = .{
+) Plan(ReceiveRequest) {
+    var plan: Plan(ReceiveRequest) = .{
         .authenticate_count = auth_plan.authenticate_count,
         .replay_count = if (replay_phase_complete) 0 else replay_plan.replay_count,
         .subscribe_count = subscription_plan.subscribe_count,
@@ -217,14 +217,14 @@ pub fn buildSyncRuntimePlan(
     return plan;
 }
 
-pub fn classifyLongLivedDmPolicy(
+pub fn classifyPolicy(
     comptime ReceiveRequest: type,
     relay_count: u8,
     relay_runtime: runtime.RelayPoolPlan,
-    runtime_plan: SyncRuntimePlan(ReceiveRequest),
+    runtime_plan: Plan(ReceiveRequest),
     live_subscription_active: bool,
-) LongLivedDmPolicyPlan(ReceiveRequest) {
-    var plan: LongLivedDmPolicyPlan(ReceiveRequest) = .{
+) PolicyPlan(ReceiveRequest) {
+    var plan: PolicyPlan(ReceiveRequest) = .{
         .relay_count = relay_count,
         .reconnect_count = relay_runtime.connect_count,
         .authenticate_count = runtime_plan.authenticate_count,
@@ -263,11 +263,11 @@ pub fn classifyLongLivedDmPolicy(
     return plan;
 }
 
-pub fn buildDmOrchestration(
+pub fn buildOrchestration(
     comptime ReceiveRequest: type,
-    policy_plan: LongLivedDmPolicyPlan(ReceiveRequest),
-) DmOrchestrationPlan(ReceiveRequest) {
-    var plan: DmOrchestrationPlan(ReceiveRequest) = .{
+    policy_plan: PolicyPlan(ReceiveRequest),
+) OrchestrationPlan(ReceiveRequest) {
+    var plan: OrchestrationPlan(ReceiveRequest) = .{
         .relay_count = policy_plan.relay_count,
         .reconnect_count = policy_plan.reconnect_count,
         .authenticate_count = policy_plan.authenticate_count,
@@ -300,12 +300,12 @@ pub fn buildDmOrchestration(
     return plan;
 }
 
-pub fn buildDmRuntimeCadence(
+pub fn buildCadence(
     comptime ReceiveRequest: type,
-    orchestration_plan: DmOrchestrationPlan(ReceiveRequest),
-    request: DmRuntimeCadenceRequest,
-) DmRuntimeCadencePlan(ReceiveRequest) {
-    var plan: DmRuntimeCadencePlan(ReceiveRequest) = .{
+    orchestration_plan: OrchestrationPlan(ReceiveRequest),
+    request: CadenceRequest,
+) CadencePlan(ReceiveRequest) {
+    var plan: CadencePlan(ReceiveRequest) = .{
         .relay_count = orchestration_plan.relay_count,
         .reconnect_count = orchestration_plan.reconnect_count,
         .authenticate_count = orchestration_plan.authenticate_count,
@@ -404,8 +404,8 @@ pub fn buildDmRuntimeCadence(
 fn waitFor(
     now_unix_seconds: u64,
     not_before_unix_seconds: ?u64,
-    reason: DmRuntimeCadenceWaitReason,
-) ?DmRuntimeCadenceWait {
+    reason: CadenceWaitReason,
+) ?CadenceWait {
     const due_at = not_before_unix_seconds orelse return null;
     if (now_unix_seconds >= due_at) return null;
     return .{
@@ -460,7 +460,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
         .subscribe_count = 1,
     };
 
-    const auth_first = buildSyncRuntimePlan(
+    const auth_first = buildPlan(
         ReceiveRequest,
         auth_plan,
         replay_plan,
@@ -471,7 +471,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
     );
     try std.testing.expect(auth_first.nextStep() == .authenticate);
 
-    const receive_second = buildSyncRuntimePlan(
+    const receive_second = buildPlan(
         ReceiveRequest,
         .{},
         replay_plan,
@@ -482,7 +482,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
     );
     try std.testing.expect(receive_second.nextStep() == .receive);
 
-    const replay_third = buildSyncRuntimePlan(
+    const replay_third = buildPlan(
         ReceiveRequest,
         .{},
         replay_plan,
@@ -493,7 +493,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
     );
     try std.testing.expect(replay_third.nextStep() == .replay);
 
-    const subscribe_fourth = buildSyncRuntimePlan(
+    const subscribe_fourth = buildPlan(
         ReceiveRequest,
         .{},
         replay_plan,
@@ -507,7 +507,7 @@ test "shared dm sync runtime helper prioritizes auth then receive then replay th
 
 test "shared dm long-lived policy helper prioritizes receive then reconnect then replay resume" {
     const ReceiveRequest = struct { token: u8 };
-    const runtime_plan = SyncRuntimePlan(ReceiveRequest){
+    const runtime_plan = Plan(ReceiveRequest){
         .receive_count = 1,
         .next_step = .{ .receive = .{ .token = 9 } },
     };
@@ -521,7 +521,7 @@ test "shared dm long-lived policy helper prioritizes receive then reconnect then
         .connect_count = 1,
     };
 
-    const receive_first = classifyLongLivedDmPolicy(
+    const receive_first = classifyPolicy(
         ReceiveRequest,
         1,
         relay_runtime,
@@ -543,12 +543,12 @@ test "shared dm long-lived policy helper prioritizes receive then reconnect then
             .until = null,
         },
     };
-    const replay_runtime = SyncRuntimePlan(ReceiveRequest){
+    const replay_runtime = Plan(ReceiveRequest){
         .replay_count = 1,
         .next_step = .{ .replay = .{ .entry = replay_entry } },
     };
 
-    const reconnect_first = classifyLongLivedDmPolicy(
+    const reconnect_first = classifyPolicy(
         ReceiveRequest,
         1,
         relay_runtime,
@@ -558,7 +558,7 @@ test "shared dm long-lived policy helper prioritizes receive then reconnect then
     try std.testing.expect(reconnect_first.nextStep() == .reconnect);
 
     const no_reconnect_runtime = runtime.RelayPoolPlan{};
-    const replay_first = classifyLongLivedDmPolicy(
+    const replay_first = classifyPolicy(
         ReceiveRequest,
         1,
         no_reconnect_runtime,
@@ -570,7 +570,7 @@ test "shared dm long-lived policy helper prioritizes receive then reconnect then
 
 test "shared dm orchestration helper surfaces relay configuration as a first-class phase" {
     const ReceiveRequest = struct { token: u8 };
-    const plan = buildDmOrchestration(ReceiveRequest, .{});
+    const plan = buildOrchestration(ReceiveRequest, .{});
 
     try std.testing.expect(plan.needs_relay_configuration);
     try std.testing.expect(plan.nextStep() == .configure_relays);
@@ -595,7 +595,7 @@ test "shared dm orchestration helper carries broader phase obligations" {
             .until = null,
         },
     };
-    const policy = classifyLongLivedDmPolicy(
+    const policy = classifyPolicy(
         ReceiveRequest,
         1,
         .{
@@ -610,7 +610,7 @@ test "shared dm orchestration helper carries broader phase obligations" {
         },
         false,
     );
-    const plan = buildDmOrchestration(ReceiveRequest, policy);
+    const plan = buildOrchestration(ReceiveRequest, policy);
 
     try std.testing.expect(!plan.needs_relay_configuration);
     try std.testing.expect(plan.needs_connect_progress);
@@ -625,14 +625,14 @@ test "shared dm runtime cadence helper defers reconnect until caller backoff ela
         .descriptor = .{ .relay_index = 0, .relay_url = "wss://relay.one" },
         .action = .connect,
     };
-    const orchestration = DmOrchestrationPlan(ReceiveRequest){
+    const orchestration = OrchestrationPlan(ReceiveRequest){
         .relay_count = 1,
         .reconnect_count = 1,
         .needs_connect_progress = true,
         .next_step = .{ .reconnect = .{ .entry = reconnect_entry } },
     };
 
-    const waiting = buildDmRuntimeCadence(ReceiveRequest, orchestration, .{
+    const waiting = buildCadence(ReceiveRequest, orchestration, .{
         .now_unix_seconds = 50,
         .reconnect_not_before_unix_seconds = 60,
     });
@@ -640,11 +640,11 @@ test "shared dm runtime cadence helper defers reconnect until caller backoff ela
     try std.testing.expectEqual(@as(?u64, 60), waiting.next_due_at_unix_seconds);
     try std.testing.expect(waiting.nextStep() == .wait);
     try std.testing.expectEqual(
-        DmRuntimeCadenceWaitReason.reconnect_backoff,
+        CadenceWaitReason.reconnect_backoff,
         waiting.nextStep().wait.reason,
     );
 
-    const due = buildDmRuntimeCadence(ReceiveRequest, orchestration, .{
+    const due = buildCadence(ReceiveRequest, orchestration, .{
         .now_unix_seconds = 60,
         .reconnect_not_before_unix_seconds = 60,
     });
@@ -659,7 +659,7 @@ test "shared dm runtime cadence helper reopens replay catchup before subscribe w
         .filters = &.{},
         .action = .subscribe,
     };
-    const orchestration = DmOrchestrationPlan(ReceiveRequest){
+    const orchestration = OrchestrationPlan(ReceiveRequest){
         .relay_count = 1,
         .subscribe_resume_count = 1,
         .replay_phase_complete = true,
@@ -667,7 +667,7 @@ test "shared dm runtime cadence helper reopens replay catchup before subscribe w
         .next_step = .{ .subscribe_resume = .{ .entry = subscribe_entry } },
     };
 
-    const plan = buildDmRuntimeCadence(ReceiveRequest, orchestration, .{
+    const plan = buildCadence(ReceiveRequest, orchestration, .{
         .now_unix_seconds = 90,
         .replay_refresh_not_before_unix_seconds = 80,
     });
@@ -677,7 +677,7 @@ test "shared dm runtime cadence helper reopens replay catchup before subscribe w
 
 test "shared dm runtime cadence helper waits for replay refresh while otherwise idle" {
     const ReceiveRequest = struct { token: u8 };
-    const plan = buildDmRuntimeCadence(ReceiveRequest, .{
+    const plan = buildCadence(ReceiveRequest, .{
         .relay_count = 1,
         .replay_phase_complete = true,
         .next_step = .idle,
@@ -690,7 +690,7 @@ test "shared dm runtime cadence helper waits for replay refresh while otherwise 
     try std.testing.expectEqual(@as(?u64, 100), plan.next_due_at_unix_seconds);
     try std.testing.expect(plan.nextStep() == .wait);
     try std.testing.expectEqual(
-        DmRuntimeCadenceWaitReason.replay_refresh_not_due_yet,
+        CadenceWaitReason.replay_refresh_not_due_yet,
         plan.nextStep().wait.reason,
     );
 }

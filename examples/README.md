@@ -702,19 +702,19 @@ They do not imply:
     orchestration helper above that runtime plus one caller-owned replay-refresh cadence helper,
     then drive durable resume export/restore, explicit reconnect, subscribe, and live receive
     posture
-  - related SDK symbols: `noztr_sdk.client`, `LegacyDmReplayJobClient`,
-    `LegacyDmSubscriptionJobClient`, `LegacyDmSyncRuntimeClient`,
-    `LegacyDmSyncRuntimeClientStorage`, `LegacyDmSyncRuntimeResumeStorage`,
-    `LegacyDmSyncRuntimeResumeState`, `LegacyDmSyncRuntimePlanStorage`,
-    `LegacyDmSyncRuntimePlan`, `LegacyDmSyncRuntimeStep`,
-    `LegacyDmLongLivedDmPolicyStorage`, `LegacyDmLongLivedDmPolicyPlan`,
-    `LegacyDmLongLivedDmPolicyStep`, `LegacyDmOrchestrationStorage`,
-    `LegacyDmOrchestrationPlan`, `LegacyDmOrchestrationStep`,
-    `LegacyDmRuntimeCadenceRequest`, `LegacyDmRuntimeCadenceStorage`,
-    `LegacyDmRuntimeCadenceWaitReason`, `LegacyDmRuntimeCadencePlan`,
-    `LegacyDmRuntimeCadenceStep`,
-    `LegacyDmSyncRuntimeAuthEventStorage`, `PreparedLegacyDmSyncRuntimeAuthEvent`,
-    `LegacyDmSyncRuntimeReplayRequest`, `LegacyDmSyncRuntimeSubscriptionRequest`,
+  - related SDK symbols: `noztr_sdk.client.dm.legacy.sync_runtime`, `LegacyDmReplayJobClient`,
+    `LegacyDmSubscriptionJobClient`, `Client`,
+    `Storage`, `ResumeStorage`,
+    `ResumeState`, `PlanStorage`,
+    `Plan`, `Step`,
+    `PolicyStorage`, `PolicyPlan`,
+    `PolicyStep`, `OrchestrationStorage`,
+    `OrchestrationPlan`, `OrchestrationStep`,
+    `CadenceRequest`, `CadenceStorage`,
+    `CadenceWaitReason`, `CadencePlan`,
+    `CadenceStep`,
+    `AuthEventStorage`, `PreparedAuthEvent`,
+    `ReplayRequest`, `SubscriptionRequest`,
     `noztr_sdk.runtime.RelayReplaySpec`, `noztr_sdk.runtime.RelaySubscriptionSpec`,
     `noztr_sdk.store.RelayCheckpointArchive`
   - kernel fixture help: `noztr.nip04`, `noztr.nip01_message`
@@ -833,19 +833,19 @@ They do not imply:
     helper above that runtime plus one caller-owned DM cadence/backoff helper, then drive durable
     resume export/restore, explicit reconnect, resubscribe, and live receive posture without
     inventing a daemon
-  - related SDK symbols: `noztr_sdk.client`, `MailboxSyncRuntimeClient`,
-    `MailboxSyncRuntimeClientStorage`, `MailboxSyncRuntimeResumeStorage`,
-    `MailboxSyncRuntimeResumeState`, `MailboxSyncRuntimePlanStorage`,
-    `MailboxSyncRuntimePlan`, `MailboxSyncRuntimeStep`,
-    `MailboxLongLivedDmPolicyStorage`, `MailboxLongLivedDmPolicyPlan`,
-    `MailboxLongLivedDmPolicyStep`, `MailboxDmOrchestrationStorage`,
-    `MailboxDmOrchestrationPlan`, `MailboxDmOrchestrationStep`,
-    `MailboxDmRuntimeCadenceRequest`, `MailboxDmRuntimeCadenceStorage`,
-    `MailboxDmRuntimeCadenceWaitReason`, `MailboxDmRuntimeCadencePlan`,
-    `MailboxDmRuntimeCadenceStep`,
-    `MailboxSyncRuntimeAuthEventStorage`, `PreparedMailboxSyncRuntimeAuthEvent`,
-    `MailboxSyncRuntimeReplayRequest`, `MailboxSyncRuntimeReplayIntake`,
-    `MailboxSyncRuntimeSubscriptionRequest`, `MailboxSyncRuntimeSubscriptionIntake`
+  - related SDK symbols: `noztr_sdk.client.dm.mailbox.sync_runtime`, `Client`,
+    `Storage`, `ResumeStorage`,
+    `ResumeState`, `PlanStorage`,
+    `Plan`, `Step`,
+    `PolicyStorage`, `PolicyPlan`,
+    `PolicyStep`, `OrchestrationStorage`,
+    `OrchestrationPlan`, `OrchestrationStep`,
+    `CadenceRequest`, `CadenceStorage`,
+    `CadenceWaitReason`, `CadencePlan`,
+    `CadenceStep`,
+    `AuthEventStorage`, `PreparedAuthEvent`,
+    `ReplayRequest`, `ReplayIntake`,
+    `SubscriptionRequest`, `SubscriptionIntake`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
     `noztr.nip01_filter`, `noztr.nip01_message`
   - control points: caller still owns the decision to declare replay catch-up complete, replay and
