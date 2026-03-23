@@ -169,6 +169,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build a shared signer route across local remote and browser adapters | [public contract map](./reference/contract-map.md) | [signer_capability_recipe.zig](../examples/signer_capability_recipe.zig), [nip07_browser_signer_recipe.zig](../examples/nip07_browser_signer_recipe.zig) |
 | build social profile, note, thread, and long-form flows | [public contract map](./reference/contract-map.md) | [social_profile_content_client_recipe.zig](../examples/social_profile_content_client_recipe.zig) |
 | build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig) |
+| build social contact-graph and starter-WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client_recipe.zig](../examples/social_graph_wot_client_recipe.zig) |
 | build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
 | build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |
 | build group flows | [public contract map](./reference/contract-map.md) | [group_session_recipe.zig](../examples/group_session_recipe.zig), [group_fleet_recipe.zig](../examples/group_fleet_recipe.zig) |
@@ -190,6 +191,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first social profile, note, thread, and long-form route
 - [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig)
   - first social reaction and list route
+- [social_graph_wot_client_recipe.zig](../examples/social_graph_wot_client_recipe.zig)
+  - first social contact-graph and starter-WoT route
 - [store_query_recipe.zig](../examples/store_query_recipe.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store_recipe.zig](../examples/sqlite_client_store_recipe.zig)

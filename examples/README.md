@@ -144,6 +144,19 @@ They do not imply:
     list publish still routes through the existing publish floor, relay query posture stays
     bounded and caller-driven, and stored list selection stays explicit over the archive seam
     instead of becoming a hidden background sync or opaque merge engine
+- `social_graph_wot_client_recipe.zig`
+  - goal: compose one kind-`3` contact-list publish route, one bounded contact subscription
+    posture, and one explicit starter-WoT inspection over stored latest contact lists
+  - related SDK symbols: `noztr_sdk.client.social.graph_wot`, `SocialGraphWotClient`,
+    `SocialContactDraft`, `SocialContactDraftStorage`, `SocialContactTagStorage`,
+    `SocialContactSubscriptionRequest`, `StoredSocialContactSelectionRequest`,
+    `StoredSocialContactInspection`, `SocialStarterWotRequest`, `SocialStarterWotInspection`,
+    `noztr_sdk.store.EventArchive`
+  - kernel fixture help: `noztr.nip02_contacts`
+  - control points: deterministic contact-tag parsing stays on `noztr`, contact-list publish and
+    relay query posture still routes through the existing publish and query floors, stored latest
+    contact selection stays explicit over the archive seam, and the starter-WoT route remains
+    inspectable and bounded instead of becoming an opaque recommendation engine or hidden sync loop
 - `signer_connect_job_client_recipe.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response
