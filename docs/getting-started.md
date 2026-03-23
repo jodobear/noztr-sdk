@@ -171,6 +171,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig) |
 | build social contact-graph and starter-only WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client_recipe.zig](../examples/social_graph_wot_client_recipe.zig) |
 | build app-facing DM capability flows above mailbox and legacy DM | [public contract map](./reference/contract-map.md) | [dm_capability_client_recipe.zig](../examples/dm_capability_client_recipe.zig) |
+| build signer-backed mailbox DM authoring above the remote-signer floor | [public contract map](./reference/contract-map.md) | [mailbox_signer_job_client_recipe.zig](../examples/mailbox_signer_job_client_recipe.zig) |
 | build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
 | build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |
 | build group flows | [public contract map](./reference/contract-map.md) | [group_session_recipe.zig](../examples/group_session_recipe.zig), [group_fleet_recipe.zig](../examples/group_fleet_recipe.zig) |
@@ -190,6 +191,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first thin browser signer route over the shared signer-capability seam
 - [dm_capability_client_recipe.zig](../examples/dm_capability_client_recipe.zig)
   - first app-facing DM capability route above mailbox and legacy DM
+- [mailbox_signer_job_client_recipe.zig](../examples/mailbox_signer_job_client_recipe.zig)
+  - first signer-backed mailbox DM authoring route above the bounded signer client
 - [social_profile_content_client_recipe.zig](../examples/social_profile_content_client_recipe.zig)
   - first social profile, note, thread, and long-form route with explicit archive-backed read selection
 - [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig)

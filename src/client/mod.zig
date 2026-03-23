@@ -17,6 +17,7 @@ const group_fleet_client = @import("group_fleet_client.zig");
 const local_event_job_client = @import("local_event_job_client.zig");
 const local_key_job_client = @import("local_key_job_client.zig");
 const mailbox_job_client = @import("mailbox_job_client.zig");
+const mailbox_signer_job_client = @import("mailbox_signer_job_client.zig");
 const mailbox_sync_runtime_client = @import("mailbox_sync_runtime_client.zig");
 const mailbox_subscription_job_client = @import("mailbox_subscription_job_client.zig");
 const mailbox_subscription_turn_client = @import("mailbox_subscription_turn_client.zig");
@@ -114,6 +115,7 @@ pub const dm = struct {
 
     pub const mailbox = struct {
         pub const job = mailbox_job_client;
+        pub const signer_job = mailbox_signer_job_client;
         pub const subscription_turn = mailbox_subscription_turn_client;
         pub const subscription_job = mailbox_subscription_job_client;
         pub const replay_turn = mailbox_replay_turn_client;

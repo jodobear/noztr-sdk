@@ -60,6 +60,7 @@ comptime {
     _ = @import("mailbox_receive_turn_recipe.zig");
     _ = @import("mailbox_sync_turn_recipe.zig");
     _ = @import("mailbox_job_client_recipe.zig");
+    _ = @import("mailbox_signer_job_client_recipe.zig");
     _ = @import("mailbox_sync_runtime_client_recipe.zig");
     _ = @import("mailbox_subscription_job_client_recipe.zig");
     _ = @import("mailbox_subscription_turn_client_recipe.zig");

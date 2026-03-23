@@ -772,6 +772,19 @@ They do not imply:
     session floor, receive work still routes through the bounded receive-turn floor, and this
     layer only exposes command-ready mailbox posture instead of inventing transport, polling, or
     UI policy
+- `mailbox_signer_job_client_recipe.zig`
+  - goal: walk one remote signer through mailbox direct-message authoring explicitly, then return
+    one bounded mailbox delivery plan for caller-owned publish work
+  - related SDK symbols: `noztr_sdk.client.dm.mailbox.signer_job`, `MailboxSignerJobClient`,
+    `MailboxSignerJobClientStorage`, `MailboxSignerJobAuthEventStorage`,
+    `PreparedMailboxSignerJobAuthEvent`, `MailboxSignerJobReady`,
+    `MailboxSignerDirectMessageRequest`, `MailboxSignerDirectMessageProgress`,
+    `PreparedMailboxSignerDirectMessage`, `MailboxSignerDirectMessageResult`
+  - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip46_remote_signing`
+  - control points: signer relay/auth state still lives on the bounded signer client, mailbox
+    delivery planning still verifies relay-list events before trust, each authoring stage stays
+    explicit instead of hidden behind one send call, and the surface stops at prepared wrap plus
+    delivery planning rather than inventing inbox/runtime or background publish ownership
 - `mailbox_subscription_turn_client_recipe.zig`
   - goal: start one live mailbox subscription turn explicitly, classify wrapped transcript events
     through mailbox intake, then close the live turn explicitly

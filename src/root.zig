@@ -25,6 +25,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.signer.session.SignerClient) == type);
     try std.testing.expect(@TypeOf(client.dm) == type);
     try std.testing.expect(@TypeOf(client.dm.capability.DmCapabilityClient) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.sync_runtime.MailboxSyncRuntimeClient) == type);
     try std.testing.expect(@TypeOf(client.identity) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyClient) == type);
@@ -152,6 +153,17 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobReady) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobResult) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClient) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobClientError) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobClientConfig) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobClientStorage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobAuthEventStorage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.PreparedMailboxSignerJobAuthEvent) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobReady) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerDirectMessageRequest) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerDirectMessageProgress) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.PreparedMailboxSignerDirectMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerDirectMessageResult) == type);
+    try std.testing.expect(@TypeOf(client.dm.mailbox.signer_job.MailboxSignerJobClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClientError) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClientConfig) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.subscription_turn.MailboxSubscriptionTurnClientStorage) == type);
