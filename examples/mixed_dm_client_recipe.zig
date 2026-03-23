@@ -113,7 +113,7 @@ test "recipe: mixed dm client normalizes intake and prepares bounded outbound ma
     try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&dedup, &mailbox_observation));
     try std.testing.expectEqual(.duplicate, client.noteObservedMessage(&dedup, &mailbox_observation));
 
-    var outbound_storage = noztr_sdk.client.dm.mixed.MixedDmOutboundStorage{};
+    var outbound_storage = noztr_sdk.client.dm.mixed.OutboundStorage{};
     var legacy_event_json: [noztr.limits.event_json_max]u8 = undefined;
     const prepared_legacy = try client.prepareDirectMessage(
         legacy_event_json[0..],

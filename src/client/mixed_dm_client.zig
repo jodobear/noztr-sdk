@@ -285,13 +285,13 @@ pub const MixedDmDedupMemory = struct {
     }
 };
 
-pub const MixedDmOutboundStorage = struct {
+pub const OutboundStorage = struct {
     legacy: workflows.dm.legacy.LegacyDmOutboundStorage = .{},
     mailbox_outbound: workflows.dm.mailbox.MailboxOutboundBuffer = .{},
     mailbox_delivery: workflows.dm.mailbox.MailboxDeliveryStorage = .{},
 };
 
-pub const MixedDmDirectMessageRequest = struct {
+pub const OutboundRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
     reply_to: ?MixedDmObservedReplyRef = null,
@@ -305,7 +305,7 @@ pub const MixedDmDirectMessageRequest = struct {
     mailbox_wrap_nonce: [32]u8,
 };
 
-pub const MixedDmRememberedDirectMessageRequest = struct {
+pub const RememberedOutboundRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
     reply_to: ?MixedDmObservedReplyRef = null,
@@ -322,20 +322,20 @@ pub const MixedDmRememberedDirectMessageRequest = struct {
     mailbox_wrap_nonce: [32]u8,
 };
 
-pub const MixedDmPreparedMailboxDirectMessage = struct {
+pub const PreparedMailboxOutbound = struct {
     delivery: workflows.dm.mailbox.MailboxDeliveryPlan,
 };
 
-pub const MixedDmPreparedLegacyDirectMessage = struct {
+pub const PreparedLegacyOutbound = struct {
     event: noztr.nip01_event.Event,
     event_json: []const u8,
 };
 
-pub const MixedDmPreparedDirectMessage = union(enum) {
-    mailbox: MixedDmPreparedMailboxDirectMessage,
-    legacy: MixedDmPreparedLegacyDirectMessage,
+pub const PreparedOutbound = union(enum) {
+    mailbox: PreparedMailboxOutbound,
+    legacy: PreparedLegacyOutbound,
 
-    pub fn protocol(self: *const MixedDmPreparedDirectMessage) MixedDmProtocol {
+    pub fn protocol(self: *const PreparedOutbound) MixedDmProtocol {
         return switch (self.*) {
             .mailbox => .mailbox,
             .legacy => .legacy,
@@ -343,8 +343,8 @@ pub const MixedDmPreparedDirectMessage = union(enum) {
     }
 };
 
-pub const MixedDmRememberedPreparedDirectMessage = struct {
-    prepared: MixedDmPreparedDirectMessage,
+pub const RememberedPreparedOutbound = struct {
+    prepared: PreparedOutbound,
     sender_protocol: MixedDmProtocol,
     remembered: bool,
 };
@@ -537,11 +537,11 @@ pub const MixedDmClient = struct {
         _: MixedDmClient,
         event_json_output: []u8,
         sender_secret_key: *const [32]u8,
-        storage: *MixedDmOutboundStorage,
+        storage: *OutboundStorage,
         protocol: MixedDmProtocol,
-        request: *const MixedDmDirectMessageRequest,
+        request: *const OutboundRequest,
         scratch: std.mem.Allocator,
-    ) MixedDmClientError!MixedDmPreparedDirectMessage {
+    ) MixedDmClientError!PreparedOutbound {
         return switch (protocol) {
             .legacy => prepareLegacyDirectMessage(
                 event_json_output,
@@ -562,11 +562,11 @@ pub const MixedDmClient = struct {
         self: MixedDmClient,
         event_json_output: []u8,
         sender_secret_key: *const [32]u8,
-        storage: *MixedDmOutboundStorage,
+        storage: *OutboundStorage,
         memory: *const MixedDmSenderProtocolMemory,
-        request: *const MixedDmRememberedDirectMessageRequest,
+        request: *const RememberedOutboundRequest,
         scratch: std.mem.Allocator,
-    ) MixedDmClientError!MixedDmRememberedPreparedDirectMessage {
+    ) MixedDmClientError!RememberedPreparedOutbound {
         const route = try self.selectRememberedReplyRoute(memory, &.{
             .peer_pubkey = request.recipient_pubkey,
             .fallback_sender_protocol = request.fallback_sender_protocol,
@@ -604,8 +604,8 @@ fn prepareLegacyDirectMessage(
     event_json_output: []u8,
     sender_secret_key: *const [32]u8,
     storage: *workflows.dm.legacy.LegacyDmOutboundStorage,
-    request: *const MixedDmDirectMessageRequest,
-) MixedDmClientError!MixedDmPreparedDirectMessage {
+    request: *const OutboundRequest,
+) MixedDmClientError!PreparedOutbound {
     const session = workflows.dm.legacy.LegacyDmSession.init(sender_secret_key);
     const prepared = try session.buildDirectMessageEvent(storage, &.{
         .recipient_pubkey = request.recipient_pubkey,
@@ -625,10 +625,10 @@ fn prepareLegacyDirectMessage(
 
 fn prepareMailboxDirectMessage(
     sender_secret_key: *const [32]u8,
-    storage: *MixedDmOutboundStorage,
-    request: *const MixedDmDirectMessageRequest,
+    storage: *OutboundStorage,
+    request: *const OutboundRequest,
     scratch: std.mem.Allocator,
-) MixedDmClientError!MixedDmPreparedDirectMessage {
+) MixedDmClientError!PreparedOutbound {
     const recipient_relay_list_event_json =
         request.recipient_relay_list_event_json orelse return error.MissingRecipientMailboxRelayList;
     var session = workflows.dm.mailbox.MailboxSession.init(sender_secret_key);
@@ -1062,7 +1062,7 @@ test "mixed dm client prepares mailbox and legacy outbound work explicitly" {
         &.{ .created_at = 99, .relays = &.{"wss://dm.one"} },
     );
 
-    var outbound_storage = MixedDmOutboundStorage{};
+    var outbound_storage = OutboundStorage{};
     var event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     const mailbox = try client.prepareDirectMessage(
         event_json_output[0..],
@@ -1149,7 +1149,7 @@ test "mixed dm client prepares remembered outbound route over caller-owned memor
     var memory = MixedDmSenderProtocolMemory.init(memory_records[0..]);
     client.rememberSenderProtocol(&memory, &recipient_pubkey, .mailbox, 110);
 
-    var outbound_storage = MixedDmOutboundStorage{};
+    var outbound_storage = OutboundStorage{};
     var event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     const prepared = try client.prepareRememberedDirectMessage(
         event_json_output[0..],

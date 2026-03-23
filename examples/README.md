@@ -658,8 +658,8 @@ They do not imply:
   - related SDK symbols: `noztr_sdk.client.dm.mixed`, `MixedDmClient`, `MixedDmClientStorage`,
     `MixedDmProtocol`, `MixedDmReplyPolicy`, `MixedDmReplyRoute`,
     `MixedDmSenderProtocolMemory`, `MixedDmRememberedReplyRoute`, `MixedDmDedupMemory`,
-    `MixedDmDedupResult`, `MixedDmObservedMessage`, `MixedDmOutboundStorage`,
-    `MixedDmDirectMessageRequest`, `MixedDmRememberedPreparedDirectMessage`
+    `MixedDmDedupResult`, `MixedDmObservedMessage`, `OutboundStorage`, `OutboundRequest`,
+    `RememberedPreparedOutbound`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
   - control points: mailbox and legacy intake still route through their existing workflow floors,
     the mixed layer keeps sender-protocol memory caller-owned and bounded, keeps replay/live dedup
