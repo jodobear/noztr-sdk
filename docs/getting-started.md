@@ -101,7 +101,7 @@ For arbitrary downstream event kinds and tags:
   operator composition above that kernel floor
 - hand signed events into `noztr_sdk.client.relay.publish.PublishClient` or the broader
   relay-session/relay-query/relay-replay family as needed
-- use [downstream_mixed_route_recipe.zig](../examples/downstream_mixed_route_recipe.zig) when you
+- use [downstream_mixed_route.zig](../examples/downstream_mixed_route.zig) when you
   want one explicit proof of that kernel-to-SDK handoff
 
 If you are building another Zig SDK above Nostr:
@@ -135,6 +135,7 @@ longer names:
 - [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
 - [remote signer naming migration](./reference/remote-signer-naming-migration.md)
 - [proof and identity planning migration](./reference/proof-identity-planning-migration.md)
+- [examples filename migration](./reference/examples-filename-migration.md)
 
 ## Add As A Local Dependency
 
@@ -164,82 +165,82 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | --- | --- | --- |
 | understand the public SDK workflow surface | [public contract map](./reference/contract-map.md) | [examples/README.md](../examples/README.md) |
 | verify install/import works | [consumer_smoke.zig](../examples/consumer_smoke.zig) | one workflow recipe |
-| build local bounded event/query/checkpoint storage first | [public contract map](./reference/contract-map.md) | [store_query_recipe.zig](../examples/store_query_recipe.zig) |
-| build one first embedded durable local-storage baseline | [public contract map](./reference/contract-map.md) | [sqlite_client_store_recipe.zig](../examples/sqlite_client_store_recipe.zig) |
-| build a first CLI-facing archive surface above shared storage | [public contract map](./reference/contract-map.md) | [store_archive_recipe.zig](../examples/store_archive_recipe.zig) |
-| build a first CLI-facing client surface above shared store plus runtime | [public contract map](./reference/contract-map.md) | [cli_archive_client_recipe.zig](../examples/cli_archive_client_recipe.zig) |
-| persist relay-local runtime cursors over shared storage | [public contract map](./reference/contract-map.md) | [relay_checkpoint_recipe.zig](../examples/relay_checkpoint_recipe.zig) |
-| build one relay-local archive plus checkpoint-backed replay route over shared storage | [public contract map](./reference/contract-map.md) | [relay_local_archive_recipe.zig](../examples/relay_local_archive_recipe.zig) |
-| restore one relay-local group snapshot over shared storage | [public contract map](./reference/contract-map.md) | [relay_local_group_archive_recipe.zig](../examples/relay_local_group_archive_recipe.zig) |
-| inspect a shared multi-relay runtime floor and derive bounded subscription targets | [public contract map](./reference/contract-map.md) | [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig) |
-| persist and restore a shared relay-pool checkpoint set, then derive bounded replay steps | [public contract map](./reference/contract-map.md) | [relay_pool_checkpoint_recipe.zig](../examples/relay_pool_checkpoint_recipe.zig) |
-| build signer/session flows | [public contract map](./reference/contract-map.md) | [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
-| build a first signer-tooling client surface above the remote-signer workflow | [public contract map](./reference/contract-map.md) | [signer_client_recipe.zig](../examples/signer_client_recipe.zig) |
-| build a shared signer route across local remote and browser adapters | [public contract map](./reference/contract-map.md) | [signer_capability_recipe.zig](../examples/signer_capability_recipe.zig), [nip07_browser_signer_recipe.zig](../examples/nip07_browser_signer_recipe.zig) |
-| build social profile, note, thread, and long-form flows with explicit archive-backed reads | [public contract map](./reference/contract-map.md) | [social_profile_content_client_recipe.zig](../examples/social_profile_content_client_recipe.zig) |
-| build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig) |
-| build social contact-graph and starter-only WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client_recipe.zig](../examples/social_graph_wot_client_recipe.zig) |
-| build app-facing DM capability flows above mailbox and legacy DM | [public contract map](./reference/contract-map.md) | [dm_capability_client_recipe.zig](../examples/dm_capability_client_recipe.zig) |
-| build one simple mixed mailbox-plus-legacy DM facade for apps with bounded outbound preparation | [public contract map](./reference/contract-map.md) | [mixed_dm_client_recipe.zig](../examples/mixed_dm_client_recipe.zig) |
-| build signer-backed mailbox DM authoring above the remote-signer floor | [public contract map](./reference/contract-map.md) | [mailbox_signer_job_client_recipe.zig](../examples/mailbox_signer_job_client_recipe.zig) |
-| build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox_recipe.zig](../examples/mailbox_recipe.zig) |
-| build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig), [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig) |
-| build group flows | [public contract map](./reference/contract-map.md) | [group_session_recipe.zig](../examples/group_session_recipe.zig), [group_fleet_recipe.zig](../examples/group_fleet_recipe.zig) |
-| build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | [public contract map](./reference/contract-map.md) | [downstream_mixed_route_recipe.zig](../examples/downstream_mixed_route_recipe.zig), [local_operator_client_recipe.zig](../examples/local_operator_client_recipe.zig), [publish_client_recipe.zig](../examples/publish_client_recipe.zig), [relay_session_client_recipe.zig](../examples/relay_session_client_recipe.zig), [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig), [local_state_client_recipe.zig](../examples/local_state_client_recipe.zig), [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig) |
+| build local bounded event/query/checkpoint storage first | [public contract map](./reference/contract-map.md) | [store_query.zig](../examples/store_query.zig) |
+| build one first embedded durable local-storage baseline | [public contract map](./reference/contract-map.md) | [sqlite_client_store.zig](../examples/sqlite_client_store.zig) |
+| build a first CLI-facing archive surface above shared storage | [public contract map](./reference/contract-map.md) | [store_archive.zig](../examples/store_archive.zig) |
+| build a first CLI-facing client surface above shared store plus runtime | [public contract map](./reference/contract-map.md) | [cli_archive_client.zig](../examples/cli_archive_client.zig) |
+| persist relay-local runtime cursors over shared storage | [public contract map](./reference/contract-map.md) | [relay_checkpoint.zig](../examples/relay_checkpoint.zig) |
+| build one relay-local archive plus checkpoint-backed replay route over shared storage | [public contract map](./reference/contract-map.md) | [relay_local_archive.zig](../examples/relay_local_archive.zig) |
+| restore one relay-local group snapshot over shared storage | [public contract map](./reference/contract-map.md) | [relay_local_group_archive.zig](../examples/relay_local_group_archive.zig) |
+| inspect a shared multi-relay runtime floor and derive bounded subscription targets | [public contract map](./reference/contract-map.md) | [relay_pool.zig](../examples/relay_pool.zig) |
+| persist and restore a shared relay-pool checkpoint set, then derive bounded replay steps | [public contract map](./reference/contract-map.md) | [relay_pool_checkpoint.zig](../examples/relay_pool_checkpoint.zig) |
+| build signer/session flows | [public contract map](./reference/contract-map.md) | [remote_signer.zig](../examples/remote_signer.zig) |
+| build a first signer-tooling client surface above the remote-signer workflow | [public contract map](./reference/contract-map.md) | [signer_client.zig](../examples/signer_client.zig) |
+| build a shared signer route across local remote and browser adapters | [public contract map](./reference/contract-map.md) | [signer_capability.zig](../examples/signer_capability.zig), [nip07_browser_signer.zig](../examples/nip07_browser_signer.zig) |
+| build social profile, note, thread, and long-form flows with explicit archive-backed reads | [public contract map](./reference/contract-map.md) | [social_profile_content_client.zig](../examples/social_profile_content_client.zig) |
+| build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client.zig](../examples/social_reaction_list_client.zig) |
+| build social contact-graph and starter-only WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client.zig](../examples/social_graph_wot_client.zig) |
+| build app-facing DM capability flows above mailbox and legacy DM | [public contract map](./reference/contract-map.md) | [dm_capability_client.zig](../examples/dm_capability_client.zig) |
+| build one simple mixed mailbox-plus-legacy DM facade for apps with bounded outbound preparation | [public contract map](./reference/contract-map.md) | [mixed_dm_client.zig](../examples/mixed_dm_client.zig) |
+| build signer-backed mailbox DM authoring above the remote-signer floor | [public contract map](./reference/contract-map.md) | [mailbox_signer_job_client.zig](../examples/mailbox_signer_job_client.zig) |
+| build mailbox/private-message flows | [public contract map](./reference/contract-map.md) | [mailbox.zig](../examples/mailbox.zig) |
+| build identity/proof flows | [public contract map](./reference/contract-map.md) | [nip39_verification.zig](../examples/nip39_verification.zig), [nip03_verification.zig](../examples/nip03_verification.zig) |
+| build group flows | [public contract map](./reference/contract-map.md) | [group_session.zig](../examples/group_session.zig), [group_fleet.zig](../examples/group_fleet.zig) |
+| build another Zig SDK above a production-grade generic Nostr relay/workflow foundation | [public contract map](./reference/contract-map.md) | [downstream_mixed_route.zig](../examples/downstream_mixed_route.zig), [local_operator_client.zig](../examples/local_operator_client.zig), [publish_client.zig](../examples/publish_client.zig), [relay_session_client.zig](../examples/relay_session_client.zig), [relay_pool.zig](../examples/relay_pool.zig), [local_state_client.zig](../examples/local_state_client.zig), [remote_signer.zig](../examples/remote_signer.zig) |
 
 ## Best First Examples
 
 - [consumer_smoke.zig](../examples/consumer_smoke.zig)
   - minimal package/import check
-- [remote_signer_recipe.zig](../examples/remote_signer_recipe.zig)
+- [remote_signer.zig](../examples/remote_signer.zig)
   - first signer/session route
-- [signer_client_recipe.zig](../examples/signer_client_recipe.zig)
+- [signer_client.zig](../examples/signer_client.zig)
   - first signer-tooling client route over the remote-signer workflow
-- [signer_capability_recipe.zig](../examples/signer_capability_recipe.zig)
+- [signer_capability.zig](../examples/signer_capability.zig)
   - first shared signer route across local, remote, and browser adapters
-- [nip07_browser_signer_recipe.zig](../examples/nip07_browser_signer_recipe.zig)
+- [nip07_browser_signer.zig](../examples/nip07_browser_signer.zig)
   - first thin browser signer route over the shared signer-capability seam
-- [dm_capability_client_recipe.zig](../examples/dm_capability_client_recipe.zig)
+- [dm_capability_client.zig](../examples/dm_capability_client.zig)
   - first app-facing DM capability route above mailbox and legacy DM
-- [mixed_dm_client_recipe.zig](../examples/mixed_dm_client_recipe.zig)
+- [mixed_dm_client.zig](../examples/mixed_dm_client.zig)
   - first simple DM-app route for mixed inbound normalization plus bounded outbound preparation
-- [mailbox_signer_job_client_recipe.zig](../examples/mailbox_signer_job_client_recipe.zig)
+- [mailbox_signer_job_client.zig](../examples/mailbox_signer_job_client.zig)
   - first signer-backed mailbox DM authoring route above the bounded signer client
-- [social_profile_content_client_recipe.zig](../examples/social_profile_content_client_recipe.zig)
+- [social_profile_content_client.zig](../examples/social_profile_content_client.zig)
   - first social profile, note, thread, and long-form route with explicit archive-backed read selection
-- [social_reaction_list_client_recipe.zig](../examples/social_reaction_list_client_recipe.zig)
+- [social_reaction_list_client.zig](../examples/social_reaction_list_client.zig)
   - first social reaction and list route
-- [social_graph_wot_client_recipe.zig](../examples/social_graph_wot_client_recipe.zig)
+- [social_graph_wot_client.zig](../examples/social_graph_wot_client.zig)
   - first social contact-graph and starter-only WoT route over verified latest contact lists
-- [store_query_recipe.zig](../examples/store_query_recipe.zig)
+- [store_query.zig](../examples/store_query.zig)
   - first bounded store/query/checkpoint route
-- [sqlite_client_store_recipe.zig](../examples/sqlite_client_store_recipe.zig)
+- [sqlite_client_store.zig](../examples/sqlite_client_store.zig)
   - first embedded durable store baseline over the shared store seam
-- [store_archive_recipe.zig](../examples/store_archive_recipe.zig)
+- [store_archive.zig](../examples/store_archive.zig)
   - first CLI-facing archive route over the shared store seam
-- [cli_archive_client_recipe.zig](../examples/cli_archive_client_recipe.zig)
+- [cli_archive_client.zig](../examples/cli_archive_client.zig)
   - first CLI-facing client composition route over shared store plus runtime
-- [relay_checkpoint_recipe.zig](../examples/relay_checkpoint_recipe.zig)
+- [relay_checkpoint.zig](../examples/relay_checkpoint.zig)
   - first relay-local checkpoint route over shared storage
-- [relay_local_archive_recipe.zig](../examples/relay_local_archive_recipe.zig)
+- [relay_local_archive.zig](../examples/relay_local_archive.zig)
   - first relay-local archive plus replay-planning route over shared storage
-- [relay_local_group_archive_recipe.zig](../examples/relay_local_group_archive_recipe.zig)
+- [relay_local_group_archive.zig](../examples/relay_local_group_archive.zig)
   - first relay-local workflow replay route over shared storage
-- [relay_pool_recipe.zig](../examples/relay_pool_recipe.zig)
+- [relay_pool.zig](../examples/relay_pool.zig)
   - first shared relay-pool runtime plus subscription-spec route
-- [relay_session_client_recipe.zig](../examples/relay_session_client_recipe.zig)
+- [relay_session_client.zig](../examples/relay_session_client.zig)
   - first generic relay-session composition route
-- [downstream_mixed_route_recipe.zig](../examples/downstream_mixed_route_recipe.zig)
+- [downstream_mixed_route.zig](../examples/downstream_mixed_route.zig)
   - first explicit kernel-event-to-SDK mixed downstream route
-- [relay_pool_checkpoint_recipe.zig](../examples/relay_pool_checkpoint_recipe.zig)
+- [relay_pool_checkpoint.zig](../examples/relay_pool_checkpoint.zig)
   - first shared relay-pool checkpoint plus replay-planning route
-- [mailbox_recipe.zig](../examples/mailbox_recipe.zig)
+- [mailbox.zig](../examples/mailbox.zig)
   - first private-message workflow route
-- [nip39_verification_recipe.zig](../examples/nip39_verification_recipe.zig)
+- [nip39_verification.zig](../examples/nip39_verification.zig)
   - first identity/discovery route
-- [nip03_verification_recipe.zig](../examples/nip03_verification_recipe.zig)
+- [nip03_verification.zig](../examples/nip03_verification.zig)
   - first detached-proof workflow route
-- [group_session_recipe.zig](../examples/group_session_recipe.zig)
+- [group_session.zig](../examples/group_session.zig)
   - first group workflow route
 
 ## Next Step

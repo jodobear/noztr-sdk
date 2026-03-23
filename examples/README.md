@@ -39,26 +39,26 @@ Use these docs when you need public routing or contract context before opening a
 - the grouped routes are the only canonical public routes for mature surfaces in this repo
 
 In the recipe entries below:
-- treat the recipe file plus the grouped route from the contract map as the canonical discovery path
+- treat the example file plus the grouped route from the contract map as the canonical discovery path
 - treat `related SDK symbols` as supporting symbol inventory around that canonical route
 
 ## If You Are Building Another Zig SDK
 
 Use the relay/runtime examples as the reusable downstream foundation:
 
-- [local_operator_client_recipe.zig](./local_operator_client_recipe.zig)
-- [publish_client_recipe.zig](./publish_client_recipe.zig)
-- [relay_pool_recipe.zig](./relay_pool_recipe.zig)
-- [relay_query_client_recipe.zig](./relay_query_client_recipe.zig)
-- [relay_exchange_client_recipe.zig](./relay_exchange_client_recipe.zig)
-- [relay_replay_client_recipe.zig](./relay_replay_client_recipe.zig)
-- [relay_auth_client_recipe.zig](./relay_auth_client_recipe.zig)
-- [relay_response_client_recipe.zig](./relay_response_client_recipe.zig)
-- [relay_session_client_recipe.zig](./relay_session_client_recipe.zig)
-- [downstream_mixed_route_recipe.zig](./downstream_mixed_route_recipe.zig)
-- [local_state_client_recipe.zig](./local_state_client_recipe.zig)
-- [relay_workspace_client_recipe.zig](./relay_workspace_client_recipe.zig)
-- [remote_signer_recipe.zig](./remote_signer_recipe.zig)
+- [local_operator_client.zig](./local_operator_client.zig)
+- [publish_client.zig](./publish_client.zig)
+- [relay_pool.zig](./relay_pool.zig)
+- [relay_query_client.zig](./relay_query_client.zig)
+- [relay_exchange_client.zig](./relay_exchange_client.zig)
+- [relay_replay_client.zig](./relay_replay_client.zig)
+- [relay_auth_client.zig](./relay_auth_client.zig)
+- [relay_response_client.zig](./relay_response_client.zig)
+- [relay_session_client.zig](./relay_session_client.zig)
+- [downstream_mixed_route.zig](./downstream_mixed_route.zig)
+- [local_state_client.zig](./local_state_client.zig)
+- [relay_workspace_client.zig](./relay_workspace_client.zig)
+- [remote_signer.zig](./remote_signer.zig)
 
 These examples show the current public foundation another Zig SDK can drive explicitly.
 
@@ -72,7 +72,7 @@ The intended arbitrary-event route is:
 - publish or relay-session composition on `noztr-sdk`
 
 The dedicated proof of that route is:
-- `downstream_mixed_route_recipe.zig`
+- `downstream_mixed_route.zig`
 
 They do not imply:
 - a hidden websocket/runtime framework
@@ -85,7 +85,7 @@ They do not imply:
   - goal: minimal package/import check
   - related SDK symbols: `noztr_sdk.workflows`
   - control point: verify the workflow namespace is the stable top-level entry
-- `remote_signer_recipe.zig`
+- `remote_signer.zig`
   - goal: explicit `NIP-46` connect plus `get_public_key`, one `nip44_encrypt` request, and one
     shared relay-pool inspect/select step
   - related SDK symbols: `noztr_sdk.workflows.signer.remote`, `Session`, `RequestBuffer`,
@@ -96,10 +96,10 @@ They do not imply:
     `buffer + id + scratch`, the shared relay-pool runtime stays explicit instead of becoming
     hidden signer policy, and the recipe keeps repetitive response JSON wiring in one small helper
     so the public session flow stays primary
-- `downstream_mixed_route_recipe.zig`
+- `downstream_mixed_route.zig`
   - goal: one arbitrary signed kernel event authored in `noztr`, then handed into generic SDK
     publish and relay-session composition without a duplicate downstream runtime layer
-- `signer_capability_recipe.zig`
+- `signer_capability.zig`
   - goal: drive one shared signer capability route through local, remote, and browser signer
     adapters while keeping backend differences explicit
   - related SDK symbols: `noztr_sdk.client.signer.capability`, `SignerBackendKind`,
@@ -109,7 +109,7 @@ They do not imply:
   - control points: capability reporting stays honest about unsupported operations, shared request
     and result vocabulary stays bounded, local remote and browser adapters can all drive the route
     honestly, and the surface still stops short of browser-extension product ownership
-- `nip07_browser_signer_recipe.zig`
+- `nip07_browser_signer.zig`
   - goal: project thin browser signer presence, supported-method reporting, and shared
     signer-capability completion onto the browser seam without claiming extension or
     browser-product ownership
@@ -119,7 +119,7 @@ They do not imply:
     adapter remains caller-driven, the shared signer-capability vocabulary now reaches the thin
     browser seam directly, and the SDK still stops at the reusable browser seam instead of
     expanding into extension packaging or approval UI
-- `social_profile_content_client_recipe.zig`
+- `social_profile_content_client.zig`
   - goal: compose one kind-`0` profile publish, one kind-`1` note subscription, one `NIP-23`
     long-form inspection route, and explicit archive-backed latest-profile, note-page, and
     long-form selection above the local operator, publish, relay-query, and event-archive floors
@@ -136,7 +136,7 @@ They do not imply:
     are explicit instead of hidden sync, long-form tag-building stays caller-buffered and
     explicit, and this first social route still stops short of ranking, feed sync, reactions,
     lists, or social-graph policy
-- `social_reaction_list_client_recipe.zig`
+- `social_reaction_list_client.zig`
   - goal: compose one `NIP-25` reaction publish route, one public `NIP-51` follow-set publish
     route, and one explicit stored latest-list selection over the local archive seam
   - related SDK symbols: `noztr_sdk.client.social.reaction_list`, `SocialReactionListClient`,
@@ -148,7 +148,7 @@ They do not imply:
     list publish still routes through the existing publish floor, relay query posture stays
     bounded and caller-driven, and stored list selection stays explicit over the archive seam
     instead of becoming a hidden background sync or opaque merge engine
-- `social_graph_wot_client_recipe.zig`
+- `social_graph_wot_client.zig`
   - goal: compose one kind-`3` contact-list publish route, one bounded contact subscription
     posture, and one explicit starter-only WoT inspection over verified latest contact lists
   - related SDK symbols: `noztr_sdk.client.social.graph_wot`, `SocialGraphWotClient`,
@@ -162,7 +162,7 @@ They do not imply:
     contact selection stays explicit over the archive seam, contact events are verified before this
     route trusts them, and the starter-WoT route remains a bounded heuristic instead of becoming an
     opaque recommendation engine, hidden sync loop, or broader trust claim
-- `signer_connect_job_client_recipe.zig`
+- `signer_connect_job_client.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response
   - related SDK symbols: `noztr_sdk.client`, `SignerConnectJobClient`,
@@ -173,7 +173,7 @@ They do not imply:
   - control points: relay auth handling stays explicit and caller-driven, request building still
     routes through the bounded signer client floor, and this layer only exposes command-ready
     connect posture instead of inventing hidden transport or reconnect policy
-- `signer_pubkey_job_client_recipe.zig`
+- `signer_pubkey_job_client.zig`
   - goal: prepare one command-ready signer pubkey job that either yields one relay `AUTH` event
     or one `get_public_key` request, then close it with one validated public-key response
   - related SDK symbols: `noztr_sdk.client`, `SignerPubkeyJobClient`,
@@ -185,7 +185,7 @@ They do not imply:
     explicit and caller-driven, request building still routes through the bounded signer client
     floor, and this layer only exposes command-ready pubkey posture instead of inventing transport
     or session policy
-- `signer_nip44_encrypt_job_client_recipe.zig`
+- `signer_nip44_encrypt_job_client.zig`
   - goal: prepare one command-ready signer `nip44_encrypt` job that either yields one relay
     `AUTH` event or one `nip44_encrypt` request, then close it with one validated text response
   - related SDK symbols: `noztr_sdk.client`, `SignerNip44EncryptJobClient`,
@@ -197,7 +197,7 @@ They do not imply:
     explicit and caller-driven, request building still routes through the bounded signer client
     floor, and this layer only exposes command-ready encrypt posture instead of inventing
     transport or session policy
-- `local_operator_client_recipe.zig`
+- `local_operator_client.zig`
   - goal: derive one local keypair, roundtrip `NIP-19` entities, sign and inspect one local
     event, and perform one explicit local `NIP-44` encrypt/decrypt roundtrip
   - related SDK symbols: `noztr_sdk.client`, `LocalOperatorClient`, `LocalKeypair`,
@@ -208,7 +208,7 @@ They do not imply:
     them, local operator flows stay relay-free and side-effect free, caller-owned buffers and
     scratch stay explicit, and the recipe proves `znk`-class tooling can stay on SDK surfaces for
     local key/event/entity work instead of stitching kernel modules together ad hoc
-- `local_key_job_client_recipe.zig`
+- `local_key_job_client.zig`
   - goal: derive one deterministic public key and generate one fresh keypair through one
     command-ready SDK job layer
   - related SDK symbols: `noztr_sdk.client`, `LocalKeyJobClient`, `LocalKeyJobClientStorage`,
@@ -218,7 +218,7 @@ They do not imply:
     floor, the job layer adds command-ready result posture instead of secret-store policy, and
     downstream tools can build local key commands without stitching deterministic key helpers
     together ad hoc
-- `local_entity_job_client_recipe.zig`
+- `local_entity_job_client.zig`
   - goal: encode one `npub`, encode one `nsec`, and decode one representative `NIP-19` entity
     through one command-ready SDK job layer
   - related SDK symbols: `noztr_sdk.client`, `LocalEntityJobClient`,
@@ -227,7 +227,7 @@ They do not imply:
   - control points: entity encode-decode still routes through the local operator floor, the job
     layer adds command-ready result posture instead of CLI-owned bech32 wiring, and downstream
     tools can build local entity commands without stitching `NIP-19` helpers together ad hoc
-- `local_event_job_client_recipe.zig`
+- `local_event_job_client.zig`
   - goal: sign one local draft, verify that signed event, and inspect one event JSON through one
     command-ready SDK job layer
   - related SDK symbols: `noztr_sdk.client`, `LocalEventJobClient`,
@@ -237,7 +237,7 @@ They do not imply:
     the job layer adds command-ready result posture instead of CLI-owned event wiring, and
     downstream tools can build local inspect/sign commands without stitching event helpers
     together ad hoc
-- `local_nip44_job_client_recipe.zig`
+- `local_nip44_job_client.zig`
   - goal: encrypt one plaintext to a peer and decrypt it again through one command-ready SDK job
     layer
   - related SDK symbols: `noztr_sdk.client`, `LocalNip44JobClient`,
@@ -246,7 +246,7 @@ They do not imply:
   - control points: local crypto still routes through the local operator floor, caller-owned
     output buffers and optional nonce posture stay explicit, and downstream tools can build local
     crypto commands without stitching `NIP-44` helpers together ad hoc
-- `publish_client_recipe.zig`
+- `publish_client.zig`
   - goal: sign one local event draft, inspect one explicit publish plan over the shared relay
     runtime, then pair one ready relay with one prepared outbound publish payload
   - related SDK symbols: `noztr_sdk.client`, `PublishClient`, `PublishClientStorage`,
@@ -258,7 +258,7 @@ They do not imply:
     one-shot and caller-driven without hidden transport ownership, and the recipe proves
     `znk`-class tooling can consume one SDK publish surface instead of rebuilding event-plus-relay
     glue ad hoc
-- `publish_job_client_recipe.zig`
+- `publish_job_client.zig`
   - goal: prepare one command-ready publish job that either yields one auth event or one bounded
     publish request, then close it with one validated publish `OK`
   - related SDK symbols: `noztr_sdk.client`, `PublishJobClient`, `PublishJobClientStorage`,
@@ -268,7 +268,7 @@ They do not imply:
   - control points: auth handling still routes through the auth-aware publish turn floor, publish
     request creation still routes through the bounded publish turn floor, and this layer only
     exposes command-ready job posture instead of inventing transport or output policy
-- `publish_turn_client_recipe.zig`
+- `publish_turn_client.zig`
   - goal: begin one explicit publish turn from a local draft and close it with one validated
     publish `OK` reply
   - related SDK symbols: `noztr_sdk.client`, `PublishTurnClient`, `PublishTurnClientStorage`,
@@ -278,7 +278,7 @@ They do not imply:
     publish readiness still routes through the shared relay-pool layer, publish `OK` validation
     still routes through the response floor, and this layer only closes one bounded publish turn
     without inventing retries or hidden websocket ownership
-- `auth_publish_turn_client_recipe.zig`
+- `auth_publish_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded publish turn
   - related SDK symbols: `noztr_sdk.client`, `AuthPublishTurnClient`,
@@ -289,7 +289,7 @@ They do not imply:
     state machine, auth event authoring still routes through the local operator floor, publish turn
     closure still routes through the publish turn floor, and this layer only adds typed auth-first
     recovery instead of inventing implicit auth retries or background relay ownership
-- `auth_count_turn_client_recipe.zig`
+- `auth_count_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded count turn
   - related SDK symbols: `noztr_sdk.client`, `AuthCountTurnClient`,
@@ -300,7 +300,7 @@ They do not imply:
     state machine, auth event authoring still routes through the local operator floor, count turn
     closure still routes through the count turn floor, and this layer only adds typed auth-first
     recovery instead of inventing implicit auth retries or background query ownership
-- `count_job_client_recipe.zig`
+- `count_job_client.zig`
   - goal: prepare one command-ready count job that either yields one auth event or one bounded
     `COUNT` request, then close it with one validated `COUNT` reply
   - related SDK symbols: `noztr_sdk.client`, `CountJobClient`, `CountJobClientStorage`,
@@ -310,7 +310,7 @@ They do not imply:
   - control points: auth handling still routes through the auth-aware count turn floor, count
     request creation still routes through the bounded count turn floor, and this layer only
     exposes command-ready job posture instead of inventing transport or output policy
-- `auth_subscription_turn_client_recipe.zig`
+- `auth_subscription_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded subscription turn
   - related SDK symbols: `noztr_sdk.client`, `AuthSubscriptionTurnClient`,
@@ -322,7 +322,7 @@ They do not imply:
     subscription transcript closure still routes through the subscription turn floor, and this
     layer only adds typed auth-first recovery instead of inventing implicit auth retries or hidden
     follow ownership
-- `subscription_job_client_recipe.zig`
+- `subscription_job_client.zig`
   - goal: prepare one command-ready bounded subscription job that either yields one auth event or
     one subscription request, then close it with bounded transcript intake and explicit `CLOSE`
   - related SDK symbols: `noztr_sdk.client`, `SubscriptionJobClient`,
@@ -333,7 +333,7 @@ They do not imply:
   - control points: auth handling still routes through the auth-aware subscription turn floor,
     transcript closure still routes through the bounded subscription turn floor, and this layer
     only exposes command-ready job posture instead of inventing hidden follow ownership
-- `auth_replay_turn_client_recipe.zig`
+- `auth_replay_turn_client.zig`
   - goal: handle one auth-gated relay explicitly, authenticate it, then resume and close one
     bounded replay turn
   - related SDK symbols: `noztr_sdk.client`, `AuthReplayTurnClient`,
@@ -345,7 +345,7 @@ They do not imply:
     transcript plus checkpoint closure still route through the replay turn floor, and this layer
     only adds typed auth-first recovery instead of inventing implicit auth retries or hidden sync
     ownership
-- `replay_job_client_recipe.zig`
+- `replay_job_client.zig`
   - goal: prepare one command-ready replay job that either yields one auth event or one bounded
     replay request, then close it with explicit replay transcript and checkpoint posture
   - related SDK symbols: `noztr_sdk.client`, `ReplayJobClient`, `ReplayJobClientStorage`,
@@ -355,7 +355,7 @@ They do not imply:
   - control points: auth handling still routes through the auth-aware replay turn floor, replay
     transcript and checkpoint closure still route through the bounded replay turn floor, and this
     layer only exposes command-ready job posture instead of inventing hidden sync ownership
-- `count_turn_client_recipe.zig`
+- `count_turn_client.zig`
   - goal: begin one explicit count turn from caller-owned count specs and close it with one
     validated `COUNT` reply
   - related SDK symbols: `noztr_sdk.client`, `CountTurnClient`, `CountTurnClientStorage`,
@@ -364,7 +364,7 @@ They do not imply:
   - control points: relay-targeted `COUNT` preparation still routes through the shared relay query
     and exchange floors, reply validation still routes through the response floor, and this layer
     only closes one bounded count turn without inventing background query ownership
-- `subscription_turn_client_recipe.zig`
+- `subscription_turn_client.zig`
   - goal: begin one explicit subscription turn from caller-owned subscription specs, accept bounded
     transcript intake, then close it explicitly
   - related SDK symbols: `noztr_sdk.client`, `SubscriptionTurnClient`,
@@ -374,7 +374,7 @@ They do not imply:
   - control points: outbound `REQ` and `CLOSE` composition still route through the shared query
     and exchange floors, transcript validation still routes through the response floor, and this
     layer only closes one bounded subscription turn without inventing long-lived follow ownership
-- `relay_auth_client_recipe.zig`
+- `relay_auth_client.zig`
   - goal: inspect one explicit relay auth challenge, build one signed `NIP-42` auth event, send it
     as one outbound `AUTH` client message, then mark the relay ready only after explicit caller
     acceptance
@@ -386,7 +386,7 @@ They do not imply:
     floor still owns signing, the SDK only adds explicit auth target selection and message
     composition, and downstream tools can now handle one `AUTH` roundtrip without rebuilding
     challenge-tag authoring ad hoc
-- `relay_exchange_client_recipe.zig`
+- `relay_exchange_client.zig`
   - goal: compose one publish exchange, one count exchange, and one subscription exchange on the
     same shared relay floor, then validate the matching relay replies explicitly without hidden
     transport ownership
@@ -399,7 +399,7 @@ They do not imply:
     response floors instead of replacing them, publish/count/subscription work all stay explicit
     and one-shot, and downstream tools can now consume a single SDK exchange layer for the most
     common relay roundtrips
-- `relay_query_client_recipe.zig`
+- `relay_query_client.zig`
   - goal: inspect explicit shared relay query posture, then compose one outbound `REQ`, one
     outbound `COUNT`, and one outbound `CLOSE` payload for a ready relay without hidden
     subscription ownership
@@ -412,7 +412,7 @@ They do not imply:
     serialization stays on the kernel, the client only pairs ready relay targets with one-shot
     request payloads, and the recipe proves `znk`-class tooling can build relay query commands on
     SDK surfaces without smuggling in a hidden streaming runtime
-- `relay_replay_client_recipe.zig`
+- `relay_replay_client.zig`
   - goal: inspect one checkpoint-backed replay step, then compose one explicit replay `REQ`
     payload for a ready relay without rebuilding checkpoint or query glue in the caller
   - related SDK symbols: `noztr_sdk.client`, `RelayReplayClient`, `RelayReplayClientStorage`,
@@ -424,7 +424,7 @@ They do not imply:
     readiness still routes through the shared relay-pool layer, the client only maps one
     checkpoint-backed `ClientQuery` into one outbound `REQ`, and downstream tools can now drive
     replay requests on SDK surfaces without rebuilding filter serialization ad hoc
-- `relay_replay_exchange_client_recipe.zig`
+- `relay_replay_exchange_client.zig`
   - goal: begin one checkpoint-backed replay request, accept explicit replay transcript intake,
     then compose one explicit replay `CLOSE` request without hidden sync ownership
   - related SDK symbols: `noztr_sdk.client`, `RelayReplayExchangeClient`,
@@ -435,7 +435,7 @@ They do not imply:
     intake still stays on the response floor, this layer only binds the two into one bounded
     exchange, and downstream tools can now drive replay roundtrips on SDK surfaces without
     inventing a hidden streaming runtime
-- `replay_checkpoint_advance_client_recipe.zig`
+- `replay_checkpoint_advance_client.zig`
   - goal: consume one replay transcript outcome stream, derive one explicit checkpoint-advance
     candidate only after `EOSE`, then persist one explicit relay checkpoint target
   - related SDK symbols: `noztr_sdk.client`, `ReplayCheckpointAdvanceClient`,
@@ -447,7 +447,7 @@ They do not imply:
     floors, checkpoint persistence still stays on the shared archive seam, this layer only decides
     when one replay transcript is safe to advance, and downstream tools can now save replay cursor
     progress on SDK surfaces without inventing hidden checkpoint policy
-- `relay_replay_turn_client_recipe.zig`
+- `relay_replay_turn_client.zig`
   - goal: begin one replay turn, accept explicit replay transcript intake, then return one bounded
     close-plus-checkpoint result and persist it explicitly
   - related SDK symbols: `noztr_sdk.client`, `RelayReplayTurnClient`,
@@ -458,7 +458,7 @@ They do not imply:
     checkpoint safety still stays on the replay checkpoint-advance floor, this layer only closes
     one bounded replay turn into one explicit result, and downstream tools can now drive replay
     turn loops on SDK surfaces without inventing hidden transcript or checkpoint state machines
-- `relay_response_client_recipe.zig`
+- `relay_response_client.zig`
   - goal: start one explicit subscription transcript, accept relay `EVENT` / `EOSE` intake, then
     validate one `COUNT`, one publish `OK`, one `NOTICE`, and one `AUTH` message through typed
     receive-side SDK helpers
@@ -470,7 +470,7 @@ They do not imply:
     only adds explicit receive-side validation and typed outcomes, and downstream tools can now
     stay on SDK surfaces for the first bounded relay-response intake jobs without hiding stream
     ownership
-- `relay_session_client_recipe.zig`
+- `relay_session_client.zig`
   - goal: drive one explicit relay session over shared runtime inspection, relay auth, outbound
     request shaping, receive-side transcript intake, and bounded member/checkpoint export-restore
   - related SDK symbols: `noztr_sdk.client`, `RelaySessionClient`,
@@ -486,7 +486,7 @@ They do not imply:
     `CLOSE` payloads still serialize on the kernel, receive-side transcript validation still
     routes through the response floor, and downstream SDKs can now build one reusable relay
     session foundation without stitching query/auth/response/checkpoint helpers together ad hoc
-- `signer_client_recipe.zig`
+- `signer_client.zig`
   - goal: use one first signer-tooling client surface to drive explicit `NIP-46` connect,
     `get_public_key`, one `nip44_encrypt` request, one shared relay-runtime inspect/select step,
     and one durable resume plus reconnect-cadence check
@@ -498,7 +498,7 @@ They do not imply:
     generated from bounded caller-owned storage instead of hidden global state, durable resume does
     not pretend a live signer session survived restart, and shared relay/session policy remains
     explicit rather than turning into signer-daemon ownership
-- `store_query_recipe.zig`
+- `store_query.zig`
   - goal: persist bounded event records, query them with one explicit cursor/page surface, and
     remember one named checkpoint
   - related SDK symbols: `noztr_sdk.store`, `MemoryClientStore`, `ClientQuery`,
@@ -507,7 +507,7 @@ They do not imply:
   - control points: caller builds event JSON on the kernel, converts it into bounded store
     records explicitly, queries through one backend-agnostic selection surface with caller-owned
     page storage, and persists one named checkpoint without committing to a durable backend yet
-- `sqlite_client_store_recipe.zig`
+- `sqlite_client_store.zig`
   - goal: open one embedded durable SQLite-backed store, archive event/checkpoint state through
     the shared store seam, persist one relay-local checkpoint, and restore that state after reopen
   - related SDK symbols: `noztr_sdk.store`, `SqliteClientStore`, `ClientStore`, `EventArchive`,
@@ -516,7 +516,7 @@ They do not imply:
   - control points: the durable baseline still satisfies the same shared store seam, higher
     archive/checkpoint helpers stay backend-agnostic, and the recipe proves serious local tooling
     can adopt one honest embedded store without inventing product-local persistence first
-- `store_archive_recipe.zig`
+- `store_archive.zig`
   - goal: use one minimal CLI-facing archive helper above the shared store seam to ingest event
     JSON, replay a bounded query, and restore one named checkpoint
   - related SDK symbols: `noztr_sdk.store`, `EventArchive`, `ClientStore`, `MemoryClientStore`
@@ -524,7 +524,7 @@ They do not imply:
   - control points: caller still owns store construction, caller still supplies bounded scratch
     for event parsing, and the archive helper proves the shared store seam is usable above raw
     event/checkpoint stores without forcing a durable backend or hidden runtime
-- `relay_registry_archive_recipe.zig`
+- `relay_registry_archive.zig`
   - goal: remember one explicit relay set in bounded local storage and list it back in stable
     order
   - related SDK symbols: `noztr_sdk.store`, `RelayRegistryArchive`, `RelayInfoStore`,
@@ -533,7 +533,7 @@ They do not imply:
   - control points: caller still owns store construction, relay membership state stays explicit
     and side-effect free, and the helper proves `znk`-class tooling can remember a relay set on
     SDK seams without rebuilding ad hoc local registry logic
-- `cli_archive_client_recipe.zig`
+- `cli_archive_client.zig`
   - goal: compose one CLI-facing archive client over the shared store and runtime floors: ingest
     local event JSON, query it through one bounded page, persist named and per-relay checkpoints,
     inspect shared relay runtime, and derive one bounded replay step
@@ -544,7 +544,7 @@ They do not imply:
     client storage and replay specs, relay runtime and replay planning remain explicit and
     side-effect free, and the recipe proves the future CLI repo can sit above one SDK client
     surface instead of rebuilding store/runtime glue ad hoc
-- `local_state_client_recipe.zig`
+- `local_state_client.zig`
   - goal: compose one neutral local-state client over the shared archive, relay-registry,
     checkpoint, and relay-runtime seams: archive local events, remember one explicit relay set,
     restore it into runtime, and derive one bounded replay plan
@@ -555,14 +555,14 @@ They do not imply:
     restore stays explicit, and the recipe proves there is now one neutral local-state route above
     the shared archive/checkpoint/runtime seams instead of forcing apps to start from a CLI-shaped
     client
-- `relay_checkpoint_recipe.zig`
+- `relay_checkpoint.zig`
   - goal: persist one named cursor per relay and scope on top of the shared checkpoint seam
   - related SDK symbols: `noztr_sdk.store`, `RelayCheckpointArchive`, `MemoryClientStore`
   - kernel fixture help: relay URL validation still routes through the SDK's relay URL seam
   - control points: caller still owns store construction and relay URL choice, and the helper
     proves relay-local runtime state can ride the shared checkpoint seam without exposing backend
     schema or forcing the internal relay pool module into the public surface
-- `relay_local_archive_recipe.zig`
+- `relay_local_archive.zig`
   - goal: archive one relay-local event set through the shared event seam, restore one scoped
     cursor, and derive one checkpoint-backed replay query explicitly
   - related SDK symbols: `noztr_sdk.store`, `RelayLocalArchive`, `RelayLocalArchiveTarget`,
@@ -572,7 +572,7 @@ They do not imply:
     relay-local instead of pretending the shared event seam already indexes events by relay, and
     replay planning remains one explicit checkpoint-restored query step instead of hidden server
     runtime behavior
-- `relay_directory_job_client_recipe.zig`
+- `relay_directory_job_client.zig`
   - goal: refresh one relay's `NIP-11` metadata over the explicit HTTP seam and keep the bounded
     remembered record in the relay registry
   - related SDK symbols: `noztr_sdk.client`, `RelayDirectoryJobClient`,
@@ -582,7 +582,7 @@ They do not imply:
   - control points: HTTP ownership stays explicit, URL/body/parse buffers stay caller-owned, and
     the job layer adds one command-ready metadata refresh posture instead of pulling network policy
     or file ownership into the SDK
-- `relay_workspace_client_recipe.zig`
+- `relay_workspace_client.zig`
   - goal: remember one explicit relay set, restore it into the shared relay runtime, inspect the
     bounded runtime view, and derive one bounded replay plan over that remembered state
   - related SDK symbols: `noztr_sdk.client`, `RelayWorkspaceClient`,
@@ -593,7 +593,7 @@ They do not imply:
   - control points: remembered relay state stays explicit, runtime restore stays a separate step
     instead of hidden bootstrap, and this narrower workspace route now sits on top of the neutral
     local-state client instead of forcing apps to start from a CLI-shaped archive composition
-- `relay_local_group_archive_recipe.zig`
+- `relay_local_group_archive.zig`
   - goal: archive one relay-local `NIP-29` snapshot through the shared event store seam and
     restore it into a fresh group client in explicit oldest-to-newest replay order
   - related SDK symbols: `noztr_sdk.store`, `RelayLocalGroupArchive`, `MemoryClientStore`,
@@ -603,7 +603,7 @@ They do not imply:
     keeps replay relay-local instead of pretending the current shared event seam is already a
     multi-relay archive model, and the restore path makes snapshot ordering explicit instead of
     hiding newest-first query behavior behind implicit reordering
-- `relay_pool_recipe.zig`
+- `relay_pool.zig`
   - goal: inspect one shared multi-relay runtime plan, select one typed next pool step, then
     derive one bounded shared subscription step
   - related SDK symbols: `noztr_sdk.runtime`, `RelayPool`, `RelayPoolStorage`,
@@ -615,7 +615,7 @@ They do not imply:
     the new subscription surface stays caller-owned and side-effect free instead of smuggling in a
     hidden sync loop, and the recipe teaches that the shared runtime floor remains explicit rather
     than hidden background coordination
-- `relay_pool_checkpoint_recipe.zig`
+- `relay_pool_checkpoint.zig`
   - goal: export one shared relay-pool checkpoint set, persist its per-relay cursors through the
     shared checkpoint seam, restore a fresh shared pool from that bounded set explicitly, then
     derive one typed replay-now step over the same shared pool plus checkpoint seam
@@ -629,7 +629,7 @@ They do not imply:
     absorbed into `runtime`, replay planning also stays caller-owned and side-effect free over one
     explicit checkpoint scope plus query, and restore still targets one fresh shared pool without
     hidden reset or background runtime
-- `legacy_dm_workflow_recipe.zig`
+- `legacy_dm_workflow.zig`
   - goal: build one signed legacy kind-`4` direct message explicitly, serialize it once, then
     accept and decrypt it through the workflow floor without inventing relay or polling policy
   - related SDK symbols: `LegacyDmSession`, `LegacyDmDirectMessageRequest`,
@@ -638,7 +638,7 @@ They do not imply:
   - control points: strict legacy payload and kind-`4` validation still route through
     `noztr-core`, reply and relay-hint tag shaping stay explicit in the SDK workflow floor, and
     outbound serialization plus inbound plaintext recovery remain fully caller-owned
-- `dm_capability_client_recipe.zig`
+- `dm_capability_client.zig`
   - goal: prepare one kind-`10050` mailbox relay-list publish, inspect one stored latest relay
     list explicitly over the archive seam, then select one explicit mixed-DM reply protocol
   - related SDK symbols: `noztr_sdk.client.dm.capability`, `DmCapabilityClient`,
@@ -650,7 +650,7 @@ They do not imply:
     relay publish/query state stays explicit on the shared SDK seams, archive-backed relay-list
     inspection verifies signatures before trust, and reply selection stays explicit instead of
     pretending the SDK owns a hidden mixed inbox runtime
-- `mixed_dm_client_recipe.zig`
+- `mixed_dm_client.zig`
   - goal: start from `noztr_sdk.client.dm.mixed.MixedDmClient`, normalize one mailbox and one
     legacy inbound DM explicitly, then select one reply route, remember one sender protocol for
     later replies, dedupe one observed message, and prepare one bounded mailbox-or-legacy outbound
@@ -665,7 +665,7 @@ They do not imply:
     the mixed layer keeps sender-protocol memory caller-owned and bounded, keeps replay/live dedup
     caller-owned and bounded, routes reply and outbound protocol selection back through explicit
     policy, and does not invent a hidden inbox runtime, unread policy, or conversation model
-- `legacy_dm_publish_job_client_recipe.zig`
+- `legacy_dm_publish_job_client.zig`
   - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmPublishJobClient`,
     `LegacyDmPublishJobClientStorage`, `LegacyDmPublishJobAuthEventStorage`,
@@ -675,7 +675,7 @@ They do not imply:
   - control points: DM event shaping still routes through the legacy DM workflow floor, auth
     event authoring still stays explicit and caller-owned, and this layer only selects one
     `authenticate` or one `publish` step without inventing retry, transport, or polling policy
-- `legacy_dm_replay_turn_client_recipe.zig`
+- `legacy_dm_replay_turn_client.zig`
   - goal: replay one checkpoint-backed legacy kind-`4` transcript explicitly, then decrypt replay
     events through one bounded intake adapter
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmReplayTurnClient`,
@@ -686,7 +686,7 @@ They do not imply:
   - control points: replay planning and checkpoint closure still route through the shared relay
     replay floor, parsed transcript events stay as event objects, and this layer only adds
     legacy-DM plaintext intake instead of inventing polling or background sync
-- `legacy_dm_subscription_turn_client_recipe.zig`
+- `legacy_dm_subscription_turn_client.zig`
   - goal: start one live legacy kind-`4` subscription turn explicitly, then decrypt transcript
     events through one bounded intake adapter
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmSubscriptionTurnClient`,
@@ -697,7 +697,7 @@ They do not imply:
   - control points: live transcript close posture still routes through the shared subscription
     turn floor, parsed transcript events stay as event objects, and this layer only adds
     legacy-DM plaintext intake instead of inventing a polling loop
-- `legacy_dm_sync_runtime_client_recipe.zig`
+- `legacy_dm_sync_runtime_client.zig`
   - goal: step one bounded legacy-DM sync runtime explicitly, inspect one broader DM
     orchestration helper above that runtime plus one caller-owned replay-refresh cadence helper,
     then drive durable resume export/restore, explicit reconnect, subscribe, and live receive
@@ -713,7 +713,7 @@ They do not imply:
     instead of hidden, restored runtime still requires explicit reconnect before resumed replay or
     live subscribe work, and the broader orchestration plus cadence helpers only classify reusable
     next-phase DM posture instead of taking hidden cadence or daemon ownership
-- `mailbox_recipe.zig`
+- `mailbox.zig`
   - goal: build one outbound direct message once, inspect mailbox workflow actions over pending
     delivery work, inspect one shared relay-pool runtime step explicitly, unwrap it through a
     recipient mailbox session, then build one outbound file message once, plan its delivery, and
@@ -739,7 +739,7 @@ They do not imply:
     can build and plan one explicit outbound file-message wrap on the same surface, can classify
     direct-message vs file-message rumors explicitly, and still owns publication and polling
     policy
-- `mailbox_event_intake_recipe.zig`
+- `mailbox_event_intake.zig`
   - goal: parse one wrapped event object once, then feed that event object directly into the
     mailbox intake floor without reserializing it back into JSON
   - related SDK symbols: `MailboxSession`, `MailboxEnvelopeOutcome`
@@ -747,7 +747,7 @@ They do not imply:
   - control points: parsed relay transcript events can stay as event objects, mailbox unwrap still
     routes through the SDK workflow floor, and replay-driven inbox sync does not need to rebuild
     JSON just to reuse mailbox intake logic
-- `mailbox_receive_turn_recipe.zig`
+- `mailbox_receive_turn.zig`
   - goal: select one ready mailbox relay explicitly, then accept one wrapped envelope through one
     bounded receive-turn floor
   - related SDK symbols: `MailboxSession`, `MailboxReceiveTurnStorage`,
@@ -756,7 +756,7 @@ They do not imply:
   - control points: ready-relay selection still routes through mailbox runtime inspection, intake
     still routes through the mailbox unwrap floor, and this layer only closes one receive turn
     without inventing polling, sync policy, or hidden relay rotation
-- `mailbox_sync_turn_recipe.zig`
+- `mailbox_sync_turn.zig`
   - goal: promote one pending mailbox delivery into one explicit publish step, and fall back to
     one bounded receive step when no delivery is pending
   - related SDK symbols: `MailboxSession`, `MailboxSyncTurnStorage`, `MailboxSyncTurnRequest`,
@@ -766,7 +766,7 @@ They do not imply:
     explicit instead of hidden behind a send loop, receive work still routes through the bounded
     receive-turn floor, and this layer only exposes one typed sync step at a time instead of
     inventing a daemon or background mailbox scheduler
-- `mailbox_job_client_recipe.zig`
+- `mailbox_job_client.zig`
   - goal: drive mailbox auth, publish, and receive work through one command-ready job surface
   - related SDK symbols: `noztr_sdk.client`, `MailboxJobClient`, `MailboxJobClientStorage`,
     `MailboxJobAuthEventStorage`, `PreparedMailboxJobAuthEvent`, `MailboxJobReady`,
@@ -777,7 +777,7 @@ They do not imply:
     session floor, receive work still routes through the bounded receive-turn floor, and this
     layer only exposes command-ready mailbox posture instead of inventing transport, polling, or
     UI policy
-- `mailbox_signer_job_client_recipe.zig`
+- `mailbox_signer_job_client.zig`
   - goal: walk one remote signer through mailbox direct-message authoring explicitly, then return
     one bounded mailbox delivery plan for caller-owned publish work
   - related SDK symbols: `noztr_sdk.client.dm.mailbox.signer_job`, `MailboxSignerJobClient`,
@@ -790,7 +790,7 @@ They do not imply:
     delivery planning still verifies relay-list events before trust, each authoring stage stays
     explicit instead of hidden behind one send call, and the surface stops at prepared wrap plus
     delivery planning rather than inventing inbox/runtime or background publish ownership
-- `mailbox_subscription_turn_client_recipe.zig`
+- `mailbox_subscription_turn_client.zig`
   - goal: start one live mailbox subscription turn explicitly, classify wrapped transcript events
     through mailbox intake, then close the live turn explicitly
   - related SDK symbols: `noztr_sdk.client`, `MailboxSubscriptionTurnClient`,
@@ -804,7 +804,7 @@ They do not imply:
     reserialized back into JSON, mailbox unwrap still routes through the mailbox workflow floor,
     and this layer only closes one bounded live mailbox transcript turn without inventing polling
     or hidden follow ownership
-- `mailbox_subscription_job_client_recipe.zig`
+- `mailbox_subscription_job_client.zig`
   - goal: prepare one mailbox live-subscription job that either yields one auth event or one
     bounded mailbox subscription request, then close the turn explicitly
   - related SDK symbols: `noztr_sdk.client`, `MailboxSubscriptionJobClient`,
@@ -818,7 +818,7 @@ They do not imply:
     transcript work still routes through the bounded mailbox subscription turn floor, and this
     layer only exposes command-ready live mailbox posture instead of inventing polling or daemon
     policy
-- `mailbox_sync_runtime_client_recipe.zig`
+- `mailbox_sync_runtime_client.zig`
   - goal: plan one bounded mailbox sync runtime explicitly, inspect one broader DM orchestration
     helper above that runtime plus one caller-owned DM cadence/backoff helper, then drive durable
     resume export/restore, explicit reconnect, resubscribe, and live receive posture without
@@ -835,7 +835,7 @@ They do not imply:
     requires explicit reconnect/resubscribe driving, auth event creation stays explicit and caller-
     owned, and the broader orchestration plus cadence helpers only classify reusable next-phase DM
     posture instead of taking hidden cadence or daemon ownership
-- `mailbox_replay_turn_client_recipe.zig`
+- `mailbox_replay_turn_client.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result
   - related SDK symbols: `noztr_sdk.client`, `MailboxReplayTurnClient`,
@@ -847,7 +847,7 @@ They do not imply:
     wrapped transcript events stay as parsed event objects instead of being reserialized back into
     JSON, mailbox unwrap still routes through the mailbox workflow floor, and this layer only
     closes one bounded mailbox replay turn without inventing polling or hidden sync policy
-- `mailbox_replay_job_client_recipe.zig`
+- `mailbox_replay_job_client.zig`
   - goal: prepare mailbox replay work that either yields one auth event or one bounded mailbox
     replay request, then close that replay with explicit mailbox intake and checkpoint posture
   - related SDK symbols: `noztr_sdk.client`, `MailboxReplayJobClient`,
@@ -859,7 +859,7 @@ They do not imply:
     checkpoint closure still route through the bounded mailbox replay turn floor, wrapped replay
     events still flow straight into mailbox intake as parsed event objects, and this layer only
     exposes command-ready mailbox replay posture instead of inventing polling or daemon policy
-- `nip03_verification_recipe.zig`
+- `nip03_verification.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
     entries for freshness, inspect one typed remembered runtime step explicitly, drive grouped
@@ -883,7 +883,7 @@ They do not imply:
     without hidden Bitcoin refresh policy, and now gets a typed store inconsistency error instead
     of an invariant-only crash if a custom remembered-verification store reports matches it cannot
     hydrate
-- `nip03_verify_client_recipe.zig`
+- `nip03_verify_client.zig`
   - goal: prepare and run one command-ready remembered detached-proof `NIP-03` verify job over
     the explicit HTTP, proof-store, and remembered-verification seams, then inspect bounded
     remembered-proof runtime, grouped target policy, refresh-cadence, refresh-batch selection,
@@ -897,7 +897,7 @@ They do not imply:
     grouped target policy, refresh-cadence, refresh-batch, archive-backed refresh readiness,
     turn-policy, and refresh planning stay bounded instead of inventing background refresh or
     output policy
-- `nip05_verify_client_recipe.zig`
+- `nip05_verify_client.zig`
   - goal: prepare and run one command-ready `NIP-05` verify job, remember the verified
     resolution, and inspect one bounded refresh plan over the public HTTP seam
   - related SDK symbols: `noztr_sdk.client`, `Nip05VerifyClient`, `Nip05VerifyClientStorage`,
@@ -907,7 +907,7 @@ They do not imply:
     resolution and bounded refresh planning above the existing resolver workflow, transport stays
     explicit, caller-owned buffers/scratch/store state stay explicit, and this layer still avoids
     inventing hidden retry or output policy
-- `nip39_verify_client_recipe.zig`
+- `nip39_verify_client.zig`
   - goal: prepare and run one command-ready remembered `NIP-39` profile verify job over the
     public HTTP seam with explicit cache and profile-store seams, then inspect remembered-identity
     latest freshness, refresh cadence, refresh batch, and one bounded stored watched-target
@@ -920,7 +920,7 @@ They do not imply:
     planning and orchestration route above the existing identity workflow, HTTP/cache/store
     ownership stays explicit, caller-owned planning storage stays explicit, and this layer still
     avoids inventing autonomous refresh or output policy
-- `nip39_verification_recipe.zig`
+- `nip39_verification.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify
     both discovered stored entries and the latest remembered profile for freshness, group
@@ -955,7 +955,7 @@ They do not imply:
     explicit remembered runtime inspection step plus one typed next-step helper, one explicit
     stale-profile refresh plan plus one typed refresh step, and one explicit freshness check
     without hidden background policy
-- `nip05_resolution_recipe.zig`
+- `nip05_resolution.zig`
   - goal: resolve and verify one `NIP-05` address, remember the successful resolution, and inspect
     one bounded refresh plan over the public HTTP seam
   - related SDK symbols: `Nip05Resolver`, `Nip05RememberedResolutionStore`,
@@ -965,7 +965,7 @@ They do not imply:
   - control points: caller provides the HTTP client, one caller-owned lookup storage wrapper, one
     explicit remembered-resolution store, and the scratch allocator; refresh work remains explicit
     typed planning rather than hidden retry behavior
-- `group_session_recipe.zig`
+- `group_session.zig`
   - goal: author a canonical `NIP-29` snapshot, export one checkpoint, restore it into a receiver
     client, select valid `previous` refs, build one outbound moderation event, then replay it
   - related SDK symbols: `GroupClient`, `GroupClientStorage`, `GroupCheckpointBuffers`,
@@ -976,7 +976,7 @@ They do not imply:
     relay readiness, authors the snapshot state explicitly, exports and restores one checkpoint,
     then builds and replays one explicit outbound moderation event using refs selected from client
     history
-- `group_fleet_recipe.zig`
+- `group_fleet.zig`
   - goal: persist relay-local `NIP-29` checkpoints from one explicit multi-relay fleet into a
     caller-owned store, restore a fresh fleet from that stored state, inspect runtime actions plus
     one explicit next runtime step over the restored relays, inspect one explicit background-
@@ -1010,7 +1010,7 @@ They do not imply:
     whole fleet, and finally plans one explicit per-relay moderation publish through caller-owned
     buffers plus one typed next-publish step and one explicit background relay selection without
     hidden merge or runtime policy
-- `group_fleet_client_recipe.zig`
+- `group_fleet_client.zig`
   - goal: drive one client-facing multi-relay groups path above `GroupFleet` to inspect runtime,
     inspect consistency, persist relay-local checkpoints through one explicit store seam, restore
     a fresh client from that store, reconcile one target relay from the chosen baseline, build and
