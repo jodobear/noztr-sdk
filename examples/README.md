@@ -651,20 +651,20 @@ They do not imply:
     inspection verifies signatures before trust, and reply selection stays explicit instead of
     pretending the SDK owns a hidden mixed inbox runtime
 - `mixed_dm_client_recipe.zig`
-  - goal: normalize one mailbox and one legacy inbound DM explicitly, then select one reply route
-    over the mixed-DM facade, remember one sender protocol explicitly, and reuse that memory for
-    later replies, then dedupe one observed message explicitly instead of hand-stitching protocol
-    checks and replay/live duplicate suppression in app code
+  - goal: start from `noztr_sdk.client.dm.mixed.MixedDmClient`, normalize one mailbox and one
+    legacy inbound DM explicitly, then select one reply route, remember one sender protocol for
+    later replies, dedupe one observed message, and prepare one bounded mailbox-or-legacy outbound
+    DM without hand-stitching protocol selection in app code
   - related SDK symbols: `noztr_sdk.client.dm.mixed`, `MixedDmClient`, `MixedDmClientStorage`,
     `MixedDmProtocol`, `MixedDmReplyPolicy`, `MixedDmReplyRoute`,
     `MixedDmSenderProtocolMemory`, `MixedDmRememberedReplyRoute`, `MixedDmDedupMemory`,
-    `MixedDmDedupResult`, `MixedDmObservedMessage`
+    `MixedDmDedupResult`, `MixedDmObservedMessage`, `MixedDmOutboundStorage`,
+    `MixedDmDirectMessageRequest`, `MixedDmRememberedPreparedDirectMessage`
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip04`
   - control points: mailbox and legacy intake still route through their existing workflow floors,
-    the mixed layer only normalizes observed inbound message shape, keeps sender-protocol memory
-    caller-owned and bounded, keeps replay/live dedup caller-owned and bounded, routes reply
-    selection back through explicit policy, and does not invent a hidden inbox runtime, unread
-    policy, or conversation model
+    the mixed layer keeps sender-protocol memory caller-owned and bounded, keeps replay/live dedup
+    caller-owned and bounded, routes reply and outbound protocol selection back through explicit
+    policy, and does not invent a hidden inbox runtime, unread policy, or conversation model
 - `legacy_dm_publish_job_client_recipe.zig`
   - goal: drive one auth-aware legacy kind-`4` DM publish path through one bounded job surface
   - related SDK symbols: `noztr_sdk.client`, `LegacyDmPublishJobClient`,

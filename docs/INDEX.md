@@ -68,9 +68,9 @@ The current public floor is grouped and broad:
   - signer capability, thin browser signer, signer session, and signer job composition above the
     remote-signer workflow
 - `client.dm.*`
-  - DM capability, app-facing mixed mailbox-plus-legacy composition, signer-backed mailbox
-    authoring, and mailbox plus legacy-DM runtime, replay, subscription, and orchestration
-    composition
+  - DM capability, app-facing mixed mailbox-plus-legacy inbound plus outbound composition,
+    signer-backed mailbox authoring, and mailbox plus legacy-DM runtime, replay, subscription,
+    and orchestration composition
 - `client.identity.*`
   - `NIP-05` and `NIP-39` client-facing identity flows
 - `client.social.*`

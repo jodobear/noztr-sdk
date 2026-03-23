@@ -167,6 +167,13 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDedupRecord) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDedupMemory) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDedupResult) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmOutboundStorage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmDirectMessageRequest) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmRememberedDirectMessageRequest) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmPreparedMailboxDirectMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmPreparedLegacyDirectMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmPreparedDirectMessage) == type);
+    try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmRememberedPreparedDirectMessage) == type);
     try std.testing.expect(@TypeOf(client.dm.mixed.MixedDmClient) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientError) == type);
     try std.testing.expect(@TypeOf(client.dm.mailbox.job.MailboxJobClientConfig) == type);

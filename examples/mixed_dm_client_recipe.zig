@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-test "recipe: mixed dm client normalizes mailbox and legacy intake and keeps reply selection explicit" {
+test "recipe: mixed dm client normalizes intake and prepares bounded outbound mailbox and legacy work" {
     var storage = noztr_sdk.client.dm.mixed.MixedDmClientStorage{};
     const client = noztr_sdk.client.dm.mixed.MixedDmClient.init(.{}, &storage);
 
@@ -112,4 +112,49 @@ test "recipe: mixed dm client normalizes mailbox and legacy intake and keeps rep
     var dedup = noztr_sdk.client.dm.mixed.MixedDmDedupMemory.init(dedup_records[0..]);
     try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&dedup, &mailbox_observation));
     try std.testing.expectEqual(.duplicate, client.noteObservedMessage(&dedup, &mailbox_observation));
+
+    var outbound_storage = noztr_sdk.client.dm.mixed.MixedDmOutboundStorage{};
+    var legacy_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared_legacy = try client.prepareDirectMessage(
+        legacy_event_json[0..],
+        &sender_secret,
+        &outbound_storage,
+        .legacy,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .reply_to = mailbox_observation.replyTo(),
+            .content = "legacy reply",
+            .created_at = 82,
+            .legacy_iv = [_]u8{0x66} ** noztr.limits.nip04_iv_bytes,
+            .mailbox_wrap_signer_private_key = sender_secret,
+            .mailbox_seal_nonce = [_]u8{0x77} ** 32,
+            .mailbox_wrap_nonce = [_]u8{0x88} ** 32,
+        },
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(.legacy, prepared_legacy.protocol());
+
+    memory.remember(&recipient_pubkey, .mailbox, 83);
+    const prepared_mailbox = try client.prepareRememberedDirectMessage(
+        legacy_event_json[0..],
+        &sender_secret,
+        &outbound_storage,
+        &memory,
+        &.{
+            .recipient_pubkey = recipient_pubkey,
+            .reply_to = mailbox_observation.replyTo(),
+            .content = "mailbox reply",
+            .created_at = 83,
+            .fallback_sender_protocol = .legacy,
+            .recipient_mailbox_available = true,
+            .legacy_iv = [_]u8{0x99} ** noztr.limits.nip04_iv_bytes,
+            .recipient_relay_list_event_json = relay_list.event_json,
+            .mailbox_wrap_signer_private_key = sender_secret,
+            .mailbox_seal_nonce = [_]u8{0xaa} ** 32,
+            .mailbox_wrap_nonce = [_]u8{0xbb} ** 32,
+        },
+        arena.allocator(),
+    );
+    try std.testing.expect(prepared_mailbox.remembered);
+    try std.testing.expectEqual(.mailbox, prepared_mailbox.prepared.protocol());
 }
