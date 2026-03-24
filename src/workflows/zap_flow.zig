@@ -13,10 +13,9 @@ pub const Error =
     noztr.nip01_event.EventVerifyError ||
     error{
         ZapDraftStorageTooSmall,
-        InvalidCoordinateText,
         InvalidPayEndpoint,
+        AmountOutsideEndpointRange,
         MissingCallbackUrl,
-        InvalidCallbackUrl,
         InvalidReceiptSignerPubkey,
         CallbackUrlTooSmall,
         MissingInvoice,
@@ -36,21 +35,28 @@ pub const ZapRequestDraft = struct {
     receipt_relays: []const []const u8,
     recipient_pubkey: [32]u8,
     amount_msats: ?u64 = null,
-    pay_request_url: ?[]const u8 = null,
+    lnurl: ?[]const u8 = null,
     event_id: ?[32]u8 = null,
-    coordinate: ?[]const u8 = null,
+    coordinate: ?Coordinate = null,
     target_kind: ?u32 = null,
     receipt_signer_pubkey: ?[32]u8 = null,
     content: []const u8 = "",
 };
 
+pub const Coordinate = struct {
+    kind: u32,
+    pubkey: [32]u8,
+    identifier: []const u8,
+};
+
 pub const ZapRequestDraftStorage = struct {
-    tags: [7]noztr.nip01_event.EventTag = undefined,
-    builders: [7]noztr.nip57_zaps.TagBuilder = undefined,
+    tags: [8]noztr.nip01_event.EventTag = undefined,
+    builders: [8]noztr.nip57_zaps.TagBuilder = undefined,
     coordinate_items: [2][]const u8 = undefined,
     recipient_pubkey_hex: [64]u8 = undefined,
     receipt_signer_pubkey_hex: [64]u8 = undefined,
     event_id_hex: [64]u8 = undefined,
+    coordinate_text: [noztr.limits.tag_item_bytes_max]u8 = undefined,
 };
 
 pub const PayEndpointFetchStorage = struct {
@@ -88,7 +94,7 @@ pub const InvoiceFetchRequest = struct {
     endpoint: PayEndpoint,
     amount_msats: u64,
     zap_request_json: []const u8,
-    pay_request_url: ?[]const u8 = null,
+    lnurl: ?[]const u8 = null,
     storage: InvoiceFetchStorage,
     scratch: std.mem.Allocator,
 };
@@ -179,10 +185,10 @@ pub const ZapFlow = struct {
             );
             tag_count += 1;
         }
-        if (draft.pay_request_url) |pay_request_url| {
+        if (draft.lnurl) |lnurl| {
             storage.tags[tag_count] = try noztr.nip57_zaps.request_build_lnurl_tag(
                 &storage.builders[tag_count],
-                pay_request_url,
+                lnurl,
             );
             tag_count += 1;
         }
@@ -196,9 +202,10 @@ pub const ZapFlow = struct {
             tag_count += 1;
         }
         if (draft.coordinate) |coordinate| {
-            try validateCoordinateText(coordinate);
+            try validateCoordinate(coordinate);
+            const coordinate_text = try formatCoordinate(storage.coordinate_text[0..], coordinate);
             storage.coordinate_items[0] = "a";
-            storage.coordinate_items[1] = coordinate;
+            storage.coordinate_items[1] = coordinate_text;
             storage.tags[tag_count] = .{ .items = storage.coordinate_items[0..2] };
             tag_count += 1;
         }
@@ -312,12 +319,19 @@ pub const ZapFlow = struct {
         http: transport.HttpClient,
         request: InvoiceFetchRequest,
     ) Error!InvoiceResult {
+        if (!request.endpoint.allows_nostr) return error.InvalidPayEndpoint;
+        if (request.endpoint.min_sendable_msats) |min_sendable_msats| {
+            if (request.amount_msats < min_sendable_msats) return error.AmountOutsideEndpointRange;
+        }
+        if (request.endpoint.max_sendable_msats) |max_sendable_msats| {
+            if (request.amount_msats > max_sendable_msats) return error.AmountOutsideEndpointRange;
+        }
         const callback_url = try composeInvoiceRequestUrl(
             request.storage.url_buffer,
             request.endpoint.callback_url,
             request.amount_msats,
             request.zap_request_json,
-            request.pay_request_url,
+            request.lnurl,
         );
         const response_body = try http.get(.{
             .url = callback_url,
@@ -367,6 +381,7 @@ fn parsePayEndpoint(body: []const u8, scratch: std.mem.Allocator) Error!PayEndpo
     }
 
     if (endpoint.callback_url.len == 0) return error.MissingCallbackUrl;
+    if (endpoint.allows_nostr and endpoint.receipt_signer_pubkey == null) return error.InvalidPayEndpoint;
     return endpoint;
 }
 
@@ -399,11 +414,11 @@ fn composeInvoiceRequestUrl(
     callback_url: []const u8,
     amount_msats: u64,
     zap_request_json: []const u8,
-    pay_request_url: ?[]const u8,
+    lnurl: ?[]const u8,
 ) Error![]const u8 {
     if (callback_url.len == 0) return error.MissingCallbackUrl;
     var cursor: usize = 0;
-    if (callback_url.len > output.len) return error.CallbackUrlTooSmall;
+    if (callback_url.len >= output.len) return error.CallbackUrlTooSmall;
     @memcpy(output[0..callback_url.len], callback_url);
     cursor += callback_url.len;
     output[cursor] = if (std.mem.indexOfScalar(u8, callback_url, '?') == null) '?' else '&';
@@ -414,7 +429,7 @@ fn composeInvoiceRequestUrl(
     };
     cursor += amount_prefix.len;
     cursor += try percentEncodeInto(output[cursor..], zap_request_json);
-    if (pay_request_url) |url| {
+    if (lnurl) |encoded_lnurl| {
         if (cursor >= output.len) return error.CallbackUrlTooSmall;
         output[cursor] = '&';
         cursor += 1;
@@ -422,7 +437,7 @@ fn composeInvoiceRequestUrl(
         if (cursor + lnurl_prefix.len > output.len) return error.CallbackUrlTooSmall;
         @memcpy(output[cursor .. cursor + lnurl_prefix.len], lnurl_prefix);
         cursor += lnurl_prefix.len;
-        cursor += try percentEncodeInto(output[cursor..], url);
+        cursor += try percentEncodeInto(output[cursor..], encoded_lnurl);
     }
     return output[0..cursor];
 }
@@ -467,18 +482,22 @@ fn parsePubkeyHex(hex: []const u8) ![32]u8 {
     return out;
 }
 
-fn validateCoordinateText(text: []const u8) Error!void {
-    const first_colon = std.mem.indexOfScalar(u8, text, ':') orelse return error.InvalidCoordinateText;
-    const second_colon = std.mem.indexOfScalarPos(u8, text, first_colon + 1, ':') orelse {
-        return error.InvalidCoordinateText;
-    };
-    if (first_colon == 0) return error.InvalidCoordinateText;
-    if (second_colon == first_colon + 1) return error.InvalidCoordinateText;
-    if (second_colon + 1 > text.len) return error.InvalidCoordinateText;
+fn formatCoordinate(output: []u8, coordinate: Coordinate) Error![]const u8 {
+    const pubkey_hex = std.fmt.bytesToHex(coordinate.pubkey, .lower);
+    return std.fmt.bufPrint(
+        output,
+        "{d}:{s}:{s}",
+        .{ coordinate.kind, pubkey_hex[0..], coordinate.identifier },
+    ) catch error.ZapDraftStorageTooSmall;
+}
 
-    _ = std.fmt.parseInt(u32, text[0..first_colon], 10) catch return error.InvalidCoordinateText;
-    _ = parsePubkeyHex(text[first_colon + 1 .. second_colon]) catch return error.InvalidCoordinateText;
-    if (text[second_colon + 1 ..].len == 0) return error.InvalidCoordinateText;
+fn validateCoordinate(coordinate: Coordinate) noztr.nip57_zaps.ZapError!void {
+    if (!std.unicode.utf8ValidateSlice(coordinate.identifier)) return error.InvalidCoordinateTag;
+
+    const replaceable = coordinate.kind >= 10_000 and coordinate.kind < 20_000;
+    const addressable = coordinate.kind >= 30_000 and coordinate.kind < 40_000;
+    if (!replaceable and !addressable) return error.InvalidCoordinateTag;
+    if (addressable and coordinate.identifier.len == 0) return error.InvalidCoordinateTag;
 }
 
 test "zap flow composes request publish and explicit HTTP-backed invoice fetch" {
@@ -502,8 +521,13 @@ test "zap flow composes request publish and explicit HTTP-backed invoice fetch" 
             .receipt_relays = &.{"wss://relay.one"},
             .recipient_pubkey = target_pubkey,
             .amount_msats = 1000,
-            .pay_request_url = "https://wallet.example/pay",
+            .lnurl = "lnurl1dp68gurn8ghj7m",
             .event_id = [_]u8{0x77} ** 32,
+            .coordinate = .{
+                .kind = 30_023,
+                .pubkey = target_pubkey,
+                .identifier = "article",
+            },
             .target_kind = 1,
             .receipt_signer_pubkey = receipt_signer_pubkey,
         },
@@ -517,6 +541,7 @@ test "zap flow composes request publish and explicit HTTP-backed invoice fetch" 
         relays[0..],
     );
     try std.testing.expectEqual(@as(usize, 1), request.receipt_relays.len);
+    try std.testing.expectEqualStrings("lnurl1dp68gurn8ghj7m", request.lnurl.?);
 
     const FakeHttp = struct {
         expected_url: []const u8,
@@ -553,27 +578,127 @@ test "zap flow composes request publish and explicit HTTP-backed invoice fetch" 
     try std.testing.expect(endpoint.allows_nostr);
     try std.testing.expect(endpoint.receipt_signer_pubkey != null);
 
-    var invoice_url_buffer: [1024]u8 = undefined;
+    var invoice_url_buffer: [2048]u8 = undefined;
     const expected_invoice_url = try composeInvoiceRequestUrl(
         invoice_url_buffer[0..],
         endpoint.callback_url,
         1000,
         prepared.event_json,
-        "https://wallet.example/pay",
+        "lnurl1dp68gurn8ghj7m",
     );
     var invoice_http = FakeHttp{
         .expected_url = expected_invoice_url,
         .body = "{\"pr\":\"lnbc10u1example\",\"verify\":\"https://wallet.example/verify\"}",
     };
-    var callback_url_buffer: [1024]u8 = undefined;
+    var callback_url_buffer: [2048]u8 = undefined;
     var callback_body_buffer: [256]u8 = undefined;
     const invoice = try flow.fetchInvoice(invoice_http.client(), .{
         .endpoint = endpoint,
         .amount_msats = 1000,
         .zap_request_json = prepared.event_json,
-        .pay_request_url = "https://wallet.example/pay",
+        .lnurl = "lnurl1dp68gurn8ghj7m",
         .storage = InvoiceFetchStorage.init(callback_url_buffer[0..], callback_body_buffer[0..]),
         .scratch = arena.allocator(),
     });
     try std.testing.expectEqualStrings("lnbc10u1example", invoice.invoice);
+}
+
+test "zap flow rejects invalid typed coordinate drafts" {
+    var storage = ZapFlowStorage{};
+    var flow = ZapFlow.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x72} ** 32;
+    const target_pubkey = [_]u8{0x56} ** 32;
+    var draft_storage = ZapRequestDraftStorage{};
+    var request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidCoordinateTag,
+        flow.prepareZapRequestPublish(
+            request_json_buffer[0..],
+            &draft_storage,
+            &secret_key,
+            &.{
+                .created_at = 21,
+                .receipt_relays = &.{"wss://relay.one"},
+                .recipient_pubkey = target_pubkey,
+                .coordinate = .{
+                    .kind = 30_023,
+                    .pubkey = target_pubkey,
+                    .identifier = "",
+                },
+            },
+        ),
+    );
+}
+
+test "zap flow rejects invoice fetch when endpoint does not allow nostr" {
+    var storage = ZapFlowStorage{};
+    const flow = ZapFlow.init(.{}, &storage);
+
+    const FakeHttp = struct {
+        fn client(_: *@This()) transport.HttpClient {
+            return .{ .ctx = undefined, .get_fn = get };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var callback_url_buffer: [128]u8 = undefined;
+    var callback_body_buffer: [128]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidPayEndpoint,
+        flow.fetchInvoice(fake.client(), .{
+            .endpoint = .{ .callback_url = "https://wallet.example/callback", .allows_nostr = false },
+            .amount_msats = 1000,
+            .zap_request_json = "{}",
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+            .storage = InvoiceFetchStorage.init(callback_url_buffer[0..], callback_body_buffer[0..]),
+            .scratch = arena.allocator(),
+        }),
+    );
+}
+
+test "zap flow rejects invoice fetch outside advertised sendable range" {
+    var storage = ZapFlowStorage{};
+    const flow = ZapFlow.init(.{}, &storage);
+
+    const FakeHttp = struct {
+        fn client(_: *@This()) transport.HttpClient {
+            return .{ .ctx = undefined, .get_fn = get };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var callback_url_buffer: [128]u8 = undefined;
+    var callback_body_buffer: [128]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.AmountOutsideEndpointRange,
+        flow.fetchInvoice(fake.client(), .{
+            .endpoint = .{
+                .callback_url = "https://wallet.example/callback",
+                .allows_nostr = true,
+                .min_sendable_msats = 2000,
+                .max_sendable_msats = 5000,
+            },
+            .amount_msats = 1000,
+            .zap_request_json = "{}",
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+            .storage = InvoiceFetchStorage.init(callback_url_buffer[0..], callback_body_buffer[0..]),
+            .scratch = arena.allocator(),
+        }),
+    );
 }

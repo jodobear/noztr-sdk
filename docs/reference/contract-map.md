@@ -28,6 +28,7 @@ Within `workflows` and `client`, the canonical grouped discovery route is now:
 - `workflows.dm.*`
 - `workflows.proof.*`
 - `workflows.signer.*`
+- `workflows.zaps.*`
 - `client.local.*`
 - `client.relay.*`
 - `client.signer.*`
@@ -150,7 +151,7 @@ route instead of helping discovery.
 | Inspect shared multi-relay readiness, derive bounded subscription targets, and select typed next runtime or subscription steps | `noztr_sdk.runtime.RelayPool` | [relay_pool.zig](../../examples/relay_pool.zig) |
 | Export and restore shared relay-pool membership plus per-relay cursors over the shared checkpoint seam, then derive bounded replay steps | `noztr_sdk.runtime.RelayPool` | [relay_pool_checkpoint.zig](../../examples/relay_pool_checkpoint.zig) |
 | Remote signing, request/response orchestration, relay switching, durable session resume, and explicit signer-session policy/cadence over the shared relay floor | `noztr_sdk.workflows.signer.remote.Session` | [remote_signer.zig](../../examples/remote_signer.zig) |
-| Explicit `NIP-57` zap request publish plus pay-endpoint and callback invoice fetch over the shared publish and HTTP seams | `noztr_sdk.workflows.zaps.ZapFlow` | [zap_flow.zig](../../examples/zap_flow.zig) |
+| Explicit `NIP-57` zap request publish plus pay-endpoint fetch, callback invoice fetch, and receipt-validation inputs over the shared publish and HTTP seams | `noztr_sdk.workflows.zaps.ZapFlow` | [zap_flow.zig](../../examples/zap_flow.zig) |
 | App-facing mailbox relay-list and reply-route helpers above the shared publish/query/archive seams | `noztr_sdk.client.dm.capability.DmCapabilityClient` | [dm_capability_client.zig](../../examples/dm_capability_client.zig) |
 | App-facing mixed DM intake and outbound authoring over the mailbox and legacy DM workflow floors plus the DM capability route | `noztr_sdk.client.dm.mixed.MixedDmClient` | [mixed_dm_client.zig](../../examples/mixed_dm_client.zig) |
 | Native legacy `NIP-04` direct-message build, JSON serialization, strict kind-`4` parse, and local plaintext recovery | `noztr_sdk.workflows.dm.legacy.LegacyDmSession` | [legacy_dm_workflow.zig](../../examples/legacy_dm_workflow.zig) |

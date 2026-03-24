@@ -153,11 +153,13 @@ They do not imply:
     reader UI, annotation sync daemons, or editorial product policy
 - `zap_flow.zig`
   - goal: compose one `NIP-57` zap request publish route, one explicit pay-endpoint fetch, and one
-    explicit callback invoice fetch over the shared publish and HTTP seams
+    explicit callback invoice fetch over the shared publish and HTTP seams while retaining the
+    receipt-signer pubkey needed for later receipt validation
   - kernel fixture help: `noztr.nip57_zaps`
   - control points: deterministic zap request and receipt parsing still stays on `noztr`, publish
-    still routes through the existing publish floor, and HTTP callback handling stays explicit over
-    the public transport seam instead of becoming a hidden wallet runtime
+    still routes through the existing publish floor, pay-endpoint metadata remains explicit so the
+    caller can retain receipt-validation inputs, and HTTP callback handling stays explicit over the
+    public transport seam instead of becoming a hidden wallet runtime
 - `signer_connect_job_client.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

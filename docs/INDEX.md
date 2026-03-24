@@ -94,6 +94,8 @@ The current public floor is grouped and broad:
   - multi-relay `NIP-29` group client composition
 - `workflows.signer.*`
   - `NIP-46` remote signer workflow
+- `workflows.zaps.*`
+  - `NIP-57` zap publish plus pay-endpoint, invoice callback, and receipt-validation workflow
 - `workflows.dm.*`
   - `NIP-17` mailbox and legacy `NIP-04` private-message workflows
 - `workflows.identity.*`

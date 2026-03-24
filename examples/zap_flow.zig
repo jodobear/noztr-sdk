@@ -21,7 +21,12 @@ test "recipe: zap flow uses explicit publish and http callback seams" {
             .receipt_relays = &.{"wss://relay.one"},
             .recipient_pubkey = recipient,
             .amount_msats = 1000,
-            .pay_request_url = "https://wallet.example/pay",
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+            .coordinate = .{
+                .kind = 30_023,
+                .pubkey = recipient,
+                .identifier = "article",
+            },
         },
     );
 
@@ -57,7 +62,7 @@ test "recipe: zap flow uses explicit publish and http callback seams" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     var endpoint_http = FakeHttp{
-        .body = "{\"callback\":\"https://wallet.example/callback\",\"allowsNostr\":true}",
+        .body = "{\"callback\":\"https://wallet.example/callback\",\"allowsNostr\":true,\"nostrPubkey\":\"1111111111111111111111111111111111111111111111111111111111111111\"}",
     };
     var endpoint_body: [256]u8 = undefined;
     const endpoint = try flow.fetchPayEndpoint(endpoint_http.client(), .{
@@ -65,16 +70,19 @@ test "recipe: zap flow uses explicit publish and http callback seams" {
         .storage = .init(endpoint_body[0..]),
         .scratch = arena.allocator(),
     });
+    try std.testing.expect(endpoint.receipt_signer_pubkey != null);
 
     var invoice_http = FakeHttp{ .body = "{\"pr\":\"lnbc10u1example\"}" };
-    var callback_url_buffer: [1024]u8 = undefined;
+    var callback_url_buffer: [2048]u8 = undefined;
     var callback_body: [256]u8 = undefined;
     _ = try flow.fetchInvoice(invoice_http.client(), .{
         .endpoint = endpoint,
         .amount_msats = 1000,
         .zap_request_json = prepared.event_json,
-        .pay_request_url = "https://wallet.example/pay",
+        .lnurl = "lnurl1dp68gurn8ghj7m",
         .storage = .init(callback_url_buffer[0..], callback_body[0..]),
         .scratch = arena.allocator(),
     });
+
+    // Keep `endpoint.receipt_signer_pubkey` so the eventual zap receipt can be validated explicitly.
 }
