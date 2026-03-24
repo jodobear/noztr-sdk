@@ -2,6 +2,9 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
+// Relay-management is the canonical high-level route for NIP-86 admin calls.
+// Use `noztr_sdk.transport.nip98_post` directly when only shared signed-POST seams
+// are needed.
 test "recipe: relay management client exercises a broad typed NIP-86 admin matrix with executeAuthorizedPost" {
     const FakeHttp = struct {
         response_body: []const u8,

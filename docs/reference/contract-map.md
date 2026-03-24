@@ -56,6 +56,8 @@ The public `noztr-sdk` foundation to target today is:
 - `noztr_sdk.client.local.operator.LocalOperatorClient` for SDK-owned local operator composition
   above kernel event, entity, key, and local crypto helpers
 - `noztr_sdk.transport.HttpClient` for explicit HTTP-backed jobs
+- `noztr_sdk.transport.nip98_post` for explicit HTTPS `POST` preparation, NIP-98 authorization
+  encoding, and prepared-execution helpers
 - `noztr_sdk.runtime.RelayPool` plus relay specs/plans for shared relay-state inspection and
   next-step selection
 - `noztr_sdk.client.relay.session.RelaySessionClient` for explicit relay-session composition above shared relay
@@ -128,6 +130,7 @@ route instead of helping discovery.
 | One-shot relay auth composition for `NIP-42` challenge handling over shared relay runtime | `noztr_sdk.client.relay.auth.RelayAuthClient` | [relay_auth_client.zig](../../examples/relay_auth_client.zig) |
 | One-shot relay exchange composition for publish, count, and subscription jobs over the shared relay floor | `noztr_sdk.client.relay.exchange.RelayExchangeClient` | [relay_exchange_client.zig](../../examples/relay_exchange_client.zig) |
 | Explicit `NIP-86` relay-management request/result handling over an HTTPS admin post seam with caller-owned auth preconditions, including relay-name/description/icon metadata mutation, symmetric pubkey and kind reversal mutation, event/IP moderation mutation including `unblockip`, typed moderation-needed plus banned-event/pubkey/IP list reads, and a bounded local-key `executeAuthorizedPost` helper | `noztr_sdk.client.relay.management.Client` | [relay_management_client.zig](../../examples/relay_management_client.zig) |
+| Explicit signed HTTPS `POST` preparation and execution for clients that need shared low-level control of URL/body/authorization handling | `noztr_sdk.transport.nip98_post` | [relay_management_client.zig](../../examples/relay_management_client.zig) |
 | One-shot relay query composition for `REQ`, `COUNT`, and `CLOSE` over shared relay readiness | `noztr_sdk.client.relay.query.RelayQueryClient` | [relay_query_client.zig](../../examples/relay_query_client.zig) |
 | One-shot relay replay composition over shared relay runtime plus checkpoint-backed query state | `noztr_sdk.client.relay.replay.RelayReplayClient` | [relay_replay_client.zig](../../examples/relay_replay_client.zig) |
 | One-shot replay exchange composition over checkpoint-backed replay plus receive-side transcript intake | `noztr_sdk.client.relay.replay_exchange.RelayReplayExchangeClient` | [relay_replay_exchange_client.zig](../../examples/relay_replay_exchange_client.zig) |

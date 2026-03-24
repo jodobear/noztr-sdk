@@ -21,13 +21,7 @@ pub const ParseContext = struct {
     kinds: []u32 = &.{},
 };
 
-pub const PreparedPost = struct {
-    url: []const u8,
-    request_json: []const u8,
-    payload_hex: []const u8,
-
-    pub const method = "POST";
-};
+pub const PreparedPost = transport.nip98_post.PreparedPost;
 
 pub const SupportedMethodsRequest = struct {
     url: []const u8,
@@ -149,11 +143,7 @@ pub const ListBannedPubkeysRequest = struct {
     authorization: ?[]const u8 = null,
 };
 
-pub const PreparedAuthorizedPost = struct {
-    url: []const u8,
-    request_json: []const u8,
-    authorization: []const u8,
-};
+pub const PreparedAuthorizedPost = transport.nip98_post.PreparedAuthorizedPost;
 
 pub const Client = struct {
     config: Config,
@@ -174,13 +164,16 @@ pub const Client = struct {
         request_json_out: []u8,
         payload_hex_out: []u8,
     ) Nip98PostError!PreparedPost {
-        try validateAdminPostTarget(url);
         const request_json = try serializeRequestJson(request_json_out, request);
-        const payload_hex = try noztr.nip98_http_auth.http_auth_payload_sha256_hex(payload_hex_out, request_json);
-        return .{
-            .url = url,
-            .request_json = request_json,
-            .payload_hex = payload_hex,
+        return transport.nip98_post.preparePost(
+            url,
+            request_json,
+            "application/json",
+            "application/json",
+            payload_hex_out,
+        ) catch |err| switch (err) {
+            error.InvalidPostTarget => error.InvalidAdminTarget,
+            else => |e| e,
         };
     }
 
@@ -191,24 +184,11 @@ pub const Client = struct {
         authorization_out: []u8,
         authorization_json_out: []u8,
     ) Nip98PostError![]const u8 {
-        _ = try noztr.nip98_http_auth.http_auth_verify_request(
-            auth_event,
-            prepared.url,
-            PreparedPost.method,
-            prepared.payload_hex,
-            auth_event.created_at,
-            0,
-            0,
-        );
-        return noztr.nip98_http_auth.http_auth_encode_authorization_header(
-            authorization_out,
-            auth_event,
-            authorization_json_out,
-        );
+        return try transport.nip98_post.encodePreparedAuthorization(prepared, auth_event, authorization_out, authorization_json_out);
     }
 
     pub fn prepareAuthorizedPost(
-        self: Client,
+        _: Client,
         url: []const u8,
         request: noztr.nip86_relay_management.Request,
         secret_key: *const [32]u8,
@@ -218,15 +198,21 @@ pub const Client = struct {
         authorization_out: []u8,
         authorization_json_out: []u8,
     ) Nip98PostError!PreparedAuthorizedPost {
-        const prepared = try self.preparePost(url, request, request_json_out, payload_hex_out);
-        const signed = try buildSignedPostAuthorization(secret_key, prepared.url, prepared.payload_hex, created_at);
-        const authorization = try self.encodePreparedAuthorization(
-            &prepared,
-            &signed.event,
+        const request_json = try serializeRequestJson(request_json_out, request);
+        return transport.nip98_post.prepareAuthorizedPost(
+            url,
+            request_json,
+            "application/json",
+            "application/json",
+            secret_key,
+            created_at,
+            payload_hex_out,
             authorization_out,
             authorization_json_out,
-        );
-        return .{ .url = prepared.url, .request_json = prepared.request_json, .authorization = authorization };
+        ) catch |err| switch (err) {
+            error.InvalidPostTarget => error.InvalidAdminTarget,
+            else => |e| e,
+        };
     }
 
     pub fn executeAuthorizedPost(
@@ -273,7 +259,10 @@ pub const Client = struct {
         prepared: *const PreparedAuthorizedPost,
         response_json_out: []u8,
     ) (transport.HttpError || AdminTargetError)![]const u8 {
-        return postJson(http, prepared.url, prepared.authorization, prepared.request_json, response_json_out);
+        return transport.nip98_post.executePreparedPost(http, prepared, response_json_out) catch |err| switch (err) {
+            error.InvalidPostTarget => error.InvalidAdminTarget,
+            else => |e| e,
+        };
     }
 
     pub fn parseSupportedMethodsResponse(
@@ -453,7 +442,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .supportedmethods);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -469,7 +464,13 @@ pub const Client = struct {
             request_json_out,
             .{ .banpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -485,7 +486,13 @@ pub const Client = struct {
             request_json_out,
             .{ .unbanpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .unbanpubkey, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -501,7 +508,13 @@ pub const Client = struct {
             request_json_out,
             .{ .allowpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -517,7 +530,13 @@ pub const Client = struct {
             request_json_out,
             .{ .unallowpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .unallowpubkey, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -533,7 +552,13 @@ pub const Client = struct {
             request_json_out,
             .{ .allowevent = .{ .id = request.id, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .allowevent, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -546,7 +571,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .allowkind = request.kind });
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -559,7 +590,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .disallowkind = request.kind });
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .disallowkind, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -572,7 +609,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .changerelayname = request.name });
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .changerelayname, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -588,7 +631,13 @@ pub const Client = struct {
             request_json_out,
             .{ .changerelaydescription = request.description },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .changerelaydescription, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -601,7 +650,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .changerelayicon = request.icon });
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .changerelayicon, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -617,7 +672,13 @@ pub const Client = struct {
             request_json_out,
             .{ .blockip = .{ .ip = request.ip, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .blockip, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -630,7 +691,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .unblockip = request.ip });
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .unblockip, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -646,7 +713,13 @@ pub const Client = struct {
             request_json_out,
             .{ .banevent = .{ .id = request.id, .reason = request.reason } },
         );
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .banevent, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -660,7 +733,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listallowedkinds);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, &.{}, &.{}, kinds_out, scratch);
     }
 
@@ -674,7 +753,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listallowedpubkeys);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -688,7 +773,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listbannedpubkeys);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .listbannedpubkeys, &.{}, pubkeys_out, &.{}, &.{}, &.{}, scratch);
     }
 
@@ -702,7 +793,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listblockedips);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .listblockedips, &.{}, &.{}, &.{}, ips_out, &.{}, scratch);
     }
 
@@ -716,7 +813,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listbannedevents);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .listbannedevents, &.{}, &.{}, events_out, &.{}, &.{}, scratch);
     }
 
@@ -730,7 +833,13 @@ pub const Client = struct {
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listeventsneedingmoderation);
-        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        const response_json = try executeAdminPost(
+            http,
+            request.url,
+            request_json,
+            request.authorization,
+            response_json_out,
+        );
         return parseResponse(response_json, .listeventsneedingmoderation, &.{}, &.{}, events_out, &.{}, &.{}, scratch);
     }
 };
@@ -742,21 +851,25 @@ fn serializeRequestJson(
     return noztr.nip86_relay_management.request_serialize_json(request_json_out, request);
 }
 
-fn postJson(
+fn executeAdminPost(
     http: transport.HttpClient,
     url: []const u8,
+    body: []const u8,
     authorization: ?[]const u8,
-    request_json: []const u8,
     response_json_out: []u8,
 ) (transport.HttpError || AdminTargetError)![]const u8 {
-    try validateAdminPostTarget(url);
-    return http.post(.{
-        .url = url,
-        .body = request_json,
-        .accept = "application/json",
-        .content_type = "application/json",
-        .authorization = authorization,
-    }, response_json_out);
+    return transport.nip98_post.executePost(
+        http,
+        url,
+        body,
+        "application/json",
+        "application/json",
+        authorization,
+        response_json_out,
+    ) catch |err| switch (err) {
+        error.InvalidPostTarget => error.InvalidAdminTarget,
+        else => |e| e,
+    };
 }
 
 fn requestToMethod(
@@ -786,13 +899,6 @@ fn requestToMethod(
     };
 }
 
-fn validateAdminPostTarget(url: []const u8) AdminTargetError!void {
-    if (url.len == 0) return error.InvalidAdminTarget;
-    const parsed = std.Uri.parse(url) catch return error.InvalidAdminTarget;
-    if (parsed.host == null) return error.InvalidAdminTarget;
-    if (!std.ascii.eqlIgnoreCase(parsed.scheme, "https")) return error.InvalidAdminTarget;
-}
-
 fn parseResponse(
     response_json: []const u8,
     expected_method: noztr.nip86_relay_management.RelayManagementMethod,
@@ -813,46 +919,6 @@ fn parseResponse(
         ips_out,
         scratch,
     );
-}
-
-const SignedPostAuthorization = struct {
-    url_tag: noztr.nip98_http_auth.TagBuilder,
-    method_tag: noztr.nip98_http_auth.TagBuilder,
-    payload_tag: noztr.nip98_http_auth.TagBuilder,
-    tags: [3]noztr.nip01_event.EventTag,
-    event: noztr.nip01_event.Event,
-};
-
-fn buildSignedPostAuthorization(
-    secret_key: *const [32]u8,
-    url: []const u8,
-    payload_hex: []const u8,
-    created_at: u64,
-) !SignedPostAuthorization {
-    const pubkey = try noztr.nostr_keys.nostr_derive_public_key(secret_key);
-    var signed = SignedPostAuthorization{
-        .url_tag = .{},
-        .method_tag = .{},
-        .payload_tag = .{},
-        .tags = undefined,
-        .event = undefined,
-    };
-    signed.tags = .{
-        try noztr.nip98_http_auth.http_auth_build_url_tag(&signed.url_tag, url),
-        try noztr.nip98_http_auth.http_auth_build_method_tag(&signed.method_tag, PreparedPost.method),
-        try noztr.nip98_http_auth.http_auth_build_payload_tag(&signed.payload_tag, payload_hex),
-    };
-    signed.event = .{
-        .id = [_]u8{0} ** 32,
-        .pubkey = pubkey,
-        .sig = [_]u8{0} ** 64,
-        .kind = noztr.nip98_http_auth.http_auth_kind,
-        .created_at = created_at,
-        .content = "",
-        .tags = signed.tags[0..],
-    };
-    try noztr.nostr_keys.nostr_sign_event(secret_key, &signed.event);
-    return signed;
 }
 
 test "relay management client posts supportedmethods and parses typed list response" {
@@ -933,10 +999,10 @@ test "relay management client prepares caller-driven NIP-98 auth for POST bodies
     );
     try std.testing.expectEqualStrings(
         "{\"method\":\"supportedmethods\",\"params\":[]}",
-        prepared.request_json,
+        prepared.body,
     );
 
-    const signed = try buildSignedPostAuthorization(
+    const signed = try transport.nip98_post.prepareSignedPostAuthorization(
         &secret_key,
         prepared.url,
         prepared.payload_hex,
@@ -952,7 +1018,7 @@ test "relay management client prepares caller-driven NIP-98 auth for POST bodies
         decoded_json[0..],
         header,
         prepared.url,
-        PreparedPost.method,
+        transport.nip98_post.PreparedPost.method,
         prepared.payload_hex,
         signed.event.created_at,
         0,
@@ -962,7 +1028,10 @@ test "relay management client prepares caller-driven NIP-98 auth for POST bodies
 
     try std.testing.expectEqualStrings("Nostr ", header[0..noztr.nip98_http_auth.authorization_scheme.len]);
     try std.testing.expectEqualStrings(prepared.url, verified.info.url);
-    try std.testing.expectEqualStrings(PreparedPost.method, verified.info.method);
+    try std.testing.expectEqualStrings(
+        transport.nip98_post.PreparedPost.method,
+        verified.info.method,
+    );
     try std.testing.expectEqualStrings(prepared.payload_hex, verified.info.payload_hex.?);
 }
 
@@ -1726,7 +1795,7 @@ test "relay management client parses prepared changerelayname responses coherent
         authorization[0..],
         authorization_json[0..],
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    var fake = FakeHttp{ .expected_body = prepared.body };
     const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
     const response = try client.parseChangeRelayNameResponse(response_json_slice, arena.allocator());
 
@@ -1898,7 +1967,7 @@ test "relay management client parses prepared listallowedpubkeys responses coher
         authorization[0..],
         authorization_json[0..],
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    var fake = FakeHttp{ .expected_body = prepared.body };
     const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
     const response = try client.parseListAllowedPubkeysResponse(
         response_json_slice,
@@ -2020,7 +2089,7 @@ test "relay management client parses prepared listbannedpubkeys responses cohere
         authorization[0..],
         authorization_json[0..],
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    var fake = FakeHttp{ .expected_body = prepared.body };
     const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
     const response = try client.parseListBannedPubkeysResponse(
         response_json_slice,
@@ -2263,7 +2332,7 @@ test "relay management client parses prepared listblockedips responses coherentl
         authorization[0..],
         authorization_json[0..],
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    var fake = FakeHttp{ .expected_body = prepared.body };
     const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
     const response = try client.parseListBlockedIpsResponse(response_json_slice, ips[0..], arena.allocator());
 
@@ -2319,7 +2388,7 @@ test "relay management client parses prepared listbannedevents responses coheren
         authorization[0..],
         authorization_json[0..],
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    var fake = FakeHttp{ .expected_body = prepared.body };
     const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
     const response = try client.parseListBannedEventsResponse(
         response_json_slice,
@@ -2379,7 +2448,7 @@ test "relay management client parses prepared listeventsneedingmoderation respon
         authorization[0..],
         authorization_json[0..],
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    var fake = FakeHttp{ .expected_body = prepared.body };
     const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
     const response = try client.parseListEventsNeedingModerationResponse(
         response_json_slice,
@@ -2421,7 +2490,7 @@ test "relay management client accepts explicit NIP-98 authorization headers" {
                 decoded_json[0..],
                 header,
                 request.url,
-                PreparedPost.method,
+                transport.nip98_post.PreparedPost.method,
                 expected_payload,
                 self.created_at,
                 0,
@@ -2457,7 +2526,7 @@ test "relay management client accepts explicit NIP-98 authorization headers" {
         nip98_request_json[0..],
         payload_hex[0..],
     );
-    const signed = try buildSignedPostAuthorization(
+    const signed = try transport.nip98_post.prepareSignedPostAuthorization(
         &secret_key,
         prepared.url,
         prepared.payload_hex,
@@ -2499,7 +2568,7 @@ test "relay management client rejects mismatched prepared NIP-98 auth events" {
         request_json[0..],
         payload_hex[0..],
     );
-    const signed = try buildSignedPostAuthorization(
+    const signed = try transport.nip98_post.prepareSignedPostAuthorization(
         &secret_key,
         "https://relay.example/other",
         prepared.payload_hex,

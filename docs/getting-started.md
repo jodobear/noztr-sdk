@@ -86,6 +86,8 @@ substrate again.
 
 Today, the downstream-targetable foundation is relay-centric:
 - HTTP-backed work starts from `noztr_sdk.transport.HttpClient`
+- explicit HTTPS admin `POST` prep/verify/execute for callers needing full control lives in
+  `noztr_sdk.transport.nip98_post`
 - shared relay runtime planning starts from `noztr_sdk.runtime.RelayPool`
 - explicit relay-session composition starts from `noztr_sdk.client.relay.session.RelaySessionClient`
 - explicit relay-backed composition extends through the relay auth/query/exchange/replay/publish,
@@ -233,7 +235,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
     including the new `unallowpubkey`, `disallowkind`, `unbanpubkey`, and `unblockip` reversal
     calls, using `executeAuthorizedPost` for common local-key auth-prepared request/parse paths while
     keeping lower-level `prepareAuthorizedPost`/`postPrepared`/`parse*Response` helpers available on
-    the client surface; admin post targets remain explicit valid HTTPS URLs
+    the client surface; admin post targets remain explicit valid HTTPS URLs and callers needing full
+    signed-post control can use `transport.nip98_post`
 - [store_query.zig](../examples/store_query.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store.zig](../examples/sqlite_client_store.zig)

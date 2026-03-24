@@ -52,6 +52,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(workflows.signer) == type);
     try std.testing.expect(@TypeOf(workflows.signer.remote.Session) == type);
     try std.testing.expect(@TypeOf(workflows.zaps.ZapFlow) == type);
+    try std.testing.expect(@TypeOf(transport.nip98_post) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientError) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientConfig) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientStorage) == type);
