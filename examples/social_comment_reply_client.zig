@@ -49,4 +49,26 @@ test "recipe: social comment reply client composes note replies and NIP-22 comme
         },
     );
     _ = try client.inspectCommentEvent(&comment.event);
+
+    var archive_storage = noztr_sdk.store.MemoryClientStore{};
+    const archive = noztr_sdk.store.EventArchive.init(archive_storage.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try client.storeInteractionEventJson(archive, reply.event_json, arena.allocator());
+    try client.storeInteractionEventJson(archive, comment.event_json, arena.allocator());
+
+    const author_hex = std.fmt.bytesToHex(comment.event.pubkey, .lower);
+    const authors = [_]noztr_sdk.store.EventPubkeyHex{author_hex};
+    var page_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
+    var query_page = noztr_sdk.store.EventQueryResultPage.init(page_records[0..]);
+    var comments: [1]noztr_sdk.client.social.comment_reply.CommentRecord = undefined;
+    const stored_comments = try client.inspectCommentPage(
+        archive,
+        &.{ .query = .{ .authors = authors[0..], .limit = 1 } },
+        &query_page,
+        comments[0..],
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(@as(usize, 1), stored_comments.comments.len);
 }

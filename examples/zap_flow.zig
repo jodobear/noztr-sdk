@@ -28,6 +28,17 @@ test "recipe: zap flow uses explicit publish and http callback seams" {
     var relays: [2][]const u8 = undefined;
     _ = try flow.inspectZapRequestEvent(&prepared.event, relays[0..]);
 
+    var publish_storage = noztr_sdk.runtime.RelayPoolPublishStorage{};
+    const publish_plan = flow.inspectPublish(&publish_storage);
+    const publish_step = publish_plan.nextStep().?;
+    var publish_request_json: [2048]u8 = undefined;
+    const targeted_publish = try flow.composeTargetedPublish(
+        publish_request_json[0..],
+        &publish_step,
+        &prepared,
+    );
+    try std.testing.expect(targeted_publish.event_message_json.len > 0);
+
     const FakeHttp = struct {
         body: []const u8,
 

@@ -37,4 +37,24 @@ test "recipe: social highlight client composes one highlight route and one archi
     var attributions: [1]noztr.nip84_highlights.HighlightAttribution = undefined;
     var refs: [1]noztr.nip84_highlights.UrlRef = undefined;
     _ = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
+
+    var archive_storage = noztr_sdk.store.MemoryClientStore{};
+    const archive = noztr_sdk.store.EventArchive.init(archive_storage.asClientStore());
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    try client.storeHighlightEventJson(archive, prepared.event_json, arena.allocator());
+
+    const author_hex = std.fmt.bytesToHex(prepared.event.pubkey, .lower);
+    const authors = [_]noztr_sdk.store.EventPubkeyHex{author_hex};
+    var page_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
+    var query_page = noztr_sdk.store.EventQueryResultPage.init(page_records[0..]);
+    var highlights: [1]noztr_sdk.client.social.highlight.HighlightRecord = undefined;
+    const stored_highlights = try client.inspectHighlightPage(
+        archive,
+        &.{ .query = .{ .authors = authors[0..], .limit = 1 } },
+        &query_page,
+        highlights[0..],
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(@as(usize, 1), stored_highlights.highlights.len);
 }
