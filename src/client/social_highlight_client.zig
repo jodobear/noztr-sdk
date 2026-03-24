@@ -476,16 +476,17 @@ test "social highlight client composes event-source highlight publish and archiv
     try std.testing.expectEqual(@as(usize, 1), stored.highlights.len);
 }
 
-test "social highlight client composes address-source highlights coherently" {
+test "social highlight client handles multiple attributions and url references coherently" {
     var storage = Storage{};
     const client = Client.init(.{}, &storage);
 
     const secret_key = [_]u8{0x71} ** 32;
     const source_pubkey = [_]u8{0x51} ** 32;
-    const attribution_pubkey = [_]u8{0x52} ** 32;
-    var builders: [5]noztr.nip84_highlights.TagBuilder = undefined;
-    var tags: [5]noztr.nip01_event.EventTag = undefined;
-    var pubkey_hex: [1]store.EventPubkeyHex = undefined;
+    const author_pubkey = [_]u8{0x52} ** 32;
+    const editor_pubkey = [_]u8{0x53} ** 32;
+    var builders: [7]noztr.nip84_highlights.TagBuilder = undefined;
+    var tags: [7]noztr.nip01_event.EventTag = undefined;
+    var pubkey_hex: [2]store.EventPubkeyHex = undefined;
     var draft_storage = HighlightDraftStorage.init(builders[0..], tags[0..], pubkey_hex[0..]);
     var event_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
 
@@ -502,32 +503,43 @@ test "social highlight client composes address-source highlights coherently" {
                 .identifier = "guide-1",
                 .relay_hint = "wss://relay.article",
             } },
-            .attributions = &.{.{
-                .pubkey = attribution_pubkey,
-                .role = "author",
-            }},
-            .references = &.{.{
-                .url = "https://example.com/full-article",
-                .marker = "mention",
-            }},
+            .attributions = &.{
+                .{ .pubkey = author_pubkey, .relay_hint = "wss://relay.author", .role = "author" },
+                .{ .pubkey = editor_pubkey, .relay_hint = "wss://relay.editor", .role = "editor" },
+            },
+            .references = &.{
+                .{ .url = "https://example.com/full-article", .marker = "mention" },
+                .{ .url = "https://example.com/footnote", .marker = "citation" },
+            },
             .comment = "saved for later",
         },
     );
 
-    var attributions: [1]noztr.nip84_highlights.HighlightAttribution = undefined;
-    var refs: [1]noztr.nip84_highlights.UrlRef = undefined;
+    var attributions: [2]noztr.nip84_highlights.HighlightAttribution = undefined;
+    var refs: [2]noztr.nip84_highlights.UrlRef = undefined;
     const highlight = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
 
     try std.testing.expect(highlight.source != null);
     try std.testing.expect(highlight.source.? == .address);
-    try std.testing.expectEqual(@as(u32, @intFromEnum(noztr.nip23_long_form.LongFormKind.article)), highlight.source.?.address.kind);
+    try std.testing.expectEqual(
+        @as(u32, @intFromEnum(noztr.nip23_long_form.LongFormKind.article)),
+        highlight.source.?.address.kind,
+    );
     try std.testing.expectEqualSlices(u8, source_pubkey[0..], highlight.source.?.address.pubkey[0..]);
     try std.testing.expectEqualStrings("guide-1", highlight.source.?.address.identifier);
     try std.testing.expectEqualStrings("wss://relay.article", highlight.source.?.address.relay_hint.?);
-    try std.testing.expectEqual(@as(u16, 1), highlight.attribution_count);
-    try std.testing.expectEqual(@as(u16, 1), highlight.url_reference_count);
+    try std.testing.expectEqual(@as(u16, 2), highlight.attribution_count);
+    try std.testing.expectEqual(@as(u16, 2), highlight.url_reference_count);
+    try std.testing.expectEqualSlices(u8, author_pubkey[0..], attributions[0].pubkey[0..]);
+    try std.testing.expectEqualStrings("wss://relay.author", attributions[0].relay_hint.?);
     try std.testing.expectEqualStrings("author", attributions[0].role.?);
+    try std.testing.expectEqualSlices(u8, editor_pubkey[0..], attributions[1].pubkey[0..]);
+    try std.testing.expectEqualStrings("wss://relay.editor", attributions[1].relay_hint.?);
+    try std.testing.expectEqualStrings("editor", attributions[1].role.?);
+    try std.testing.expectEqualStrings("https://example.com/full-article", refs[0].url);
     try std.testing.expectEqualStrings("mention", refs[0].marker.?);
+    try std.testing.expectEqualStrings("https://example.com/footnote", refs[1].url);
+    try std.testing.expectEqualStrings("citation", refs[1].marker.?);
     try std.testing.expectEqualStrings("saved for later", highlight.comment.?);
 }
 

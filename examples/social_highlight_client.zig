@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-test "recipe: social highlight client composes one address-source highlight route and one archive-backed stored page explicitly" {
+test "recipe: social highlight client composes one address-source highlight route with multiple attributions and references plus one archive-backed stored page explicitly" {
     var storage = noztr_sdk.client.social.highlight.Storage{};
     var client = noztr_sdk.client.social.highlight.Client.init(.{}, &storage);
 
@@ -12,15 +12,16 @@ test "recipe: social highlight client composes one address-source highlight rout
     const secret_key = [_]u8{0x82} ** 32;
     const source_pubkey = [_]u8{0x84} ** 32;
     const author = [_]u8{0x85} ** 32;
-    var builders: [4]noztr.nip84_highlights.TagBuilder = undefined;
-    var tags: [4]noztr.nip01_event.EventTag = undefined;
-    var pubkey_hex: [1]noztr_sdk.store.EventPubkeyHex = undefined;
+    const editor = [_]u8{0x86} ** 32;
+    var builders: [7]noztr.nip84_highlights.TagBuilder = undefined;
+    var tags: [7]noztr.nip01_event.EventTag = undefined;
+    var pubkey_hex: [2]noztr_sdk.store.EventPubkeyHex = undefined;
     var draft_storage = noztr_sdk.client.social.highlight.HighlightDraftStorage.init(
         builders[0..],
         tags[0..],
         pubkey_hex[0..],
     );
-    var event_json: [1024]u8 = undefined;
+    var event_json: [noztr.limits.event_json_max]u8 = undefined;
     const prepared = try client.prepareHighlightPublish(
         event_json[0..],
         &draft_storage,
@@ -34,17 +35,31 @@ test "recipe: social highlight client composes one address-source highlight rout
                 .identifier = "essay-1",
                 .relay_hint = "wss://relay.article",
             } },
-            .attributions = &.{.{ .pubkey = author }},
+            .attributions = &.{
+                .{ .pubkey = author, .relay_hint = "wss://relay.author", .role = "author" },
+                .{ .pubkey = editor, .relay_hint = "wss://relay.editor", .role = "editor" },
+            },
+            .references = &.{
+                .{ .url = "https://example.com/essay-1", .marker = "mention" },
+                .{ .url = "https://example.com/essay-1/notes", .marker = "citation" },
+            },
             .context = "chapter 1",
+            .comment = "keep this passage handy",
         },
     );
 
-    var attributions: [1]noztr.nip84_highlights.HighlightAttribution = undefined;
-    var refs: [1]noztr.nip84_highlights.UrlRef = undefined;
+    var attributions: [2]noztr.nip84_highlights.HighlightAttribution = undefined;
+    var refs: [2]noztr.nip84_highlights.UrlRef = undefined;
     const highlight = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
     try std.testing.expect(highlight.source != null);
     try std.testing.expect(highlight.source.? == .address);
     try std.testing.expectEqualStrings("essay-1", highlight.source.?.address.identifier);
+    try std.testing.expectEqual(@as(u16, 2), highlight.attribution_count);
+    try std.testing.expectEqual(@as(u16, 2), highlight.url_reference_count);
+    try std.testing.expectEqualStrings("author", attributions[0].role.?);
+    try std.testing.expectEqualStrings("editor", attributions[1].role.?);
+    try std.testing.expectEqualStrings("mention", refs[0].marker.?);
+    try std.testing.expectEqualStrings("citation", refs[1].marker.?);
 
     var archive_storage = noztr_sdk.store.MemoryClientStore{};
     const archive = noztr_sdk.store.EventArchive.init(archive_storage.asClientStore());
@@ -65,4 +80,16 @@ test "recipe: social highlight client composes one address-source highlight rout
         arena.allocator(),
     );
     try std.testing.expectEqual(@as(usize, 1), stored_highlights.highlights.len);
+
+    var stored_attributions: [2]noztr.nip84_highlights.HighlightAttribution = undefined;
+    var stored_refs: [2]noztr.nip84_highlights.UrlRef = undefined;
+    const stored_highlight = try client.inspectHighlightEvent(
+        &stored_highlights.highlights[0].event,
+        stored_attributions[0..],
+        stored_refs[0..],
+    );
+    try std.testing.expectEqual(@as(u16, 2), stored_highlight.attribution_count);
+    try std.testing.expectEqual(@as(u16, 2), stored_highlight.url_reference_count);
+    try std.testing.expectEqualStrings("mention", stored_refs[0].marker.?);
+    try std.testing.expectEqualStrings("citation", stored_refs[1].marker.?);
 }
