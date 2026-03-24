@@ -228,7 +228,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first explicit `NIP-57` publish plus callback route over the shared publish and HTTP seams
 - [relay_management_client.zig](../examples/relay_management_client.zig)
   - first explicit `NIP-86` admin request/result route over the shared HTTP seam, including typed
-    allowed-pubkey inspection and explicit pubkey allow-list mutation
+    allowed-pubkey and blocked-IP inspection plus explicit pubkey allow-list and IP block-list mutation
 - [store_query.zig](../examples/store_query.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store.zig](../examples/sqlite_client_store.zig)

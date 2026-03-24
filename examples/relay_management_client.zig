@@ -39,6 +39,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     var response_json: [256]u8 = undefined;
     var methods: [2][]const u8 = undefined;
     var kinds: [2]u32 = undefined;
+    var blocked_ips: [1]noztr.nip86_relay_management.IpReason = undefined;
     var allowed_pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -100,6 +101,33 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     try std.testing.expect(allowed_pubkeys_response.result == .pubkeys);
     try std.testing.expectEqualStrings("seed", allowed_pubkeys_response.result.pubkeys[0].reason.?);
 
+    const blocked_ips_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listblockedips,
+        &admin_secret,
+        1_700_000_002,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var blocked_ips_http = FakeHttp{
+        .response_body = "{\"result\":[{\"ip\":\"203.0.113.7\",\"reason\":\"scanner\"}],\"error\":null}",
+    };
+    const blocked_ips_response_json = try client.postPrepared(
+        blocked_ips_http.client(),
+        &blocked_ips_post,
+        response_json[0..],
+    );
+    const blocked_ips_response = try client.parseListBlockedIpsResponse(
+        blocked_ips_response_json,
+        blocked_ips[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(blocked_ips_response.result == .ips);
+    try std.testing.expectEqualStrings("203.0.113.7", blocked_ips_response.result.ips[0].ip);
+    try std.testing.expectEqualStrings("scanner", blocked_ips_response.result.ips[0].reason.?);
+
     const pubkey = [_]u8{0x11} ** 32;
     const allowpubkey_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
@@ -138,11 +166,25 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     const ack_response = try client.parseAllowKindResponse(ack_response_json, arena.allocator());
     try std.testing.expect(ack_response.result == .ack);
 
+    const blockip_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .blockip = .{ .ip = "198.51.100.42", .reason = "manual" } },
+        &admin_secret,
+        1_700_000_004,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    const blockip_response_json = try client.postPrepared(ack_http.client(), &blockip_post, response_json[0..]);
+    const blockip_response = try client.parseBlockIpResponse(blockip_response_json, arena.allocator());
+    try std.testing.expect(blockip_response.result == .ack);
+
     const ban_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
         .{ .banpubkey = .{ .pubkey = pubkey, .reason = "spam" } },
         &admin_secret,
-        1_700_000_004,
+        1_700_000_005,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],

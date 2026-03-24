@@ -44,7 +44,19 @@ pub const AllowKindRequest = struct {
     kind: u32,
 };
 
+pub const BlockIpRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+    ip: []const u8,
+    reason: ?[]const u8 = null,
+};
+
 pub const ListAllowedKindsRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+};
+
+pub const ListBlockedIpsRequest = struct {
     url: []const u8,
     authorization: ?[]const u8 = null,
 };
@@ -148,7 +160,7 @@ pub const Client = struct {
         methods_out: [][]const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn parseBanPubkeyResponse(
@@ -156,7 +168,7 @@ pub const Client = struct {
         response_json: []const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn parseAllowPubkeyResponse(
@@ -164,7 +176,7 @@ pub const Client = struct {
         response_json: []const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn parseAllowKindResponse(
@@ -172,7 +184,15 @@ pub const Client = struct {
         response_json: []const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn parseBlockIpResponse(
+        _: Client,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .blockip, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn parseListAllowedKindsResponse(
@@ -181,7 +201,7 @@ pub const Client = struct {
         kinds_out: []u32,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, kinds_out, scratch);
+        return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, &.{}, kinds_out, scratch);
     }
 
     pub fn parseListAllowedPubkeysResponse(
@@ -190,7 +210,16 @@ pub const Client = struct {
         pubkeys_out: []noztr.nip86_relay_management.PubkeyReason,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, scratch);
+        return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, &.{}, scratch);
+    }
+
+    pub fn parseListBlockedIpsResponse(
+        _: Client,
+        response_json: []const u8,
+        ips_out: []noztr.nip86_relay_management.IpReason,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .listblockedips, &.{}, &.{}, ips_out, &.{}, scratch);
     }
 
     pub fn fetchSupportedMethods(
@@ -204,7 +233,7 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .supportedmethods);
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn banPubkey(
@@ -220,7 +249,7 @@ pub const Client = struct {
             .{ .banpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn allowPubkey(
@@ -236,7 +265,7 @@ pub const Client = struct {
             .{ .allowpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn allowKind(
@@ -249,7 +278,23 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .allowkind = request.kind });
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn blockIp(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const BlockIpRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(
+            request_json_out,
+            .{ .blockip = .{ .ip = request.ip, .reason = request.reason } },
+        );
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .blockip, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn fetchListAllowedKinds(
@@ -263,7 +308,7 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listallowedkinds);
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, kinds_out, scratch);
+        return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, &.{}, kinds_out, scratch);
     }
 
     pub fn fetchListAllowedPubkeys(
@@ -277,7 +322,21 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listallowedpubkeys);
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, scratch);
+        return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, &.{}, scratch);
+    }
+
+    pub fn fetchListBlockedIps(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const ListBlockedIpsRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        ips_out: []noztr.nip86_relay_management.IpReason,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(request_json_out, .listblockedips);
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .listblockedips, &.{}, &.{}, ips_out, &.{}, scratch);
     }
 };
 
@@ -309,11 +368,11 @@ fn parseResponse(
     expected_method: noztr.nip86_relay_management.RelayManagementMethod,
     methods_out: [][]const u8,
     pubkeys_out: []noztr.nip86_relay_management.PubkeyReason,
+    ips_out: []noztr.nip86_relay_management.IpReason,
     kinds_out: []u32,
     scratch: std.mem.Allocator,
 ) Error!noztr.nip86_relay_management.Response {
     var zero_events: [0]noztr.nip86_relay_management.EventIdReason = .{};
-    var zero_ips: [0]noztr.nip86_relay_management.IpReason = .{};
     return noztr.nip86_relay_management.response_parse_json(
         response_json,
         expected_method,
@@ -321,7 +380,7 @@ fn parseResponse(
         pubkeys_out,
         zero_events[0..],
         kinds_out,
-        zero_ips[0..],
+        ips_out,
         scratch,
     );
 }
@@ -562,6 +621,48 @@ test "relay management client posts banpubkey and parses ack response" {
     const response = try client.banPubkey(
         fake.client(),
         &.{ .url = "https://relay.example/admin", .pubkey = pubkey, .reason = "spam" },
+        request_json[0..],
+        response_json[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .ack);
+}
+
+test "relay management client posts blockip and parses ack response" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const expected_body = "{\"method\":\"blockip\",\"params\":[\"127.0.0.1\",\"abuse\"]}";
+    var fake = FakeHttp{ .expected_body = expected_body, .response_body = "{\"result\":true,\"error\":null}" };
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var response_json: [64]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.blockIp(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .ip = "127.0.0.1", .reason = "abuse" },
         request_json[0..],
         response_json[0..],
         arena.allocator(),
@@ -833,6 +934,121 @@ test "relay management client parses prepared listallowedpubkeys responses coher
     try std.testing.expectEqual(@as(usize, 1), response.result.pubkeys.len);
     try std.testing.expectEqualDeep(expected_pubkey, response.result.pubkeys[0].pubkey);
     try std.testing.expectEqualStrings("vip", response.result.pubkeys[0].reason.?);
+}
+
+test "relay management client posts listblockedips and parses typed list response" {
+    const FakeHttp = struct {
+        expected_url: []const u8,
+        expected_authorization: ?[]const u8,
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.url, self.expected_url)) return error.NotFound;
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.expected_authorization) |authorization| {
+                if (request.authorization == null) return error.InvalidResponse;
+                if (!std.mem.eql(u8, request.authorization.?, authorization)) return error.InvalidResponse;
+            }
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var fake = FakeHttp{
+        .expected_url = "https://relay.example/admin",
+        .expected_authorization = "Nostr token",
+        .expected_body = "{\"method\":\"listblockedips\",\"params\":[]}",
+        .response_body = "{\"result\":[{\"ip\":\"203.0.113.7\",\"reason\":\"scanner\"},{\"ip\":\"2001:db8::7\"}],\"error\":null}",
+    };
+    var request_json: [128]u8 = undefined;
+    var response_json: [192]u8 = undefined;
+    var ips: [2]noztr.nip86_relay_management.IpReason = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.fetchListBlockedIps(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .authorization = "Nostr token" },
+        request_json[0..],
+        response_json[0..],
+        ips[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .ips);
+    try std.testing.expectEqual(@as(usize, 2), response.result.ips.len);
+    try std.testing.expectEqualStrings("203.0.113.7", response.result.ips[0].ip);
+    try std.testing.expectEqualStrings("scanner", response.result.ips[0].reason.?);
+    try std.testing.expectEqualStrings("2001:db8::7", response.result.ips[1].ip);
+    try std.testing.expect(response.result.ips[1].reason == null);
+}
+
+test "relay management client parses prepared listblockedips responses coherently" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (request.authorization == null) return error.InvalidResponse;
+            const response =
+                "{\"result\":[{\"ip\":\"198.51.100.42\",\"reason\":\"manual\"}],\"error\":null}";
+            @memcpy(out[0..response.len], response);
+            return out[0..response.len];
+        }
+    };
+
+    const secret_key = [_]u8{0x46} ** 32;
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+    var authorization: [1024]u8 = undefined;
+    var authorization_json: [1024]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var ips: [1]noztr.nip86_relay_management.IpReason = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const prepared = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listblockedips,
+        &secret_key,
+        1_700_000_500,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
+    const response = try client.parseListBlockedIpsResponse(response_json_slice, ips[0..], arena.allocator());
+
+    try std.testing.expect(response.result == .ips);
+    try std.testing.expectEqual(@as(usize, 1), response.result.ips.len);
+    try std.testing.expectEqualStrings("198.51.100.42", response.result.ips[0].ip);
+    try std.testing.expectEqualStrings("manual", response.result.ips[0].reason.?);
 }
 
 test "relay management client accepts explicit NIP-98 authorization headers" {
