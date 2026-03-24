@@ -167,14 +167,14 @@ They do not imply:
     `listbannedpubkeys`, `listeventsneedingmoderation`, `listbannedevents`, `listblockedips`,
     `allowpubkey`, `unallowpubkey`, `allowevent`, `listallowedkinds`, `allowkind`, `disallowkind`,
     `blockip`, `unblockip`, `banpubkey`, `unbanpubkey`, and `banevent` requests over the explicit
-    HTTP post seam with caller-driven `NIP-98` authorization setup, using one broad SDK-prepared
+    HTTPS admin post seam with caller-driven `NIP-98` authorization setup, using one broad SDK-prepared
     admin matrix recipe plus typed response parsing; lower-level prepared-header helpers remain
     available on the client surface but are not the primary taught route in this recipe
   - kernel fixture help: `noztr.nip86_relay_management`, `noztr.nip98_http_auth`
   - control points: deterministic `NIP-86` request and response JSON shaping plus `NIP-98` auth-tag
-    shaping stay on `noztr`, admin auth remains an explicit caller-owned secret-key precondition, and HTTP
-    request ownership stays on the public transport seam instead of becoming a hidden operator
-    daemon
+    shaping stay on `noztr`, admin auth remains an explicit caller-owned secret-key precondition,
+    admin targets must stay explicit valid HTTPS URLs, and request ownership stays on the public
+    transport seam instead of becoming a hidden operator daemon
 - `signer_connect_job_client.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

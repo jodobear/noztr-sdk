@@ -232,7 +232,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
     blocked-IP inspection, along with explicit metadata, pubkey, kind, event, and IP mutation
     including the new `unallowpubkey`, `disallowkind`, `unbanpubkey`, and `unblockip` reversal
     calls, using the SDK-prepared auth path while keeping lower-level prepared-header auth
-    available on the client surface
+    available on the client surface; admin post targets remain explicit valid HTTPS URLs
 - [store_query.zig](../examples/store_query.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store.zig](../examples/sqlite_client_store.zig)

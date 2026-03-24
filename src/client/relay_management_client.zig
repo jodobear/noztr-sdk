@@ -2,8 +2,10 @@ const std = @import("std");
 const transport = @import("../transport/mod.zig");
 const noztr = @import("noztr");
 
-pub const Error = transport.HttpError || noztr.nip86_relay_management.RelayManagementError;
+pub const AdminTargetError = error{InvalidAdminTarget};
+pub const Error = transport.HttpError || AdminTargetError || noztr.nip86_relay_management.RelayManagementError;
 pub const Nip98PostError = noztr.nip86_relay_management.RelayManagementError ||
+    AdminTargetError ||
     noztr.nip98_http_auth.HttpAuthError ||
     noztr.nostr_keys.NostrKeysError;
 
@@ -164,6 +166,7 @@ pub const Client = struct {
         request_json_out: []u8,
         payload_hex_out: []u8,
     ) Nip98PostError!PreparedPost {
+        try validateAdminPostTarget(url);
         const request_json = try serializeRequestJson(request_json_out, request);
         const payload_hex = try noztr.nip98_http_auth.http_auth_payload_sha256_hex(payload_hex_out, request_json);
         return .{
@@ -223,7 +226,7 @@ pub const Client = struct {
         http: transport.HttpClient,
         prepared: *const PreparedAuthorizedPost,
         response_json_out: []u8,
-    ) transport.HttpError![]const u8 {
+    ) (transport.HttpError || AdminTargetError)![]const u8 {
         return postJson(http, prepared.url, prepared.authorization, prepared.request_json, response_json_out);
     }
 
@@ -699,7 +702,8 @@ fn postJson(
     authorization: ?[]const u8,
     request_json: []const u8,
     response_json_out: []u8,
-) transport.HttpError![]const u8 {
+) (transport.HttpError || AdminTargetError)![]const u8 {
+    try validateAdminPostTarget(url);
     return http.post(.{
         .url = url,
         .body = request_json,
@@ -707,6 +711,13 @@ fn postJson(
         .content_type = "application/json",
         .authorization = authorization,
     }, response_json_out);
+}
+
+fn validateAdminPostTarget(url: []const u8) AdminTargetError!void {
+    if (url.len == 0) return error.InvalidAdminTarget;
+    const parsed = std.Uri.parse(url) catch return error.InvalidAdminTarget;
+    if (parsed.host == null) return error.InvalidAdminTarget;
+    if (!std.ascii.eqlIgnoreCase(parsed.scheme, "https")) return error.InvalidAdminTarget;
 }
 
 fn parseResponse(
@@ -880,6 +891,153 @@ test "relay management client prepares caller-driven NIP-98 auth for POST bodies
     try std.testing.expectEqualStrings(prepared.url, verified.info.url);
     try std.testing.expectEqualStrings(PreparedPost.method, verified.info.method);
     try std.testing.expectEqualStrings(prepared.payload_hex, verified.info.payload_hex.?);
+}
+
+test "relay management client preparePost rejects malformed admin URL" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.preparePost("://bad-url", .supportedmethods, request_json[0..], payload_hex[0..]),
+    );
+}
+
+test "relay management client preparePost rejects hostless admin URL" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.preparePost("https:///admin", .supportedmethods, request_json[0..], payload_hex[0..]),
+    );
+}
+
+test "relay management client preparePost rejects non-https admin URL" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.preparePost("http://relay.example/admin", .supportedmethods, request_json[0..], payload_hex[0..]),
+    );
+}
+
+test "relay management client fetchSupportedMethods rejects malformed admin URL" {
+    const FakeHttp = struct {
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(_: *anyopaque, _: transport.HttpPostRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var fake = FakeHttp{};
+    var request_json: [128]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var methods: [2][]const u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.fetchSupportedMethods(
+            fake.client(),
+            &.{ .url = "://bad-url" },
+            request_json[0..],
+            response_json[0..],
+            methods[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "relay management client fetchSupportedMethods rejects hostless admin URL" {
+    const FakeHttp = struct {
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(_: *anyopaque, _: transport.HttpPostRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var fake = FakeHttp{};
+    var request_json: [128]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var methods: [2][]const u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.fetchSupportedMethods(
+            fake.client(),
+            &.{ .url = "https:///admin" },
+            request_json[0..],
+            response_json[0..],
+            methods[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "relay management client fetchSupportedMethods rejects non-https admin URL" {
+    const FakeHttp = struct {
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(_: *anyopaque, _: transport.HttpPostRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var fake = FakeHttp{};
+    var request_json: [128]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var methods: [2][]const u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.fetchSupportedMethods(
+            fake.client(),
+            &.{ .url = "http://relay.example/admin" },
+            request_json[0..],
+            response_json[0..],
+            methods[0..],
+            arena.allocator(),
+        ),
+    );
 }
 
 test "relay management client executes prepared authorized posts coherently" {
@@ -2316,6 +2474,174 @@ test "relay management client surfaces invalid relay-management responses" {
         client.fetchSupportedMethods(
             fake.client(),
             &.{ .url = "https://relay.example/admin" },
+            request_json[0..],
+            response_json[0..],
+            methods[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "relay management client rejects malformed admin targets before preparing posts" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.preparePost(
+            "://bad",
+            .supportedmethods,
+            request_json[0..],
+            payload_hex[0..],
+        ),
+    );
+}
+
+test "relay management client rejects hostless admin targets before preparing posts" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.preparePost(
+            "https:///admin",
+            .supportedmethods,
+            request_json[0..],
+            payload_hex[0..],
+        ),
+    );
+}
+
+test "relay management client rejects non-https admin targets before preparing posts" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.preparePost(
+            "http://relay.example/admin",
+            .supportedmethods,
+            request_json[0..],
+            payload_hex[0..],
+        ),
+    );
+}
+
+test "relay management client rejects malformed admin targets on direct post paths" {
+    const FakeHttp = struct {
+        dummy: u8 = 0,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = &self.dummy, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(_: *anyopaque, _: transport.HttpPostRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.InvalidResponse;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var methods: [1][]const u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.fetchSupportedMethods(
+            fake.client(),
+            &.{ .url = "://bad" },
+            request_json[0..],
+            response_json[0..],
+            methods[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "relay management client rejects hostless admin targets on direct post paths" {
+    const FakeHttp = struct {
+        dummy: u8 = 0,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = &self.dummy, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(_: *anyopaque, _: transport.HttpPostRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.InvalidResponse;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var methods: [1][]const u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.fetchSupportedMethods(
+            fake.client(),
+            &.{ .url = "https:///admin" },
+            request_json[0..],
+            response_json[0..],
+            methods[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "relay management client rejects non-https admin targets on direct post paths" {
+    const FakeHttp = struct {
+        dummy: u8 = 0,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = &self.dummy, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(_: *anyopaque, _: transport.HttpPostRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.InvalidResponse;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var response_json: [128]u8 = undefined;
+    var methods: [1][]const u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidAdminTarget,
+        client.fetchSupportedMethods(
+            fake.client(),
+            &.{ .url = "http://relay.example/admin" },
             request_json[0..],
             response_json[0..],
             methods[0..],
