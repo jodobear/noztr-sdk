@@ -41,6 +41,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     var kinds: [2]u32 = undefined;
     var blocked_ips: [1]noztr.nip86_relay_management.IpReason = undefined;
     var allowed_pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
+    var banned_events: [1]noztr.nip86_relay_management.EventIdReason = undefined;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -128,6 +129,32 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     try std.testing.expectEqualStrings("203.0.113.7", blocked_ips_response.result.ips[0].ip);
     try std.testing.expectEqualStrings("scanner", blocked_ips_response.result.ips[0].reason.?);
 
+    const banned_events_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listbannedevents,
+        &admin_secret,
+        1_700_000_003,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var banned_events_http = FakeHttp{
+        .response_body = "{\"result\":[{\"id\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"reason\":\"reviewed\"}],\"error\":null}",
+    };
+    const banned_events_response_json = try client.postPrepared(
+        banned_events_http.client(),
+        &banned_events_post,
+        response_json[0..],
+    );
+    const banned_events_response = try client.parseListBannedEventsResponse(
+        banned_events_response_json,
+        banned_events[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(banned_events_response.result == .events);
+    try std.testing.expectEqualStrings("reviewed", banned_events_response.result.events[0].reason.?);
+
     const pubkey = [_]u8{0x11} ** 32;
     const allowpubkey_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
@@ -193,4 +220,19 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     const ban_response_json = try client.postPrepared(ack_http.client(), &ban_post, response_json[0..]);
     const ban_response = try client.parseBanPubkeyResponse(ban_response_json, arena.allocator());
     try std.testing.expect(ban_response.result == .ack);
+
+    const event_id = [_]u8{0x33} ** 32;
+    const banevent_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .banevent = .{ .id = event_id, .reason = "malware" } },
+        &admin_secret,
+        1_700_000_006,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    const banevent_response_json = try client.postPrepared(ack_http.client(), &banevent_post, response_json[0..]);
+    const banevent_response = try client.parseBanEventResponse(banevent_response_json, arena.allocator());
+    try std.testing.expect(banevent_response.result == .ack);
 }
