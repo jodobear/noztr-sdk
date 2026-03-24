@@ -31,6 +31,13 @@ pub const BanPubkeyRequest = struct {
     reason: ?[]const u8 = null,
 };
 
+pub const AllowPubkeyRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+    pubkey: [32]u8,
+    reason: ?[]const u8 = null,
+};
+
 pub const AllowKindRequest = struct {
     url: []const u8,
     authorization: ?[]const u8 = null,
@@ -38,6 +45,11 @@ pub const AllowKindRequest = struct {
 };
 
 pub const ListAllowedKindsRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+};
+
+pub const ListAllowedPubkeysRequest = struct {
     url: []const u8,
     authorization: ?[]const u8 = null,
 };
@@ -136,7 +148,7 @@ pub const Client = struct {
         methods_out: [][]const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, scratch);
+        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, scratch);
     }
 
     pub fn parseBanPubkeyResponse(
@@ -144,7 +156,15 @@ pub const Client = struct {
         response_json: []const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .banpubkey, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn parseAllowPubkeyResponse(
+        _: Client,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn parseAllowKindResponse(
@@ -152,7 +172,7 @@ pub const Client = struct {
         response_json: []const u8,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .allowkind, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn parseListAllowedKindsResponse(
@@ -161,7 +181,16 @@ pub const Client = struct {
         kinds_out: []u32,
         scratch: std.mem.Allocator,
     ) Error!noztr.nip86_relay_management.Response {
-        return parseResponse(response_json, .listallowedkinds, &.{}, kinds_out, scratch);
+        return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, kinds_out, scratch);
+    }
+
+    pub fn parseListAllowedPubkeysResponse(
+        _: Client,
+        response_json: []const u8,
+        pubkeys_out: []noztr.nip86_relay_management.PubkeyReason,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, scratch);
     }
 
     pub fn fetchSupportedMethods(
@@ -175,7 +204,7 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .supportedmethods);
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, scratch);
+        return parseResponse(response_json, .supportedmethods, methods_out, &.{}, &.{}, scratch);
     }
 
     pub fn banPubkey(
@@ -191,7 +220,23 @@ pub const Client = struct {
             .{ .banpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
         );
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .banpubkey, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .banpubkey, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn allowPubkey(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const AllowPubkeyRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(
+            request_json_out,
+            .{ .allowpubkey = .{ .pubkey = request.pubkey, .reason = request.reason } },
+        );
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn allowKind(
@@ -204,7 +249,7 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .{ .allowkind = request.kind });
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .allowkind, &.{}, &.{}, scratch);
+        return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn fetchListAllowedKinds(
@@ -218,7 +263,21 @@ pub const Client = struct {
     ) Error!noztr.nip86_relay_management.Response {
         const request_json = try serializeRequestJson(request_json_out, .listallowedkinds);
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
-        return parseResponse(response_json, .listallowedkinds, &.{}, kinds_out, scratch);
+        return parseResponse(response_json, .listallowedkinds, &.{}, &.{}, kinds_out, scratch);
+    }
+
+    pub fn fetchListAllowedPubkeys(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const ListAllowedPubkeysRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        pubkeys_out: []noztr.nip86_relay_management.PubkeyReason,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(request_json_out, .listallowedpubkeys);
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .listallowedpubkeys, &.{}, pubkeys_out, &.{}, scratch);
     }
 };
 
@@ -249,17 +308,17 @@ fn parseResponse(
     response_json: []const u8,
     expected_method: noztr.nip86_relay_management.RelayManagementMethod,
     methods_out: [][]const u8,
+    pubkeys_out: []noztr.nip86_relay_management.PubkeyReason,
     kinds_out: []u32,
     scratch: std.mem.Allocator,
 ) Error!noztr.nip86_relay_management.Response {
-    var zero_pubkeys: [0]noztr.nip86_relay_management.PubkeyReason = .{};
     var zero_events: [0]noztr.nip86_relay_management.EventIdReason = .{};
     var zero_ips: [0]noztr.nip86_relay_management.IpReason = .{};
     return noztr.nip86_relay_management.response_parse_json(
         response_json,
         expected_method,
         methods_out,
-        zero_pubkeys[0..],
+        pubkeys_out,
         zero_events[0..],
         kinds_out,
         zero_ips[0..],
@@ -511,6 +570,50 @@ test "relay management client posts banpubkey and parses ack response" {
     try std.testing.expect(response.result == .ack);
 }
 
+test "relay management client posts allowpubkey and parses ack response" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const pubkey = [_]u8{0xaa} ** 32;
+    const expected_body =
+        "{\"method\":\"allowpubkey\",\"params\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"operator\"]}";
+    var fake = FakeHttp{ .expected_body = expected_body, .response_body = "{\"result\":true,\"error\":null}" };
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [192]u8 = undefined;
+    var response_json: [64]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.allowPubkey(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .pubkey = pubkey, .reason = "operator" },
+        request_json[0..],
+        response_json[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .ack);
+}
+
 test "relay management client posts allowkind and parses ack response" {
     const FakeHttp = struct {
         expected_body: []const u8,
@@ -608,6 +711,128 @@ test "relay management client posts listallowedkinds and parses typed list respo
     try std.testing.expect(response.result == .kinds);
     try std.testing.expectEqual(@as(usize, 2), response.result.kinds.len);
     try std.testing.expectEqual(@as(u32, 1984), response.result.kinds[1]);
+}
+
+test "relay management client posts listallowedpubkeys and parses typed list response" {
+    const FakeHttp = struct {
+        expected_url: []const u8,
+        expected_authorization: ?[]const u8,
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.url, self.expected_url)) return error.NotFound;
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.expected_authorization) |authorization| {
+                if (request.authorization == null) return error.InvalidResponse;
+                if (!std.mem.eql(u8, request.authorization.?, authorization)) return error.InvalidResponse;
+            }
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const first_pubkey = [_]u8{0x11} ** 32;
+    const second_pubkey = [_]u8{0x22} ** 32;
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var fake = FakeHttp{
+        .expected_url = "https://relay.example/admin",
+        .expected_authorization = "Nostr token",
+        .expected_body = "{\"method\":\"listallowedpubkeys\",\"params\":[]}",
+        .response_body = "{\"result\":[{\"pubkey\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"reason\":\"seed\"},{\"pubkey\":\"2222222222222222222222222222222222222222222222222222222222222222\"}],\"error\":null}",
+    };
+    var request_json: [128]u8 = undefined;
+    var response_json: [256]u8 = undefined;
+    var pubkeys: [2]noztr.nip86_relay_management.PubkeyReason = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.fetchListAllowedPubkeys(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .authorization = "Nostr token" },
+        request_json[0..],
+        response_json[0..],
+        pubkeys[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .pubkeys);
+    try std.testing.expectEqual(@as(usize, 2), response.result.pubkeys.len);
+    try std.testing.expectEqualDeep(first_pubkey, response.result.pubkeys[0].pubkey);
+    try std.testing.expectEqualStrings("seed", response.result.pubkeys[0].reason.?);
+    try std.testing.expectEqualDeep(second_pubkey, response.result.pubkeys[1].pubkey);
+    try std.testing.expect(response.result.pubkeys[1].reason == null);
+}
+
+test "relay management client parses prepared listallowedpubkeys responses coherently" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (request.authorization == null) return error.InvalidResponse;
+            const response =
+                "{\"result\":[{\"pubkey\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"reason\":\"vip\"}],\"error\":null}";
+            @memcpy(out[0..response.len], response);
+            return out[0..response.len];
+        }
+    };
+
+    const secret_key = [_]u8{0x45} ** 32;
+    const expected_pubkey = [_]u8{0x44} ** 32;
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+    var authorization: [1024]u8 = undefined;
+    var authorization_json: [1024]u8 = undefined;
+    var response_json: [192]u8 = undefined;
+    var pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const prepared = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listallowedpubkeys,
+        &secret_key,
+        1_700_000_400,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
+    const response = try client.parseListAllowedPubkeysResponse(
+        response_json_slice,
+        pubkeys[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .pubkeys);
+    try std.testing.expectEqual(@as(usize, 1), response.result.pubkeys.len);
+    try std.testing.expectEqualDeep(expected_pubkey, response.result.pubkeys[0].pubkey);
+    try std.testing.expectEqualStrings("vip", response.result.pubkeys[0].reason.?);
 }
 
 test "relay management client accepts explicit NIP-98 authorization headers" {

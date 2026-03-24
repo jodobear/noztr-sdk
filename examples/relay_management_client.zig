@@ -36,9 +36,10 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
     var authorization: [1024]u8 = undefined;
     var authorization_json: [1024]u8 = undefined;
-    var response_json: [128]u8 = undefined;
+    var response_json: [256]u8 = undefined;
     var methods: [2][]const u8 = undefined;
     var kinds: [2]u32 = undefined;
+    var allowed_pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -73,11 +74,60 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     try std.testing.expect(kinds_response.result == .kinds);
     try std.testing.expectEqual(@as(u32, 1984), kinds_response.result.kinds[1]);
 
+    const allowed_pubkeys_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listallowedpubkeys,
+        &admin_secret,
+        1_700_000_001,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var allowed_pubkeys_http = FakeHttp{
+        .response_body = "{\"result\":[{\"pubkey\":\"1111111111111111111111111111111111111111111111111111111111111111\",\"reason\":\"seed\"}],\"error\":null}",
+    };
+    const allowed_pubkeys_response_json = try client.postPrepared(
+        allowed_pubkeys_http.client(),
+        &allowed_pubkeys_post,
+        response_json[0..],
+    );
+    const allowed_pubkeys_response = try client.parseListAllowedPubkeysResponse(
+        allowed_pubkeys_response_json,
+        allowed_pubkeys[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(allowed_pubkeys_response.result == .pubkeys);
+    try std.testing.expectEqualStrings("seed", allowed_pubkeys_response.result.pubkeys[0].reason.?);
+
+    const pubkey = [_]u8{0x11} ** 32;
+    const allowpubkey_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .allowpubkey = .{ .pubkey = pubkey, .reason = "operator" } },
+        &admin_secret,
+        1_700_000_002,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var allowpubkey_http = FakeHttp{ .response_body = "{\"result\":true,\"error\":null}" };
+    const allowpubkey_response_json = try client.postPrepared(
+        allowpubkey_http.client(),
+        &allowpubkey_post,
+        response_json[0..],
+    );
+    const allowpubkey_response = try client.parseAllowPubkeyResponse(
+        allowpubkey_response_json,
+        arena.allocator(),
+    );
+    try std.testing.expect(allowpubkey_response.result == .ack);
+
     const allowkind_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
         .{ .allowkind = 1984 },
         &admin_secret,
-        1_700_000_002,
+        1_700_000_003,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -88,12 +138,11 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     const ack_response = try client.parseAllowKindResponse(ack_response_json, arena.allocator());
     try std.testing.expect(ack_response.result == .ack);
 
-    const pubkey = [_]u8{0x11} ** 32;
     const ban_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
         .{ .banpubkey = .{ .pubkey = pubkey, .reason = "spam" } },
         &admin_secret,
-        1_700_000_003,
+        1_700_000_004,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
