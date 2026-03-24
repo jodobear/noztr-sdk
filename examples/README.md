@@ -164,7 +164,7 @@ They do not imply:
   - goal: compose `NIP-86` `supportedmethods`, `listallowedpubkeys`, `listblockedips`,
     `allowpubkey`, `listallowedkinds`, `allowkind`, `blockip`, and `banpubkey` requests over the
     explicit HTTP post seam with caller-driven `NIP-98` authorization setup, including one
-    SDK-prepared convenience path and typed response parsing
+    SDK-prepared convenience path, lower-level prepared-header helpers, and typed response parsing
   - kernel fixture help: `noztr.nip86_relay_management`, `noztr.nip98_http_auth`
   - control points: deterministic `NIP-86` request and response JSON shaping plus `NIP-98` auth-tag
     shaping stay on `noztr`, admin auth remains an explicit caller-owned secret-key precondition, and HTTP
