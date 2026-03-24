@@ -229,7 +229,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 - [relay_management_client.zig](../examples/relay_management_client.zig)
   - first explicit `NIP-86` admin request/result route over the shared HTTP seam, including typed
     relay-name mutation plus allowed-pubkey, moderation-needed, banned-event, and blocked-IP
-    inspection, along with explicit metadata, pubkey, event, and IP mutation, using the
+    inspection, along with explicit metadata, pubkey, kind, event, and IP mutation including the
+    new `unallowpubkey`, `disallowkind`, `unbanpubkey`, and `unblockip` reversal calls, using the
     SDK-prepared auth path while keeping lower-level prepared-header auth available on the client
     surface
 - [store_query.zig](../examples/store_query.zig)

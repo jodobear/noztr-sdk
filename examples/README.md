@@ -165,11 +165,11 @@ They do not imply:
   - goal: compose `NIP-86` `supportedmethods`, relay-metadata mutation
     (`changerelayname`, `changerelaydescription`, `changerelayicon`), `listallowedpubkeys`,
     `listeventsneedingmoderation`, `listbannedevents`, `listblockedips`, `allowpubkey`,
-    `allowevent`, `listallowedkinds`, `allowkind`, `blockip`, `banpubkey`, and `banevent` requests
-    over the explicit HTTP post seam with caller-driven `NIP-98` authorization setup, including
-    one SDK-prepared convenience path and typed response parsing; lower-level prepared-header
-    helpers remain available on the client surface but are not the primary taught route in this
-    recipe
+    `unallowpubkey`, `allowevent`, `listallowedkinds`, `allowkind`, `disallowkind`, `blockip`,
+    `unblockip`, `banpubkey`, `unbanpubkey`, and `banevent` requests over the explicit HTTP post
+    seam with caller-driven `NIP-98` authorization setup, using one broad SDK-prepared admin matrix
+    recipe plus typed response parsing; lower-level prepared-header helpers remain available on the
+    client surface but are not the primary taught route in this recipe
   - kernel fixture help: `noztr.nip86_relay_management`, `noztr.nip98_http_auth`
   - control points: deterministic `NIP-86` request and response JSON shaping plus `NIP-98` auth-tag
     shaping stay on `noztr`, admin auth remains an explicit caller-owned secret-key precondition, and HTTP
