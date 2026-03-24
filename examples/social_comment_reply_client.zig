@@ -1,7 +1,7 @@
 const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 
-test "recipe: social comment reply client composes note replies and NIP-22 comments explicitly" {
+test "recipe: social comment reply client composes note replies and coordinate-target NIP-22 comments explicitly" {
     var storage = noztr_sdk.client.social.comment_reply.Storage{};
     var client = noztr_sdk.client.social.comment_reply.Client.init(.{}, &storage);
 
@@ -36,19 +36,23 @@ test "recipe: social comment reply client composes note replies and NIP-22 comme
         &.{
             .created_at = 101,
             .content = "comment",
-            .root = .{ .external = .{
-                .value = "https://example.com/root",
-                .external_kind = "web",
-                .author_pubkey = [_]u8{0x01} ** 32,
+            .root = .{ .coordinate = .{
+                .kind = 30023,
+                .pubkey = [_]u8{0x01} ** 32,
+                .identifier = "article",
+                .relay_hint = "wss://relay.root",
             } },
-            .parent = .{ .external = .{
-                .value = "https://example.com/parent",
-                .external_kind = "web",
-                .author_pubkey = [_]u8{0x02} ** 32,
+            .parent = .{ .coordinate = .{
+                .kind = 30023,
+                .pubkey = [_]u8{0x02} ** 32,
+                .identifier = "section-1",
+                .relay_hint = "wss://relay.parent",
             } },
         },
     );
-    _ = try client.inspectCommentEvent(&comment.event);
+    const parsed_comment = try client.inspectCommentEvent(&comment.event);
+    try std.testing.expect(parsed_comment.root == .coordinate);
+    try std.testing.expect(parsed_comment.parent == .coordinate);
 
     var archive_storage = noztr_sdk.store.MemoryClientStore{};
     const archive = noztr_sdk.store.EventArchive.init(archive_storage.asClientStore());

@@ -65,8 +65,6 @@ pub const ExternalCommentTargetDraft = struct {
     value: []const u8,
     hint: ?[]const u8 = null,
     external_kind: []const u8,
-    author_pubkey: [32]u8,
-    author_hint: ?[]const u8 = null,
 };
 
 pub const CommentTargetDraft = union(enum) {
@@ -76,19 +74,25 @@ pub const CommentTargetDraft = union(enum) {
 };
 
 pub const CommentDraftStorage = struct {
-    tags: [6]noztr.nip01_event.EventTag = undefined,
+    tags: [8]noztr.nip01_event.EventTag = undefined,
     root_target_items: [4][]const u8 = undefined,
+    root_companion_items: [4][]const u8 = undefined,
     root_kind_items: [2][]const u8 = undefined,
     root_author_items: [3][]const u8 = undefined,
     parent_target_items: [4][]const u8 = undefined,
+    parent_companion_items: [4][]const u8 = undefined,
     parent_kind_items: [2][]const u8 = undefined,
     parent_author_items: [3][]const u8 = undefined,
     root_target_id_hex: [64]u8 = undefined,
     root_target_author_hex: [64]u8 = undefined,
     root_event_author_hex: [64]u8 = undefined,
+    root_companion_event_id_hex: [64]u8 = undefined,
+    root_companion_event_author_hex: [64]u8 = undefined,
     parent_target_id_hex: [64]u8 = undefined,
     parent_target_author_hex: [64]u8 = undefined,
     parent_event_author_hex: [64]u8 = undefined,
+    parent_companion_event_id_hex: [64]u8 = undefined,
+    parent_companion_event_author_hex: [64]u8 = undefined,
     root_kind_text: [20]u8 = undefined,
     parent_kind_text: [20]u8 = undefined,
     root_coordinate_text: [noztr.limits.tag_item_bytes_max]u8 = undefined,
@@ -551,19 +555,8 @@ fn appendCommentEventTargetTags(
     appendTag(storage, tag_count, target_items[0..target_item_count]) catch {
         return error.CommentDraftStorageTooSmall;
     };
-    appendCommentKindAndAuthorTags(
-        storage,
-        tag_count,
-        kind,
-        target.kind,
-        kind_items,
-        kind_text,
-        target.author_pubkey,
-        target.author_hint,
-        author_items,
-        author_hex,
-        null,
-    ) catch return error.CommentDraftStorageTooSmall;
+    try appendCommentKindTag(storage, tag_count, kind, kind_items, kind_text, target.kind, null);
+    try appendCommentAuthorTag(storage, tag_count, kind, author_items, author_hex, target.author_pubkey, target.author_hint);
 }
 
 fn appendCommentCoordinateTargetTags(
@@ -578,10 +571,9 @@ fn appendCommentCoordinateTargetTags(
             .parent => error.ParentTextNoteUnsupported,
         };
     }
-    std.debug.assert(target.event_hint == null or target.event_id != null);
-    if (target.event_id != null) return error.CommentDraftStorageTooSmall;
 
     const target_items = targetItemsFor(storage, kind);
+    const companion_items = companionItemsFor(storage, kind);
     const coordinate_text = coordinateTextFor(storage, kind);
     const author_items = authorItemsFor(storage, kind);
     const author_hex = authorHexFor(storage, kind);
@@ -598,19 +590,19 @@ fn appendCommentCoordinateTargetTags(
     appendTag(storage, tag_count, target_items[0..target_item_count]) catch {
         return error.CommentDraftStorageTooSmall;
     };
-    appendCommentKindAndAuthorTags(
-        storage,
-        tag_count,
-        kind,
-        target.kind,
-        kind_items,
-        kind_text,
-        target.pubkey,
-        target.author_hint,
-        author_items,
-        author_hex,
-        null,
-    ) catch return error.CommentDraftStorageTooSmall;
+    if (target.event_id) |event_id| {
+        try appendCommentCompanionEventTag(
+            storage,
+            tag_count,
+            kind,
+            companion_items,
+            event_id,
+            target.event_hint,
+            target.pubkey,
+        );
+    }
+    try appendCommentKindTag(storage, tag_count, kind, kind_items, kind_text, target.kind, null);
+    try appendCommentAuthorTag(storage, tag_count, kind, author_items, author_hex, target.pubkey, target.author_hint);
 }
 
 fn appendCommentExternalTargetTags(
@@ -620,8 +612,6 @@ fn appendCommentExternalTargetTags(
     target: ExternalCommentTargetDraft,
 ) Error!void {
     const target_items = targetItemsFor(storage, kind);
-    const author_items = authorItemsFor(storage, kind);
-    const author_hex = authorHexFor(storage, kind);
     const kind_items = kindItemsFor(storage, kind);
     const kind_text = kindTextFor(storage, kind);
     target_items[0] = targetTagName(kind, .external);
@@ -634,44 +624,73 @@ fn appendCommentExternalTargetTags(
     appendTag(storage, tag_count, target_items[0..target_item_count]) catch {
         return error.CommentDraftStorageTooSmall;
     };
-    appendCommentKindAndAuthorTags(
-        storage,
-        tag_count,
-        kind,
-        0,
-        kind_items,
-        kind_text,
-        target.author_pubkey,
-        target.author_hint,
-        author_items,
-        author_hex,
-        target.external_kind,
-    ) catch return error.CommentDraftStorageTooSmall;
+    try appendCommentKindTag(storage, tag_count, kind, kind_items, kind_text, 0, target.external_kind);
 }
 
-fn appendCommentKindAndAuthorTags(
+fn appendCommentCompanionEventTag(
     storage: *CommentDraftStorage,
     tag_count: *usize,
     kind: CommentTargetKind,
-    target_kind: u32,
+    companion_items: [][]const u8,
+    event_id: [32]u8,
+    event_hint: ?[]const u8,
+    event_author_pubkey: [32]u8,
+) error{CommentDraftStorageTooSmall}!void {
+    const event_id_hex_storage = switch (kind) {
+        .root => storage.root_companion_event_id_hex[0..],
+        .parent => storage.parent_companion_event_id_hex[0..],
+    };
+    const event_author_hex_storage = switch (kind) {
+        .root => storage.root_companion_event_author_hex[0..],
+        .parent => storage.parent_companion_event_author_hex[0..],
+    };
+    const event_id_hex = std.fmt.bytesToHex(event_id, .lower);
+    @memcpy(event_id_hex_storage[0..event_id_hex.len], event_id_hex[0..]);
+    companion_items[0] = switch (kind) {
+        .root => "E",
+        .parent => "e",
+    };
+    companion_items[1] = event_id_hex_storage[0..event_id_hex.len];
+    var item_count: usize = 2;
+    if (event_hint) |hint| {
+        companion_items[item_count] = hint;
+        item_count += 1;
+    }
+    const event_author_hex = std.fmt.bytesToHex(event_author_pubkey, .lower);
+    @memcpy(event_author_hex_storage[0..event_author_hex.len], event_author_hex[0..]);
+    companion_items[item_count] = event_author_hex_storage[0..event_author_hex.len];
+    item_count += 1;
+    try appendTag(storage, tag_count, companion_items[0..item_count]);
+}
+
+fn appendCommentKindTag(
+    storage: *CommentDraftStorage,
+    tag_count: *usize,
+    kind: CommentTargetKind,
     kind_items: [][]const u8,
     kind_text: []u8,
-    author_pubkey: [32]u8,
-    author_hint: ?[]const u8,
-    author_items: [][]const u8,
-    author_hex: []u8,
+    target_kind: u32,
     external_kind_override: ?[]const u8,
 ) error{CommentDraftStorageTooSmall}!void {
     kind_items[0] = kindTagName(kind);
-    if (external_kind_override) |external_kind| {
-        kind_items[1] = external_kind;
-    } else {
-        kind_items[1] = std.fmt.bufPrint(kind_text, "{d}", .{target_kind}) catch {
+    kind_items[1] = if (external_kind_override) |external_kind|
+        external_kind
+    else
+        std.fmt.bufPrint(kind_text, "{d}", .{target_kind}) catch {
             return error.CommentDraftStorageTooSmall;
         };
-    }
     try appendTag(storage, tag_count, kind_items[0..2]);
+}
 
+fn appendCommentAuthorTag(
+    storage: *CommentDraftStorage,
+    tag_count: *usize,
+    kind: CommentTargetKind,
+    author_items: [][]const u8,
+    author_hex: []u8,
+    author_pubkey: [32]u8,
+    author_hint: ?[]const u8,
+) error{CommentDraftStorageTooSmall}!void {
     const pubkey_hex = std.fmt.bytesToHex(author_pubkey, .lower);
     @memcpy(author_hex[0..pubkey_hex.len], pubkey_hex[0..]);
     author_items[0] = authorTagName(kind);
@@ -705,6 +724,13 @@ fn kindItemsFor(storage: *CommentDraftStorage, kind: CommentTargetKind) [][]cons
     return switch (kind) {
         .root => storage.root_kind_items[0..],
         .parent => storage.parent_kind_items[0..],
+    };
+}
+
+fn companionItemsFor(storage: *CommentDraftStorage, kind: CommentTargetKind) [][]const u8 {
+    return switch (kind) {
+        .root => storage.root_companion_items[0..],
+        .parent => storage.parent_companion_items[0..],
     };
 }
 
@@ -875,12 +901,10 @@ test "social comment reply client composes reply and comment publish with explic
             .root = .{ .external = .{
                 .value = "https://example.com/root",
                 .external_kind = "web",
-                .author_pubkey = [_]u8{0x01} ** 32,
             } },
             .parent = .{ .external = .{
                 .value = "https://example.com/parent",
                 .external_kind = "web",
-                .author_pubkey = [_]u8{0x02} ** 32,
             } },
         },
     );
@@ -908,4 +932,118 @@ test "social comment reply client composes reply and comment publish with explic
         arena.allocator(),
     );
     try std.testing.expectEqual(@as(usize, 1), stored_comments.comments.len);
+}
+
+test "social comment reply client composes event-target comments coherently" {
+    var storage = Storage{};
+    var client = Client.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x61} ** 32;
+    const root_event_id = [_]u8{0x31} ** 32;
+    const root_event_author = [_]u8{0xa1} ** 32;
+    const parent_event_id = [_]u8{0x32} ** 32;
+    const parent_event_author = [_]u8{0xa2} ** 32;
+
+    var comment_storage = CommentDraftStorage{};
+    var comment_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared_comment = try client.prepareCommentPublish(
+        comment_event_json[0..],
+        &comment_storage,
+        &secret_key,
+        &.{
+            .created_at = 12,
+            .content = "event-target comment",
+            .root = .{ .event = .{
+                .event_id = root_event_id,
+                .relay_hint = "wss://relay.root",
+                .event_author_pubkey = root_event_author,
+                .author_pubkey = root_event_author,
+                .author_hint = "wss://author.root",
+                .kind = 30023,
+            } },
+            .parent = .{ .event = .{
+                .event_id = parent_event_id,
+                .relay_hint = "wss://relay.parent",
+                .event_author_pubkey = parent_event_author,
+                .author_pubkey = parent_event_author,
+                .author_hint = "wss://author.parent",
+                .kind = comment_event_kind,
+            } },
+        },
+    );
+
+    const parsed_comment = try client.inspectCommentEvent(&prepared_comment.event);
+    switch (parsed_comment.root) {
+        .event => |root| {
+            try std.testing.expectEqual(root_event_id, root.event_id);
+            try std.testing.expectEqual(root_event_author, root.event_author_pubkey.?);
+            try std.testing.expectEqual(root_event_author, root.author_pubkey);
+            try std.testing.expectEqual(@as(u32, 30023), root.kind);
+        },
+        else => return error.UnexpectedError,
+    }
+    switch (parsed_comment.parent) {
+        .event => |parent| {
+            try std.testing.expectEqual(parent_event_id, parent.event_id);
+            try std.testing.expectEqual(parent_event_author, parent.event_author_pubkey.?);
+            try std.testing.expectEqual(parent_event_author, parent.author_pubkey);
+            try std.testing.expectEqual(@as(u32, comment_event_kind), parent.kind);
+        },
+        else => return error.UnexpectedError,
+    }
+}
+
+test "social comment reply client composes coordinate-target comments coherently" {
+    var storage = Storage{};
+    var client = Client.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x71} ** 32;
+    const root_pubkey = [_]u8{0xc1} ** 32;
+    const parent_pubkey = [_]u8{0xc2} ** 32;
+
+    var comment_storage = CommentDraftStorage{};
+    var comment_event_json: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared_comment = try client.prepareCommentPublish(
+        comment_event_json[0..],
+        &comment_storage,
+        &secret_key,
+        &.{
+            .created_at = 13,
+            .content = "coordinate-target comment",
+            .root = .{ .coordinate = .{
+                .kind = 30023,
+                .pubkey = root_pubkey,
+                .identifier = "article",
+                .relay_hint = "wss://relay.root",
+                .author_hint = "wss://author.root",
+            } },
+            .parent = .{ .coordinate = .{
+                .kind = 30023,
+                .pubkey = parent_pubkey,
+                .identifier = "section-1",
+                .relay_hint = "wss://relay.parent",
+                .author_hint = "wss://author.parent",
+            } },
+        },
+    );
+
+    const parsed_comment = try client.inspectCommentEvent(&prepared_comment.event);
+    switch (parsed_comment.root) {
+        .coordinate => |root| {
+            try std.testing.expectEqual(@as(u32, 30023), root.kind);
+            try std.testing.expectEqual(root_pubkey, root.pubkey);
+            try std.testing.expectEqualStrings("article", root.identifier);
+            try std.testing.expectEqualStrings("wss://relay.root", root.relay_hint.?);
+        },
+        else => return error.UnexpectedError,
+    }
+    switch (parsed_comment.parent) {
+        .coordinate => |parent| {
+            try std.testing.expectEqual(@as(u32, 30023), parent.kind);
+            try std.testing.expectEqual(parent_pubkey, parent.pubkey);
+            try std.testing.expectEqualStrings("section-1", parent.identifier);
+            try std.testing.expectEqualStrings("wss://relay.parent", parent.relay_hint.?);
+        },
+        else => return error.UnexpectedError,
+    }
 }
