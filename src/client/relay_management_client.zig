@@ -51,6 +51,24 @@ pub const AllowKindRequest = struct {
     kind: u32,
 };
 
+pub const ChangeRelayNameRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+    name: []const u8,
+};
+
+pub const ChangeRelayDescriptionRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+    description: []const u8,
+};
+
+pub const ChangeRelayIconRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+    icon: []const u8,
+};
+
 pub const BlockIpRequest = struct {
     url: []const u8,
     authorization: ?[]const u8 = null,
@@ -219,6 +237,30 @@ pub const Client = struct {
         return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
+    pub fn parseChangeRelayNameResponse(
+        _: Client,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .changerelayname, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn parseChangeRelayDescriptionResponse(
+        _: Client,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .changerelaydescription, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn parseChangeRelayIconResponse(
+        _: Client,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .changerelayicon, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
     pub fn parseBlockIpResponse(
         _: Client,
         response_json: []const u8,
@@ -353,6 +395,48 @@ pub const Client = struct {
         const request_json = try serializeRequestJson(request_json_out, .{ .allowkind = request.kind });
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
         return parseResponse(response_json, .allowkind, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn changeRelayName(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const ChangeRelayNameRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(request_json_out, .{ .changerelayname = request.name });
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .changerelayname, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn changeRelayDescription(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const ChangeRelayDescriptionRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(
+            request_json_out,
+            .{ .changerelaydescription = request.description },
+        );
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .changerelaydescription, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn changeRelayIcon(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const ChangeRelayIconRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(request_json_out, .{ .changerelayicon = request.icon });
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .changerelayicon, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn blockIp(
@@ -919,6 +1003,92 @@ test "relay management client posts allowkind and parses ack response" {
     try std.testing.expect(response.result == .ack);
 }
 
+test "relay management client posts changerelaydescription and parses ack response" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const expected_body =
+        "{\"method\":\"changerelaydescription\",\"params\":[\"Bounded moderated relay\"]}";
+    var fake = FakeHttp{ .expected_body = expected_body, .response_body = "{\"result\":true,\"error\":null}" };
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [160]u8 = undefined;
+    var response_json: [64]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.changeRelayDescription(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .description = "Bounded moderated relay" },
+        request_json[0..],
+        response_json[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .ack);
+}
+
+test "relay management client posts changerelayicon and parses ack response" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const expected_body =
+        "{\"method\":\"changerelayicon\",\"params\":[\"https://relay.example/icon.png\"]}";
+    var fake = FakeHttp{ .expected_body = expected_body, .response_body = "{\"result\":true,\"error\":null}" };
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [160]u8 = undefined;
+    var response_json: [64]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.changeRelayIcon(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .icon = "https://relay.example/icon.png" },
+        request_json[0..],
+        response_json[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .ack);
+}
+
 test "relay management client posts banevent and parses ack response" {
     const FakeHttp = struct {
         expected_body: []const u8,
@@ -959,6 +1129,56 @@ test "relay management client posts banevent and parses ack response" {
         response_json[0..],
         arena.allocator(),
     );
+
+    try std.testing.expect(response.result == .ack);
+}
+
+test "relay management client parses prepared changerelayname responses coherently" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (request.authorization == null) return error.InvalidResponse;
+            const response = "{\"result\":true,\"error\":null}";
+            @memcpy(out[0..response.len], response);
+            return out[0..response.len];
+        }
+    };
+
+    const secret_key = [_]u8{0x56} ** 32;
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+    var authorization: [1024]u8 = undefined;
+    var authorization_json: [1024]u8 = undefined;
+    var response_json: [64]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const prepared = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .changerelayname = "Noztr Relay" },
+        &secret_key,
+        1_700_000_500,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
+    const response = try client.parseChangeRelayNameResponse(response_json_slice, arena.allocator());
 
     try std.testing.expect(response.result == .ack);
 }

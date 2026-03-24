@@ -61,6 +61,72 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     const methods_response = try client.parseSupportedMethodsResponse(methods_response_json, methods[0..], arena.allocator());
     try std.testing.expect(methods_response.result == .methods);
 
+    const changerelayname_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .changerelayname = "Noztr Relay" },
+        &admin_secret,
+        1_700_000_000,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var relay_name_http = FakeHttp{ .response_body = "{\"result\":true,\"error\":null}" };
+    const relay_name_response_json = try client.postPrepared(
+        relay_name_http.client(),
+        &changerelayname_post,
+        response_json[0..],
+    );
+    const relay_name_response = try client.parseChangeRelayNameResponse(
+        relay_name_response_json,
+        arena.allocator(),
+    );
+    try std.testing.expect(relay_name_response.result == .ack);
+
+    const changerelaydescription_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .changerelaydescription = "A bounded operator relay" },
+        &admin_secret,
+        1_700_000_000,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var relay_description_http = FakeHttp{ .response_body = "{\"result\":true,\"error\":null}" };
+    const relay_description_response_json = try client.postPrepared(
+        relay_description_http.client(),
+        &changerelaydescription_post,
+        response_json[0..],
+    );
+    const relay_description_response = try client.parseChangeRelayDescriptionResponse(
+        relay_description_response_json,
+        arena.allocator(),
+    );
+    try std.testing.expect(relay_description_response.result == .ack);
+
+    const changerelayicon_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .changerelayicon = "https://relay.example/icon.png" },
+        &admin_secret,
+        1_700_000_000,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var relay_icon_http = FakeHttp{ .response_body = "{\"result\":true,\"error\":null}" };
+    const relay_icon_response_json = try client.postPrepared(
+        relay_icon_http.client(),
+        &changerelayicon_post,
+        response_json[0..],
+    );
+    const relay_icon_response = try client.parseChangeRelayIconResponse(
+        relay_icon_response_json,
+        arena.allocator(),
+    );
+    try std.testing.expect(relay_icon_response.result == .ack);
+
     const allowed_kinds_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
         .listallowedkinds,
@@ -81,7 +147,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .listallowedpubkeys,
         &admin_secret,
-        1_700_000_001,
+        1_700_000_002,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -107,7 +173,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .listblockedips,
         &admin_secret,
-        1_700_000_002,
+        1_700_000_003,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -134,7 +200,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .listbannedevents,
         &admin_secret,
-        1_700_000_003,
+        1_700_000_004,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -160,7 +226,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .listeventsneedingmoderation,
         &admin_secret,
-        1_700_000_004,
+        1_700_000_005,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -187,7 +253,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .{ .allowpubkey = .{ .pubkey = pubkey, .reason = "operator" } },
         &admin_secret,
-        1_700_000_002,
+        1_700_000_006,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -209,7 +275,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .{ .allowkind = 1984 },
         &admin_secret,
-        1_700_000_003,
+        1_700_000_007,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -224,7 +290,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .{ .blockip = .{ .ip = "198.51.100.42", .reason = "manual" } },
         &admin_secret,
-        1_700_000_004,
+        1_700_000_008,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -238,7 +304,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .{ .banpubkey = .{ .pubkey = pubkey, .reason = "spam" } },
         &admin_secret,
-        1_700_000_005,
+        1_700_000_009,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -253,7 +319,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .{ .banevent = .{ .id = event_id, .reason = "malware" } },
         &admin_secret,
-        1_700_000_006,
+        1_700_000_010,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -267,7 +333,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
         "https://relay.example/admin",
         .{ .allowevent = .{ .id = event_id, .reason = "manual-review" } },
         &admin_secret,
-        1_700_000_007,
+        1_700_000_011,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],

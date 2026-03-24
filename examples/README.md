@@ -161,7 +161,8 @@ They do not imply:
     caller can bind receipt validation to the original request event, and HTTP callback handling
     stays explicit over the public transport seam instead of becoming a hidden wallet runtime
 - `relay_management_client.zig`
-  - goal: compose `NIP-86` `supportedmethods`, `listallowedpubkeys`,
+  - goal: compose `NIP-86` `supportedmethods`, relay-metadata mutation
+    (`changerelayname`, `changerelaydescription`, `changerelayicon`), `listallowedpubkeys`,
     `listeventsneedingmoderation`, `listbannedevents`, `listblockedips`, `allowpubkey`,
     `allowevent`, `listallowedkinds`, `allowkind`, `blockip`, `banpubkey`, and `banevent` requests
     over the explicit HTTP post seam with caller-driven `NIP-98` authorization setup, including
