@@ -38,6 +38,13 @@ pub const AllowPubkeyRequest = struct {
     reason: ?[]const u8 = null,
 };
 
+pub const AllowEventRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+    id: [32]u8,
+    reason: ?[]const u8 = null,
+};
+
 pub const AllowKindRequest = struct {
     url: []const u8,
     authorization: ?[]const u8 = null,
@@ -69,6 +76,11 @@ pub const ListBlockedIpsRequest = struct {
 };
 
 pub const ListBannedEventsRequest = struct {
+    url: []const u8,
+    authorization: ?[]const u8 = null,
+};
+
+pub const ListEventsNeedingModerationRequest = struct {
     url: []const u8,
     authorization: ?[]const u8 = null,
 };
@@ -191,6 +203,14 @@ pub const Client = struct {
         return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
+    pub fn parseAllowEventResponse(
+        _: Client,
+        response_json: []const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .allowevent, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
     pub fn parseAllowKindResponse(
         _: Client,
         response_json: []const u8,
@@ -251,6 +271,15 @@ pub const Client = struct {
         return parseResponse(response_json, .listbannedevents, &.{}, &.{}, events_out, &.{}, &.{}, scratch);
     }
 
+    pub fn parseListEventsNeedingModerationResponse(
+        _: Client,
+        response_json: []const u8,
+        events_out: []noztr.nip86_relay_management.EventIdReason,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        return parseResponse(response_json, .listeventsneedingmoderation, &.{}, &.{}, events_out, &.{}, &.{}, scratch);
+    }
+
     pub fn fetchSupportedMethods(
         _: Client,
         http: transport.HttpClient,
@@ -295,6 +324,22 @@ pub const Client = struct {
         );
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
         return parseResponse(response_json, .allowpubkey, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
+    }
+
+    pub fn allowEvent(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const AllowEventRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(
+            request_json_out,
+            .{ .allowevent = .{ .id = request.id, .reason = request.reason } },
+        );
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .allowevent, &.{}, &.{}, &.{}, &.{}, &.{}, scratch);
     }
 
     pub fn allowKind(
@@ -396,6 +441,20 @@ pub const Client = struct {
         const request_json = try serializeRequestJson(request_json_out, .listbannedevents);
         const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
         return parseResponse(response_json, .listbannedevents, &.{}, &.{}, events_out, &.{}, &.{}, scratch);
+    }
+
+    pub fn fetchListEventsNeedingModeration(
+        _: Client,
+        http: transport.HttpClient,
+        request: *const ListEventsNeedingModerationRequest,
+        request_json_out: []u8,
+        response_json_out: []u8,
+        events_out: []noztr.nip86_relay_management.EventIdReason,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip86_relay_management.Response {
+        const request_json = try serializeRequestJson(request_json_out, .listeventsneedingmoderation);
+        const response_json = try postJson(http, request.url, request.authorization, request_json, response_json_out);
+        return parseResponse(response_json, .listeventsneedingmoderation, &.{}, &.{}, events_out, &.{}, &.{}, scratch);
     }
 };
 
@@ -774,6 +833,50 @@ test "relay management client posts allowpubkey and parses ack response" {
     try std.testing.expect(response.result == .ack);
 }
 
+test "relay management client posts allowevent and parses ack response" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const event_id = [_]u8{0xbb} ** 32;
+    const expected_body =
+        "{\"method\":\"allowevent\",\"params\":[\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"reviewed\"]}";
+    var fake = FakeHttp{ .expected_body = expected_body, .response_body = "{\"result\":true,\"error\":null}" };
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [192]u8 = undefined;
+    var response_json: [64]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.allowEvent(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .id = event_id, .reason = "reviewed" },
+        request_json[0..],
+        response_json[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .ack);
+}
+
 test "relay management client posts allowkind and parses ack response" {
     const FakeHttp = struct {
         expected_body: []const u8,
@@ -1101,6 +1204,68 @@ test "relay management client posts listbannedevents and parses typed list respo
     try std.testing.expect(response.result.events[1].reason == null);
 }
 
+test "relay management client posts listeventsneedingmoderation and parses typed list response" {
+    const FakeHttp = struct {
+        expected_url: []const u8,
+        expected_authorization: ?[]const u8,
+        expected_body: []const u8,
+        response_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.url, self.expected_url)) return error.NotFound;
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (self.expected_authorization) |authorization| {
+                if (request.authorization == null) return error.InvalidResponse;
+                if (!std.mem.eql(u8, request.authorization.?, authorization)) return error.InvalidResponse;
+            }
+            if (self.response_body.len > out.len) return error.ResponseTooLarge;
+            @memcpy(out[0..self.response_body.len], self.response_body);
+            return out[0..self.response_body.len];
+        }
+    };
+
+    const first_event = [_]u8{0x88} ** 32;
+    const second_event = [_]u8{0x99} ** 32;
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var fake = FakeHttp{
+        .expected_url = "https://relay.example/admin",
+        .expected_authorization = "Nostr token",
+        .expected_body = "{\"method\":\"listeventsneedingmoderation\",\"params\":[]}",
+        .response_body = "{\"result\":[{\"id\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"reason\":\"reported\"},{\"id\":\"9999999999999999999999999999999999999999999999999999999999999999\"}],\"error\":null}",
+    };
+    var request_json: [128]u8 = undefined;
+    var response_json: [256]u8 = undefined;
+    var events: [2]noztr.nip86_relay_management.EventIdReason = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const response = try client.fetchListEventsNeedingModeration(
+        fake.client(),
+        &.{ .url = "https://relay.example/admin", .authorization = "Nostr token" },
+        request_json[0..],
+        response_json[0..],
+        events[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .events);
+    try std.testing.expectEqual(@as(usize, 2), response.result.events.len);
+    try std.testing.expectEqualDeep(first_event, response.result.events[0].id);
+    try std.testing.expectEqualStrings("reported", response.result.events[0].reason.?);
+    try std.testing.expectEqualDeep(second_event, response.result.events[1].id);
+    try std.testing.expect(response.result.events[1].reason == null);
+}
+
 test "relay management client posts listblockedips and parses typed list response" {
     const FakeHttp = struct {
         expected_url: []const u8,
@@ -1274,6 +1439,66 @@ test "relay management client parses prepared listbannedevents responses coheren
     try std.testing.expectEqual(@as(usize, 1), response.result.events.len);
     try std.testing.expectEqualDeep(expected_event, response.result.events[0].id);
     try std.testing.expectEqualStrings("reviewed", response.result.events[0].reason.?);
+}
+
+test "relay management client parses prepared listeventsneedingmoderation responses coherently" {
+    const FakeHttp = struct {
+        expected_body: []const u8,
+
+        fn client(self: *@This()) transport.HttpClient {
+            return .{ .ctx = self, .get_fn = get, .post_fn = post };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+
+        fn post(ctx: *anyopaque, request: transport.HttpPostRequest, out: []u8) transport.HttpError![]const u8 {
+            const self: *@This() = @ptrCast(@alignCast(ctx));
+            if (!std.mem.eql(u8, request.body, self.expected_body)) return error.InvalidResponse;
+            if (request.authorization == null) return error.InvalidResponse;
+            const response =
+                "{\"result\":[{\"id\":\"abababababababababababababababababababababababababababababababab\",\"reason\":\"queue\"}],\"error\":null}";
+            @memcpy(out[0..response.len], response);
+            return out[0..response.len];
+        }
+    };
+
+    const secret_key = [_]u8{0x48} ** 32;
+    const expected_event = [_]u8{0xab} ** 32;
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+    var request_json: [128]u8 = undefined;
+    var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
+    var authorization: [1024]u8 = undefined;
+    var authorization_json: [1024]u8 = undefined;
+    var response_json: [192]u8 = undefined;
+    var events: [1]noztr.nip86_relay_management.EventIdReason = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    const prepared = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listeventsneedingmoderation,
+        &secret_key,
+        1_700_000_575,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var fake = FakeHttp{ .expected_body = prepared.request_json };
+    const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
+    const response = try client.parseListEventsNeedingModerationResponse(
+        response_json_slice,
+        events[0..],
+        arena.allocator(),
+    );
+
+    try std.testing.expect(response.result == .events);
+    try std.testing.expectEqual(@as(usize, 1), response.result.events.len);
+    try std.testing.expectEqualDeep(expected_event, response.result.events[0].id);
+    try std.testing.expectEqualStrings("queue", response.result.events[0].reason.?);
 }
 
 test "relay management client accepts explicit NIP-98 authorization headers" {

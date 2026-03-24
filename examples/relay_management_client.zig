@@ -42,6 +42,7 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     var blocked_ips: [1]noztr.nip86_relay_management.IpReason = undefined;
     var allowed_pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
     var banned_events: [1]noztr.nip86_relay_management.EventIdReason = undefined;
+    var moderation_events: [1]noztr.nip86_relay_management.EventIdReason = undefined;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -155,6 +156,32 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     try std.testing.expect(banned_events_response.result == .events);
     try std.testing.expectEqualStrings("reviewed", banned_events_response.result.events[0].reason.?);
 
+    const moderation_events_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listeventsneedingmoderation,
+        &admin_secret,
+        1_700_000_004,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var moderation_events_http = FakeHttp{
+        .response_body = "{\"result\":[{\"id\":\"abababababababababababababababababababababababababababababababab\",\"reason\":\"reported\"}],\"error\":null}",
+    };
+    const moderation_events_response_json = try client.postPrepared(
+        moderation_events_http.client(),
+        &moderation_events_post,
+        response_json[0..],
+    );
+    const moderation_events_response = try client.parseListEventsNeedingModerationResponse(
+        moderation_events_response_json,
+        moderation_events[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(moderation_events_response.result == .events);
+    try std.testing.expectEqualStrings("reported", moderation_events_response.result.events[0].reason.?);
+
     const pubkey = [_]u8{0x11} ** 32;
     const allowpubkey_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
@@ -235,4 +262,18 @@ test "recipe: relay management client posts typed NIP-86 calls with explicit NIP
     const banevent_response_json = try client.postPrepared(ack_http.client(), &banevent_post, response_json[0..]);
     const banevent_response = try client.parseBanEventResponse(banevent_response_json, arena.allocator());
     try std.testing.expect(banevent_response.result == .ack);
+
+    const allowevent_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .{ .allowevent = .{ .id = event_id, .reason = "manual-review" } },
+        &admin_secret,
+        1_700_000_007,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    const allowevent_response_json = try client.postPrepared(ack_http.client(), &allowevent_post, response_json[0..]);
+    const allowevent_response = try client.parseAllowEventResponse(allowevent_response_json, arena.allocator());
+    try std.testing.expect(allowevent_response.result == .ack);
 }
