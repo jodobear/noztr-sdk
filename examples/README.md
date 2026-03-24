@@ -161,9 +161,9 @@ They do not imply:
     caller can retain receipt-validation inputs, and HTTP callback handling stays explicit over the
     public transport seam instead of becoming a hidden wallet runtime
 - `relay_management_client.zig`
-  - goal: compose one `NIP-86` `supportedmethods` request and one `banpubkey` request over the
-    explicit HTTP post seam with caller-driven `NIP-98` authorization setup, including one
-    SDK-prepared convenience path and typed response parsing
+  - goal: compose `NIP-86` `supportedmethods`, `listallowedkinds`, `allowkind`, and `banpubkey`
+    requests over the explicit HTTP post seam with caller-driven `NIP-98` authorization setup,
+    including one SDK-prepared convenience path and typed response parsing
   - kernel fixture help: `noztr.nip86_relay_management`, `noztr.nip98_http_auth`
   - control points: deterministic `NIP-86` request and response JSON shaping plus `NIP-98` auth-tag
     shaping stay on `noztr`, admin auth remains an explicit caller-owned secret-key precondition, and HTTP
