@@ -20,6 +20,7 @@ pub const Error =
         CallbackUrlTooSmall,
         MissingInvoice,
         InvalidInvoiceResponse,
+        ReceiptRequestMismatch,
     };
 
 pub const ZapFlowConfig = struct {
@@ -102,6 +103,11 @@ pub const InvoiceFetchRequest = struct {
 pub const InvoiceResult = struct {
     invoice: []const u8,
     verify_url: ?[]const u8 = null,
+};
+
+pub const ReceiptValidationContext = struct {
+    request_event_id: [32]u8,
+    receipt_signer_pubkey: [32]u8,
 };
 
 pub const ZapFlow = struct {
@@ -302,6 +308,48 @@ pub const ZapFlow = struct {
         );
     }
 
+    pub fn prepareReceiptValidationContext(
+        self: ZapFlow,
+        endpoint: PayEndpoint,
+        request_event: *const noztr.nip01_event.Event,
+        expected_amount_msats: ?u64,
+        relays_out: [][]const u8,
+    ) Error!ReceiptValidationContext {
+        if (!endpoint.allows_nostr) return error.InvalidPayEndpoint;
+        const receipt_signer_pubkey = endpoint.receipt_signer_pubkey orelse {
+            return error.InvalidPayEndpoint;
+        };
+        _ = try self.validateZapRequestEvent(
+            request_event,
+            expected_amount_msats,
+            receipt_signer_pubkey,
+            relays_out,
+        );
+        return .{
+            .request_event_id = request_event.id,
+            .receipt_signer_pubkey = receipt_signer_pubkey,
+        };
+    }
+
+    pub fn validateReceiptForContext(
+        self: ZapFlow,
+        event: *const noztr.nip01_event.Event,
+        context: ReceiptValidationContext,
+        relays_out: [][]const u8,
+        scratch: std.mem.Allocator,
+    ) Error!noztr.nip57_zaps.ZapReceipt {
+        const receipt = try self.validateZapReceiptEvent(
+            event,
+            context.receipt_signer_pubkey,
+            relays_out,
+            scratch,
+        );
+        if (!std.mem.eql(u8, &receipt.request.id, &context.request_event_id)) {
+            return error.ReceiptRequestMismatch;
+        }
+        return receipt;
+    }
+
     pub fn fetchPayEndpoint(
         _: ZapFlow,
         http: transport.HttpClient,
@@ -320,12 +368,21 @@ pub const ZapFlow = struct {
         request: InvoiceFetchRequest,
     ) Error!InvoiceResult {
         if (!request.endpoint.allows_nostr) return error.InvalidPayEndpoint;
+        if (request.endpoint.receipt_signer_pubkey == null) return error.InvalidPayEndpoint;
         if (request.endpoint.min_sendable_msats) |min_sendable_msats| {
             if (request.amount_msats < min_sendable_msats) return error.AmountOutsideEndpointRange;
         }
         if (request.endpoint.max_sendable_msats) |max_sendable_msats| {
             if (request.amount_msats > max_sendable_msats) return error.AmountOutsideEndpointRange;
         }
+        var request_relays: [8][]const u8 = undefined;
+        const request_event = try parseVerifiedEventJson(request.zap_request_json, request.scratch);
+        _ = try noztr.nip57_zaps.zap_request_validate(
+            &request_event,
+            request.amount_msats,
+            request.endpoint.receipt_signer_pubkey,
+            request_relays[0..],
+        );
         const callback_url = try composeInvoiceRequestUrl(
             request.storage.url_buffer,
             request.endpoint.callback_url,
@@ -383,6 +440,15 @@ fn parsePayEndpoint(body: []const u8, scratch: std.mem.Allocator) Error!PayEndpo
     if (endpoint.callback_url.len == 0) return error.MissingCallbackUrl;
     if (endpoint.allows_nostr and endpoint.receipt_signer_pubkey == null) return error.InvalidPayEndpoint;
     return endpoint;
+}
+
+fn parseVerifiedEventJson(
+    event_json: []const u8,
+    scratch: std.mem.Allocator,
+) Error!noztr.nip01_event.Event {
+    const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
+    try noztr.nip01_event.event_verify(&event);
+    return event;
 }
 
 fn parseInvoiceResult(body: []const u8, scratch: std.mem.Allocator) Error!InvoiceResult {
@@ -498,6 +564,69 @@ fn validateCoordinate(coordinate: Coordinate) noztr.nip57_zaps.ZapError!void {
     const addressable = coordinate.kind >= 30_000 and coordinate.kind < 40_000;
     if (!replaceable and !addressable) return error.InvalidCoordinateTag;
     if (addressable and coordinate.identifier.len == 0) return error.InvalidCoordinateTag;
+}
+
+const ReceiptFixtureStorage = struct {
+    tags: [4]noztr.nip01_event.EventTag = undefined,
+    builders: [4]noztr.nip57_zaps.TagBuilder = undefined,
+    recipient_pubkey_hex: [64]u8 = undefined,
+    sender_pubkey_hex: [64]u8 = undefined,
+};
+
+fn buildZapReceiptFixture(
+    receipt_signer_secret_key: *const [32]u8,
+    request_json: []const u8,
+    recipient_pubkey: [32]u8,
+    sender_pubkey: [32]u8,
+    bolt11: []const u8,
+    created_at: u64,
+    storage: *ReceiptFixtureStorage,
+    scratch: std.mem.Allocator,
+) !noztr.nip01_event.Event {
+    var tag_count: usize = 0;
+    const recipient_pubkey_hex = std.fmt.bytesToHex(recipient_pubkey, .lower);
+    @memcpy(storage.recipient_pubkey_hex[0..], recipient_pubkey_hex[0..]);
+    storage.tags[tag_count] = try noztr.nip57_zaps.zap_build_pubkey_tag(
+        &storage.builders[tag_count],
+        "p",
+        storage.recipient_pubkey_hex[0..],
+    );
+    tag_count += 1;
+
+    const sender_pubkey_hex = std.fmt.bytesToHex(sender_pubkey, .lower);
+    @memcpy(storage.sender_pubkey_hex[0..], sender_pubkey_hex[0..]);
+    storage.tags[tag_count] = try noztr.nip57_zaps.zap_build_pubkey_tag(
+        &storage.builders[tag_count],
+        "P",
+        storage.sender_pubkey_hex[0..],
+    );
+    tag_count += 1;
+
+    storage.tags[tag_count] = try noztr.nip57_zaps.receipt_build_bolt11_tag(
+        &storage.builders[tag_count],
+        bolt11,
+    );
+    tag_count += 1;
+
+    storage.tags[tag_count] = try noztr.nip57_zaps.receipt_build_description_tag(
+        &storage.builders[tag_count],
+        request_json,
+        scratch,
+    );
+    tag_count += 1;
+
+    const receipt_signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(receipt_signer_secret_key);
+    var event = noztr.nip01_event.Event{
+        .id = [_]u8{0} ** 32,
+        .pubkey = receipt_signer_pubkey,
+        .sig = [_]u8{0} ** 64,
+        .kind = noztr.nip57_zaps.zap_receipt_kind,
+        .created_at = created_at,
+        .content = "",
+        .tags = storage.tags[0..tag_count],
+    };
+    try noztr.nostr_keys.nostr_sign_event(receipt_signer_secret_key, &event);
+    return event;
 }
 
 test "zap flow composes request publish and explicit HTTP-backed invoice fetch" {
@@ -632,6 +761,204 @@ test "zap flow rejects invalid typed coordinate drafts" {
     );
 }
 
+test "zap flow prepares explicit receipt validation context and validates coherent receipts" {
+    var storage = ZapFlowStorage{};
+    var flow = ZapFlow.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x73} ** 32;
+    const receipt_signer_secret_key = [_]u8{0x74} ** 32;
+    const recipient_pubkey = [_]u8{0x57} ** 32;
+    const receipt_signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&receipt_signer_secret_key);
+
+    var draft_storage = ZapRequestDraftStorage{};
+    var request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try flow.prepareZapRequestPublish(
+        request_json_buffer[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 22,
+            .receipt_relays = &.{"wss://relay.one"},
+            .recipient_pubkey = recipient_pubkey,
+            .amount_msats = 1000,
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+        },
+    );
+
+    const endpoint = PayEndpoint{
+        .callback_url = "https://wallet.example/callback",
+        .allows_nostr = true,
+        .receipt_signer_pubkey = receipt_signer_pubkey,
+    };
+    var request_relays: [2][]const u8 = undefined;
+    const context = try flow.prepareReceiptValidationContext(endpoint, &prepared.event, 1000, request_relays[0..]);
+    try std.testing.expectEqual(receipt_signer_pubkey, context.receipt_signer_pubkey);
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var receipt_storage = ReceiptFixtureStorage{};
+    const request_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&secret_key);
+    const receipt_event = try buildZapReceiptFixture(
+        &receipt_signer_secret_key,
+        prepared.event_json,
+        recipient_pubkey,
+        request_pubkey,
+        "lnbc10u1example",
+        23,
+        &receipt_storage,
+        arena.allocator(),
+    );
+
+    var receipt_relays: [2][]const u8 = undefined;
+    const receipt = try flow.validateReceiptForContext(
+        &receipt_event,
+        context,
+        receipt_relays[0..],
+        arena.allocator(),
+    );
+    try std.testing.expectEqual(prepared.event.id, receipt.request.id);
+    try std.testing.expectEqualStrings("lnbc10u1example", receipt.bolt11);
+}
+
+test "zap flow rejects receipt validation when receipt signer does not match pay endpoint" {
+    var storage = ZapFlowStorage{};
+    var flow = ZapFlow.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x75} ** 32;
+    const receipt_signer_secret_key = [_]u8{0x76} ** 32;
+    const wrong_receipt_signer_secret_key = [_]u8{0x77} ** 32;
+    const recipient_pubkey = [_]u8{0x58} ** 32;
+    const receipt_signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&receipt_signer_secret_key);
+
+    var draft_storage = ZapRequestDraftStorage{};
+    var request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try flow.prepareZapRequestPublish(
+        request_json_buffer[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 24,
+            .receipt_relays = &.{"wss://relay.one"},
+            .recipient_pubkey = recipient_pubkey,
+            .amount_msats = 1500,
+        },
+    );
+
+    var request_relays: [2][]const u8 = undefined;
+    const context = try flow.prepareReceiptValidationContext(
+        .{
+            .callback_url = "https://wallet.example/callback",
+            .allows_nostr = true,
+            .receipt_signer_pubkey = receipt_signer_pubkey,
+        },
+        &prepared.event,
+        1500,
+        request_relays[0..],
+    );
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var receipt_storage = ReceiptFixtureStorage{};
+    const request_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&secret_key);
+    const wrong_receipt_event = try buildZapReceiptFixture(
+        &wrong_receipt_signer_secret_key,
+        prepared.event_json,
+        recipient_pubkey,
+        request_pubkey,
+        "lnbc15u1example",
+        25,
+        &receipt_storage,
+        arena.allocator(),
+    );
+
+    var receipt_relays: [2][]const u8 = undefined;
+    try std.testing.expectError(
+        error.ReceiptSignerMismatch,
+        flow.validateReceiptForContext(
+            &wrong_receipt_event,
+            context,
+            receipt_relays[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
+test "zap flow rejects receipt validation when receipt embeds a different request" {
+    var storage = ZapFlowStorage{};
+    var flow = ZapFlow.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x78} ** 32;
+    const receipt_signer_secret_key = [_]u8{0x79} ** 32;
+    const recipient_pubkey = [_]u8{0x59} ** 32;
+    const receipt_signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&receipt_signer_secret_key);
+
+    var draft_storage = ZapRequestDraftStorage{};
+    var request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try flow.prepareZapRequestPublish(
+        request_json_buffer[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 26,
+            .receipt_relays = &.{"wss://relay.one"},
+            .recipient_pubkey = recipient_pubkey,
+            .amount_msats = 2000,
+        },
+    );
+
+    var other_request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+    var other_draft_storage = ZapRequestDraftStorage{};
+    const other_prepared = try flow.prepareZapRequestPublish(
+        other_request_json_buffer[0..],
+        &other_draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 27,
+            .receipt_relays = &.{"wss://relay.one"},
+            .recipient_pubkey = recipient_pubkey,
+            .amount_msats = 3000,
+        },
+    );
+
+    var request_relays: [2][]const u8 = undefined;
+    const context = try flow.prepareReceiptValidationContext(
+        .{
+            .callback_url = "https://wallet.example/callback",
+            .allows_nostr = true,
+            .receipt_signer_pubkey = receipt_signer_pubkey,
+        },
+        &prepared.event,
+        2000,
+        request_relays[0..],
+    );
+
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+    var receipt_storage = ReceiptFixtureStorage{};
+    const request_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&secret_key);
+    const mismatched_receipt_event = try buildZapReceiptFixture(
+        &receipt_signer_secret_key,
+        other_prepared.event_json,
+        recipient_pubkey,
+        request_pubkey,
+        "lnbc20u1example",
+        28,
+        &receipt_storage,
+        arena.allocator(),
+    );
+
+    var receipt_relays: [2][]const u8 = undefined;
+    try std.testing.expectError(
+        error.ReceiptRequestMismatch,
+        flow.validateReceiptForContext(
+            &mismatched_receipt_event,
+            context,
+            receipt_relays[0..],
+            arena.allocator(),
+        ),
+    );
+}
+
 test "zap flow rejects invoice fetch when endpoint does not allow nostr" {
     var storage = ZapFlowStorage{};
     const flow = ZapFlow.init(.{}, &storage);
@@ -665,9 +992,44 @@ test "zap flow rejects invoice fetch when endpoint does not allow nostr" {
     );
 }
 
+test "zap flow rejects invoice fetch when nostr-capable endpoint omits signer pubkey" {
+    var storage = ZapFlowStorage{};
+    const flow = ZapFlow.init(.{}, &storage);
+
+    const FakeHttp = struct {
+        fn client(_: *@This()) transport.HttpClient {
+            return .{ .ctx = undefined, .get_fn = get };
+        }
+
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var callback_url_buffer: [128]u8 = undefined;
+    var callback_body_buffer: [128]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidPayEndpoint,
+        flow.fetchInvoice(fake.client(), .{
+            .endpoint = .{ .callback_url = "https://wallet.example/callback", .allows_nostr = true },
+            .amount_msats = 1000,
+            .zap_request_json = "{}",
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+            .storage = InvoiceFetchStorage.init(callback_url_buffer[0..], callback_body_buffer[0..]),
+            .scratch = arena.allocator(),
+        }),
+    );
+}
+
 test "zap flow rejects invoice fetch outside advertised sendable range" {
     var storage = ZapFlowStorage{};
     const flow = ZapFlow.init(.{}, &storage);
+    const receipt_signer_secret_key = [_]u8{0x7c} ** 32;
+    const receipt_signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&receipt_signer_secret_key);
 
     const FakeHttp = struct {
         fn client(_: *@This()) transport.HttpClient {
@@ -691,11 +1053,70 @@ test "zap flow rejects invoice fetch outside advertised sendable range" {
             .endpoint = .{
                 .callback_url = "https://wallet.example/callback",
                 .allows_nostr = true,
+                .receipt_signer_pubkey = receipt_signer_pubkey,
                 .min_sendable_msats = 2000,
                 .max_sendable_msats = 5000,
             },
             .amount_msats = 1000,
             .zap_request_json = "{}",
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+            .storage = InvoiceFetchStorage.init(callback_url_buffer[0..], callback_body_buffer[0..]),
+            .scratch = arena.allocator(),
+        }),
+    );
+}
+
+test "zap flow rejects invoice fetch when request amount mismatches callback amount" {
+    var storage = ZapFlowStorage{};
+    var flow = ZapFlow.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x7a} ** 32;
+    const target_pubkey = [_]u8{0x5a} ** 32;
+    const receipt_signer_secret_key = [_]u8{0x7b} ** 32;
+    const receipt_signer_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&receipt_signer_secret_key);
+    var draft_storage = ZapRequestDraftStorage{};
+    var request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+    const prepared = try flow.prepareZapRequestPublish(
+        request_json_buffer[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 29,
+            .receipt_relays = &.{"wss://relay.one"},
+            .recipient_pubkey = target_pubkey,
+            .amount_msats = 1000,
+            .lnurl = "lnurl1dp68gurn8ghj7m",
+            .receipt_signer_pubkey = receipt_signer_pubkey,
+        },
+    );
+
+    const FakeHttp = struct {
+        fn client(_: *@This()) transport.HttpClient {
+            return .{ .ctx = undefined, .get_fn = get };
+        }
+        fn get(_: *anyopaque, _: transport.HttpRequest, _: []u8) transport.HttpError![]const u8 {
+            return error.NotFound;
+        }
+    };
+
+    var fake = FakeHttp{};
+    var callback_url_buffer: [256]u8 = undefined;
+    var callback_body_buffer: [128]u8 = undefined;
+    var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
+    defer arena.deinit();
+
+    try std.testing.expectError(
+        error.InvalidQueryAmount,
+        flow.fetchInvoice(fake.client(), .{
+            .endpoint = .{
+                .callback_url = "https://wallet.example/callback",
+                .allows_nostr = true,
+                .receipt_signer_pubkey = receipt_signer_pubkey,
+                .min_sendable_msats = 500,
+                .max_sendable_msats = 5000,
+            },
+            .amount_msats = 2000,
+            .zap_request_json = prepared.event_json,
             .lnurl = "lnurl1dp68gurn8ghj7m",
             .storage = InvoiceFetchStorage.init(callback_url_buffer[0..], callback_body_buffer[0..]),
             .scratch = arena.allocator(),
