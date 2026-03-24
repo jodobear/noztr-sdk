@@ -41,6 +41,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
     var kinds: [2]u32 = undefined;
     var blocked_ips: [1]noztr.nip86_relay_management.IpReason = undefined;
     var allowed_pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
+    var banned_pubkeys: [1]noztr.nip86_relay_management.PubkeyReason = undefined;
     var banned_events: [1]noztr.nip86_relay_management.EventIdReason = undefined;
     var moderation_events: [1]noztr.nip86_relay_management.EventIdReason = undefined;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
@@ -169,11 +170,37 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
     try std.testing.expect(allowed_pubkeys_response.result == .pubkeys);
     try std.testing.expectEqualStrings("seed", allowed_pubkeys_response.result.pubkeys[0].reason.?);
 
+    const banned_pubkeys_post = try client.prepareAuthorizedPost(
+        "https://relay.example/admin",
+        .listbannedpubkeys,
+        &admin_secret,
+        1_700_000_003,
+        request_json[0..],
+        payload_hex[0..],
+        authorization[0..],
+        authorization_json[0..],
+    );
+    var banned_pubkeys_http = FakeHttp{
+        .response_body = "{\"result\":[{\"pubkey\":\"3333333333333333333333333333333333333333333333333333333333333333\",\"reason\":\"spam\"}],\"error\":null}",
+    };
+    const banned_pubkeys_response_json = try client.postPrepared(
+        banned_pubkeys_http.client(),
+        &banned_pubkeys_post,
+        response_json[0..],
+    );
+    const banned_pubkeys_response = try client.parseListBannedPubkeysResponse(
+        banned_pubkeys_response_json,
+        banned_pubkeys[0..],
+        arena.allocator(),
+    );
+    try std.testing.expect(banned_pubkeys_response.result == .pubkeys);
+    try std.testing.expectEqualStrings("spam", banned_pubkeys_response.result.pubkeys[0].reason.?);
+
     const blocked_ips_post = try client.prepareAuthorizedPost(
         "https://relay.example/admin",
         .listblockedips,
         &admin_secret,
-        1_700_000_003,
+        1_700_000_004,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -200,7 +227,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .listbannedevents,
         &admin_secret,
-        1_700_000_004,
+        1_700_000_005,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -226,7 +253,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .listeventsneedingmoderation,
         &admin_secret,
-        1_700_000_005,
+        1_700_000_006,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -253,7 +280,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .allowpubkey = .{ .pubkey = pubkey, .reason = "operator" } },
         &admin_secret,
-        1_700_000_006,
+        1_700_000_007,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -275,7 +302,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .unallowpubkey = .{ .pubkey = pubkey, .reason = "cleanup" } },
         &admin_secret,
-        1_700_000_007,
+        1_700_000_008,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -296,7 +323,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .allowkind = 1984 },
         &admin_secret,
-        1_700_000_008,
+        1_700_000_009,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -311,7 +338,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .disallowkind = 1984 },
         &admin_secret,
-        1_700_000_009,
+        1_700_000_010,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -332,7 +359,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .blockip = .{ .ip = "198.51.100.42", .reason = "manual" } },
         &admin_secret,
-        1_700_000_010,
+        1_700_000_011,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -346,7 +373,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .unblockip = "198.51.100.42" },
         &admin_secret,
-        1_700_000_011,
+        1_700_000_012,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -367,7 +394,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .banpubkey = .{ .pubkey = pubkey, .reason = "spam" } },
         &admin_secret,
-        1_700_000_012,
+        1_700_000_013,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -382,7 +409,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .banevent = .{ .id = event_id, .reason = "malware" } },
         &admin_secret,
-        1_700_000_013,
+        1_700_000_014,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
@@ -396,7 +423,7 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         "https://relay.example/admin",
         .{ .allowevent = .{ .id = event_id, .reason = "manual-review" } },
         &admin_secret,
-        1_700_000_014,
+        1_700_000_015,
         request_json[0..],
         payload_hex[0..],
         authorization[0..],
