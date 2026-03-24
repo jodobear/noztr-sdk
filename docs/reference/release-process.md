@@ -81,6 +81,8 @@ Before cutting a public tag, all of these should be true:
    - package metadata uses the project version line
    - changelog or release-notes surface exists
    - migration notes exist for known pre-`1.0` breaks that matter to evaluation
+   - the canonical migration route is published:
+     - `docs/reference/migration-guide.md`
 
 ## Tagging Guidance
 
@@ -124,10 +126,14 @@ What it currently covers
 - NIP-46 remote signer
 - NIP-17 mailbox DM
 - Legacy NIP-04 DM
+- social content, reaction/list, comment/reply, and highlight client/workflow support
+- NIP-57 zap workflow and receipt validation
+- NIP-86 relay management
 - NIP-03 OpenTimestamps verification
 - NIP-05 identity resolution
 - NIP-29 groups
 - NIP-39 identity verification
+- shared HTTP and signed-post transport seams where reusable beyond one consumer
 
 Tradeoffs and limits
 - Explicit caller-owned runtime posture
@@ -150,6 +156,23 @@ Adoption guidance
 - the first actual RC notes are written from the template above
 - maintainers do one final downstream-evaluation pass from the public docs route
 - the release commit is intentionally chosen and tagged
+
+## Current Stabilization State
+
+The current repo state should be treated as the downstream-evaluation baseline.
+
+That means:
+- the broad cleanup/remediation campaign is finished
+- the recent breadth wave is landed and audited
+- the first Blossom-forced shared substrate seam is landed
+- migration notes are now routed through one canonical guide
+
+It does not mean a tag should be cut immediately.
+
+The remaining work before `v0.1.0-rc.1` is still:
+- final downstream-evaluation pass
+- actual RC release notes
+- one intentionally chosen clean release commit and annotated tag
 
 Many NIPs still remain unimplemented. That does not block `0.1.0-rc.1` by itself if the release
 notes and docs describe current coverage honestly.

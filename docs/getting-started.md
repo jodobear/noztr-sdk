@@ -132,16 +132,10 @@ These are separate on purpose: the Zig version is compatibility information, not
 
 ## Pre-1.0 Migration Notes
 
-If you are updating an older downstream, check these before assuming a route still uses the older
-longer names:
+If you are updating an older pre-`1.0` downstream, start here:
 
-- [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
-- [DM orchestration naming migration](./reference/dm-orchestration-naming-migration.md)
-- [social and DM stored-read migration](./reference/social-dm-stored-read-migration.md)
-- [remote signer naming migration](./reference/remote-signer-naming-migration.md)
-- [proof, identity, and NIP-05 planning migration](./reference/proof-identity-planning-migration.md)
-- [examples filename migration](./reference/examples-filename-migration.md)
-- [noztr-core rc4 migration](./reference/noztr-core-rc4-migration.md)
+- [pre-1.0 migration guide](./reference/migration-guide.md)
+  - canonical grouped migration route for the current namespace and naming cleanups
 
 ## Add As A Local Dependency
 

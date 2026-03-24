@@ -43,28 +43,8 @@ If you are evaluating `noztr-sdk` for another Zig SDK, read the downstream bound
   - project versioning, RC criteria, tagging guidance, and first-release framing
 - [CHANGELOG.md](../CHANGELOG.md)
   - project-level release line and notable changes
-- [remote signer naming migration](./reference/remote-signer-naming-migration.md)
-  - short pre-`1.0` migration note for direct `remote_signer` submodule imports
-- [workflow submodule naming migration](./reference/workflow-submodule-naming-migration.md)
-  - short pre-`1.0` migration note for direct `group_session` and `mailbox` submodule imports
-- [grouped public namespace migration](./reference/grouped-public-namespace-migration.md)
-  - short pre-`1.0` migration note for the breaking grouped-route cleanup in `client` and
-    `workflows`
-- [local state client migration](./reference/local-state-client-migration.md)
-  - short pre-`1.0` migration note for `RelayWorkspaceClientConfig` and the new canonical
-    local-state route
-- [DM sync runtime naming migration](./reference/dm-sync-runtime-naming-migration.md)
-  - short pre-`1.0` migration note for the mailbox and legacy sync-runtime family cleanup
-- [DM orchestration naming migration](./reference/dm-orchestration-naming-migration.md)
-  - short pre-`1.0` migration note for the mailbox and legacy job/turn family cleanup
-- [social and DM stored-read migration](./reference/social-dm-stored-read-migration.md)
-  - short pre-`1.0` migration note for the social and DM read-side naming cleanup
-- [proof, identity, and NIP-05 planning migration](./reference/proof-identity-planning-migration.md)
-  - short pre-`1.0` migration note for the grouped proof/identity/NIP-05 planning cleanup
-- [examples filename migration](./reference/examples-filename-migration.md)
-  - short pre-`1.0` migration note for dropping the redundant `_recipe` example filename suffix
-- [noztr-core rc4 migration](./reference/noztr-core-rc4-migration.md)
-  - short pre-`1.0` migration note for cumulative post-`rc.3` core-driven SDK type renames
+- [pre-1.0 migration guide](./reference/migration-guide.md)
+  - canonical grouped route for all pre-`1.0` migration notes
 - [examples/README.md](../examples/README.md)
   - workflow recipes and teaching routes
 
@@ -86,8 +66,8 @@ The current public floor is grouped and broad:
 - `client.identity.*`
   - `NIP-05` and `NIP-39` client-facing identity flows
 - `client.social.*`
-  - profile, note, thread, long-form, reaction, list, contact-graph, and starter-only WoT
-    client-facing social/content composition
+  - profile, note, thread, long-form, reaction, list, comment/reply, highlight, contact-graph,
+    and starter-only WoT client-facing social/content composition
 - `client.proof.*`
   - `NIP-03` proof verification and remembered-proof planning
 - `client.groups.*`

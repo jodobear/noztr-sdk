@@ -18,3 +18,17 @@ library version.
   - public release-process guidance
   - first-release note framing
   - release-prep integration into normal maintainer workflow
+- added one canonical pre-`1.0` migration route:
+  - `docs/reference/migration-guide.md`
+  - grouped current breaking migration notes into one downstream entrypoint
+
+### Changed
+
+- stabilized the current downstream-evaluation floor instead of continuing broad cleanup churn:
+  - grouped client/workflow/store/runtime/transport route shape is now the intended baseline
+  - social, DM, proof, identity, groups, relay-management, and zap breadth are documented as the
+    current public floor
+  - relay-management now shares the generic `transport.nip98_post` seam instead of owning a
+    private signed-POST stack
+- public docs now route migration readers through one canonical guide instead of a long inline
+  inventory
