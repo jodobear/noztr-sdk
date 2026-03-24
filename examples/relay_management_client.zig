@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-test "recipe: relay management client exercises a broad typed NIP-86 admin matrix with explicit NIP-98 auth setup" {
+test "recipe: relay management client exercises a broad typed NIP-86 admin matrix with executeAuthorizedPost" {
     const FakeHttp = struct {
         response_body: []const u8,
 
@@ -47,7 +47,9 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    const supportedmethods_post = try client.prepareAuthorizedPost(
+    var methods_http = FakeHttp{ .response_body = "{\"result\":[\"supportedmethods\",\"banpubkey\"],\"error\":null}" };
+    const methods_response = try client.executeAuthorizedPost(
+        methods_http.client(),
         "https://relay.example/admin",
         .supportedmethods,
         &admin_secret,
@@ -56,13 +58,15 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         payload_hex[0..],
         authorization[0..],
         authorization_json[0..],
+        response_json[0..],
+        .{ .methods = methods[0..] },
+        arena.allocator(),
     );
-    var methods_http = FakeHttp{ .response_body = "{\"result\":[\"supportedmethods\",\"banpubkey\"],\"error\":null}" };
-    const methods_response_json = try client.postPrepared(methods_http.client(), &supportedmethods_post, response_json[0..]);
-    const methods_response = try client.parseSupportedMethodsResponse(methods_response_json, methods[0..], arena.allocator());
     try std.testing.expect(methods_response.result == .methods);
 
-    const changerelayname_post = try client.prepareAuthorizedPost(
+    var relay_name_http = FakeHttp{ .response_body = "{\"result\":true,\"error\":null}" };
+    const relay_name_response = try client.executeAuthorizedPost(
+        relay_name_http.client(),
         "https://relay.example/admin",
         .{ .changerelayname = "Noztr Relay" },
         &admin_secret,
@@ -71,15 +75,8 @@ test "recipe: relay management client exercises a broad typed NIP-86 admin matri
         payload_hex[0..],
         authorization[0..],
         authorization_json[0..],
-    );
-    var relay_name_http = FakeHttp{ .response_body = "{\"result\":true,\"error\":null}" };
-    const relay_name_response_json = try client.postPrepared(
-        relay_name_http.client(),
-        &changerelayname_post,
         response_json[0..],
-    );
-    const relay_name_response = try client.parseChangeRelayNameResponse(
-        relay_name_response_json,
+        .{},
         arena.allocator(),
     );
     try std.testing.expect(relay_name_response.result == .ack);

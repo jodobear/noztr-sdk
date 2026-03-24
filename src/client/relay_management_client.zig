@@ -13,6 +13,14 @@ pub const Config = struct {};
 
 pub const Storage = struct {};
 
+pub const ParseContext = struct {
+    methods: [][]const u8 = &.{},
+    pubkeys: []noztr.nip86_relay_management.PubkeyReason = &.{},
+    events: []noztr.nip86_relay_management.EventIdReason = &.{},
+    ips: []noztr.nip86_relay_management.IpReason = &.{},
+    kinds: []u32 = &.{},
+};
+
 pub const PreparedPost = struct {
     url: []const u8,
     request_json: []const u8,
@@ -219,6 +227,44 @@ pub const Client = struct {
             authorization_json_out,
         );
         return .{ .url = prepared.url, .request_json = prepared.request_json, .authorization = authorization };
+    }
+
+    pub fn executeAuthorizedPost(
+        self: Client,
+        http: transport.HttpClient,
+        url: []const u8,
+        request: noztr.nip86_relay_management.Request,
+        secret_key: *const [32]u8,
+        created_at: u64,
+        request_json_out: []u8,
+        payload_hex_out: []u8,
+        authorization_out: []u8,
+        authorization_json_out: []u8,
+        response_json_out: []u8,
+        context: ParseContext,
+        scratch: std.mem.Allocator,
+    ) (Nip98PostError || transport.HttpError)!noztr.nip86_relay_management.Response {
+        const prepared = try self.prepareAuthorizedPost(
+            url,
+            request,
+            secret_key,
+            created_at,
+            request_json_out,
+            payload_hex_out,
+            authorization_out,
+            authorization_json_out,
+        );
+        const response_json = try self.postPrepared(http, &prepared, response_json_out);
+        return parseResponse(
+            response_json,
+            requestToMethod(request),
+            context.methods,
+            context.pubkeys,
+            context.events,
+            context.ips,
+            context.kinds,
+            scratch,
+        );
     }
 
     pub fn postPrepared(
@@ -713,6 +759,33 @@ fn postJson(
     }, response_json_out);
 }
 
+fn requestToMethod(
+    request: noztr.nip86_relay_management.Request,
+) noztr.nip86_relay_management.RelayManagementMethod {
+    return switch (request) {
+        .supportedmethods => .supportedmethods,
+        .banpubkey => .banpubkey,
+        .unbanpubkey => .unbanpubkey,
+        .listbannedpubkeys => .listbannedpubkeys,
+        .allowpubkey => .allowpubkey,
+        .unallowpubkey => .unallowpubkey,
+        .listallowedpubkeys => .listallowedpubkeys,
+        .listeventsneedingmoderation => .listeventsneedingmoderation,
+        .allowevent => .allowevent,
+        .banevent => .banevent,
+        .listbannedevents => .listbannedevents,
+        .changerelayname => .changerelayname,
+        .changerelaydescription => .changerelaydescription,
+        .changerelayicon => .changerelayicon,
+        .allowkind => .allowkind,
+        .disallowkind => .disallowkind,
+        .listallowedkinds => .listallowedkinds,
+        .blockip => .blockip,
+        .unblockip => .unblockip,
+        .listblockedips => .listblockedips,
+    };
+}
+
 fn validateAdminPostTarget(url: []const u8) AdminTargetError!void {
     if (url.len == 0) return error.InvalidAdminTarget;
     const parsed = std.Uri.parse(url) catch return error.InvalidAdminTarget;
@@ -1040,7 +1113,7 @@ test "relay management client fetchSupportedMethods rejects non-https admin URL"
     );
 }
 
-test "relay management client executes prepared authorized posts coherently" {
+test "relay management client executes prepared or bounded authorized posts coherently" {
     const FakeHttp = struct {
         expected_body: []const u8,
         fn client(self: *@This()) transport.HttpClient {
@@ -1070,8 +1143,11 @@ test "relay management client executes prepared authorized posts coherently" {
     var methods: [2][]const u8 = undefined;
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
+    const expected_body = "{\"method\":\"supportedmethods\",\"params\":[]}";
+    var fake = FakeHttp{ .expected_body = expected_body };
 
-    const prepared = try client.prepareAuthorizedPost(
+    const response = try client.executeAuthorizedPost(
+        fake.client(),
         "https://relay.example/admin",
         .supportedmethods,
         &secret_key,
@@ -1080,10 +1156,10 @@ test "relay management client executes prepared authorized posts coherently" {
         payload_hex[0..],
         authorization[0..],
         authorization_json[0..],
+        response_json[0..],
+        .{ .methods = methods[0..] },
+        arena.allocator(),
     );
-    var fake = FakeHttp{ .expected_body = prepared.request_json };
-    const response_json_slice = try client.postPrepared(fake.client(), &prepared, response_json[0..]);
-    const response = try client.parseSupportedMethodsResponse(response_json_slice, methods[0..], arena.allocator());
 
     try std.testing.expect(response.result == .methods);
     try std.testing.expectEqualStrings("banpubkey", response.result.methods[1]);
