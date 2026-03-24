@@ -31,9 +31,9 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.identity) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.social) == type);
-    try std.testing.expect(@TypeOf(client.social.comment_reply.SocialCommentReplyClient) == type);
+    try std.testing.expect(@TypeOf(client.social.comment_reply.Client) == type);
     try std.testing.expect(@TypeOf(client.social.graph_wot.SocialGraphWotClient) == type);
-    try std.testing.expect(@TypeOf(client.social.highlight.SocialHighlightClient) == type);
+    try std.testing.expect(@TypeOf(client.social.highlight.Client) == type);
     try std.testing.expect(@TypeOf(client.social.profile_content.SocialProfileContentClient) == type);
     try std.testing.expect(@TypeOf(client.social.reaction_list.SocialReactionListClient) == type);
     try std.testing.expect(@TypeOf(client.proof) == type);

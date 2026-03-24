@@ -10,7 +10,7 @@ const noztr = @import("noztr");
 pub const reply_event_kind: u32 = noztr.nip10_threads.text_note_event_kind;
 pub const comment_event_kind: u32 = noztr.nip22_comments.comment_event_kind;
 
-pub const SocialCommentReplyClientError =
+pub const Error =
     publish_client.PublishClientError ||
     relay_query_client.RelayQueryClientError ||
     store.EventArchiveError ||
@@ -31,9 +31,9 @@ pub const SocialCommentReplyClientError =
         CommentDraftStorageTooSmall,
     };
 
-pub const SocialCommentReplyClientConfig = social_support.ClientConfig;
+pub const Config = social_support.ClientConfig;
 
-pub const SocialCommentReplyClientStorage = social_support.ClientStorage;
+pub const Storage = social_support.ClientStorage;
 
 pub const ReplyReference = noztr.nip10_threads.Reference;
 
@@ -95,27 +95,27 @@ pub const CommentDraftStorage = struct {
     parent_coordinate_text: [noztr.limits.tag_item_bytes_max]u8 = undefined,
 };
 
-pub const SocialEventQuery = social_support.AuthorTimeQuery;
+pub const Query = social_support.AuthorTimeQuery;
 
 pub const ReplySubscriptionRequest = struct {
     subscription_id: []const u8,
-    query: SocialEventQuery = .{},
+    query: Query = .{},
 };
 
 pub const CommentSubscriptionRequest = struct {
     subscription_id: []const u8,
-    query: SocialEventQuery = .{},
+    query: Query = .{},
 };
 
-pub const SocialSubscriptionPlanStorage = social_support.SubscriptionPlanStorage;
+pub const SubscriptionStorage = social_support.SubscriptionPlanStorage;
 
 pub const ReplyPageRequest = struct {
-    query: SocialEventQuery = .{},
+    query: Query = .{},
     cursor: ?store.EventCursor = null,
 };
 
 pub const CommentPageRequest = struct {
-    query: SocialEventQuery = .{},
+    query: Query = .{},
     cursor: ?store.EventCursor = null,
 };
 
@@ -141,15 +141,15 @@ pub const CommentPage = struct {
     next_cursor: ?store.EventCursor = null,
 };
 
-pub const SocialCommentReplyClient = struct {
-    config: SocialCommentReplyClientConfig,
+pub const Client = struct {
+    config: Config,
     publish: publish_client.PublishClient,
     query: relay_query_client.RelayQueryClient,
 
     pub fn init(
-        config: SocialCommentReplyClientConfig,
-        storage: *SocialCommentReplyClientStorage,
-    ) SocialCommentReplyClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = config,
@@ -159,9 +159,9 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn attach(
-        config: SocialCommentReplyClientConfig,
-        storage: *SocialCommentReplyClientStorage,
-    ) SocialCommentReplyClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .publish = publish_client.PublishClient.attach(config.publish, &storage.publish),
@@ -170,31 +170,31 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn addRelay(
-        self: *SocialCommentReplyClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) SocialCommentReplyClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         return social_support.addRelay(&self.publish, &self.query, relay_url_text);
     }
 
     pub fn markRelayConnected(
-        self: *SocialCommentReplyClient,
+        self: *Client,
         relay_index: u8,
-    ) SocialCommentReplyClientError!void {
+    ) Error!void {
         try social_support.markRelayConnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *SocialCommentReplyClient,
+        self: *Client,
         relay_index: u8,
-    ) SocialCommentReplyClientError!void {
+    ) Error!void {
         try social_support.noteRelayDisconnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *SocialCommentReplyClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) SocialCommentReplyClientError!void {
+    ) Error!void {
         try social_support.noteRelayAuthChallenge(
             &self.publish,
             &self.query,
@@ -204,24 +204,24 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return social_support.inspectRelayRuntime(&self.query, storage);
     }
 
     pub fn inspectPublish(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPublishStorage,
     ) runtime.RelayPoolPublishPlan {
         return social_support.inspectPublish(&self.publish, storage);
     }
 
     pub fn buildReplyDraft(
-        _: SocialCommentReplyClient,
+        _: Client,
         storage: *ReplyDraftStorage,
         draft: *const ReplyDraft,
-    ) SocialCommentReplyClientError!local_operator.LocalEventDraft {
+    ) Error!local_operator.LocalEventDraft {
         storage.tags[0] = buildThreadReferenceTag(
             storage.root_items[0..],
             storage.root_event_id_hex[0..],
@@ -251,21 +251,21 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn prepareReplyPublish(
-        self: SocialCommentReplyClient,
+        self: Client,
         event_json_output: []u8,
         draft_storage: *ReplyDraftStorage,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         draft: *const ReplyDraft,
-    ) SocialCommentReplyClientError!publish_client.PreparedPublishEvent {
+    ) Error!publish_client.PreparedPublishEvent {
         const local_draft = try self.buildReplyDraft(draft_storage, draft);
         return self.publish.prepareSignedEvent(event_json_output, secret_key, &local_draft);
     }
 
     pub fn buildCommentDraft(
-        _: SocialCommentReplyClient,
+        _: Client,
         storage: *CommentDraftStorage,
         draft: *const CommentDraft,
-    ) SocialCommentReplyClientError!local_operator.LocalEventDraft {
+    ) Error!local_operator.LocalEventDraft {
         var tag_count: usize = 0;
         try buildCommentTargetTags(storage, &tag_count, .root, draft.root);
         try buildCommentTargetTags(storage, &tag_count, .parent, draft.parent);
@@ -280,30 +280,30 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn prepareCommentPublish(
-        self: SocialCommentReplyClient,
+        self: Client,
         event_json_output: []u8,
         draft_storage: *CommentDraftStorage,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         draft: *const CommentDraft,
-    ) SocialCommentReplyClientError!publish_client.PreparedPublishEvent {
+    ) Error!publish_client.PreparedPublishEvent {
         const local_draft = try self.buildCommentDraft(draft_storage, draft);
         return self.publish.prepareSignedEvent(event_json_output, secret_key, &local_draft);
     }
 
     pub fn composeTargetedPublish(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         output: []u8,
         step: *const runtime.RelayPoolPublishStep,
         prepared: *const publish_client.PreparedPublishEvent,
-    ) SocialCommentReplyClientError!publish_client.TargetedPublishEvent {
+    ) Error!publish_client.TargetedPublishEvent {
         return social_support.composeTargetedPublish(&self.publish, output, step, prepared);
     }
 
     pub fn inspectReplySubscription(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         request: *const ReplySubscriptionRequest,
-        storage: *SocialSubscriptionPlanStorage,
-    ) SocialCommentReplyClientError!runtime.RelayPoolSubscriptionPlan {
+        storage: *SubscriptionStorage,
+    ) Error!runtime.RelayPoolSubscriptionPlan {
         const kinds = [_]u32{reply_event_kind};
         return self.inspectSingleSubscription(
             request.subscription_id,
@@ -314,10 +314,10 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn inspectCommentSubscription(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         request: *const CommentSubscriptionRequest,
-        storage: *SocialSubscriptionPlanStorage,
-    ) SocialCommentReplyClientError!runtime.RelayPoolSubscriptionPlan {
+        storage: *SubscriptionStorage,
+    ) Error!runtime.RelayPoolSubscriptionPlan {
         const kinds = [_]u32{comment_event_kind};
         return self.inspectSingleSubscription(
             request.subscription_id,
@@ -328,19 +328,19 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn composeTargetedSubscriptionRequest(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         output: []u8,
         step: *const runtime.RelayPoolSubscriptionStep,
-    ) SocialCommentReplyClientError!relay_query_client.TargetedSubscriptionRequest {
+    ) Error!relay_query_client.TargetedSubscriptionRequest {
         return social_support.composeTargetedSubscriptionRequest(&self.query, output, step);
     }
 
     pub fn composeTargetedCloseRequest(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         output: []u8,
         target: *const relay_query_client.RelayQueryTarget,
         subscription_id: []const u8,
-    ) SocialCommentReplyClientError!relay_query_client.TargetedCloseRequest {
+    ) Error!relay_query_client.TargetedCloseRequest {
         return social_support.composeTargetedCloseRequest(
             &self.query,
             output,
@@ -350,41 +350,41 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn inspectReplyEvent(
-        _: SocialCommentReplyClient,
+        _: Client,
         event: *const noztr.nip01_event.Event,
         mentions_out: []noztr.nip10_threads.Reference,
-    ) SocialCommentReplyClientError!noztr.nip10_threads.Thread {
+    ) Error!noztr.nip10_threads.Thread {
         if (event.kind != reply_event_kind) return error.InvalidReplyEventKind;
         return noztr.nip10_threads.thread_extract(event, mentions_out);
     }
 
     pub fn inspectCommentEvent(
-        _: SocialCommentReplyClient,
+        _: Client,
         event: *const noztr.nip01_event.Event,
-    ) SocialCommentReplyClientError!noztr.nip22_comments.Comment {
+    ) Error!noztr.nip22_comments.Comment {
         if (event.kind != comment_event_kind) return error.InvalidCommentEventKind;
         return noztr.nip22_comments.comment_parse(event);
     }
 
     pub fn storeInteractionEventJson(
-        _: SocialCommentReplyClient,
+        _: Client,
         archive: store.EventArchive,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SocialCommentReplyClientError!void {
+    ) Error!void {
         const event = try parseVerifiedStoredInteractionEventJson(event_json, scratch);
         if (!storedInteractionKindSupported(event.kind)) return error.InvalidStoredInteractionKind;
         return archive.ingestEventJson(event_json, scratch);
     }
 
     pub fn inspectReplyPage(
-        _: SocialCommentReplyClient,
+        _: Client,
         archive: store.EventArchive,
         request: *const ReplyPageRequest,
         page: *store.EventQueryResultPage,
         replies_out: []ReplyRecord,
         scratch: std.mem.Allocator,
-    ) SocialCommentReplyClientError!ReplyPage {
+    ) Error!ReplyPage {
         const kinds = [_]u32{reply_event_kind};
         try archive.query(&.{
             .authors = request.query.authors,
@@ -413,13 +413,13 @@ pub const SocialCommentReplyClient = struct {
     }
 
     pub fn inspectCommentPage(
-        self: SocialCommentReplyClient,
+        self: Client,
         archive: store.EventArchive,
         request: *const CommentPageRequest,
         page: *store.EventQueryResultPage,
         comments_out: []CommentRecord,
         scratch: std.mem.Allocator,
-    ) SocialCommentReplyClientError!CommentPage {
+    ) Error!CommentPage {
         const kinds = [_]u32{comment_event_kind};
         try archive.query(&.{
             .authors = request.query.authors,
@@ -448,12 +448,12 @@ pub const SocialCommentReplyClient = struct {
     }
 
     fn inspectSingleSubscription(
-        self: *const SocialCommentReplyClient,
+        self: *const Client,
         subscription_id: []const u8,
-        query: *const SocialEventQuery,
+        query: *const Query,
         kinds: []const u32,
-        storage: *SocialSubscriptionPlanStorage,
-    ) SocialCommentReplyClientError!runtime.RelayPoolSubscriptionPlan {
+        storage: *SubscriptionStorage,
+    ) Error!runtime.RelayPoolSubscriptionPlan {
         return social_support.inspectSingleSubscription(
             &self.query,
             subscription_id,
@@ -497,7 +497,7 @@ fn buildCommentTargetTags(
     tag_count: *usize,
     kind: CommentTargetKind,
     target: CommentTargetDraft,
-) SocialCommentReplyClientError!void {
+) Error!void {
     switch (target) {
         .event => |event_target| {
             try appendCommentEventTargetTags(storage, tag_count, kind, event_target);
@@ -516,7 +516,7 @@ fn appendCommentEventTargetTags(
     tag_count: *usize,
     kind: CommentTargetKind,
     target: noztr.nip22_comments.EventTarget,
-) SocialCommentReplyClientError!void {
+) Error!void {
     if (target.kind == reply_event_kind) {
         return switch (kind) {
             .root => error.RootTextNoteUnsupported,
@@ -571,7 +571,7 @@ fn appendCommentCoordinateTargetTags(
     tag_count: *usize,
     kind: CommentTargetKind,
     target: noztr.nip22_comments.CoordinateTarget,
-) SocialCommentReplyClientError!void {
+) Error!void {
     if (target.kind == reply_event_kind) {
         return switch (kind) {
             .root => error.RootTextNoteUnsupported,
@@ -618,7 +618,7 @@ fn appendCommentExternalTargetTags(
     tag_count: *usize,
     kind: CommentTargetKind,
     target: ExternalCommentTargetDraft,
-) SocialCommentReplyClientError!void {
+) Error!void {
     const target_items = targetItemsFor(storage, kind);
     const author_items = authorItemsFor(storage, kind);
     const author_hex = authorHexFor(storage, kind);
@@ -788,7 +788,7 @@ fn authorTagName(kind: CommentTargetKind) []const u8 {
 fn formatCommentCoordinate(
     output: []u8,
     coordinate: noztr.nip22_comments.CoordinateTarget,
-) SocialCommentReplyClientError![]const u8 {
+) Error![]const u8 {
     const pubkey_hex = std.fmt.bytesToHex(coordinate.pubkey, .lower);
     return std.fmt.bufPrint(
         output,
@@ -800,7 +800,7 @@ fn formatCommentCoordinate(
 fn parseVerifiedStoredInteractionEventJson(
     event_json: []const u8,
     scratch: std.mem.Allocator,
-) SocialCommentReplyClientError!noztr.nip01_event.Event {
+) Error!noztr.nip01_event.Event {
     const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
     try noztr.nip01_event.event_verify(&event);
     return event;
@@ -812,8 +812,8 @@ fn storedInteractionKindSupported(kind: u32) bool {
 }
 
 test "social comment reply client composes reply and comment publish with explicit inspection" {
-    var storage = SocialCommentReplyClientStorage{};
-    var client = SocialCommentReplyClient.init(.{}, &storage);
+    var storage = Storage{};
+    var client = Client.init(.{}, &storage);
 
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
@@ -850,7 +850,7 @@ test "social comment reply client composes reply and comment publish with explic
     try std.testing.expect(thread.root != null);
     try std.testing.expect(thread.reply != null);
 
-    var reply_subscription_storage = SocialSubscriptionPlanStorage{};
+    var reply_subscription_storage = SubscriptionStorage{};
     const reply_plan = try client.inspectReplySubscription(
         &.{ .subscription_id = "replies", .query = .{ .limit = 20 } },
         &reply_subscription_storage,

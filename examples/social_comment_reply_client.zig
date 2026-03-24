@@ -2,8 +2,8 @@ const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 
 test "recipe: social comment reply client composes note replies and NIP-22 comments explicitly" {
-    var storage = noztr_sdk.client.social.comment_reply.SocialCommentReplyClientStorage{};
-    var client = noztr_sdk.client.social.comment_reply.SocialCommentReplyClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.social.comment_reply.Storage{};
+    var client = noztr_sdk.client.social.comment_reply.Client.init(.{}, &storage);
 
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);

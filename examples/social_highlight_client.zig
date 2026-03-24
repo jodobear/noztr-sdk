@@ -3,8 +3,8 @@ const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
 test "recipe: social highlight client composes one highlight route and one archive-backed stored page explicitly" {
-    var storage = noztr_sdk.client.social.highlight.SocialHighlightClientStorage{};
-    var client = noztr_sdk.client.social.highlight.SocialHighlightClient.init(.{}, &storage);
+    var storage = noztr_sdk.client.social.highlight.Storage{};
+    var client = noztr_sdk.client.social.highlight.Client.init(.{}, &storage);
 
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);

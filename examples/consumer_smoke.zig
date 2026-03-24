@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr_sdk = @import("noztr_sdk");
 
 // Minimal import smoke for the stable public namespace shape.
-test "consumer smoke: import the sdk workflow namespace" {
+test "consumer smoke: import the sdk grouped public namespaces" {
     try std.testing.expect(@TypeOf(noztr_sdk.workflows) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.workflows.signer.remote.Session) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.workflows.zaps.ZapFlow) == type);
@@ -19,8 +19,8 @@ test "consumer smoke: import the sdk workflow namespace" {
     try std.testing.expect(@TypeOf(noztr_sdk.client.relay.session.RelaySessionClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.identity.nip39.Nip39VerifyClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.social.graph_wot.SocialGraphWotClient) == type);
-    try std.testing.expect(@TypeOf(noztr_sdk.client.social.comment_reply.SocialCommentReplyClient) == type);
-    try std.testing.expect(@TypeOf(noztr_sdk.client.social.highlight.SocialHighlightClient) == type);
+    try std.testing.expect(@TypeOf(noztr_sdk.client.social.comment_reply.Client) == type);
+    try std.testing.expect(@TypeOf(noztr_sdk.client.social.highlight.Client) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.social.profile_content.SocialProfileContentClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.social.reaction_list.SocialReactionListClient) == type);
 }

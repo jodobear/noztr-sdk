@@ -9,7 +9,7 @@ const noztr = @import("noztr");
 
 pub const highlight_event_kind: u32 = noztr.nip84_highlights.highlight_kind;
 
-pub const SocialHighlightClientError =
+pub const Error =
     publish_client.PublishClientError ||
     relay_query_client.RelayQueryClientError ||
     store.EventArchiveError ||
@@ -26,9 +26,9 @@ pub const SocialHighlightClientError =
         HighlightPageStorageTooSmall,
     };
 
-pub const SocialHighlightClientConfig = social_support.ClientConfig;
+pub const Config = social_support.ClientConfig;
 
-pub const SocialHighlightClientStorage = social_support.ClientStorage;
+pub const Storage = social_support.ClientStorage;
 
 pub const HighlightAuthorDraft = struct {
     pubkey: [32]u8,
@@ -71,17 +71,17 @@ pub const HighlightDraftStorage = struct {
     }
 };
 
-pub const SocialEventQuery = social_support.AuthorTimeQuery;
+pub const Query = social_support.AuthorTimeQuery;
 
 pub const HighlightSubscriptionRequest = struct {
     subscription_id: []const u8,
-    query: SocialEventQuery = .{},
+    query: Query = .{},
 };
 
-pub const SocialSubscriptionPlanStorage = social_support.SubscriptionPlanStorage;
+pub const SubscriptionStorage = social_support.SubscriptionPlanStorage;
 
 pub const HighlightPageRequest = struct {
-    query: SocialEventQuery = .{},
+    query: Query = .{},
     cursor: ?store.EventCursor = null,
 };
 
@@ -96,15 +96,15 @@ pub const HighlightPage = struct {
     next_cursor: ?store.EventCursor = null,
 };
 
-pub const SocialHighlightClient = struct {
-    config: SocialHighlightClientConfig,
+pub const Client = struct {
+    config: Config,
     publish: publish_client.PublishClient,
     query: relay_query_client.RelayQueryClient,
 
     pub fn init(
-        config: SocialHighlightClientConfig,
-        storage: *SocialHighlightClientStorage,
-    ) SocialHighlightClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = config,
@@ -114,9 +114,9 @@ pub const SocialHighlightClient = struct {
     }
 
     pub fn attach(
-        config: SocialHighlightClientConfig,
-        storage: *SocialHighlightClientStorage,
-    ) SocialHighlightClient {
+        config: Config,
+        storage: *Storage,
+    ) Client {
         return .{
             .config = config,
             .publish = publish_client.PublishClient.attach(config.publish, &storage.publish),
@@ -125,31 +125,31 @@ pub const SocialHighlightClient = struct {
     }
 
     pub fn addRelay(
-        self: *SocialHighlightClient,
+        self: *Client,
         relay_url_text: []const u8,
-    ) SocialHighlightClientError!runtime.RelayDescriptor {
+    ) Error!runtime.RelayDescriptor {
         return social_support.addRelay(&self.publish, &self.query, relay_url_text);
     }
 
     pub fn markRelayConnected(
-        self: *SocialHighlightClient,
+        self: *Client,
         relay_index: u8,
-    ) SocialHighlightClientError!void {
+    ) Error!void {
         try social_support.markRelayConnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayDisconnected(
-        self: *SocialHighlightClient,
+        self: *Client,
         relay_index: u8,
-    ) SocialHighlightClientError!void {
+    ) Error!void {
         try social_support.noteRelayDisconnected(&self.publish, &self.query, relay_index);
     }
 
     pub fn noteRelayAuthChallenge(
-        self: *SocialHighlightClient,
+        self: *Client,
         relay_index: u8,
         challenge: []const u8,
-    ) SocialHighlightClientError!void {
+    ) Error!void {
         try social_support.noteRelayAuthChallenge(
             &self.publish,
             &self.query,
@@ -159,24 +159,24 @@ pub const SocialHighlightClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const SocialHighlightClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPlanStorage,
     ) runtime.RelayPoolPlan {
         return social_support.inspectRelayRuntime(&self.query, storage);
     }
 
     pub fn inspectPublish(
-        self: *const SocialHighlightClient,
+        self: *const Client,
         storage: *runtime.RelayPoolPublishStorage,
     ) runtime.RelayPoolPublishPlan {
         return social_support.inspectPublish(&self.publish, storage);
     }
 
     pub fn buildHighlightDraft(
-        _: SocialHighlightClient,
+        _: Client,
         storage: *HighlightDraftStorage,
         draft: *const HighlightDraft,
-    ) SocialHighlightClientError!local_operator.LocalEventDraft {
+    ) Error!local_operator.LocalEventDraft {
         const needed_tags = highlightTagCount(draft);
         if (needed_tags > storage.tags.len) return error.HighlightDraftStorageTooSmall;
         if (needed_tags > storage.builders.len) return error.HighlightDraftStorageTooSmall;
@@ -234,30 +234,30 @@ pub const SocialHighlightClient = struct {
     }
 
     pub fn prepareHighlightPublish(
-        self: SocialHighlightClient,
+        self: Client,
         event_json_output: []u8,
         draft_storage: *HighlightDraftStorage,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         draft: *const HighlightDraft,
-    ) SocialHighlightClientError!publish_client.PreparedPublishEvent {
+    ) Error!publish_client.PreparedPublishEvent {
         const local_draft = try self.buildHighlightDraft(draft_storage, draft);
         return self.publish.prepareSignedEvent(event_json_output, secret_key, &local_draft);
     }
 
     pub fn composeTargetedPublish(
-        self: *const SocialHighlightClient,
+        self: *const Client,
         output: []u8,
         step: *const runtime.RelayPoolPublishStep,
         prepared: *const publish_client.PreparedPublishEvent,
-    ) SocialHighlightClientError!publish_client.TargetedPublishEvent {
+    ) Error!publish_client.TargetedPublishEvent {
         return social_support.composeTargetedPublish(&self.publish, output, step, prepared);
     }
 
     pub fn inspectHighlightSubscription(
-        self: *const SocialHighlightClient,
+        self: *const Client,
         request: *const HighlightSubscriptionRequest,
-        storage: *SocialSubscriptionPlanStorage,
-    ) SocialHighlightClientError!runtime.RelayPoolSubscriptionPlan {
+        storage: *SubscriptionStorage,
+    ) Error!runtime.RelayPoolSubscriptionPlan {
         const kinds = [_]u32{highlight_event_kind};
         return social_support.inspectSingleSubscription(
             &self.query,
@@ -269,19 +269,19 @@ pub const SocialHighlightClient = struct {
     }
 
     pub fn composeTargetedSubscriptionRequest(
-        self: *const SocialHighlightClient,
+        self: *const Client,
         output: []u8,
         step: *const runtime.RelayPoolSubscriptionStep,
-    ) SocialHighlightClientError!relay_query_client.TargetedSubscriptionRequest {
+    ) Error!relay_query_client.TargetedSubscriptionRequest {
         return social_support.composeTargetedSubscriptionRequest(&self.query, output, step);
     }
 
     pub fn composeTargetedCloseRequest(
-        self: *const SocialHighlightClient,
+        self: *const Client,
         output: []u8,
         target: *const relay_query_client.RelayQueryTarget,
         subscription_id: []const u8,
-    ) SocialHighlightClientError!relay_query_client.TargetedCloseRequest {
+    ) Error!relay_query_client.TargetedCloseRequest {
         return social_support.composeTargetedCloseRequest(
             &self.query,
             output,
@@ -291,34 +291,34 @@ pub const SocialHighlightClient = struct {
     }
 
     pub fn inspectHighlightEvent(
-        _: SocialHighlightClient,
+        _: Client,
         event: *const noztr.nip01_event.Event,
         attributions_out: []noztr.nip84_highlights.HighlightAttribution,
         refs_out: []noztr.nip84_highlights.UrlRef,
-    ) SocialHighlightClientError!noztr.nip84_highlights.Highlight {
+    ) Error!noztr.nip84_highlights.Highlight {
         if (event.kind != highlight_event_kind) return error.InvalidHighlightEventKind;
         return noztr.nip84_highlights.highlight_extract(event, attributions_out, refs_out);
     }
 
     pub fn storeHighlightEventJson(
-        _: SocialHighlightClient,
+        _: Client,
         archive: store.EventArchive,
         event_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SocialHighlightClientError!void {
+    ) Error!void {
         const event = try parseVerifiedStoredHighlightEventJson(event_json, scratch);
         if (event.kind != highlight_event_kind) return error.InvalidStoredHighlightKind;
         return archive.ingestEventJson(event_json, scratch);
     }
 
     pub fn inspectHighlightPage(
-        _: SocialHighlightClient,
+        _: Client,
         archive: store.EventArchive,
         request: *const HighlightPageRequest,
         page: *store.EventQueryResultPage,
         highlights_out: []HighlightRecord,
         scratch: std.mem.Allocator,
-    ) SocialHighlightClientError!HighlightPage {
+    ) Error!HighlightPage {
         const kinds = [_]u32{highlight_event_kind};
         try archive.query(&.{
             .authors = request.query.authors,
@@ -358,7 +358,7 @@ fn buildHighlightSourceTag(
     storage: *HighlightDraftStorage,
     builder_index: *usize,
     source: noztr.nip84_highlights.HighlightSource,
-) SocialHighlightClientError!noztr.nip01_event.EventTag {
+) Error!noztr.nip01_event.EventTag {
     const builder = &storage.builders[builder_index.*];
     builder_index.* += 1;
 
@@ -404,15 +404,15 @@ fn buildHighlightSourceTag(
 fn parseVerifiedStoredHighlightEventJson(
     event_json: []const u8,
     scratch: std.mem.Allocator,
-) SocialHighlightClientError!noztr.nip01_event.Event {
+) Error!noztr.nip01_event.Event {
     const event = try noztr.nip01_event.event_parse_json(event_json, scratch);
     try noztr.nip01_event.event_verify(&event);
     return event;
 }
 
 test "social highlight client composes highlight publish and archive-backed inspection" {
-    var storage = SocialHighlightClientStorage{};
-    var client = SocialHighlightClient.init(.{}, &storage);
+    var storage = Storage{};
+    var client = Client.init(.{}, &storage);
 
     const relay = try client.addRelay("wss://relay.one");
     try client.markRelayConnected(relay.relay_index);
@@ -445,7 +445,7 @@ test "social highlight client composes highlight publish and archive-backed insp
     try std.testing.expect(highlight.source != null);
     try std.testing.expectEqualStrings("chapter 1", highlight.context.?);
 
-    var subscription_storage = SocialSubscriptionPlanStorage{};
+    var subscription_storage = SubscriptionStorage{};
     const plan = try client.inspectHighlightSubscription(
         &.{ .subscription_id = "highlights", .query = .{ .limit = 10 } },
         &subscription_storage,
