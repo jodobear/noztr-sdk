@@ -108,11 +108,14 @@ Within `workflows` and `client`, the canonical grouped routes are now:
 - `workflows.dm.*`
 - `workflows.proof.*`
 - `workflows.signer.*`
+- `workflows.zaps.*`
 - `client.local.*`
 - `client.relay.*`
+- `client.relay.management.*`
 - `client.signer.*`
 - `client.dm.*`
 - `client.identity.*`
+- `client.social.*`
 - `client.proof.*`
 - `client.groups.*`
 
@@ -156,12 +159,20 @@ The structured SDK examples tree now lives under `examples/`.
 
 Start here:
 - `examples/consumer_smoke.zig`
+- `examples/downstream_mixed_route.zig`
 - `examples/remote_signer.zig`
 - `examples/signer_client.zig`
-- `examples/signer_capability.zig`
-- `examples/nip07_browser_signer.zig`
-- `examples/mailbox.zig`
-- `examples/nip03_verification.zig`
-- `examples/group_session.zig`
+- `examples/social_profile_content_client.zig`
+- `examples/social_graph_wot_client.zig`
+- `examples/zap_flow.zig`
+- `examples/relay_management_client.zig`
+- `examples/mixed_dm_client.zig`
+
+For one-line route guidance:
+- `client.relay.*` and `client.local.*`: `publish_client.zig`
+- `client.social.*`: `social_profile_content_client.zig`
+- `client.dm.*`: `mixed_dm_client.zig` (and legacy mailbox flows)
+- `workflows.zaps.*`: `zap_flow.zig`
+- `client.relay.management.*`: `relay_management_client.zig`
 
 For the agent-readable recipe catalog, use `examples/README.md`.
