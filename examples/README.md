@@ -582,38 +582,28 @@ They do not imply:
 - `mailbox_job_client.zig`
   - goal: drive mailbox auth, publish, and receive work through one command-ready job surface
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`
-  - control points: mailbox relay state still lives in the mailbox workflow floor, auth event
-    creation stays explicit and caller-owned, delivery planning still routes through the mailbox
-    session floor, receive work still routes through the bounded receive-turn floor, and this
-    layer only exposes command-ready mailbox posture instead of inventing transport, polling, or
-    UI policy
+  - control points: relay state stays on the mailbox workflow floor, auth creation stays
+    caller-owned, and this layer only exposes command-ready mailbox posture
 - `mailbox_signer_job_client.zig`
   - goal: walk one remote signer through mailbox direct-message authoring explicitly, then return
     one bounded mailbox delivery plan for caller-owned publish work
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip46_remote_signing`
-  - control points: signer relay/auth state still lives on the bounded signer client, mailbox
-    delivery planning still verifies relay-list events before trust, each authoring stage stays
-    explicit instead of hidden behind one send call, and the surface stops at prepared wrap plus
-    delivery planning rather than inventing inbox/runtime or background publish ownership
+  - control points: signer relay/auth state stays on the bounded signer client, relay-list trust
+    stays explicit, and this surface stops at prepared wrap plus delivery planning
 - `mailbox_subscription_turn_client.zig`
   - goal: start one live mailbox subscription turn explicitly, classify wrapped transcript events
     through mailbox intake, then close the live turn explicitly
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip01_filter`,
     `noztr.nip01_message`
-  - control points: live subscription request/close still route through the shared subscription
-    turn floor, wrapped transcript events stay as parsed event objects instead of being
-    reserialized back into JSON, mailbox unwrap still routes through the mailbox workflow floor,
-    and this layer only closes one bounded live mailbox transcript turn without inventing polling
-    or hidden follow ownership
+  - control points: subscription request/close still route through the shared subscription-turn
+    floor, parsed events stay as events, and this layer only closes one bounded live mailbox turn
 - `mailbox_subscription_job_client.zig`
   - goal: prepare one mailbox live-subscription job that either yields one auth event or one
     bounded mailbox subscription request, then close the turn explicitly
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
     `noztr.nip01_filter`, `noztr.nip01_message`
-  - control points: auth handling still routes through shared relay auth state, live mailbox
-    transcript work still routes through the bounded mailbox subscription turn floor, and this
-    layer only exposes command-ready live mailbox posture instead of inventing polling or daemon
-    policy
+  - control points: auth handling still routes through shared relay auth state, live transcript
+    work stays on the bounded mailbox subscription-turn floor, and this layer stays command-ready
 - `mailbox_sync_runtime_client.zig`
   - goal: plan one bounded mailbox sync runtime explicitly, inspect one broader DM orchestration
     helper above that runtime plus one caller-owned DM cadence/backoff helper, then drive durable
@@ -621,28 +611,22 @@ They do not imply:
     inventing a daemon
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`,
     `noztr.nip01_filter`, `noztr.nip01_message`
-  - control points: caller still owns the decision to declare replay catch-up complete, replay and
-    live transcript work still route through the bounded mailbox replay and subscription floors,
-    relay cursors still stay on the shared checkpoint archive seam, restored runtime state still
-    requires explicit reconnect/resubscribe driving, auth event creation stays explicit and caller-
-    owned, and the broader orchestration plus cadence helpers only classify reusable next-phase DM
-    posture instead of taking hidden cadence or daemon ownership
+  - control points: replay/live transcript work stay on the bounded mailbox floors, relay cursors
+    stay on the checkpoint seam, reconnect/resubscribe stay explicit, and cadence/orchestration
+    helpers classify posture without taking daemon ownership
 - `mailbox_replay_turn_client.zig`
   - goal: replay one checkpoint-backed mailbox transcript explicitly, classify wrapped replay
     events through mailbox intake, then close the replay turn with one explicit checkpoint result
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip01_message`
-  - control points: replay cursor planning still routes through the shared replay turn floor,
-    wrapped transcript events stay as parsed event objects instead of being reserialized back into
-    JSON, mailbox unwrap still routes through the mailbox workflow floor, and this layer only
-    closes one bounded mailbox replay turn without inventing polling or hidden sync policy
+  - control points: replay cursor planning still routes through the shared replay-turn floor,
+    parsed events stay as events, and this layer only closes one bounded mailbox replay turn
 - `mailbox_replay_job_client.zig`
   - goal: prepare mailbox replay work that either yields one auth event or one bounded mailbox
     replay request, then close that replay with explicit mailbox intake and checkpoint posture
   - kernel fixture help: `noztr.nip17_private_messages`, `noztr.nip42_auth`, `noztr.nip01_message`
   - control points: auth handling still routes through shared relay auth state, replay request and
-    checkpoint closure still route through the bounded mailbox replay turn floor, wrapped replay
-    events still flow straight into mailbox intake as parsed event objects, and this layer only
-    exposes command-ready mailbox replay posture instead of inventing polling or daemon policy
+    checkpoint closure stay on the bounded mailbox replay-turn floor, and this layer stays
+    command-ready
 - `nip03_verification.zig`
   - goal: fetch one detached OpenTimestamps proof document, store it explicitly, remember the
     verified result, classify the latest remembered verification plus remembered verification
@@ -652,18 +636,9 @@ They do not imply:
     plan refresh for stale remembered verifications, and recover the latest remembered
     verification for the same target event
   - kernel fixture help: `noztr.nostr_keys`
-  - control points: caller supplies the target event, attestation event, detached proof URL,
-    caller-owned proof buffer, caller-owned proof-store records, and caller-owned remembered-
-    verification store records over the explicit HTTP seam, then performs one explicit
-    latest-verification freshness lookup plus one explicit preferred-verification selection over
-    caller-owned freshness storage plus one explicit freshness-classified remembered
-    discovery lookup plus one typed remembered runtime-step helper plus one explicit grouped
-    target-policy plan plus one explicit grouped refresh-cadence plan plus one explicit bounded
-    refresh-batch plan plus one explicit archive-backed refresh-readiness plan plus one explicit
-    grouped turn-policy plan plus one explicit stale-proof refresh plan plus one typed refresh step
-    without hidden Bitcoin refresh policy, and now gets a typed store inconsistency error instead
-    of an invariant-only crash if a custom remembered-verification store reports matches it cannot
-    hydrate
+  - control points: HTTP, proof storage, and remembered verification storage stay explicit, and
+    the workflow gives bounded freshness, policy, cadence, batch, and refresh planning without
+    hidden refresh ownership
 - `nip03_verify_client.zig`
   - goal: prepare and run one command-ready remembered detached-proof `NIP-03` verify job over
     the explicit HTTP, proof-store, and remembered-verification seams, then inspect bounded
@@ -671,30 +646,23 @@ They do not imply:
     refresh readiness over the explicit archive seam, turn-policy, and refresh planning through
     the client surface
   - kernel fixture help: `noztr.nostr_keys`, `noztr.nip03_opentimestamps`
-  - control points: the client only assembles remote-proof request posture above the existing
-    OpenTimestamps workflow, HTTP and store ownership stay explicit, and remembered-proof runtime,
-    grouped target policy, refresh-cadence, refresh-batch, archive-backed refresh readiness,
-    turn-policy, and refresh planning stay bounded instead of inventing background refresh or
-    output policy
+  - control points: the client only assembles command-ready proof work above the workflow floor,
+    HTTP and store ownership stay explicit, and runtime/refresh planning stays bounded
 - `nip05_verify_client.zig`
   - goal: prepare and run one command-ready `NIP-05` verify job, remember the verified
     resolution, and inspect one bounded refresh plan over the public HTTP seam
   - kernel fixture help: none beyond the SDK result surface
-  - control points: the client assembles command-ready lookup storage plus remembered successful
-    resolution and bounded refresh planning above the existing resolver workflow, transport stays
-    explicit, caller-owned buffers/scratch/store state stay explicit, and this layer still avoids
-    inventing hidden retry or output policy
+  - control points: the client assembles command-ready lookup and remembered-resolution work above
+    the resolver workflow, transport and storage stay explicit, and refresh planning stays bounded
 - `nip39_verify_client.zig`
   - goal: prepare and run one command-ready remembered `NIP-39` profile verify job over the
     public HTTP seam with explicit cache and profile-store seams, then inspect remembered-identity
     latest freshness, refresh cadence, refresh batch, and one bounded stored watched-target
     long-lived planning route through the client surface
   - kernel fixture help: `noztr.nip39_external_identities`
-  - control points: the client assembles one profile verification job plus remembered-identity
-    strategy helpers over the explicit profile store and one watched-target-store-backed long-lived
-    planning and orchestration route above the existing identity workflow, HTTP/cache/store
-    ownership stays explicit, caller-owned planning storage stays explicit, and this layer still
-    avoids inventing autonomous refresh or output policy
+  - control points: the client assembles remembered-profile verification and watched-target
+    planning above the identity workflow, HTTP/cache/store ownership stays explicit, and long-lived
+    planning stays bounded
 - `nip39_verification.zig`
   - goal: verify one full kind-10011 identity event over the public HTTP seam, reuse one explicit
     cache, remember the verified profile, hydrate one stored discovery result directly, classify
@@ -708,32 +676,15 @@ They do not imply:
     that watched set, inspect one typed remembered runtime step explicitly, plan refresh for stale
     remembered profiles explicitly, and replay the same identity from remembered state
   - kernel fixture help: `noztr.nip39_external_identities`
-  - control points: caller provides the HTTP client, the signed identity event, the target pubkey,
-    caller-owned per-claim verification storage, caller-owned cache records, caller-owned profile
-    store records, inspects provider-shaped details from the verified claims, then performs one
-    explicit remembered discovery lookup, one explicit freshness-classified remembered discovery
-    lookup, one newest-match remembered lookup, one grouped watched-target remembered discovery
-    lookup, one grouped watched-target freshness discovery lookup, one caller-owned watched-target
-    latest-freshness plan plus one typed next watched-target step, one explicit watched-target
-    preferred-per-target selection step, one explicit watched-target preferred-selection step, one
-    explicit watched-target stale-refresh plan plus one typed next refresh step, one explicit
-    preferred-profile selection step, one explicit watched-target runtime plan plus one typed next
-    runtime step, one explicit watched-target policy plan plus grouped verify-now / usable-
-    preferred / refresh-needed views, one explicit watched-target refresh-cadence plan plus one
-    typed next-due step and grouped usable-while-refreshing / refresh-soon views, one explicit
-    watched-target refresh-batch plan plus one typed next selected step and grouped selected /
-    deferred views, one explicit watched-target turn-policy plan plus one typed next work step and
-    grouped verify-now / refresh-selected / work / idle / cached-now / deferred-later views, one
-    explicit remembered runtime inspection step plus one typed next-step helper, one explicit
-    stale-profile refresh plan plus one typed refresh step, and one explicit freshness check
+  - control points: HTTP, cache, verification storage, and profile storage stay caller-owned, and
+    the workflow gives explicit discovery, freshness, watched-target planning, and refresh helpers
     without hidden background policy
 - `nip05_resolution.zig`
   - goal: resolve and verify one `NIP-05` address, remember the successful resolution, and inspect
     one bounded refresh plan over the public HTTP seam
   - kernel fixture help: none beyond the SDK result surface
-  - control points: caller provides the HTTP client, one caller-owned lookup storage wrapper, one
-    explicit remembered-resolution store, and the scratch allocator; refresh work remains explicit
-    typed planning rather than hidden retry behavior
+  - control points: HTTP, lookup storage, and remembered-resolution storage stay explicit, and
+    refresh work remains typed planning rather than hidden retry behavior
 - `group_session.zig`
   - goal: author a canonical `NIP-29` snapshot, export one checkpoint, restore it into a receiver
     client, select valid `previous` refs, build one outbound moderation event, then replay it
