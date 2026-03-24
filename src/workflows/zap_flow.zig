@@ -53,7 +53,6 @@ pub const Coordinate = struct {
 pub const ZapRequestDraftStorage = struct {
     tags: [8]noztr.nip01_event.EventTag = undefined,
     builders: [8]noztr.nip57_zaps.TagBuilder = undefined,
-    coordinate_items: [2][]const u8 = undefined,
     recipient_pubkey_hex: [64]u8 = undefined,
     receipt_signer_pubkey_hex: [64]u8 = undefined,
     event_id_hex: [64]u8 = undefined,
@@ -208,11 +207,11 @@ pub const ZapFlow = struct {
             tag_count += 1;
         }
         if (draft.coordinate) |coordinate| {
-            try validateCoordinate(coordinate);
             const coordinate_text = try formatCoordinate(storage.coordinate_text[0..], coordinate);
-            storage.coordinate_items[0] = "a";
-            storage.coordinate_items[1] = coordinate_text;
-            storage.tags[tag_count] = .{ .items = storage.coordinate_items[0..2] };
+            storage.tags[tag_count] = try noztr.nip57_zaps.zap_build_coordinate_tag(
+                &storage.builders[tag_count],
+                coordinate_text,
+            );
             tag_count += 1;
         }
         if (draft.target_kind) |target_kind| {
@@ -557,15 +556,6 @@ fn formatCoordinate(output: []u8, coordinate: Coordinate) Error![]const u8 {
     ) catch error.ZapDraftStorageTooSmall;
 }
 
-fn validateCoordinate(coordinate: Coordinate) noztr.nip57_zaps.ZapError!void {
-    if (!std.unicode.utf8ValidateSlice(coordinate.identifier)) return error.InvalidCoordinateTag;
-
-    const replaceable = coordinate.kind >= 10_000 and coordinate.kind < 20_000;
-    const addressable = coordinate.kind >= 30_000 and coordinate.kind < 40_000;
-    if (!replaceable and !addressable) return error.InvalidCoordinateTag;
-    if (addressable and coordinate.identifier.len == 0) return error.InvalidCoordinateTag;
-}
-
 const ReceiptFixtureStorage = struct {
     tags: [4]noztr.nip01_event.EventTag = undefined,
     builders: [4]noztr.nip57_zaps.TagBuilder = undefined,
@@ -755,6 +745,35 @@ test "zap flow rejects invalid typed coordinate drafts" {
                     .kind = 30_023,
                     .pubkey = target_pubkey,
                     .identifier = "",
+                },
+            },
+        ),
+    );
+}
+
+test "zap flow rejects unsupported coordinate kinds through kernel coordinate builder" {
+    var storage = ZapFlowStorage{};
+    var flow = ZapFlow.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x75} ** 32;
+    const target_pubkey = [_]u8{0x57} ** 32;
+    var draft_storage = ZapRequestDraftStorage{};
+    var request_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+
+    try std.testing.expectError(
+        error.InvalidCoordinateTag,
+        flow.prepareZapRequestPublish(
+            request_json_buffer[0..],
+            &draft_storage,
+            &secret_key,
+            &.{
+                .created_at = 28,
+                .receipt_relays = &.{"wss://relay.one"},
+                .recipient_pubkey = target_pubkey,
+                .coordinate = .{
+                    .kind = 21,
+                    .pubkey = target_pubkey,
+                    .identifier = "article",
                 },
             },
         ),
