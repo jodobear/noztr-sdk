@@ -92,6 +92,8 @@ The current public floor is grouped and broad:
   - `NIP-03` proof verification and remembered-proof planning
 - `client.groups.*`
   - multi-relay `NIP-29` group client composition
+- `client.relay.management.*`
+  - explicit `NIP-86` relay-management request/result handling over the HTTP seam
 - `workflows.signer.*`
   - `NIP-46` remote signer workflow
 - `workflows.zaps.*`

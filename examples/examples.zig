@@ -27,6 +27,7 @@ comptime {
     _ = @import("relay_auth_client.zig");
     _ = @import("relay_directory_job_client.zig");
     _ = @import("relay_exchange_client.zig");
+    _ = @import("relay_management_client.zig");
     _ = @import("relay_query_client.zig");
     _ = @import("relay_session_client.zig");
     _ = @import("relay_workspace_client.zig");

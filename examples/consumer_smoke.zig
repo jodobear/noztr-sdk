@@ -16,6 +16,7 @@ test "consumer smoke: import the sdk grouped public namespaces" {
     try std.testing.expect(@TypeOf(noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.signer.capability.SignerCapabilityProfile) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.signer.browser.Nip07BrowserProvider) == type);
+    try std.testing.expect(@TypeOf(noztr_sdk.client.relay.management.Client) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.relay.session.RelaySessionClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.identity.nip39.Nip39VerifyClient) == type);
     try std.testing.expect(@TypeOf(noztr_sdk.client.social.graph_wot.SocialGraphWotClient) == type);

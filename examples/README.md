@@ -160,6 +160,13 @@ They do not imply:
     still routes through the existing publish floor, pay-endpoint metadata remains explicit so the
     caller can retain receipt-validation inputs, and HTTP callback handling stays explicit over the
     public transport seam instead of becoming a hidden wallet runtime
+- `relay_management_client.zig`
+  - goal: compose one `NIP-86` `supportedmethods` request and one `banpubkey` request over the
+    explicit HTTP post seam with typed response parsing
+  - kernel fixture help: `noztr.nip86_relay_management`
+  - control points: deterministic request and response JSON shaping stays on `noztr`, admin auth
+    remains an explicit caller-supplied precondition, and HTTP request ownership stays on the public
+    transport seam instead of becoming a hidden operator daemon
 - `signer_connect_job_client.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

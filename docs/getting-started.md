@@ -187,6 +187,7 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client.zig](../examples/social_reaction_list_client.zig) |
 | build social contact-graph and starter-only WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client.zig](../examples/social_graph_wot_client.zig) |
 | build explicit zap request and callback flows | [public contract map](./reference/contract-map.md) | [zap_flow.zig](../examples/zap_flow.zig) |
+| build explicit relay-management admin calls | [public contract map](./reference/contract-map.md) | [relay_management_client.zig](../examples/relay_management_client.zig) |
 | build app-facing DM capability flows above mailbox and legacy DM | [public contract map](./reference/contract-map.md) | [dm_capability_client.zig](../examples/dm_capability_client.zig) |
 | build one simple mixed mailbox-plus-legacy DM facade for apps with bounded outbound preparation | [public contract map](./reference/contract-map.md) | [mixed_dm_client.zig](../examples/mixed_dm_client.zig) |
 | build signer-backed mailbox DM authoring above the remote-signer floor | [public contract map](./reference/contract-map.md) | [mailbox_signer_job_client.zig](../examples/mailbox_signer_job_client.zig) |
@@ -225,6 +226,8 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first social contact-graph and starter-only WoT route over verified latest contact lists
 - [zap_flow.zig](../examples/zap_flow.zig)
   - first explicit `NIP-57` publish plus callback route over the shared publish and HTTP seams
+- [relay_management_client.zig](../examples/relay_management_client.zig)
+  - first explicit `NIP-86` admin request/result route over the shared HTTP seam
 - [store_query.zig](../examples/store_query.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store.zig](../examples/sqlite_client_store.zig)
