@@ -10,7 +10,7 @@ pub const Nip39VerifyClientError =
     workflows.identity.verify.IdentityRememberedIdentityPlanningError ||
     workflows.identity.verify.IdentityStoredProfileDiscoveryError ||
     workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyError ||
-    workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationError;
+    workflows.identity.verify.IdentityStoredWatchedTargetRuntimeError;
 
 pub const Nip39VerifyClientConfig = struct {};
 
@@ -137,13 +137,13 @@ pub const Nip39VerifyClient = struct {
         );
     }
 
-    pub fn inspectRememberedLatest(
+    pub fn inspectRememberedFreshness(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
-        request: Planning.Remembered.Latest.Request,
-    ) Nip39VerifyClientError!Planning.Remembered.Latest.Plan {
+        request: Planning.Remembered.Freshness.Request,
+    ) Nip39VerifyClientError!Planning.Remembered.Freshness.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityLatestFreshness(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectRememberedIdentityFreshness(store, request);
     }
 
     pub fn getPreferredForTargets(
@@ -298,14 +298,14 @@ pub const Nip39VerifyClient = struct {
         );
     }
 
-    pub fn inspectWatchedOrchestration(
+    pub fn inspectWatchedRuntime(
         self: *const Nip39VerifyClient,
         store: workflows.identity.verify.IdentityProfileStore,
         watched_target_store: workflows.identity.verify.IdentityWatchedTargetStore,
-        request: Planning.Watched.Orchestration.Request,
-    ) Nip39VerifyClientError!Planning.Watched.Orchestration.Plan {
+        request: Planning.Watched.Runtime.Request,
+    ) Nip39VerifyClientError!Planning.Watched.Runtime.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetOrchestration(
+        return workflows.identity.verify.IdentityVerifier.inspectStoredWatchedTargetRuntime(
             store,
             watched_target_store,
             request,
@@ -863,7 +863,7 @@ test "nip39 verify client inspects stored watched target refresh batch through t
     try std.testing.expectEqualStrings("bob", batch.deferredEntries()[0].target.identity);
 }
 
-test "nip39 verify client inspects stored watched target orchestration through the client surface" {
+test "nip39 verify client inspects stored watched target runtime through the client surface" {
     const stable_pubkey = [_]u8{0xa1} ** 32;
     const soon_pubkey = [_]u8{0xa2} ** 32;
     const stale_pubkey = [_]u8{0xa3} ** 32;
@@ -945,7 +945,7 @@ test "nip39 verify client inspects stored watched target orchestration through t
     var turn_groups: [4]Planning.Turn.Group = undefined;
 
     const client = Nip39VerifyClient.init(.{});
-    const plan = try client.inspectWatchedOrchestration(
+    const plan = try client.inspectWatchedRuntime(
         profile_store.asStore(),
         watched_store.asStore(),
         .{
@@ -954,7 +954,7 @@ test "nip39 verify client inspects stored watched target orchestration through t
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.Watched.Orchestration.Storage.init(
+            .storage = Planning.Watched.Runtime.Storage.init(
                 listed_records[0..],
                 targets[0..],
                 Planning.Policy.Storage.init(
@@ -1010,7 +1010,7 @@ test "nip39 verify client inspects stored watched target orchestration through t
     try std.testing.expectEqualStrings("bob", plan.deferredEntries()[0].target.identity);
 }
 
-test "nip39 verify client inspects remembered identity latest freshness through the client surface" {
+test "nip39 verify client inspects remembered identity freshness through the client surface" {
     const alice_pubkey_a = [_]u8{0xf1} ** 32;
     const alice_pubkey_b = [_]u8{0xf2} ** 32;
     const bob_pubkey = [_]u8{0xf3} ** 32;
@@ -1063,7 +1063,7 @@ test "nip39 verify client inspects remembered identity latest freshness through 
     var entries: [2]Planning.Latest.Entry = undefined;
 
     const client = Nip39VerifyClient.init(.{});
-    const plan = try client.inspectRememberedLatest(
+    const plan = try client.inspectRememberedFreshness(
         profile_store.asStore(),
         .{
             .now_unix_seconds = 50,

@@ -55,7 +55,7 @@ const Nip05Planning = nip05.Planning;
 
 ## `NIP-03` Planning Shape
 
-Old flat names like:
+Older flat names like:
 
 - `Planning.LatestTargetRequest`
 - `Planning.PreferredTargetEntry`
@@ -123,6 +123,18 @@ Examples:
 - `Planning.PreferredTargetSelectionRequest` -> `Planning.Preferred.EntriesRequest`
 - `Planning.RememberedCadencePlan` -> `Planning.Remembered.Cadence.Plan`
 - `Planning.WatchedOrchestrationPlan` -> `Planning.Watched.Orchestration.Plan`
+
+## `NIP-39` Follow-On Cleanup
+
+The later route-local cleanup shortened two surviving grouped subfamilies:
+
+- `Planning.Remembered.Latest.*` -> `Planning.Remembered.Freshness.*`
+- `Planning.Watched.Orchestration.*` -> `Planning.Watched.Runtime.*`
+
+That same cleanup also shortened the main client methods:
+
+- `inspectRememberedLatest` -> `inspectRememberedFreshness`
+- `inspectWatchedOrchestration` -> `inspectWatchedRuntime`
 
 ## `NIP-05` Planning Shape
 

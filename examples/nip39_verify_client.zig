@@ -128,28 +128,28 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     var batch_latest_entries: [4]Planning.Latest.Entry = undefined;
     var batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
     var batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var orchestration_policy_matches: [2]Planning.Match = undefined;
-    var orchestration_policy_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var orchestration_policy_entries: [4]Planning.Policy.Entry = undefined;
-    var orchestration_policy_groups: [4]Planning.Policy.Group = undefined;
-    var orchestration_cadence_matches: [2]Planning.Match = undefined;
-    var orchestration_cadence_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var orchestration_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var orchestration_cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var orchestration_batch_matches: [2]Planning.Match = undefined;
-    var orchestration_batch_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var orchestration_batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var orchestration_batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var orchestration_turn_matches: [2]Planning.Match = undefined;
-    var orchestration_turn_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var orchestration_turn_policy_entries: [4]Planning.Policy.Entry = undefined;
-    var orchestration_turn_policy_groups: [4]Planning.Policy.Group = undefined;
-    var orchestration_turn_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var orchestration_turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var runtime_policy_matches: [2]Planning.Match = undefined;
+    var runtime_policy_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var runtime_policy_entries: [4]Planning.Policy.Entry = undefined;
+    var runtime_policy_groups: [4]Planning.Policy.Group = undefined;
+    var runtime_cadence_matches: [2]Planning.Match = undefined;
+    var runtime_cadence_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var runtime_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var runtime_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var runtime_batch_matches: [2]Planning.Match = undefined;
+    var runtime_batch_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var runtime_batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var runtime_batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var runtime_turn_matches: [2]Planning.Match = undefined;
+    var runtime_turn_latest_entries: [4]Planning.Latest.Entry = undefined;
+    var runtime_turn_policy_entries: [4]Planning.Policy.Entry = undefined;
+    var runtime_turn_policy_groups: [4]Planning.Policy.Group = undefined;
+    var runtime_turn_cadence_entries: [4]Planning.Cadence.Entry = undefined;
+    var runtime_turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
     var turn_entries: [4]Planning.Turn.Entry = undefined;
     var turn_groups: [4]Planning.Turn.Group = undefined;
-    var orchestration_turn_entries: [4]Planning.Turn.Entry = undefined;
-    var orchestration_turn_groups: [4]Planning.Turn.Group = undefined;
+    var runtime_turn_entries: [4]Planning.Turn.Entry = undefined;
+    var runtime_turn_groups: [4]Planning.Turn.Group = undefined;
 
     const cadence = try client.inspectWatchedCadence(
         profile_store.asStore(),
@@ -242,7 +242,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     try std.testing.expectEqualStrings("bob", turn_policy.refreshSelectedEntries()[0].target.identity);
     try std.testing.expectEqualStrings("alice", turn_policy.useCachedEntries()[0].target.identity);
 
-    const orchestration = try client.inspectWatchedOrchestration(
+    const runtime = try client.inspectWatchedRuntime(
         profile_store.asStore(),
         watched_target_store.asStore(),
         .{
@@ -251,59 +251,59 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .refresh_soon_age_seconds = 12,
             .max_selected = 2,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.Watched.Orchestration.Storage.init(
+            .storage = Planning.Watched.Runtime.Storage.init(
                 listed_records[0..],
                 targets[0..],
                 Planning.Policy.Storage.init(
-                    orchestration_policy_matches[0..],
-                    orchestration_policy_latest_entries[0..],
-                    orchestration_policy_entries[0..],
-                    orchestration_policy_groups[0..],
+                    runtime_policy_matches[0..],
+                    runtime_policy_latest_entries[0..],
+                    runtime_policy_entries[0..],
+                    runtime_policy_groups[0..],
                 ),
                 Planning.Cadence.Storage.init(
-                    orchestration_cadence_matches[0..],
-                    orchestration_cadence_latest_entries[0..],
-                    orchestration_cadence_entries[0..],
-                    orchestration_cadence_groups[0..],
+                    runtime_cadence_matches[0..],
+                    runtime_cadence_latest_entries[0..],
+                    runtime_cadence_entries[0..],
+                    runtime_cadence_groups[0..],
                 ),
                 Planning.Batch.Storage.init(
-                    orchestration_batch_matches[0..],
-                    orchestration_batch_latest_entries[0..],
-                    orchestration_batch_cadence_entries[0..],
-                    orchestration_batch_cadence_groups[0..],
+                    runtime_batch_matches[0..],
+                    runtime_batch_latest_entries[0..],
+                    runtime_batch_cadence_entries[0..],
+                    runtime_batch_cadence_groups[0..],
                 ),
                 Planning.Turn.Storage.init(
-                    orchestration_turn_matches[0..],
-                    orchestration_turn_latest_entries[0..],
-                    orchestration_turn_policy_entries[0..],
-                    orchestration_turn_policy_groups[0..],
-                    orchestration_turn_cadence_entries[0..],
-                    orchestration_turn_cadence_groups[0..],
-                    orchestration_turn_entries[0..],
-                    orchestration_turn_groups[0..],
+                    runtime_turn_matches[0..],
+                    runtime_turn_latest_entries[0..],
+                    runtime_turn_policy_entries[0..],
+                    runtime_turn_policy_groups[0..],
+                    runtime_turn_cadence_entries[0..],
+                    runtime_turn_cadence_groups[0..],
+                    runtime_turn_entries[0..],
+                    runtime_turn_groups[0..],
                 ),
             ),
         },
     );
-    try std.testing.expectEqual(@as(u32, 4), orchestration.watched_target_count);
-    try std.testing.expectEqual(@as(u32, 2), orchestration.policy.verify_now_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.policy.use_preferred_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.policy.use_stale_and_refresh_count);
-    try std.testing.expectEqual(@as(u32, 2), orchestration.cadence.verify_now_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.cadence.usable_while_refreshing_count);
-    try std.testing.expectEqual(@as(u32, 0), orchestration.cadence.refresh_soon_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.cadence.stable_count);
-    try std.testing.expectEqual(@as(u32, 2), orchestration.batch.selected_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.batch.deferred_count);
-    try std.testing.expectEqual(@as(u32, 2), orchestration.turn.verify_now_count);
-    try std.testing.expectEqual(@as(u32, 0), orchestration.turn.refresh_selected_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.turn.use_cached_count);
-    try std.testing.expectEqual(@as(u32, 1), orchestration.turn.defer_refresh_count);
-    try std.testing.expectEqualStrings("carol", orchestration.nextDueStep().?.entry.target.identity);
-    try std.testing.expectEqualStrings("carol", orchestration.nextRefreshBatchStep().?.entry.target.identity);
-    try std.testing.expectEqualStrings("carol", orchestration.nextWorkStep().?.entry.target.identity);
-    try std.testing.expectEqualStrings("alice", orchestration.useCachedEntries()[0].target.identity);
-    try std.testing.expectEqualStrings("bob", orchestration.deferredEntries()[0].target.identity);
+    try std.testing.expectEqual(@as(u32, 4), runtime.watched_target_count);
+    try std.testing.expectEqual(@as(u32, 2), runtime.policy.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.policy.use_preferred_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.policy.use_stale_and_refresh_count);
+    try std.testing.expectEqual(@as(u32, 2), runtime.cadence.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.cadence.usable_while_refreshing_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.cadence.refresh_soon_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.cadence.stable_count);
+    try std.testing.expectEqual(@as(u32, 2), runtime.batch.selected_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.batch.deferred_count);
+    try std.testing.expectEqual(@as(u32, 2), runtime.turn.verify_now_count);
+    try std.testing.expectEqual(@as(u32, 0), runtime.turn.refresh_selected_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.turn.use_cached_count);
+    try std.testing.expectEqual(@as(u32, 1), runtime.turn.defer_refresh_count);
+    try std.testing.expectEqualStrings("carol", runtime.nextDueStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("carol", runtime.nextRefreshBatchStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("carol", runtime.nextWorkStep().?.entry.target.identity);
+    try std.testing.expectEqualStrings("alice", runtime.useCachedEntries()[0].target.identity);
+    try std.testing.expectEqualStrings("bob", runtime.deferredEntries()[0].target.identity);
 
     var remembered_records: [2]Planning.Record.Remembered = undefined;
     var remembered_targets: [2]Planning.Target = undefined;
@@ -312,12 +312,12 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     var remembered_cadence_entries: [2]Planning.Cadence.Entry = undefined;
     var remembered_cadence_groups: [5]Planning.Cadence.Group = undefined;
 
-    const remembered_freshness = try client.inspectRememberedLatest(
+    const remembered_freshness = try client.inspectRememberedFreshness(
         profile_store.asStore(),
         .{
             .now_unix_seconds = 50,
             .max_age_seconds = 20,
-            .storage = Planning.Remembered.Latest.Storage.init(
+            .storage = Planning.Remembered.Freshness.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
                 Planning.Latest.Storage.init(

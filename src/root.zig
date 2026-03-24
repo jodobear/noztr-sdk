@@ -836,9 +836,9 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityRecord) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityResultPage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityPlanningError) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityLatestFreshnessStorage) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityLatestFreshnessRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityLatestFreshnessPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityFreshnessStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityFreshnessRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityFreshnessPlan) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityRefreshCadenceStorage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityRefreshCadenceRequest) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityRefreshCadencePlan) == type);
@@ -891,10 +891,10 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchStorage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchRequest) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRefreshBatchPlan) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationError) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationStorage) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetOrchestrationPlan) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRuntimeError) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRuntimeStorage) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRuntimeRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetRuntimePlan) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyError) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyStorage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyRequest) == type);

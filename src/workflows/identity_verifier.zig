@@ -1259,9 +1259,9 @@ pub const IdentityStoredWatchedTargetRefreshBatchPlan = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetOrchestrationError = IdentityStoredWatchedTargetPlanningError;
+pub const IdentityStoredWatchedTargetRuntimeError = IdentityStoredWatchedTargetPlanningError;
 
-pub const IdentityStoredWatchedTargetOrchestrationStorage = struct {
+pub const IdentityStoredWatchedTargetRuntimeStorage = struct {
     watched_target_records: []IdentityWatchedTargetRecord,
     targets: []IdentityStoredProfileTarget,
     policy: IdentityStoredProfileTargetPolicyStorage,
@@ -1276,7 +1276,7 @@ pub const IdentityStoredWatchedTargetOrchestrationStorage = struct {
         cadence: IdentityStoredProfileTargetRefreshCadenceStorage,
         batch: IdentityStoredProfileTargetRefreshBatchStorage,
         turn: IdentityStoredProfileTargetTurnPolicyStorage,
-    ) IdentityStoredWatchedTargetOrchestrationStorage {
+    ) IdentityStoredWatchedTargetRuntimeStorage {
         return .{
             .watched_target_records = watched_target_records,
             .targets = targets,
@@ -1288,16 +1288,16 @@ pub const IdentityStoredWatchedTargetOrchestrationStorage = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetOrchestrationRequest = struct {
+pub const IdentityStoredWatchedTargetRuntimeRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     max_selected: usize,
     fallback_policy: IdentityStoredProfileFallbackPolicy = .allow_stale_latest,
-    storage: IdentityStoredWatchedTargetOrchestrationStorage,
+    storage: IdentityStoredWatchedTargetRuntimeStorage,
 };
 
-pub const IdentityStoredWatchedTargetOrchestrationPlan = struct {
+pub const IdentityStoredWatchedTargetRuntimePlan = struct {
     watched_target_count: u32 = 0,
     policy: IdentityStoredProfileTargetPolicyPlan,
     cadence: IdentityStoredProfileTargetRefreshCadencePlan,
@@ -1305,43 +1305,43 @@ pub const IdentityStoredWatchedTargetOrchestrationPlan = struct {
     turn: IdentityStoredProfileTargetTurnPolicyPlan,
 
     pub fn nextWorkStep(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) ?IdentityStoredProfileTargetTurnPolicyStep {
         return self.turn.nextWorkStep();
     }
 
     pub fn nextDueStep(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) ?IdentityStoredProfileTargetRefreshCadenceStep {
         return self.cadence.nextDueStep();
     }
 
     pub fn nextRefreshBatchStep(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) ?IdentityStoredProfileTargetRefreshBatchStep {
         return self.batch.nextBatchStep();
     }
 
     pub fn verifyNowEntries(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) []const IdentityStoredProfileTargetTurnPolicyEntry {
         return self.turn.verifyNowEntries();
     }
 
     pub fn refreshSelectedEntries(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) []const IdentityStoredProfileTargetTurnPolicyEntry {
         return self.turn.refreshSelectedEntries();
     }
 
     pub fn useCachedEntries(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) []const IdentityStoredProfileTargetTurnPolicyEntry {
         return self.turn.useCachedEntries();
     }
 
     pub fn deferredEntries(
-        self: *const IdentityStoredWatchedTargetOrchestrationPlan,
+        self: *const IdentityStoredWatchedTargetRuntimePlan,
     ) []const IdentityStoredProfileTargetTurnPolicyEntry {
         return self.turn.deferredEntries();
     }
@@ -1460,7 +1460,7 @@ pub const IdentityStoredProfileTargetLatestFreshnessStep = struct {
 pub const IdentityRememberedIdentityPlanningError =
     IdentityProfileStoreError || error{RememberedIdentityListTruncated, BufferTooSmall};
 
-pub const IdentityRememberedIdentityLatestFreshnessStorage = struct {
+pub const IdentityRememberedIdentityFreshnessStorage = struct {
     remembered_identity_records: []IdentityRememberedIdentityRecord,
     targets: []IdentityStoredProfileTarget,
     freshness: IdentityStoredProfileTargetLatestFreshnessStorage,
@@ -1469,7 +1469,7 @@ pub const IdentityRememberedIdentityLatestFreshnessStorage = struct {
         remembered_identity_records: []IdentityRememberedIdentityRecord,
         targets: []IdentityStoredProfileTarget,
         freshness: IdentityStoredProfileTargetLatestFreshnessStorage,
-    ) IdentityRememberedIdentityLatestFreshnessStorage {
+    ) IdentityRememberedIdentityFreshnessStorage {
         return .{
             .remembered_identity_records = remembered_identity_records,
             .targets = targets,
@@ -1478,24 +1478,24 @@ pub const IdentityRememberedIdentityLatestFreshnessStorage = struct {
     }
 };
 
-pub const IdentityRememberedIdentityLatestFreshnessRequest = struct {
+pub const IdentityRememberedIdentityFreshnessRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
-    storage: IdentityRememberedIdentityLatestFreshnessStorage,
+    storage: IdentityRememberedIdentityFreshnessStorage,
 };
 
-pub const IdentityRememberedIdentityLatestFreshnessPlan = struct {
+pub const IdentityRememberedIdentityFreshnessPlan = struct {
     remembered_identity_count: u32 = 0,
     freshness: IdentityStoredProfileTargetLatestFreshnessPlan,
 
     pub fn nextEntry(
-        self: *const IdentityRememberedIdentityLatestFreshnessPlan,
+        self: *const IdentityRememberedIdentityFreshnessPlan,
     ) ?*const IdentityStoredProfileTargetLatestFreshnessEntry {
         return self.freshness.nextEntry();
     }
 
     pub fn nextStep(
-        self: *const IdentityRememberedIdentityLatestFreshnessPlan,
+        self: *const IdentityRememberedIdentityFreshnessPlan,
     ) ?IdentityStoredProfileTargetLatestFreshnessStep {
         return self.freshness.nextStep();
     }
@@ -2281,10 +2281,10 @@ pub const Planning = struct {
     };
 
     pub const Remembered = struct {
-        pub const Latest = struct {
-            pub const Storage = IdentityRememberedIdentityLatestFreshnessStorage;
-            pub const Request = IdentityRememberedIdentityLatestFreshnessRequest;
-            pub const Plan = IdentityRememberedIdentityLatestFreshnessPlan;
+        pub const Freshness = struct {
+            pub const Storage = IdentityRememberedIdentityFreshnessStorage;
+            pub const Request = IdentityRememberedIdentityFreshnessRequest;
+            pub const Plan = IdentityRememberedIdentityFreshnessPlan;
         };
 
         pub const Cadence = struct {
@@ -2322,11 +2322,11 @@ pub const Planning = struct {
             pub const Plan = IdentityStoredWatchedTargetRefreshBatchPlan;
         };
 
-        pub const Orchestration = struct {
-            pub const Error = IdentityStoredWatchedTargetOrchestrationError;
-            pub const Storage = IdentityStoredWatchedTargetOrchestrationStorage;
-            pub const Request = IdentityStoredWatchedTargetOrchestrationRequest;
-            pub const Plan = IdentityStoredWatchedTargetOrchestrationPlan;
+        pub const Runtime = struct {
+            pub const Error = IdentityStoredWatchedTargetRuntimeError;
+            pub const Storage = IdentityStoredWatchedTargetRuntimeStorage;
+            pub const Request = IdentityStoredWatchedTargetRuntimeRequest;
+            pub const Plan = IdentityStoredWatchedTargetRuntimePlan;
         };
 
         pub const Turn = struct {
@@ -2502,10 +2502,10 @@ pub const IdentityVerifier = struct {
         return store.findProfiles(request.provider, request.identity, request.results);
     }
 
-    pub fn inspectRememberedIdentityLatestFreshness(
+    pub fn inspectRememberedIdentityFreshness(
         store: IdentityProfileStore,
-        request: IdentityRememberedIdentityLatestFreshnessRequest,
-    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityLatestFreshnessPlan {
+        request: IdentityRememberedIdentityFreshnessRequest,
+    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityFreshnessPlan {
         const count = try loadRememberedIdentities(
             store,
             request.storage.remembered_identity_records,
@@ -3558,11 +3558,11 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn inspectStoredWatchedTargetOrchestration(
+    pub fn inspectStoredWatchedTargetRuntime(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
-        request: IdentityStoredWatchedTargetOrchestrationRequest,
-    ) IdentityStoredWatchedTargetOrchestrationError!IdentityStoredWatchedTargetOrchestrationPlan {
+        request: IdentityStoredWatchedTargetRuntimeRequest,
+    ) IdentityStoredWatchedTargetRuntimeError!IdentityStoredWatchedTargetRuntimePlan {
         const count = try loadStoredWatchedTargets(
             watched_target_store,
             request.storage.watched_target_records,
@@ -7932,7 +7932,7 @@ test "identity profile store lists remembered identities in stable deduplicated 
     try std.testing.expectEqualStrings("bob", page.slice()[1].identitySlice());
 }
 
-test "identity verifier inspects remembered identity latest freshness over explicit profile store" {
+test "identity verifier inspects remembered identity freshness over explicit profile store" {
     const alice_pubkey_a = [_]u8{0xf1} ** 32;
     const alice_pubkey_b = [_]u8{0xf2} ** 32;
     const bob_pubkey = [_]u8{0xf3} ** 32;
@@ -8002,7 +8002,7 @@ test "identity verifier inspects remembered identity latest freshness over expli
     var matches: [2]IdentityProfileMatch = undefined;
     var entries: [2]IdentityStoredProfileTargetLatestFreshnessEntry = undefined;
 
-    const plan = try IdentityVerifier.inspectRememberedIdentityLatestFreshness(
+    const plan = try IdentityVerifier.inspectRememberedIdentityFreshness(
         store.asStore(),
         .{
             .now_unix_seconds = 50,
@@ -8024,7 +8024,7 @@ test "identity verifier inspects remembered identity latest freshness over expli
     try std.testing.expectEqual(IdentityStoredProfileFreshness.stale, plan.nextEntry().?.latest.?.freshness);
 }
 
-test "identity verifier rejects remembered identity latest freshness when remembered identity listing truncates" {
+test "identity verifier rejects remembered identity freshness when remembered identity listing truncates" {
     const alice_pubkey = [_]u8{0xf4} ** 32;
     const bob_pubkey = [_]u8{0xf5} ** 32;
     const alice_summary = IdentityProfileVerificationSummary{
@@ -8076,7 +8076,7 @@ test "identity verifier rejects remembered identity latest freshness when rememb
 
     try std.testing.expectError(
         error.RememberedIdentityListTruncated,
-        IdentityVerifier.inspectRememberedIdentityLatestFreshness(
+        IdentityVerifier.inspectRememberedIdentityFreshness(
             store.asStore(),
             .{
                 .now_unix_seconds = 50,
@@ -9710,7 +9710,7 @@ test "identity verifier inspects stored watched target refresh batch over an exp
     try std.testing.expectEqualStrings("bob", batch.deferredEntries()[0].target.identity);
 }
 
-test "identity verifier inspects stored watched target orchestration over an explicit watched target store" {
+test "identity verifier inspects stored watched target runtime over an explicit watched target store" {
     const stable_pubkey = [_]u8{0xa1} ** 32;
     const soon_pubkey = [_]u8{0xa2} ** 32;
     const stale_pubkey = [_]u8{0xa3} ** 32;
@@ -9791,7 +9791,7 @@ test "identity verifier inspects stored watched target orchestration over an exp
     var turn_entries: [4]IdentityStoredProfileTargetTurnPolicyEntry = undefined;
     var turn_groups: [4]IdentityStoredProfileTargetTurnPolicyGroup = undefined;
 
-    const plan = try IdentityVerifier.inspectStoredWatchedTargetOrchestration(
+    const plan = try IdentityVerifier.inspectStoredWatchedTargetRuntime(
         profile_store.asStore(),
         watched_store.asStore(),
         .{
@@ -9856,7 +9856,7 @@ test "identity verifier inspects stored watched target orchestration over an exp
     try std.testing.expectEqualStrings("bob", plan.deferredEntries()[0].target.identity);
 }
 
-test "identity verifier rejects stored watched target orchestration when watched target listing truncates" {
+test "identity verifier rejects stored watched target runtime when watched target listing truncates" {
     var watched_records: [1]IdentityWatchedTargetRecord = undefined;
     var watched_store = MemoryIdentityWatchedTargetStore.init(watched_records[0..]);
     _ = try watched_store.rememberTarget(.{ .provider = .github, .identity = "alice" });
@@ -9896,7 +9896,7 @@ test "identity verifier rejects stored watched target orchestration when watched
 
     try std.testing.expectError(
         error.WatchedTargetListTruncated,
-        IdentityVerifier.inspectStoredWatchedTargetOrchestration(
+        IdentityVerifier.inspectStoredWatchedTargetRuntime(
             profile_store.asStore(),
             watched_store.asStore(),
             .{
