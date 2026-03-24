@@ -29,7 +29,7 @@ Use these docs when you need public routing or contract context before opening a
   - `client.local.*`, `client.relay.*`, `client.signer.*`, `client.dm.*`, `client.identity.*`,
     `client.social.*`, `client.proof.*`, `client.groups.*`
   - `workflows.groups.*`, `workflows.identity.*`, `workflows.dm.*`, `workflows.proof.*`,
-    `workflows.signer.*`
+    `workflows.signer.*`, `workflows.zaps.*`
 - shared store/query imports come from `@import("noztr_sdk").store`
 - shared relay-pool/runtime imports come from `@import("noztr_sdk").runtime`
 - HTTP-backed workflow recipes also use `@import("noztr_sdk").transport`
@@ -137,6 +137,27 @@ They do not imply:
     contact selection stays explicit over the archive seam, contact events are verified before this
     route trusts them, and the starter-WoT route remains a bounded heuristic instead of becoming an
     opaque recommendation engine, hidden sync loop, or broader trust claim
+- `social_comment_reply_client.zig`
+  - goal: compose one kind-`1` reply route, one `NIP-22` comment publish route, and one explicit
+    stored comment-page inspection over the shared social publish/query/archive substrate
+  - kernel fixture help: `noztr.nip10_threads`, `noztr.nip22_comments`
+  - control points: note-reply and comment linkage parsing still stays on `noztr`, reply and
+    comment publish still route through the existing publish and query floors, and stored comment
+    inspection stays explicit over the archive seam instead of becoming hidden thread policy
+- `social_highlight_client.zig`
+  - goal: compose one `NIP-84` highlight publish route and one explicit stored highlight-page
+    inspection over the shared social publish/query/archive substrate
+  - kernel fixture help: `noztr.nip84_highlights`
+  - control points: deterministic source, attribution, context, and comment parsing still stays on
+    `noztr`, publish still routes through the existing social floor, and the route stops short of
+    reader UI, annotation sync daemons, or editorial product policy
+- `zap_flow.zig`
+  - goal: compose one `NIP-57` zap request publish route, one explicit pay-endpoint fetch, and one
+    explicit callback invoice fetch over the shared publish and HTTP seams
+  - kernel fixture help: `noztr.nip57_zaps`
+  - control points: deterministic zap request and receipt parsing still stays on `noztr`, publish
+    still routes through the existing publish floor, and HTTP callback handling stays explicit over
+    the public transport seam instead of becoming a hidden wallet runtime
 - `signer_connect_job_client.zig`
   - goal: prepare one command-ready signer connect job that either yields one relay `AUTH` event
     or one `connect` request, then close it with one validated connect response

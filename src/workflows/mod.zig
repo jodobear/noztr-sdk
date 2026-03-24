@@ -7,6 +7,7 @@ const mailbox_workflow = @import("mailbox.zig");
 const nip05_resolver = @import("nip05_resolver.zig");
 const opentimestamps_verifier = @import("opentimestamps_verifier.zig");
 const remote_signer = @import("remote_signer.zig");
+const zap_flow = @import("zap_flow.zig");
 
 pub const groups = struct {
     pub const local = group_client;
@@ -31,3 +32,5 @@ pub const proof = struct {
 pub const signer = struct {
     pub const remote = remote_signer;
 };
+
+pub const zaps = zap_flow;

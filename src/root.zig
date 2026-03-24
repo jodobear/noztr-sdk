@@ -31,7 +31,9 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(client.identity) == type);
     try std.testing.expect(@TypeOf(client.identity.nip39.Nip39VerifyClient) == type);
     try std.testing.expect(@TypeOf(client.social) == type);
+    try std.testing.expect(@TypeOf(client.social.comment_reply.SocialCommentReplyClient) == type);
     try std.testing.expect(@TypeOf(client.social.graph_wot.SocialGraphWotClient) == type);
+    try std.testing.expect(@TypeOf(client.social.highlight.SocialHighlightClient) == type);
     try std.testing.expect(@TypeOf(client.social.profile_content.SocialProfileContentClient) == type);
     try std.testing.expect(@TypeOf(client.social.reaction_list.SocialReactionListClient) == type);
     try std.testing.expect(@TypeOf(client.proof) == type);
@@ -48,6 +50,7 @@ test "root module exposes grouped client and workflow namespaces" {
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerifier) == type);
     try std.testing.expect(@TypeOf(workflows.signer) == type);
     try std.testing.expect(@TypeOf(workflows.signer.remote.Session) == type);
+    try std.testing.expect(@TypeOf(workflows.zaps.ZapFlow) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientError) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientConfig) == type);
     try std.testing.expect(@TypeOf(client.local.archive.CliArchiveClientStorage) == type);

@@ -31,6 +31,8 @@ const nip03_verify_client = @import("nip03_verify_client.zig");
 const nip05_verify_client = @import("nip05_verify_client.zig");
 const nip39_verify_client = @import("nip39_verify_client.zig");
 const social_graph_wot_client = @import("social_graph_wot_client.zig");
+const social_comment_reply_client = @import("social_comment_reply_client.zig");
+const social_highlight_client = @import("social_highlight_client.zig");
 const social_profile_content_client = @import("social_profile_content_client.zig");
 const social_reaction_list_client = @import("social_reaction_list_client.zig");
 const publish_job_client = @import("publish_job_client.zig");
@@ -132,7 +134,9 @@ pub const identity = struct {
 };
 
 pub const social = struct {
+    pub const comment_reply = social_comment_reply_client;
     pub const graph_wot = social_graph_wot_client;
+    pub const highlight = social_highlight_client;
     pub const profile_content = social_profile_content_client;
     pub const reaction_list = social_reaction_list_client;
 };

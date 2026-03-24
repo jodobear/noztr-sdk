@@ -44,6 +44,7 @@ Inside `workflows` and `client`, prefer the grouped routes when choosing a publi
 - `workflows.dm.*`
 - `workflows.proof.*`
 - `workflows.signer.*`
+- `workflows.zaps.*`
 - `client.local.*`
 - `client.relay.*`
 - `client.signer.*`
@@ -181,8 +182,11 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
 | build a first signer-tooling client surface above the remote-signer workflow | [public contract map](./reference/contract-map.md) | [signer_client.zig](../examples/signer_client.zig) |
 | build a shared signer route across local remote and browser adapters | [public contract map](./reference/contract-map.md) | [signer_capability.zig](../examples/signer_capability.zig), [nip07_browser_signer.zig](../examples/nip07_browser_signer.zig) |
 | build social profile, note, thread, and long-form flows with explicit archive-backed reads | [public contract map](./reference/contract-map.md) | [social_profile_content_client.zig](../examples/social_profile_content_client.zig) |
+| build social reply and `NIP-22` comment flows | [public contract map](./reference/contract-map.md) | [social_comment_reply_client.zig](../examples/social_comment_reply_client.zig) |
+| build social highlight flows | [public contract map](./reference/contract-map.md) | [social_highlight_client.zig](../examples/social_highlight_client.zig) |
 | build social reaction and list flows | [public contract map](./reference/contract-map.md) | [social_reaction_list_client.zig](../examples/social_reaction_list_client.zig) |
 | build social contact-graph and starter-only WoT flows | [public contract map](./reference/contract-map.md) | [social_graph_wot_client.zig](../examples/social_graph_wot_client.zig) |
+| build explicit zap request and callback flows | [public contract map](./reference/contract-map.md) | [zap_flow.zig](../examples/zap_flow.zig) |
 | build app-facing DM capability flows above mailbox and legacy DM | [public contract map](./reference/contract-map.md) | [dm_capability_client.zig](../examples/dm_capability_client.zig) |
 | build one simple mixed mailbox-plus-legacy DM facade for apps with bounded outbound preparation | [public contract map](./reference/contract-map.md) | [mixed_dm_client.zig](../examples/mixed_dm_client.zig) |
 | build signer-backed mailbox DM authoring above the remote-signer floor | [public contract map](./reference/contract-map.md) | [mailbox_signer_job_client.zig](../examples/mailbox_signer_job_client.zig) |
@@ -211,10 +215,16 @@ exe.root_module.addImport("noztr_sdk", sdk_module);
   - first signer-backed mailbox DM authoring route above the bounded signer client
 - [social_profile_content_client.zig](../examples/social_profile_content_client.zig)
   - first social profile, note, thread, and long-form route with explicit archive-backed read selection
+- [social_comment_reply_client.zig](../examples/social_comment_reply_client.zig)
+  - first social reply and `NIP-22` comment route
+- [social_highlight_client.zig](../examples/social_highlight_client.zig)
+  - first social highlight route
 - [social_reaction_list_client.zig](../examples/social_reaction_list_client.zig)
   - first social reaction and list route
 - [social_graph_wot_client.zig](../examples/social_graph_wot_client.zig)
   - first social contact-graph and starter-only WoT route over verified latest contact lists
+- [zap_flow.zig](../examples/zap_flow.zig)
+  - first explicit `NIP-57` publish plus callback route over the shared publish and HTTP seams
 - [store_query.zig](../examples/store_query.zig)
   - first bounded store/query/checkpoint route
 - [sqlite_client_store.zig](../examples/sqlite_client_store.zig)

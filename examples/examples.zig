@@ -31,6 +31,8 @@ comptime {
     _ = @import("relay_session_client.zig");
     _ = @import("relay_workspace_client.zig");
     _ = @import("social_graph_wot_client.zig");
+    _ = @import("social_comment_reply_client.zig");
+    _ = @import("social_highlight_client.zig");
     _ = @import("social_profile_content_client.zig");
     _ = @import("social_reaction_list_client.zig");
     _ = @import("replay_job_client.zig");
@@ -73,6 +75,7 @@ comptime {
     _ = @import("nip39_verification.zig");
     _ = @import("nip03_verification.zig");
     _ = @import("nip05_resolution.zig");
+    _ = @import("zap_flow.zig");
     _ = @import("group_session.zig");
     _ = @import("group_fleet.zig");
     _ = @import("group_session_adversarial_example.zig");
