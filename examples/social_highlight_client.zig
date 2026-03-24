@@ -2,7 +2,7 @@ const std = @import("std");
 const noztr = @import("noztr");
 const noztr_sdk = @import("noztr_sdk");
 
-test "recipe: social highlight client composes one highlight route and one archive-backed stored page explicitly" {
+test "recipe: social highlight client composes one address-source highlight route and one archive-backed stored page explicitly" {
     var storage = noztr_sdk.client.social.highlight.Storage{};
     var client = noztr_sdk.client.social.highlight.Client.init(.{}, &storage);
 
@@ -10,7 +10,7 @@ test "recipe: social highlight client composes one highlight route and one archi
     try client.markRelayConnected(relay.relay_index);
 
     const secret_key = [_]u8{0x82} ** 32;
-    const source_id = [_]u8{0x84} ** 32;
+    const source_pubkey = [_]u8{0x84} ** 32;
     const author = [_]u8{0x85} ** 32;
     var builders: [4]noztr.nip84_highlights.TagBuilder = undefined;
     var tags: [4]noztr.nip01_event.EventTag = undefined;
@@ -28,7 +28,12 @@ test "recipe: social highlight client composes one highlight route and one archi
         &.{
             .created_at = 100,
             .content = "quoted",
-            .source = .{ .event = .{ .event_id = source_id } },
+            .source = .{ .address = .{
+                .kind = @intFromEnum(noztr.nip23_long_form.LongFormKind.article),
+                .pubkey = source_pubkey,
+                .identifier = "essay-1",
+                .relay_hint = "wss://relay.article",
+            } },
             .attributions = &.{.{ .pubkey = author }},
             .context = "chapter 1",
         },
@@ -36,7 +41,10 @@ test "recipe: social highlight client composes one highlight route and one archi
 
     var attributions: [1]noztr.nip84_highlights.HighlightAttribution = undefined;
     var refs: [1]noztr.nip84_highlights.UrlRef = undefined;
-    _ = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
+    const highlight = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
+    try std.testing.expect(highlight.source != null);
+    try std.testing.expect(highlight.source.? == .address);
+    try std.testing.expectEqualStrings("essay-1", highlight.source.?.address.identifier);
 
     var archive_storage = noztr_sdk.store.MemoryClientStore{};
     const archive = noztr_sdk.store.EventArchive.init(archive_storage.asClientStore());

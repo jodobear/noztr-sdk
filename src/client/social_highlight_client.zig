@@ -410,7 +410,7 @@ fn parseVerifiedStoredHighlightEventJson(
     return event;
 }
 
-test "social highlight client composes highlight publish and archive-backed inspection" {
+test "social highlight client composes event-source highlight publish and archive-backed inspection" {
     var storage = Storage{};
     var client = Client.init(.{}, &storage);
 
@@ -474,4 +474,101 @@ test "social highlight client composes highlight publish and archive-backed insp
         arena.allocator(),
     );
     try std.testing.expectEqual(@as(usize, 1), stored.highlights.len);
+}
+
+test "social highlight client composes address-source highlights coherently" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x71} ** 32;
+    const source_pubkey = [_]u8{0x51} ** 32;
+    const attribution_pubkey = [_]u8{0x52} ** 32;
+    var builders: [5]noztr.nip84_highlights.TagBuilder = undefined;
+    var tags: [5]noztr.nip01_event.EventTag = undefined;
+    var pubkey_hex: [1]store.EventPubkeyHex = undefined;
+    var draft_storage = HighlightDraftStorage.init(builders[0..], tags[0..], pubkey_hex[0..]);
+    var event_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+
+    const prepared = try client.prepareHighlightPublish(
+        event_json_buffer[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 21,
+            .content = "quoted address text",
+            .source = .{ .address = .{
+                .kind = @intFromEnum(noztr.nip23_long_form.LongFormKind.article),
+                .pubkey = source_pubkey,
+                .identifier = "guide-1",
+                .relay_hint = "wss://relay.article",
+            } },
+            .attributions = &.{.{
+                .pubkey = attribution_pubkey,
+                .role = "author",
+            }},
+            .references = &.{.{
+                .url = "https://example.com/full-article",
+                .marker = "mention",
+            }},
+            .comment = "saved for later",
+        },
+    );
+
+    var attributions: [1]noztr.nip84_highlights.HighlightAttribution = undefined;
+    var refs: [1]noztr.nip84_highlights.UrlRef = undefined;
+    const highlight = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
+
+    try std.testing.expect(highlight.source != null);
+    try std.testing.expect(highlight.source.? == .address);
+    try std.testing.expectEqual(@as(u32, @intFromEnum(noztr.nip23_long_form.LongFormKind.article)), highlight.source.?.address.kind);
+    try std.testing.expectEqualSlices(u8, source_pubkey[0..], highlight.source.?.address.pubkey[0..]);
+    try std.testing.expectEqualStrings("guide-1", highlight.source.?.address.identifier);
+    try std.testing.expectEqualStrings("wss://relay.article", highlight.source.?.address.relay_hint.?);
+    try std.testing.expectEqual(@as(u16, 1), highlight.attribution_count);
+    try std.testing.expectEqual(@as(u16, 1), highlight.url_reference_count);
+    try std.testing.expectEqualStrings("author", attributions[0].role.?);
+    try std.testing.expectEqualStrings("mention", refs[0].marker.?);
+    try std.testing.expectEqualStrings("saved for later", highlight.comment.?);
+}
+
+test "social highlight client composes url-source highlights coherently" {
+    var storage = Storage{};
+    const client = Client.init(.{}, &storage);
+
+    const secret_key = [_]u8{0x72} ** 32;
+    var builders: [4]noztr.nip84_highlights.TagBuilder = undefined;
+    var tags: [4]noztr.nip01_event.EventTag = undefined;
+    var pubkey_hex: [0]store.EventPubkeyHex = undefined;
+    var draft_storage = HighlightDraftStorage.init(builders[0..], tags[0..], pubkey_hex[0..]);
+    var event_json_buffer: [noztr.limits.event_json_max]u8 = undefined;
+
+    const prepared = try client.prepareHighlightPublish(
+        event_json_buffer[0..],
+        &draft_storage,
+        &secret_key,
+        &.{
+            .created_at = 22,
+            .content = "quoted url text",
+            .source = .{ .url = .{
+                .url = "https://example.com/source",
+            } },
+            .references = &.{.{
+                .url = "https://example.com/mention",
+                .marker = "mention",
+            }},
+            .context = "opening section",
+        },
+    );
+
+    var attributions: [0]noztr.nip84_highlights.HighlightAttribution = undefined;
+    var refs: [2]noztr.nip84_highlights.UrlRef = undefined;
+    const highlight = try client.inspectHighlightEvent(&prepared.event, attributions[0..], refs[0..]);
+
+    try std.testing.expect(highlight.source != null);
+    try std.testing.expect(highlight.source.? == .url);
+    try std.testing.expectEqualStrings("https://example.com/source", highlight.source.?.url.url);
+    try std.testing.expectEqualStrings("source", highlight.source.?.url.marker.?);
+    try std.testing.expectEqual(@as(u16, 2), highlight.url_reference_count);
+    try std.testing.expectEqualStrings("mention", refs[1].marker.?);
+    try std.testing.expectEqualStrings("opening section", highlight.context.?);
 }

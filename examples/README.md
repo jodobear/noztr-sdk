@@ -145,8 +145,8 @@ They do not imply:
     comment publish still route through the existing publish and query floors, and stored comment
     inspection stays explicit over the archive seam instead of becoming hidden thread policy
 - `social_highlight_client.zig`
-  - goal: compose one `NIP-84` highlight publish route and one explicit stored highlight-page
-    inspection over the shared social publish/query/archive substrate
+  - goal: compose one `NIP-84` address-source highlight publish route and one explicit stored
+    highlight-page inspection over the shared social publish/query/archive substrate
   - kernel fixture help: `noztr.nip84_highlights`
   - control points: deterministic source, attribution, context, and comment parsing still stays on
     `noztr`, publish still routes through the existing social floor, and the route stops short of
