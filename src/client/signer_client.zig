@@ -5,14 +5,14 @@ const signer_capability = @import("signer_capability.zig");
 
 pub const signer_client_request_id_max_bytes: u8 = 32;
 
-pub const SignerClientError = workflows.signer.remote.Error;
-pub const SignerClientCapabilityError = SignerClientError || error{
+pub const Error = workflows.signer.remote.Error;
+pub const CapabilityError = Error || error{
     UnexpectedCapabilityOutcome,
 };
 
-pub const SignerClientConfig = struct {};
+pub const Config = struct {};
 
-pub const SignerClientRequestStorage = struct {
+pub const RequestStorage = struct {
     buffer: workflows.signer.remote.RequestBuffer = .{},
     request_id: [signer_client_request_id_max_bytes]u8 =
         [_]u8{0} ** signer_client_request_id_max_bytes,
@@ -21,13 +21,13 @@ pub const SignerClientRequestStorage = struct {
     /// The returned request context borrows both the generated id and serialized request buffer
     /// until the next call overwrites this storage.
     pub fn nextRequestContext(
-        self: *SignerClientRequestStorage,
+        self: *RequestStorage,
         scratch: std.mem.Allocator,
     ) workflows.signer.remote.RequestContext {
         return .init(self.nextRequestId(), &self.buffer, scratch);
     }
 
-    fn nextRequestId(self: *SignerClientRequestStorage) []const u8 {
+    fn nextRequestId(self: *RequestStorage) []const u8 {
         self.request_sequence += 1;
         @memset(self.request_id[0..], 0);
         return std.fmt.bufPrint(
@@ -38,30 +38,30 @@ pub const SignerClientRequestStorage = struct {
     }
 };
 
-pub const SignerClientStorage = struct {
-    request: SignerClientRequestStorage = .{},
+pub const Storage = struct {
+    request: RequestStorage = .{},
     relay_runtime: workflows.signer.remote.RelayRuntimeStorage = .{},
 };
 
-pub const SignerClientResumeStorage = workflows.signer.remote.ResumeStorage;
-pub const SignerClientResumeState = workflows.signer.remote.ResumeState;
-pub const SignerClientSessionPolicyAction = workflows.signer.remote.PolicyAction;
-pub const SignerClientSessionPolicyStep = workflows.signer.remote.PolicyStep;
-pub const SignerClientSessionPolicyPlan = workflows.signer.remote.PolicyPlan;
-pub const SignerClientSessionCadenceRequest = workflows.signer.remote.CadenceRequest;
-pub const SignerClientSessionCadenceWaitReason = workflows.signer.remote.CadenceWaitReason;
-pub const SignerClientSessionCadenceWait = workflows.signer.remote.CadenceWait;
-pub const SignerClientSessionCadenceStep = workflows.signer.remote.CadenceStep;
-pub const SignerClientSessionCadencePlan = workflows.signer.remote.CadencePlan;
+pub const ResumeStorage = workflows.signer.remote.ResumeStorage;
+pub const ResumeState = workflows.signer.remote.ResumeState;
+pub const PolicyAction = workflows.signer.remote.PolicyAction;
+pub const PolicyStep = workflows.signer.remote.PolicyStep;
+pub const PolicyPlan = workflows.signer.remote.PolicyPlan;
+pub const CadenceRequest = workflows.signer.remote.CadenceRequest;
+pub const CadenceWaitReason = workflows.signer.remote.CadenceWaitReason;
+pub const CadenceWait = workflows.signer.remote.CadenceWait;
+pub const CadenceStep = workflows.signer.remote.CadenceStep;
+pub const CadencePlan = workflows.signer.remote.CadencePlan;
 
-pub const SignerClient = struct {
-    config: SignerClientConfig,
+pub const Client = struct {
+    config: Config,
     session: workflows.signer.remote.Session,
 
     pub fn init(
-        config: SignerClientConfig,
+        config: Config,
         session: workflows.signer.remote.Session,
-    ) SignerClient {
+    ) Client {
         return .{
             .config = config,
             .session = session,
@@ -69,69 +69,69 @@ pub const SignerClient = struct {
     }
 
     pub fn initFromBunkerUriText(
-        config: SignerClientConfig,
+        config: Config,
         uri_text: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerClientError!SignerClient {
+    ) Error!Client {
         return .{
             .config = config,
             .session = try workflows.signer.remote.Session.initFromBunkerUriText(uri_text, scratch),
         };
     }
 
-    pub fn currentRelayUrl(self: *const SignerClient) []const u8 {
+    pub fn currentRelayUrl(self: *const Client) []const u8 {
         return self.session.currentRelayUrl();
     }
 
-    pub fn currentRelayCanSendRequests(self: *const SignerClient) bool {
+    pub fn currentRelayCanSendRequests(self: *const Client) bool {
         return self.session.currentRelayCanSendRequests();
     }
 
-    pub fn isConnected(self: *const SignerClient) bool {
+    pub fn isConnected(self: *const Client) bool {
         return self.session.isConnected();
     }
 
-    pub fn remoteSignerPubkey(self: *const SignerClient) [32]u8 {
+    pub fn remoteSignerPubkey(self: *const Client) [32]u8 {
         return self.session.remoteSignerPubkey();
     }
 
-    pub fn getUserPubkey(self: *const SignerClient) ?[32]u8 {
+    pub fn getUserPubkey(self: *const Client) ?[32]u8 {
         return self.session.getUserPubkey();
     }
 
     pub fn signerCapabilityProfile(
-        self: *const SignerClient,
+        self: *const Client,
     ) signer_capability.SignerCapabilityProfile {
         _ = self;
         return .remoteSigner();
     }
 
-    pub fn lastSignerError(self: *const SignerClient) ?[]const u8 {
+    pub fn lastSignerError(self: *const Client) ?[]const u8 {
         return self.session.lastSignerError();
     }
 
-    pub fn markCurrentRelayConnected(self: *SignerClient) void {
+    pub fn markCurrentRelayConnected(self: *Client) void {
         self.session.markCurrentRelayConnected();
     }
 
-    pub fn noteCurrentRelayDisconnected(self: *SignerClient) void {
+    pub fn noteCurrentRelayDisconnected(self: *Client) void {
         self.session.noteCurrentRelayDisconnected();
     }
 
     pub fn noteCurrentRelayAuthChallenge(
-        self: *SignerClient,
+        self: *Client,
         challenge: []const u8,
-    ) SignerClientError!void {
+    ) Error!void {
         try self.session.noteCurrentRelayAuthChallenge(challenge);
     }
 
     pub fn acceptCurrentRelayAuthEventJson(
-        self: *SignerClient,
+        self: *Client,
         auth_event_json: []const u8,
         now_unix_seconds: u64,
         window_seconds: u32,
         scratch: std.mem.Allocator,
-    ) SignerClientError!void {
+    ) Error!void {
         try self.session.acceptCurrentRelayAuthEventJson(
             auth_event_json,
             now_unix_seconds,
@@ -140,55 +140,55 @@ pub const SignerClient = struct {
         );
     }
 
-    pub fn advanceRelay(self: *SignerClient) SignerClientError![]const u8 {
+    pub fn advanceRelay(self: *Client) Error![]const u8 {
         return self.session.advanceRelay();
     }
 
     pub fn inspectRelayRuntime(
-        self: *const SignerClient,
-        storage: *SignerClientStorage,
+        self: *const Client,
+        storage: *Storage,
     ) runtime.RelayPoolPlan {
         return self.session.inspectRelayPoolRuntime(&storage.relay_runtime);
     }
 
     pub fn exportResumeState(
-        self: *const SignerClient,
-        storage: *SignerClientResumeStorage,
-    ) SignerClientError!SignerClientResumeState {
+        self: *const Client,
+        storage: *ResumeStorage,
+    ) Error!ResumeState {
         return self.session.exportResumeState(storage);
     }
 
     pub fn restoreResumeState(
-        self: *SignerClient,
-        state: *const SignerClientResumeState,
-    ) SignerClientError!void {
+        self: *Client,
+        state: *const ResumeState,
+    ) Error!void {
         return self.session.restoreResumeState(state);
     }
 
-    pub fn inspectSessionPolicy(self: *const SignerClient) SignerClientSessionPolicyPlan {
+    pub fn inspectPolicy(self: *const Client) PolicyPlan {
         return self.session.inspectSessionPolicy();
     }
 
-    pub fn inspectSessionCadence(
-        self: *const SignerClient,
-        request: SignerClientSessionCadenceRequest,
-    ) SignerClientSessionCadencePlan {
+    pub fn inspectCadence(
+        self: *const Client,
+        request: CadenceRequest,
+    ) CadencePlan {
         return self.session.inspectSessionCadence(request);
     }
 
     pub fn selectRelayRuntimeStep(
-        self: *SignerClient,
+        self: *Client,
         step: *const runtime.RelayPoolStep,
-    ) SignerClientError![]const u8 {
+    ) Error![]const u8 {
         return self.session.selectRelayPoolStep(step);
     }
 
     pub fn beginConnect(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         requested_permissions: []const workflows.signer.remote.Permission,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginConnect(
             storage.request.nextRequestContext(scratch),
             requested_permissions,
@@ -196,19 +196,19 @@ pub const SignerClient = struct {
     }
 
     pub fn beginGetPublicKey(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginGetPublicKey(storage.request.nextRequestContext(scratch));
     }
 
     pub fn beginSignEvent(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         unsigned_event_json: []const u8,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginSignEvent(
             storage.request.nextRequestContext(scratch),
             unsigned_event_json,
@@ -216,19 +216,19 @@ pub const SignerClient = struct {
     }
 
     pub fn beginSwitchRelays(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginSwitchRelays(storage.request.nextRequestContext(scratch));
     }
 
     pub fn beginNip04Encrypt(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         request: *const workflows.signer.remote.PubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip04Encrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -236,11 +236,11 @@ pub const SignerClient = struct {
     }
 
     pub fn beginNip04Decrypt(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         request: *const workflows.signer.remote.PubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip04Decrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -248,11 +248,11 @@ pub const SignerClient = struct {
     }
 
     pub fn beginNip44Encrypt(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         request: *const workflows.signer.remote.PubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip44Encrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -260,11 +260,11 @@ pub const SignerClient = struct {
     }
 
     pub fn beginNip44Decrypt(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         request: *const workflows.signer.remote.PubkeyTextRequest,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginNip44Decrypt(
             storage.request.nextRequestContext(scratch),
             request,
@@ -272,19 +272,19 @@ pub const SignerClient = struct {
     }
 
     pub fn beginPing(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.session.beginPing(storage.request.nextRequestContext(scratch));
     }
 
     pub fn beginSignerCapabilityOperation(
-        self: *SignerClient,
-        storage: *SignerClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         request: *const signer_capability.SignerOperationRequest,
-    ) SignerClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return switch (request.*) {
             .get_public_key => self.beginGetPublicKey(storage, scratch),
             .sign_event => |unsigned_event_json| self.beginSignEvent(
@@ -300,18 +300,18 @@ pub const SignerClient = struct {
     }
 
     pub fn acceptResponseJson(
-        self: *SignerClient,
+        self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerClientError!workflows.signer.remote.ResponseOutcome {
+    ) Error!workflows.signer.remote.ResponseOutcome {
         return self.session.acceptResponseJson(response_json, scratch);
     }
 
     pub fn acceptSignerCapabilityResponseJson(
-        self: *SignerClient,
+        self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerClientCapabilityError!signer_capability.SignerOperationResult {
+    ) CapabilityError!signer_capability.SignerOperationResult {
         const outcome = try self.acceptResponseJson(response_json, scratch);
         return switch (outcome) {
             .user_pubkey => |pubkey| .{ .user_pubkey = pubkey },
@@ -346,7 +346,7 @@ fn capabilityOperationFromRemoteMethod(
 }
 
 test "signer client request storage generates sequential bounded request ids" {
-    var storage = SignerClientRequestStorage{};
+    var storage = RequestStorage{};
     var scratch_bytes: [32]u8 = undefined;
     var scratch = std.heap.FixedBufferAllocator.init(&scratch_bytes);
 
@@ -365,10 +365,10 @@ test "signer client composes connect get_public_key and nip44 encrypt without ca
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    var client = try Client.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
     client.markCurrentRelayConnected();
 
-    var storage = SignerClientStorage{};
+    var storage = Storage{};
 
     var connect_scratch_bytes: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_bytes);
@@ -453,10 +453,10 @@ test "signer client keeps relay runtime inspection explicit" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
-    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    var client = try Client.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
     client.markCurrentRelayConnected();
 
-    var storage = SignerClientStorage{};
+    var storage = Storage{};
     const runtime_plan = client.inspectRelayRuntime(&storage);
     try std.testing.expectEqual(@as(u8, 2), runtime_plan.relay_count);
     try std.testing.expectEqual(@as(u8, 1), runtime_plan.ready_count);
@@ -478,9 +478,9 @@ test "signer client restores durable resume state" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two";
-    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    var client = try Client.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
     client.markCurrentRelayConnected();
-    var storage = SignerClientStorage{};
+    var storage = Storage{};
 
     var connect_scratch_bytes: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_bytes);
@@ -513,16 +513,16 @@ test "signer client restores durable resume state" {
         switch_response_scratch.allocator(),
     );
 
-    var resume_storage = SignerClientResumeStorage{};
+    var resume_storage = ResumeStorage{};
     const resume_state = try client.exportResumeState(&resume_storage);
 
-    var restored = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    var restored = try Client.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
     try restored.restoreResumeState(&resume_state);
     try std.testing.expectEqualStrings("wss://relay.three", restored.currentRelayUrl());
     try std.testing.expect(!restored.isConnected());
     try std.testing.expectEqual(
-        SignerClientSessionPolicyAction.connect_relay,
-        restored.inspectSessionPolicy().action,
+        PolicyAction.connect_relay,
+        restored.inspectPolicy().action,
     );
 }
 
@@ -533,15 +533,15 @@ test "signer client exposes session cadence parity" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one";
-    const client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    const client = try Client.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
 
-    const cadence = client.inspectSessionCadence(.{
+    const cadence = client.inspectCadence(.{
         .now_unix_seconds = 10,
         .reconnect_not_before_unix_seconds = 20,
     });
     try std.testing.expect(cadence.nextStep() == .wait);
     try std.testing.expectEqual(
-        SignerClientSessionCadenceWaitReason.reconnect_backoff,
+        CadenceWaitReason.reconnect_backoff,
         cadence.nextStep().wait.reason,
     );
 }
@@ -553,7 +553,7 @@ test "signer client adapts onto the signer capability surface" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var client = try SignerClient.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
+    var client = try Client.initFromBunkerUriText(.{}, bunker_uri, arena.allocator());
     client.markCurrentRelayConnected();
 
     const capability = client.signerCapabilityProfile();
@@ -561,7 +561,7 @@ test "signer client adapts onto the signer capability surface" {
     try std.testing.expectEqual(.caller_driven_request, capability.modeFor(.get_public_key));
     try std.testing.expectEqual(.caller_driven_request, capability.modeFor(.nip04_encrypt));
 
-    var storage = SignerClientStorage{};
+    var storage = Storage{};
 
     var connect_scratch_bytes: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_bytes);

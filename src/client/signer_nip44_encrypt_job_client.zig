@@ -7,16 +7,16 @@ const signer_runtime_support = @import("signer_runtime_support.zig");
 const workflows = @import("../workflows/mod.zig");
 
 pub const Error =
-    signer_client.SignerClientError ||
+    signer_client.Error ||
     signer_job_support.SignerJobAuthError;
 
 pub const Config = struct {
-    signer: signer_client.SignerClientConfig = .{},
+    signer: signer_client.Config = .{},
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
 
 pub const Storage = struct {
-    signer: signer_client.SignerClientStorage = .{},
+    signer: signer_client.Storage = .{},
     auth_state: signer_job_support.SignerJobAuthState = .{},
 };
 
@@ -37,11 +37,11 @@ pub const Result = union(enum) {
 pub const Client = struct {
     config: Config,
     local_operator: local_operator.LocalOperatorClient,
-    signer: signer_client.SignerClient,
+    signer: signer_client.Client,
 
     pub fn init(
         config: Config,
-        signer: signer_client.SignerClient,
+        signer: signer_client.Client,
         storage: *Storage,
     ) Client {
         storage.* = .{};
@@ -60,7 +60,7 @@ pub const Client = struct {
     ) Error!Client {
         return .init(
             config,
-            try signer_client.SignerClient.initFromBunkerUriText(
+            try signer_client.Client.initFromBunkerUriText(
                 config.signer,
                 uri_text,
                 scratch,
@@ -71,7 +71,7 @@ pub const Client = struct {
 
     pub fn attach(
         config: Config,
-        signer: signer_client.SignerClient,
+    signer: signer_client.Client,
         storage: *Storage,
     ) Client {
         _ = storage;
@@ -367,8 +367,8 @@ test "signer nip44 encrypt job client drives auth-gated encrypt progression thro
 }
 
 fn establishSignerSession(
-    signer: *signer_client.SignerClient,
-    storage: *signer_client.SignerClientStorage,
+    signer: *signer_client.Client,
+    storage: *signer_client.Storage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
 ) workflows.signer.remote.Error!void {

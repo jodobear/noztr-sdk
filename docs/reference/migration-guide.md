@@ -37,6 +37,8 @@ Use this first, then jump by route family.
 
 - [Remote signer naming migration](./remote-signer-naming-migration.md)
   - `workflows.signer.remote.*` role-based cleanup
+- [Signer session naming migration](./signer-session-naming-migration.md)
+  - route-local signer-session `client.signer.session.*` names
 - [Signer job naming migration](./signer-job-naming-migration.md)
   - canonical route-local `client.signer.*` job naming
 - [Proof, identity, and NIP-05 planning migration](./proof-identity-planning-migration.md)

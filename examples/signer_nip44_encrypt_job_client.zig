@@ -77,8 +77,8 @@ test "recipe: signer nip44 encrypt job stays explicit after connect and across a
 }
 
 fn establishSignerSession(
-    signer: *noztr_sdk.client.signer.session.SignerClient,
-    storage: *noztr_sdk.client.signer.session.SignerClientStorage,
+    signer: *noztr_sdk.client.signer.session.Client,
+    storage: *noztr_sdk.client.signer.session.Storage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
 ) noztr_sdk.workflows.signer.remote.Error!void {

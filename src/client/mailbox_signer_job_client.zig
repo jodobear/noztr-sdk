@@ -9,7 +9,7 @@ const relay_url = @import("../relay/url.zig");
 const noztr = @import("noztr");
 
 pub const MailboxSignerJobClientError =
-    signer_client.SignerClientError ||
+    signer_client.Error ||
     signer_job_support.SignerJobAuthError ||
     workflows.dm.mailbox.MailboxError ||
     noztr.nip01_event.EventSerializeError ||
@@ -24,7 +24,7 @@ pub const MailboxSignerJobClientError =
     };
 
 pub const MailboxSignerJobClientConfig = struct {
-    signer: signer_client.SignerClientConfig = .{},
+    signer: signer_client.Config = .{},
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
 
@@ -162,7 +162,7 @@ const DirectMessageAuthoringStorage = struct {
 };
 
 pub const MailboxSignerJobClientStorage = struct {
-    signer: signer_client.SignerClientStorage = .{},
+    signer: signer_client.Storage = .{},
     auth_state: signer_job_support.SignerJobAuthState = .{},
     direct_message: DirectMessageAuthoringStorage = .{},
 };
@@ -170,11 +170,11 @@ pub const MailboxSignerJobClientStorage = struct {
 pub const MailboxSignerJobClient = struct {
     config: MailboxSignerJobClientConfig,
     local_operator: local_operator.LocalOperatorClient,
-    signer: signer_client.SignerClient,
+    signer: signer_client.Client,
 
     pub fn init(
         config: MailboxSignerJobClientConfig,
-        signer: signer_client.SignerClient,
+        signer: signer_client.Client,
         storage: *MailboxSignerJobClientStorage,
     ) MailboxSignerJobClient {
         storage.* = .{};
@@ -193,14 +193,14 @@ pub const MailboxSignerJobClient = struct {
     ) MailboxSignerJobClientError!MailboxSignerJobClient {
         return .init(
             config,
-            try signer_client.SignerClient.initFromBunkerUriText(config.signer, uri_text, scratch),
+            try signer_client.Client.initFromBunkerUriText(config.signer, uri_text, scratch),
             storage,
         );
     }
 
     pub fn attach(
         config: MailboxSignerJobClientConfig,
-        signer: signer_client.SignerClient,
+        signer: signer_client.Client,
         storage: *MailboxSignerJobClientStorage,
     ) MailboxSignerJobClient {
         _ = storage;

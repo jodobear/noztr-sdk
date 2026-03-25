@@ -49,7 +49,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var remote = try noztr_sdk.client.signer.session.SignerClient.initFromBunkerUriText(
+    var remote = try noztr_sdk.client.signer.session.Client.initFromBunkerUriText(
         .{},
         bunker_uri,
         arena.allocator(),
@@ -58,7 +58,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
     const remote_capability = remote.signerCapabilityProfile();
     try std.testing.expectEqual(.caller_driven_request, sign_event_request.modeIn(&remote_capability));
 
-    var remote_storage = noztr_sdk.client.signer.session.SignerClientStorage{};
+    var remote_storage = noztr_sdk.client.signer.session.Storage{};
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
     _ = try remote.beginConnect(&remote_storage, connect_scratch.allocator(), &.{});

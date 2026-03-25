@@ -11,14 +11,14 @@ test "recipe: signer client stays explicit from connect to get_public_key and ni
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&relay=wss%3A%2F%2Frelay.two&secret=secret";
-    var client = try noztr_sdk.client.signer.session.SignerClient.initFromBunkerUriText(
+    var client = try noztr_sdk.client.signer.session.Client.initFromBunkerUriText(
         .{},
         bunker_uri,
         arena.allocator(),
     );
     client.markCurrentRelayConnected();
 
-    var storage = noztr_sdk.client.signer.session.SignerClientStorage{};
+    var storage = noztr_sdk.client.signer.session.Storage{};
 
     var connect_scratch_storage: [1024]u8 = undefined;
     var connect_scratch = std.heap.FixedBufferAllocator.init(&connect_scratch_storage);
@@ -106,10 +106,10 @@ test "recipe: signer client stays explicit from connect to get_public_key and ni
     try std.testing.expectEqualStrings("wss://relay.two", client.currentRelayUrl());
     try std.testing.expect(!client.isConnected());
 
-    var resume_storage = noztr_sdk.client.signer.session.SignerClientResumeStorage{};
+    var resume_storage = noztr_sdk.client.signer.session.ResumeStorage{};
     const resume_state = try client.exportResumeState(&resume_storage);
 
-    var restored = try noztr_sdk.client.signer.session.SignerClient.initFromBunkerUriText(
+    var restored = try noztr_sdk.client.signer.session.Client.initFromBunkerUriText(
         .{},
         bunker_uri,
         arena.allocator(),
@@ -117,7 +117,7 @@ test "recipe: signer client stays explicit from connect to get_public_key and ni
     try restored.restoreResumeState(&resume_state);
     try std.testing.expectEqualStrings("wss://relay.two", restored.currentRelayUrl());
 
-    const cadence = restored.inspectSessionCadence(.{
+    const cadence = restored.inspectCadence(.{
         .now_unix_seconds = 10,
         .reconnect_not_before_unix_seconds = 20,
     });
