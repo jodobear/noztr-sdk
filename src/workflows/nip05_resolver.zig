@@ -59,19 +59,19 @@ pub const nip05_remembered_resolution_address_max_bytes: u16 =
 pub const nip05_remembered_resolution_lookup_url_max_bytes: u16 =
     noztr.limits.nip05_identifier_bytes_max + 64;
 
-pub const Nip05RememberedResolutionStorePutOutcome = enum {
+const StorePutOutcome = enum {
     stored,
     updated,
     ignored_stale,
 };
 
-pub const Nip05RememberedResolutionStoreError = error{
+const StoreError = error{
     AddressTooLong,
     LookupUrlTooLong,
     StoreFull,
 };
 
-pub const Nip05RememberedResolutionRecord = struct {
+const StoreRecord = struct {
     address_text: [nip05_remembered_resolution_address_max_bytes]u8 =
         [_]u8{0} ** nip05_remembered_resolution_address_max_bytes,
     address_text_len: u16 = 0,
@@ -84,54 +84,54 @@ pub const Nip05RememberedResolutionRecord = struct {
     resolved_at: u64 = 0,
     occupied: bool = false,
 
-    pub fn addressText(self: *const Nip05RememberedResolutionRecord) []const u8 {
+    pub fn addressText(self: *const StoreRecord) []const u8 {
         return self.address_text[0..self.address_text_len];
     }
 
-    pub fn lookupUrl(self: *const Nip05RememberedResolutionRecord) []const u8 {
+    pub fn lookupUrl(self: *const StoreRecord) []const u8 {
         return self.lookup_url[0..self.lookup_url_len];
     }
 };
 
-pub const Nip05RememberedResolutionStoreVTable = struct {
+const StoreVTable = struct {
     put_resolution: *const fn (
         ctx: *anyopaque,
-        record: *const Nip05RememberedResolutionRecord,
-    ) Nip05RememberedResolutionStoreError!Nip05RememberedResolutionStorePutOutcome,
+        record: *const StoreRecord,
+    ) StoreError!StorePutOutcome,
     get_resolution: *const fn (
         ctx: *anyopaque,
         address_text: []const u8,
-    ) Nip05RememberedResolutionStoreError!?Nip05RememberedResolutionRecord,
+    ) StoreError!?StoreRecord,
 };
 
-pub const Nip05RememberedResolutionStore = struct {
+const StoreBackend = struct {
     ctx: *anyopaque,
-    vtable: *const Nip05RememberedResolutionStoreVTable,
+    vtable: *const StoreVTable,
 
     pub fn putResolution(
-        self: Nip05RememberedResolutionStore,
-        record: *const Nip05RememberedResolutionRecord,
-    ) Nip05RememberedResolutionStoreError!Nip05RememberedResolutionStorePutOutcome {
+        self: StoreBackend,
+        record: *const StoreRecord,
+    ) StoreError!StorePutOutcome {
         return self.vtable.put_resolution(self.ctx, record);
     }
 
     pub fn getResolution(
-        self: Nip05RememberedResolutionStore,
+        self: StoreBackend,
         address_text: []const u8,
-    ) Nip05RememberedResolutionStoreError!?Nip05RememberedResolutionRecord {
+    ) StoreError!?StoreRecord {
         return self.vtable.get_resolution(self.ctx, address_text);
     }
 };
 
-pub const MemoryNip05RememberedResolutionStore = struct {
-    records: []Nip05RememberedResolutionRecord,
+const MemoryStore = struct {
+    records: []StoreRecord,
     count: usize = 0,
 
-    pub fn init(records: []Nip05RememberedResolutionRecord) MemoryNip05RememberedResolutionStore {
+    pub fn init(records: []StoreRecord) MemoryStore {
         return .{ .records = records };
     }
 
-    pub fn asStore(self: *MemoryNip05RememberedResolutionStore) Nip05RememberedResolutionStore {
+    pub fn asStore(self: *MemoryStore) StoreBackend {
         return .{
             .ctx = self,
             .vtable = &remembered_resolution_store_vtable,
@@ -139,9 +139,9 @@ pub const MemoryNip05RememberedResolutionStore = struct {
     }
 
     pub fn putResolution(
-        self: *MemoryNip05RememberedResolutionStore,
-        record: *const Nip05RememberedResolutionRecord,
-    ) Nip05RememberedResolutionStoreError!Nip05RememberedResolutionStorePutOutcome {
+        self: *MemoryStore,
+        record: *const StoreRecord,
+    ) StoreError!StorePutOutcome {
         if (record.address_text_len > nip05_remembered_resolution_address_max_bytes) {
             return error.AddressTooLong;
         }
@@ -162,9 +162,9 @@ pub const MemoryNip05RememberedResolutionStore = struct {
     }
 
     pub fn getResolution(
-        self: *MemoryNip05RememberedResolutionStore,
+        self: *MemoryStore,
         address_text: []const u8,
-    ) Nip05RememberedResolutionStoreError!?Nip05RememberedResolutionRecord {
+    ) StoreError!?StoreRecord {
         if (address_text.len > nip05_remembered_resolution_address_max_bytes) {
             return error.AddressTooLong;
         }
@@ -173,7 +173,7 @@ pub const MemoryNip05RememberedResolutionStore = struct {
     }
 
     fn findIndex(
-        self: *const MemoryNip05RememberedResolutionStore,
+        self: *const MemoryStore,
         address_text: []const u8,
     ) ?usize {
         for (self.records[0..self.count], 0..) |*record, index| {
@@ -184,53 +184,51 @@ pub const MemoryNip05RememberedResolutionStore = struct {
     }
 };
 
-pub const Nip05RememberedResolutionTarget = struct {
+const TargetValue = struct {
     address_text: []const u8,
 };
 
-pub const Nip05RememberedResolutionFreshness = enum {
+const LatestFreshness = enum {
     fresh,
     stale,
 };
 
-pub const Nip05LatestRememberedResolutionFreshness = struct {
-    resolution: Nip05RememberedResolutionRecord,
-    freshness: Nip05RememberedResolutionFreshness,
+const LatestValue = struct {
+    resolution: StoreRecord,
+    freshness: LatestFreshness,
     age_seconds: u64,
 };
 
-pub const Nip05LatestRememberedResolutionTargetEntry = struct {
-    target: Nip05RememberedResolutionTarget,
-    latest: ?Nip05LatestRememberedResolutionFreshness = null,
+const LatestEntry = struct {
+    target: TargetValue,
+    latest: ?LatestValue = null,
 };
 
-pub const Nip05LatestRememberedResolutionTargetStorage = struct {
-    entries: []Nip05LatestRememberedResolutionTargetEntry,
+const LatestStorage = struct {
+    entries: []LatestEntry,
 
     pub fn init(
-        entries: []Nip05LatestRememberedResolutionTargetEntry,
-    ) Nip05LatestRememberedResolutionTargetStorage {
+        entries: []LatestEntry,
+    ) LatestStorage {
         return .{ .entries = entries };
     }
 };
 
-pub const Nip05LatestRememberedResolutionTargetRequest = struct {
-    targets: []const Nip05RememberedResolutionTarget,
+const LatestRequest = struct {
+    targets: []const TargetValue,
     now_unix_seconds: u64,
     max_age_seconds: u64,
-    storage: Nip05LatestRememberedResolutionTargetStorage,
+    storage: LatestStorage,
     scratch: std.mem.Allocator,
 };
 
-pub const Nip05LatestRememberedResolutionTargetPlan = struct {
-    entries: []const Nip05LatestRememberedResolutionTargetEntry,
+const LatestPlan = struct {
+    entries: []const LatestEntry,
     fresh_count: u32 = 0,
     stale_count: u32 = 0,
     missing_count: u32 = 0,
 
-    pub fn nextEntry(
-        self: *const Nip05LatestRememberedResolutionTargetPlan,
-    ) ?*const Nip05LatestRememberedResolutionTargetEntry {
+    pub fn nextEntry(self: *const LatestPlan) ?*const LatestEntry {
         for (self.entries) |*entry| {
             if (entry.latest == null) return entry;
             if (entry.latest.?.freshness != .fresh) return entry;
@@ -238,38 +236,36 @@ pub const Nip05LatestRememberedResolutionTargetPlan = struct {
         return null;
     }
 
-    pub fn nextStep(
-        self: *const Nip05LatestRememberedResolutionTargetPlan,
-    ) ?Nip05LatestRememberedResolutionTargetStep {
+    pub fn nextStep(self: *const LatestPlan) ?LatestStep {
         const entry = self.nextEntry() orelse return null;
         return .{ .entry = entry.* };
     }
 };
 
-pub const Nip05LatestRememberedResolutionTargetStep = struct {
-    entry: Nip05LatestRememberedResolutionTargetEntry,
+const LatestStep = struct {
+    entry: LatestEntry,
 };
 
-pub const Nip05RememberedResolutionRefreshAction = enum {
+const RefreshAction = enum {
     lookup_now,
     refresh_now,
     stable,
 };
 
-pub const Nip05RememberedResolutionRefreshEntry = struct {
-    target: Nip05RememberedResolutionTarget,
-    action: Nip05RememberedResolutionRefreshAction,
-    latest: ?Nip05LatestRememberedResolutionFreshness = null,
+const RefreshEntry = struct {
+    target: TargetValue,
+    action: RefreshAction,
+    latest: ?LatestValue = null,
 };
 
-pub const Nip05RememberedResolutionRefreshStorage = struct {
-    latest_entries: []Nip05LatestRememberedResolutionTargetEntry,
-    entries: []Nip05RememberedResolutionRefreshEntry,
+const RefreshStorage = struct {
+    latest_entries: []LatestEntry,
+    entries: []RefreshEntry,
 
     pub fn init(
-        latest_entries: []Nip05LatestRememberedResolutionTargetEntry,
-        entries: []Nip05RememberedResolutionRefreshEntry,
-    ) Nip05RememberedResolutionRefreshStorage {
+        latest_entries: []LatestEntry,
+        entries: []RefreshEntry,
+    ) RefreshStorage {
         return .{
             .latest_entries = latest_entries,
             .entries = entries,
@@ -277,32 +273,28 @@ pub const Nip05RememberedResolutionRefreshStorage = struct {
     }
 };
 
-pub const Nip05RememberedResolutionRefreshRequest = struct {
-    targets: []const Nip05RememberedResolutionTarget,
+const RefreshRequest = struct {
+    targets: []const TargetValue,
     now_unix_seconds: u64,
     max_age_seconds: u64,
-    storage: Nip05RememberedResolutionRefreshStorage,
+    storage: RefreshStorage,
     scratch: std.mem.Allocator,
 };
 
-pub const Nip05RememberedResolutionRefreshPlan = struct {
-    entries: []const Nip05RememberedResolutionRefreshEntry,
+const RefreshPlan = struct {
+    entries: []const RefreshEntry,
     lookup_now_count: u32 = 0,
     refresh_now_count: u32 = 0,
     stable_count: u32 = 0,
 
-    pub fn nextEntry(
-        self: *const Nip05RememberedResolutionRefreshPlan,
-    ) ?*const Nip05RememberedResolutionRefreshEntry {
+    pub fn nextEntry(self: *const RefreshPlan) ?*const RefreshEntry {
         for (self.entries) |*entry| {
             if (entry.action != .stable) return entry;
         }
         return null;
     }
 
-    pub fn nextStep(
-        self: *const Nip05RememberedResolutionRefreshPlan,
-    ) ?Nip05RememberedResolutionRefreshStep {
+    pub fn nextStep(self: *const RefreshPlan) ?RefreshStep {
         const entry = self.nextEntry() orelse return null;
         return .{
             .action = entry.action,
@@ -311,38 +303,40 @@ pub const Nip05RememberedResolutionRefreshPlan = struct {
     }
 };
 
-pub const Nip05RememberedResolutionRefreshStep = struct {
-    action: Nip05RememberedResolutionRefreshAction,
-    entry: Nip05RememberedResolutionRefreshEntry,
+const RefreshStep = struct {
+    action: RefreshAction,
+    entry: RefreshEntry,
 };
 
 pub const Planning = struct {
     pub const Store = struct {
-        pub const PutOutcome = Nip05RememberedResolutionStorePutOutcome;
-        pub const Record = Nip05RememberedResolutionRecord;
-        pub const Backend = Nip05RememberedResolutionStore;
-        pub const Memory = MemoryNip05RememberedResolutionStore;
+        pub const Error = StoreError;
+        pub const PutOutcome = StorePutOutcome;
+        pub const Record = StoreRecord;
+        pub const Backend = StoreBackend;
+        pub const Memory = MemoryStore;
     };
 
     pub const Target = struct {
-        pub const Value = Nip05RememberedResolutionTarget;
+        pub const Value = TargetValue;
 
         pub const Latest = struct {
-            pub const Freshness = Nip05RememberedResolutionFreshness;
-            pub const Entry = Nip05LatestRememberedResolutionTargetEntry;
-            pub const Storage = Nip05LatestRememberedResolutionTargetStorage;
-            pub const Request = Nip05LatestRememberedResolutionTargetRequest;
-            pub const Plan = Nip05LatestRememberedResolutionTargetPlan;
-            pub const Step = Nip05LatestRememberedResolutionTargetStep;
+            pub const Freshness = LatestFreshness;
+            pub const Value = LatestValue;
+            pub const Entry = LatestEntry;
+            pub const Storage = LatestStorage;
+            pub const Request = LatestRequest;
+            pub const Plan = LatestPlan;
+            pub const Step = LatestStep;
         };
 
         pub const Refresh = struct {
-            pub const Action = Nip05RememberedResolutionRefreshAction;
-            pub const Entry = Nip05RememberedResolutionRefreshEntry;
-            pub const Storage = Nip05RememberedResolutionRefreshStorage;
-            pub const Request = Nip05RememberedResolutionRefreshRequest;
-            pub const Plan = Nip05RememberedResolutionRefreshPlan;
-            pub const Step = Nip05RememberedResolutionRefreshStep;
+            pub const Action = RefreshAction;
+            pub const Entry = RefreshEntry;
+            pub const Storage = RefreshStorage;
+            pub const Request = RefreshRequest;
+            pub const Plan = RefreshPlan;
+            pub const Step = RefreshStep;
         };
     };
 };
@@ -439,19 +433,19 @@ pub const Nip05Resolver = struct {
     }
 
     pub fn rememberResolution(
-        store: Nip05RememberedResolutionStore,
+        store: Planning.Store.Backend,
         resolution: *const Nip05Resolution,
         resolved_at: u64,
-    ) Nip05RememberedResolutionStoreError!Nip05RememberedResolutionStorePutOutcome {
+    ) Planning.Store.Error!Planning.Store.PutOutcome {
         var record = try rememberedResolutionRecordFromResolution(resolution, resolved_at);
         return store.putResolution(&record);
     }
 
     pub fn getRememberedResolution(
-        store: Nip05RememberedResolutionStore,
+        store: Planning.Store.Backend,
         address_text: []const u8,
         scratch: std.mem.Allocator,
-    ) (Nip05ResolverError || Nip05RememberedResolutionStoreError)!?Nip05RememberedResolutionRecord {
+    ) (Nip05ResolverError || Planning.Store.Error)!?Planning.Store.Record {
         var canonical_address_buffer: [nip05_remembered_resolution_address_max_bytes]u8 = undefined;
         const canonical_address = try canonicalizeAddressText(
             canonical_address_buffer[0..],
@@ -462,13 +456,13 @@ pub const Nip05Resolver = struct {
     }
 
     pub fn inspectLatestForTargets(
-        store: Nip05RememberedResolutionStore,
-        request: Nip05LatestRememberedResolutionTargetRequest,
-    ) (Nip05ResolverError || Nip05RememberedResolutionStoreError)!Nip05LatestRememberedResolutionTargetPlan {
+        store: Planning.Store.Backend,
+        request: Planning.Target.Latest.Request,
+    ) (Nip05ResolverError || Planning.Store.Error)!Planning.Target.Latest.Plan {
         if (request.storage.entries.len < request.targets.len) return error.BufferTooSmall;
 
         const entries = request.storage.entries[0..request.targets.len];
-        var plan = Nip05LatestRememberedResolutionTargetPlan{
+        var plan = Planning.Target.Latest.Plan{
             .entries = entries,
         };
         var canonical_arena = std.heap.ArenaAllocator.init(request.scratch);
@@ -484,7 +478,7 @@ pub const Nip05Resolver = struct {
                     request.now_unix_seconds - record.resolved_at
                 else
                     0;
-                const freshness: Nip05RememberedResolutionFreshness = if (age_seconds <= request.max_age_seconds)
+                const freshness: Planning.Target.Latest.Freshness = if (age_seconds <= request.max_age_seconds)
                     .fresh
                 else
                     .stale;
@@ -506,9 +500,9 @@ pub const Nip05Resolver = struct {
     }
 
     pub fn planRefreshForTargets(
-        store: Nip05RememberedResolutionStore,
-        request: Nip05RememberedResolutionRefreshRequest,
-    ) (Nip05ResolverError || Nip05RememberedResolutionStoreError)!Nip05RememberedResolutionRefreshPlan {
+        store: Planning.Store.Backend,
+        request: Planning.Target.Refresh.Request,
+    ) (Nip05ResolverError || Planning.Store.Error)!Planning.Target.Refresh.Plan {
         if (request.storage.latest_entries.len < request.targets.len) return error.BufferTooSmall;
         if (request.storage.entries.len < request.targets.len) return error.BufferTooSmall;
 
@@ -518,17 +512,17 @@ pub const Nip05Resolver = struct {
                 .targets = request.targets,
                 .now_unix_seconds = request.now_unix_seconds,
                 .max_age_seconds = request.max_age_seconds,
-                .storage = Nip05LatestRememberedResolutionTargetStorage.init(request.storage.latest_entries),
+                .storage = Planning.Target.Latest.Storage.init(request.storage.latest_entries),
                 .scratch = request.scratch,
             },
         );
 
         const entries = request.storage.entries[0..request.targets.len];
-        var plan = Nip05RememberedResolutionRefreshPlan{
+        var plan = Planning.Target.Refresh.Plan{
             .entries = entries,
         };
         for (latest_plan.entries, entries) |latest_entry, *entry| {
-            const action: Nip05RememberedResolutionRefreshAction = if (latest_entry.latest == null)
+            const action: Planning.Target.Refresh.Action = if (latest_entry.latest == null)
                 .lookup_now
             else if (latest_entry.latest.?.freshness == .stale)
                 .refresh_now
@@ -601,8 +595,8 @@ fn fetchDocument(
 fn rememberedResolutionRecordFromResolution(
     resolution: *const Nip05Resolution,
     resolved_at: u64,
-) Nip05RememberedResolutionStoreError!Nip05RememberedResolutionRecord {
-    var record = Nip05RememberedResolutionRecord{
+) Planning.Store.Error!Planning.Store.Record {
+    var record = Planning.Store.Record{
         .public_key = resolution.profile.public_key,
         .relay_count = @intCast(resolution.profile.relays.len),
         .nip46_relay_count = @intCast(resolution.profile.nip46_relays.len),
@@ -639,21 +633,21 @@ fn canonicalizeAddressText(
 
 fn rememberedResolutionStorePut(
     ctx: *anyopaque,
-    record: *const Nip05RememberedResolutionRecord,
-) Nip05RememberedResolutionStoreError!Nip05RememberedResolutionStorePutOutcome {
-    const self: *MemoryNip05RememberedResolutionStore = @ptrCast(@alignCast(ctx));
+    record: *const Planning.Store.Record,
+) Planning.Store.Error!Planning.Store.PutOutcome {
+    const self: *MemoryStore = @ptrCast(@alignCast(ctx));
     return self.putResolution(record);
 }
 
 fn rememberedResolutionStoreGet(
     ctx: *anyopaque,
     address_text: []const u8,
-) Nip05RememberedResolutionStoreError!?Nip05RememberedResolutionRecord {
-    const self: *MemoryNip05RememberedResolutionStore = @ptrCast(@alignCast(ctx));
+) Planning.Store.Error!?Planning.Store.Record {
+    const self: *MemoryStore = @ptrCast(@alignCast(ctx));
     return self.getResolution(address_text);
 }
 
-const remembered_resolution_store_vtable = Nip05RememberedResolutionStoreVTable{
+const remembered_resolution_store_vtable = StoreVTable{
     .put_resolution = rememberedResolutionStorePut,
     .get_resolution = rememberedResolutionStoreGet,
 };
@@ -946,8 +940,8 @@ test "nip05 resolver propagates malformed documents from noztr" {
 }
 
 test "nip05 resolver remembers canonical successful resolutions" {
-    var records: [2]Nip05RememberedResolutionRecord = undefined;
-    var store = MemoryNip05RememberedResolutionStore.init(records[0..]);
+    var records: [2]Planning.Store.Record = undefined;
+    var store = Planning.Store.Memory.init(records[0..]);
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -985,8 +979,8 @@ test "nip05 resolver remembers canonical successful resolutions" {
 }
 
 test "nip05 resolver ignores stale remembered resolution updates" {
-    var records: [1]Nip05RememberedResolutionRecord = undefined;
-    var store = MemoryNip05RememberedResolutionStore.init(records[0..]);
+    var records: [1]Planning.Store.Record = undefined;
+    var store = Planning.Store.Memory.init(records[0..]);
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -1008,11 +1002,11 @@ test "nip05 resolver ignores stale remembered resolution updates" {
     };
 
     try std.testing.expectEqual(
-        Nip05RememberedResolutionStorePutOutcome.stored,
+        Planning.Store.PutOutcome.stored,
         try Nip05Resolver.rememberResolution(store.asStore(), &latest, 50),
     );
     try std.testing.expectEqual(
-        Nip05RememberedResolutionStorePutOutcome.ignored_stale,
+        Planning.Store.PutOutcome.ignored_stale,
         try Nip05Resolver.rememberResolution(store.asStore(), &stale, 49),
     );
 
@@ -1027,8 +1021,8 @@ test "nip05 resolver ignores stale remembered resolution updates" {
 }
 
 test "nip05 resolver inspects latest remembered resolution freshness for targets" {
-    var records: [2]Nip05RememberedResolutionRecord = undefined;
-    var store = MemoryNip05RememberedResolutionStore.init(records[0..]);
+    var records: [2]Planning.Store.Record = undefined;
+    var store = Planning.Store.Memory.init(records[0..]);
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -1052,12 +1046,12 @@ test "nip05 resolver inspects latest remembered resolution freshness for targets
     _ = try Nip05Resolver.rememberResolution(store.asStore(), &resolution, 90);
     _ = try Nip05Resolver.rememberResolution(store.asStore(), &second_resolution, 10);
 
-    const targets = [_]Nip05RememberedResolutionTarget{
+    const targets = [_]Planning.Target.Value{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
         .{ .address_text = "carol@example.com" },
     };
-    var latest_entries: [3]Nip05LatestRememberedResolutionTargetEntry = undefined;
+    var latest_entries: [3]Planning.Target.Latest.Entry = undefined;
 
     const plan = try Nip05Resolver.inspectLatestForTargets(
         store.asStore(),
@@ -1065,7 +1059,7 @@ test "nip05 resolver inspects latest remembered resolution freshness for targets
             .targets = targets[0..],
             .now_unix_seconds = 100,
             .max_age_seconds = 20,
-            .storage = Nip05LatestRememberedResolutionTargetStorage.init(latest_entries[0..]),
+            .storage = Planning.Target.Latest.Storage.init(latest_entries[0..]),
             .scratch = arena.allocator(),
         },
     );
@@ -1082,8 +1076,8 @@ test "nip05 resolver inspects latest remembered resolution freshness for targets
 }
 
 test "nip05 resolver plans remembered resolution refresh work for missing and stale targets" {
-    var records: [2]Nip05RememberedResolutionRecord = undefined;
-    var store = MemoryNip05RememberedResolutionStore.init(records[0..]);
+    var records: [2]Planning.Store.Record = undefined;
+    var store = Planning.Store.Memory.init(records[0..]);
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
@@ -1107,13 +1101,13 @@ test "nip05 resolver plans remembered resolution refresh work for missing and st
     _ = try Nip05Resolver.rememberResolution(store.asStore(), &resolution, 95);
     _ = try Nip05Resolver.rememberResolution(store.asStore(), &second_resolution, 10);
 
-    const targets = [_]Nip05RememberedResolutionTarget{
+    const targets = [_]Planning.Target.Value{
         .{ .address_text = "carol@example.com" },
         .{ .address_text = "bob@example.com" },
         .{ .address_text = "alice@example.com" },
     };
-    var latest_entries: [3]Nip05LatestRememberedResolutionTargetEntry = undefined;
-    var refresh_entries: [3]Nip05RememberedResolutionRefreshEntry = undefined;
+    var latest_entries: [3]Planning.Target.Latest.Entry = undefined;
+    var refresh_entries: [3]Planning.Target.Refresh.Entry = undefined;
 
     const plan = try Nip05Resolver.planRefreshForTargets(
         store.asStore(),
@@ -1121,7 +1115,7 @@ test "nip05 resolver plans remembered resolution refresh work for missing and st
             .targets = targets[0..],
             .now_unix_seconds = 100,
             .max_age_seconds = 20,
-            .storage = Nip05RememberedResolutionRefreshStorage.init(
+            .storage = Planning.Target.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

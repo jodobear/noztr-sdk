@@ -5,7 +5,7 @@ const builtin = @import("builtin");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
 
 pub const Nip05VerifyClientError =
-    workflows.identity.nip05.Nip05ResolverError || workflows.identity.nip05.Nip05RememberedResolutionStoreError;
+    workflows.identity.nip05.Nip05ResolverError || workflows.identity.nip05.Planning.Store.Error;
 
 pub const Nip05VerifyClientConfig = struct {};
 
@@ -273,8 +273,8 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
         lookup_url_buffer[0..],
         body_buffer[0..],
     );
-    var store_records: [2]workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(store_records[0..]);
+    var store_records: [2]workflows.identity.nip05.Planning.Store.Record = undefined;
+    var remembered_store = workflows.identity.nip05.Planning.Store.Memory.init(store_records[0..]);
     const client = Nip05VerifyClient.init(.{});
 
     const verify = client.prepareVerifyJob(
@@ -324,8 +324,8 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
 }
 
 test "nip05 verify client plans remembered refresh work through one client surface" {
-    var store_records: [2]workflows.identity.nip05.Nip05RememberedResolutionRecord = undefined;
-    var remembered_store = workflows.identity.nip05.MemoryNip05RememberedResolutionStore.init(store_records[0..]);
+    var store_records: [2]workflows.identity.nip05.Planning.Store.Record = undefined;
+    var remembered_store = workflows.identity.nip05.Planning.Store.Memory.init(store_records[0..]);
     const client = Nip05VerifyClient.init(.{});
 
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);

@@ -228,6 +228,9 @@ That same cleanup also shortened the main client methods:
 
 The old one-off client-side `Nip05RememberedResolutionPlanning` facade is gone.
 
+The old flat workflow-floor planning aliases are also gone. Use the grouped planning route
+directly instead of the former top-level `Nip05RememberedResolution...` type wall.
+
 Use:
 
 - `noztr_sdk.client.identity.nip05.Planning`
@@ -246,12 +249,17 @@ Examples:
 - `Nip05RememberedResolutionPlanning.Record` -> `Planning.Store.Record`
 - `Nip05RememberedResolutionPlanning.LatestTargetRequest` -> `Planning.Target.Latest.Request`
 - `Nip05RememberedResolutionPlanning.RefreshPlan` -> `Planning.Target.Refresh.Plan`
+- `Nip05RememberedResolutionStore` -> `Planning.Store.Backend`
+- `MemoryNip05RememberedResolutionStore` -> `Planning.Store.Memory`
+- `Nip05LatestRememberedResolutionTargetRequest` -> `Planning.Target.Latest.Request`
+- `Nip05RememberedResolutionRefreshRequest` -> `Planning.Target.Refresh.Request`
 
 Route shape:
 
 ```zig
 pub const Planning = struct {
     pub const Store = struct {
+        pub const Error = ...;
         pub const PutOutcome = ...;
         pub const Record = ...;
         pub const Backend = ...;
@@ -262,6 +270,7 @@ pub const Planning = struct {
         pub const Value = ...;
         pub const Latest = struct {
             pub const Freshness = ...;
+            pub const Value = ...;
             pub const Entry = ...;
             pub const Storage = ...;
             pub const Request = ...;

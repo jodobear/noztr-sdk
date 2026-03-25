@@ -1027,10 +1027,11 @@ test "phase8 exposes the nip05 resolver workflow surface" {
     try std.testing.expect(@TypeOf(workflows.identity.nip05.Nip05LookupStorage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.nip05.Nip05LookupRequest) == type);
     try std.testing.expect(@TypeOf(workflows.identity.nip05.Nip05VerificationRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.nip05.Nip05RememberedResolutionStore) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.nip05.MemoryNip05RememberedResolutionStore) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.nip05.Nip05LatestRememberedResolutionTargetRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.nip05.Nip05RememberedResolutionRefreshRequest) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.nip05.Planning.Store.Error) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.nip05.Planning.Store.Backend) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.nip05.Planning.Store.Memory) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.nip05.Planning.Target.Latest.Request) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.nip05.Planning.Target.Refresh.Request) == type);
 }
 
 test "phase9 exposes the group session workflow surface" {
