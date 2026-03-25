@@ -21,6 +21,20 @@ Use these docs when you need public routing or contract context before opening a
 - [docs/reference/contract-map.md](../docs/reference/contract-map.md)
 - [docs/reference/downstream-sdk-boundary.md](../docs/reference/downstream-sdk-boundary.md)
 
+## Start Here (Route-First)
+
+Choose one destination first, then open the mapped examples:
+
+- **Core SDK foundation**: `consumer_smoke.zig` -> `local_operator_client.zig` -> `publish_client.zig` -> `downstream_mixed_route.zig`
+- **Relay and sessions**: `relay_query_client.zig`, `relay_exchange_client.zig`, `relay_auth_client.zig`, `relay_session_client.zig`
+- **Signer workflows**: `remote_signer.zig`, `signer_client.zig`, `signer_capability.zig`, `signer_connect_job_client.zig`
+- **DM + mailbox**: `mixed_dm_client.zig`, `mailbox.zig`, `mailbox_sync_runtime_client.zig`, `mailbox_replay_turn_client.zig`
+- **Social content**: `social_profile_content_client.zig`, `social_reaction_list_client.zig`, `social_graph_wot_client.zig`, `social_comment_reply_client.zig`
+- **Identity and proofs**: `nip39_verification.zig`, `nip03_verify_client.zig`, `nip05_resolution.zig`
+- **Store and runtime**: `store_query.zig`, `local_state_client.zig`, `cli_archive_client.zig`, `relay_pool_checkpoint.zig`
+
+After selecting a track, use the full catalog below for fine-grained examples and control-point details.
+
 ## Teaching Posture
 
 - public client-composition imports come from `@import("noztr_sdk").client`
@@ -37,9 +51,6 @@ Use these docs when you need public routing or contract context before opening a
 - examples are compile-verified recipes, not hidden runtimes or framework demos
 - deferred seams are named explicitly instead of being smuggled into example code
 - the grouped routes are the only canonical public routes for mature surfaces in this repo
-
-In the recipe entries below:
-- treat the example file plus the grouped route from the contract map as the canonical discovery path
 
 ## If You Are Building Another Zig SDK
 
@@ -78,7 +89,10 @@ They do not imply:
 - hidden connection ownership
 - product-specific policy above the relay/Nostr layer
 
-## Start Here
+## Detailed Catalog (Secondary Reference)
+
+In the recipe entries below:
+- treat the example file plus the grouped route from the contract map as the canonical discovery path
 
 - `consumer_smoke.zig`
   - goal: minimal package/import check
