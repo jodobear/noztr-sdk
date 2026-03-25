@@ -9,7 +9,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
     const local_capability = local.signerCapabilityProfile();
     const author_secret = [_]u8{0x11} ** 32;
 
-    const get_public_key_request: noztr_sdk.client.signer.capability.SignerOperationRequest = .{
+    const get_public_key_request: noztr_sdk.client.signer.capability.OperationRequest = .{
         .get_public_key = {},
     };
     try std.testing.expectEqual(.local_immediate, get_public_key_request.modeIn(&local_capability));
@@ -35,7 +35,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
     );
     var unsigned_event_json_output: [512]u8 = undefined;
     const unsigned_event_json = try local.serializeEventJson(unsigned_event_json_output[0..], &unsigned_event);
-    const sign_event_request: noztr_sdk.client.signer.capability.SignerOperationRequest = .{
+    const sign_event_request: noztr_sdk.client.signer.capability.OperationRequest = .{
         .sign_event = unsigned_event_json,
     };
     const local_sign_result = try local.completeSignerCapabilityOperation(
@@ -123,7 +123,7 @@ test "recipe: signer capability adapters stay explicit across local remote and b
             fn call(
                 context: *const anyopaque,
                 output: []u8,
-                request: *const noztr_sdk.client.signer.capability.SignerOperationRequest,
+                request: *const noztr_sdk.client.signer.capability.OperationRequest,
             ) noztr_sdk.client.signer.browser.Nip07BrowserError![]const u8 {
                 _ = context;
                 return switch (request.*) {

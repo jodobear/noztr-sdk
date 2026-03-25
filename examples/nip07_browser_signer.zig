@@ -20,7 +20,7 @@ test "recipe: thin NIP-07 browser adapter projects onto signer capability honest
             fn call(
                 context: *const anyopaque,
                 output: []u8,
-                request: *const noztr_sdk.client.signer.capability.SignerOperationRequest,
+                request: *const noztr_sdk.client.signer.capability.OperationRequest,
             ) noztr_sdk.client.signer.browser.Nip07BrowserError![]const u8 {
                 _ = context;
                 return switch (request.*) {
@@ -64,10 +64,10 @@ test "recipe: thin NIP-07 browser adapter projects onto signer capability honest
     const capability = browser.signerCapabilityProfile();
     try std.testing.expectEqual(.browser, capability.backend);
 
-    const get_public_key_request: noztr_sdk.client.signer.capability.SignerOperationRequest = .{
+    const get_public_key_request: noztr_sdk.client.signer.capability.OperationRequest = .{
         .get_public_key = {},
     };
-    const nip04_encrypt_request: noztr_sdk.client.signer.capability.SignerOperationRequest = .{
+    const nip04_encrypt_request: noztr_sdk.client.signer.capability.OperationRequest = .{
         .nip04_encrypt = .{
             .pubkey = [_]u8{0x22} ** 32,
             .text = "hello",

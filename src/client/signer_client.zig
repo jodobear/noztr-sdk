@@ -101,7 +101,7 @@ pub const Client = struct {
 
     pub fn signerCapabilityProfile(
         self: *const Client,
-    ) signer_capability.SignerCapabilityProfile {
+    ) signer_capability.Profile {
         _ = self;
         return .remoteSigner();
     }
@@ -283,7 +283,7 @@ pub const Client = struct {
         self: *Client,
         storage: *Storage,
         scratch: std.mem.Allocator,
-        request: *const signer_capability.SignerOperationRequest,
+        request: *const signer_capability.OperationRequest,
     ) Error!workflows.signer.remote.OutboundRequest {
         return switch (request.*) {
             .get_public_key => self.beginGetPublicKey(storage, scratch),
@@ -311,7 +311,7 @@ pub const Client = struct {
         self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) CapabilityError!signer_capability.SignerOperationResult {
+    ) CapabilityError!signer_capability.OperationResult {
         const outcome = try self.acceptResponseJson(response_json, scratch);
         return switch (outcome) {
             .user_pubkey => |pubkey| .{ .user_pubkey = pubkey },
@@ -333,7 +333,7 @@ pub const Client = struct {
 
 fn capabilityOperationFromRemoteMethod(
     method: workflows.signer.remote.Method,
-) ?signer_capability.SignerOperation {
+) ?signer_capability.Operation {
     return switch (method) {
         .get_public_key => .get_public_key,
         .sign_event => .sign_event,
@@ -578,7 +578,7 @@ test "signer client adapts onto the signer capability surface" {
         connect_response_scratch.allocator(),
     );
 
-    const get_public_key_request: signer_capability.SignerOperationRequest = .{ .get_public_key = {} };
+    const get_public_key_request: signer_capability.OperationRequest = .{ .get_public_key = {} };
     var pubkey_scratch_bytes: [1024]u8 = undefined;
     var pubkey_scratch = std.heap.FixedBufferAllocator.init(&pubkey_scratch_bytes);
     const outbound_pubkey = try client.beginSignerCapabilityOperation(

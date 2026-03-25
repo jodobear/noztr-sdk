@@ -22,7 +22,7 @@ pub const Nip07BrowserMethodSupport = struct {
 
     pub fn supports(
         self: *const Nip07BrowserMethodSupport,
-        operation: signer_capability.SignerOperation,
+        operation: signer_capability.Operation,
     ) bool {
         return switch (operation) {
             .get_public_key => self.get_public_key,
@@ -45,22 +45,22 @@ pub const Nip07BrowserSupport = struct {
 
     pub fn supports(
         self: *const Nip07BrowserSupport,
-        operation: signer_capability.SignerOperation,
+        operation: signer_capability.Operation,
     ) bool {
         return self.isPresent() and self.methods.supports(operation);
     }
 
     pub fn modeFor(
         self: *const Nip07BrowserSupport,
-        operation: signer_capability.SignerOperation,
-    ) signer_capability.SignerOperationMode {
+        operation: signer_capability.Operation,
+    ) signer_capability.OperationMode {
         if (!self.supports(operation)) return .unsupported;
         return .caller_driven_request;
     }
 
     pub fn signerCapabilityProfile(
         self: *const Nip07BrowserSupport,
-    ) signer_capability.SignerCapabilityProfile {
+    ) signer_capability.Profile {
         return .init(.browser, .{
             .get_public_key = self.modeFor(.get_public_key),
             .sign_event = self.modeFor(.sign_event),
@@ -81,7 +81,7 @@ pub const Nip07BrowserProvider = struct {
         completeOperation: *const fn (
             context: *const anyopaque,
             output: []u8,
-            request: *const signer_capability.SignerOperationRequest,
+            request: *const signer_capability.OperationRequest,
         ) Nip07BrowserError![]const u8,
     };
 
@@ -101,7 +101,7 @@ pub const Nip07BrowserProvider = struct {
 
     pub fn signerCapabilityProfile(
         self: *const Nip07BrowserProvider,
-    ) signer_capability.SignerCapabilityProfile {
+    ) signer_capability.Profile {
         const support = self.inspectSupport();
         return support.signerCapabilityProfile();
     }
@@ -109,8 +109,8 @@ pub const Nip07BrowserProvider = struct {
     pub fn completeSignerCapabilityOperation(
         self: *const Nip07BrowserProvider,
         output: []u8,
-        request: *const signer_capability.SignerOperationRequest,
-    ) Nip07BrowserError!signer_capability.SignerOperationResult {
+        request: *const signer_capability.OperationRequest,
+    ) Nip07BrowserError!signer_capability.OperationResult {
         const support = self.inspectSupport();
         if (!support.isPresent()) return error.SignerUnavailable;
         if (!request.isSupportedBy(&support.signerCapabilityProfile())) return error.UnsupportedMethod;
@@ -175,7 +175,7 @@ test "nip07 browser provider exposes capability profile through a thin support s
             fn call(
                 context: *const anyopaque,
                 output: []u8,
-                request: *const signer_capability.SignerOperationRequest,
+                request: *const signer_capability.OperationRequest,
             ) Nip07BrowserError![]const u8 {
                 _ = context;
                 return switch (request.*) {
@@ -220,7 +220,7 @@ test "nip07 browser provider exposes capability profile through a thin support s
     try std.testing.expectEqual(.unsupported, capability.modeFor(.nip04_encrypt));
 
     var output: [256]u8 = undefined;
-    const get_public_key_request: signer_capability.SignerOperationRequest = .{ .get_public_key = {} };
+    const get_public_key_request: signer_capability.OperationRequest = .{ .get_public_key = {} };
     const result = try provider.completeSignerCapabilityOperation(output[0..], &get_public_key_request);
     try std.testing.expect(get_public_key_request.acceptsResult(&result));
 }
@@ -240,7 +240,7 @@ test "nip07 browser adapter completes shared signer requests while keeping unsup
             fn call(
                 context: *const anyopaque,
                 output: []u8,
-                request: *const signer_capability.SignerOperationRequest,
+                request: *const signer_capability.OperationRequest,
             ) Nip07BrowserError![]const u8 {
                 _ = context;
                 return switch (request.*) {
@@ -274,7 +274,7 @@ test "nip07 browser adapter completes shared signer requests while keeping unsup
     const provider = Nip07BrowserProvider.init(&partial_context, &fake_vtable);
 
     var output: [256]u8 = undefined;
-    const sign_event_request: signer_capability.SignerOperationRequest = .{
+    const sign_event_request: signer_capability.OperationRequest = .{
         .sign_event = "{\"kind\":1}",
     };
     const sign_event_result = try provider.completeSignerCapabilityOperation(
@@ -283,7 +283,7 @@ test "nip07 browser adapter completes shared signer requests while keeping unsup
     );
     try std.testing.expect(sign_event_request.acceptsResult(&sign_event_result));
 
-    const nip04_request: signer_capability.SignerOperationRequest = .{
+    const nip04_request: signer_capability.OperationRequest = .{
         .nip04_encrypt = .{
             .pubkey = [_]u8{0x22} ** 32,
             .text = "hello",

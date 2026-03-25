@@ -37,6 +37,8 @@ Use this first, then jump by route family.
 
 - [Remote signer naming migration](./remote-signer-naming-migration.md)
   - `workflows.signer.remote.*` role-based cleanup
+- [Signer capability naming migration](./signer-capability-naming-migration.md)
+  - route-local signer-capability type names in `client.signer.capability.*`
 - [Signer session naming migration](./signer-session-naming-migration.md)
   - route-local signer-session `client.signer.session.*` names
 - [Mailbox signer job naming migration](./mailbox-signer-job-naming-migration.md)

@@ -200,7 +200,7 @@ pub const LocalOperatorClient = struct {
 
     pub fn signerCapabilityProfile(
         self: LocalOperatorClient,
-    ) signer_capability.SignerCapabilityProfile {
+    ) signer_capability.Profile {
         _ = self;
         return .localOperator();
     }
@@ -246,9 +246,9 @@ pub const LocalOperatorClient = struct {
         self: LocalOperatorClient,
         output: []u8,
         secret_key: *const [secret_key_bytes]u8,
-        request: *const signer_capability.SignerOperationRequest,
+        request: *const signer_capability.OperationRequest,
         scratch: std.mem.Allocator,
-    ) LocalOperatorSignerCapabilityError!signer_capability.SignerOperationResult {
+    ) LocalOperatorSignerCapabilityError!signer_capability.OperationResult {
         return switch (request.*) {
             .get_public_key => .{ .user_pubkey = try self.derivePublicKey(secret_key) },
             .sign_event => |unsigned_event_json| blk: {
@@ -509,7 +509,7 @@ test "local operator client adapts onto the signer capability surface" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
-    const get_public_key_request: signer_capability.SignerOperationRequest = .{ .get_public_key = {} };
+    const get_public_key_request: signer_capability.OperationRequest = .{ .get_public_key = {} };
     const get_public_key_result = try client.completeSignerCapabilityOperation(
         output[0..],
         &secret_key,
@@ -528,7 +528,7 @@ test "local operator client adapts onto the signer capability surface" {
     );
     var unsigned_event_json_output: [512]u8 = undefined;
     const unsigned_event_json = try client.serializeEventJson(unsigned_event_json_output[0..], &unsigned_event);
-    const sign_event_request: signer_capability.SignerOperationRequest = .{
+    const sign_event_request: signer_capability.OperationRequest = .{
         .sign_event = unsigned_event_json,
     };
     const sign_event_result = try client.completeSignerCapabilityOperation(
@@ -539,7 +539,7 @@ test "local operator client adapts onto the signer capability surface" {
     );
     try std.testing.expect(sign_event_request.acceptsResult(&sign_event_result));
 
-    const decrypt_request: signer_capability.SignerOperationRequest = .{
+    const decrypt_request: signer_capability.OperationRequest = .{
         .nip04_decrypt = .{
             .pubkey = peer_pubkey,
             .text = "ciphertext",
