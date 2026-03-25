@@ -2173,16 +2173,17 @@ pub const Planning = struct {
         pub const Entry = IdentityStoredProfileDiscoveryEntry;
         pub const Freshness = IdentityStoredProfileFreshness;
         pub const FallbackPolicy = IdentityStoredProfileFallbackPolicy;
-        pub const FreshEntry = IdentityStoredProfileDiscoveryFreshnessEntry;
 
-        pub const Discovery = struct {
-            pub const Storage = IdentityStoredProfileDiscoveryStorage;
-            pub const Request = IdentityStoredProfileDiscoveryRequest;
-        };
-
-        pub const DiscoveryFresh = struct {
+        pub const Fresh = struct {
+            pub const Entry = IdentityStoredProfileDiscoveryFreshnessEntry;
             pub const Storage = IdentityStoredProfileDiscoveryFreshnessStorage;
             pub const Request = IdentityStoredProfileDiscoveryFreshnessRequest;
+        };
+
+        pub const Discovery = struct {
+            pub const Group = IdentityStoredProfileTargetDiscoveryGroup;
+            pub const Storage = IdentityStoredProfileDiscoveryStorage;
+            pub const Request = IdentityStoredProfileDiscoveryRequest;
         };
 
         pub const Runtime = struct {
@@ -2202,82 +2203,85 @@ pub const Planning = struct {
         };
     };
 
-    pub const Target = IdentityStoredProfileTarget;
+    pub const Target = struct {
+        pub const Value = IdentityStoredProfileTarget;
 
-    pub const Discovery = struct {
-        pub const Group = IdentityStoredProfileTargetDiscoveryGroup;
-        pub const Storage = IdentityStoredProfileTargetDiscoveryStorage;
-        pub const Request = IdentityStoredProfileTargetDiscoveryRequest;
-    };
+        pub const Discovery = struct {
+            pub const Group = IdentityStoredProfileTargetDiscoveryGroup;
+            pub const Storage = IdentityStoredProfileTargetDiscoveryStorage;
+            pub const Request = IdentityStoredProfileTargetDiscoveryRequest;
+        };
 
-    pub const DiscoveryFresh = struct {
-        pub const Group = IdentityStoredProfileTargetDiscoveryFreshnessGroup;
-        pub const Storage = IdentityStoredProfileTargetDiscoveryFreshnessStorage;
-        pub const Request = IdentityStoredProfileTargetDiscoveryFreshnessRequest;
-    };
+        pub const Fresh = struct {
+            pub const Group = IdentityStoredProfileTargetDiscoveryFreshnessGroup;
+            pub const Storage = IdentityStoredProfileTargetDiscoveryFreshnessStorage;
+            pub const Request = IdentityStoredProfileTargetDiscoveryFreshnessRequest;
+        };
 
-    pub const Latest = struct {
-        pub const Entry = IdentityStoredProfileTargetLatestFreshnessEntry;
-        pub const Storage = IdentityStoredProfileTargetLatestFreshnessStorage;
-        pub const Request = IdentityStoredProfileTargetLatestFreshnessRequest;
-    };
+        pub const Latest = struct {
+            pub const Entry = IdentityStoredProfileTargetLatestFreshnessEntry;
+            pub const Storage = IdentityStoredProfileTargetLatestFreshnessStorage;
+            pub const Request = IdentityStoredProfileTargetLatestFreshnessRequest;
+            pub const Plan = IdentityStoredProfileTargetLatestFreshnessPlan;
+        };
 
-    pub const Preferred = struct {
-        pub const Entry = IdentityPreferredStoredProfileTargetEntry;
-        pub const Storage = IdentityPreferredStoredProfileTargetStorage;
-        pub const EntriesRequest = IdentityPreferredStoredProfileTargetSelectionRequest;
-        pub const Request = IdentityPreferredStoredProfileTargetRequest;
-        pub const Value = IdentityPreferredStoredProfileTarget;
-    };
+        pub const Preferred = struct {
+            pub const Entry = IdentityPreferredStoredProfileTargetEntry;
+            pub const Storage = IdentityPreferredStoredProfileTargetStorage;
+            pub const EntriesRequest = IdentityPreferredStoredProfileTargetSelectionRequest;
+            pub const Request = IdentityPreferredStoredProfileTargetRequest;
+            pub const Value = IdentityPreferredStoredProfileTarget;
+        };
 
-    pub const Refresh = struct {
-        pub const Entry = IdentityStoredProfileTargetRefreshEntry;
-        pub const Storage = IdentityStoredProfileTargetRefreshStorage;
-        pub const Request = IdentityStoredProfileTargetRefreshRequest;
-        pub const Plan = IdentityStoredProfileTargetRefreshPlan;
-        pub const Step = IdentityStoredProfileTargetRefreshStep;
-    };
+        pub const Refresh = struct {
+            pub const Entry = IdentityStoredProfileTargetRefreshEntry;
+            pub const Storage = IdentityStoredProfileTargetRefreshStorage;
+            pub const Request = IdentityStoredProfileTargetRefreshRequest;
+            pub const Plan = IdentityStoredProfileTargetRefreshPlan;
+            pub const Step = IdentityStoredProfileTargetRefreshStep;
+        };
 
-    pub const Runtime = struct {
-        pub const Action = IdentityStoredProfileTargetRuntimeAction;
-        pub const Request = IdentityStoredProfileTargetRuntimeRequest;
-        pub const Plan = IdentityStoredProfileTargetRuntimePlan;
-        pub const Step = IdentityStoredProfileTargetRuntimeStep;
-    };
+        pub const Runtime = struct {
+            pub const Action = IdentityStoredProfileTargetRuntimeAction;
+            pub const Request = IdentityStoredProfileTargetRuntimeRequest;
+            pub const Plan = IdentityStoredProfileTargetRuntimePlan;
+            pub const Step = IdentityStoredProfileTargetRuntimeStep;
+        };
 
-    pub const Policy = struct {
-        pub const Entry = IdentityStoredProfileTargetPolicyEntry;
-        pub const Group = IdentityStoredProfileTargetPolicyGroup;
-        pub const Storage = IdentityStoredProfileTargetPolicyStorage;
-        pub const Request = IdentityStoredProfileTargetPolicyRequest;
-        pub const Plan = IdentityStoredProfileTargetPolicyPlan;
-    };
+        pub const Policy = struct {
+            pub const Entry = IdentityStoredProfileTargetPolicyEntry;
+            pub const Group = IdentityStoredProfileTargetPolicyGroup;
+            pub const Storage = IdentityStoredProfileTargetPolicyStorage;
+            pub const Request = IdentityStoredProfileTargetPolicyRequest;
+            pub const Plan = IdentityStoredProfileTargetPolicyPlan;
+        };
 
-    pub const Cadence = struct {
-        pub const Action = IdentityStoredProfileTargetRefreshCadenceAction;
-        pub const Entry = IdentityStoredProfileTargetRefreshCadenceEntry;
-        pub const Group = IdentityStoredProfileTargetRefreshCadenceGroup;
-        pub const Storage = IdentityStoredProfileTargetRefreshCadenceStorage;
-        pub const Request = IdentityStoredProfileTargetRefreshCadenceRequest;
-        pub const Plan = IdentityStoredProfileTargetRefreshCadencePlan;
-        pub const Step = IdentityStoredProfileTargetRefreshCadenceStep;
-    };
+        pub const Cadence = struct {
+            pub const Action = IdentityStoredProfileTargetRefreshCadenceAction;
+            pub const Entry = IdentityStoredProfileTargetRefreshCadenceEntry;
+            pub const Group = IdentityStoredProfileTargetRefreshCadenceGroup;
+            pub const Storage = IdentityStoredProfileTargetRefreshCadenceStorage;
+            pub const Request = IdentityStoredProfileTargetRefreshCadenceRequest;
+            pub const Plan = IdentityStoredProfileTargetRefreshCadencePlan;
+            pub const Step = IdentityStoredProfileTargetRefreshCadenceStep;
+        };
 
-    pub const Batch = struct {
-        pub const Storage = IdentityStoredProfileTargetRefreshBatchStorage;
-        pub const Request = IdentityStoredProfileTargetRefreshBatchRequest;
-        pub const Plan = IdentityStoredProfileTargetRefreshBatchPlan;
-        pub const Step = IdentityStoredProfileTargetRefreshBatchStep;
-    };
+        pub const Batch = struct {
+            pub const Storage = IdentityStoredProfileTargetRefreshBatchStorage;
+            pub const Request = IdentityStoredProfileTargetRefreshBatchRequest;
+            pub const Plan = IdentityStoredProfileTargetRefreshBatchPlan;
+            pub const Step = IdentityStoredProfileTargetRefreshBatchStep;
+        };
 
-    pub const Turn = struct {
-        pub const Action = IdentityStoredProfileTargetTurnPolicyAction;
-        pub const Entry = IdentityStoredProfileTargetTurnPolicyEntry;
-        pub const Group = IdentityStoredProfileTargetTurnPolicyGroup;
-        pub const Storage = IdentityStoredProfileTargetTurnPolicyStorage;
-        pub const Request = IdentityStoredProfileTargetTurnPolicyRequest;
-        pub const Plan = IdentityStoredProfileTargetTurnPolicyPlan;
-        pub const Step = IdentityStoredProfileTargetTurnPolicyStep;
+        pub const Turn = struct {
+            pub const Action = IdentityStoredProfileTargetTurnPolicyAction;
+            pub const Entry = IdentityStoredProfileTargetTurnPolicyEntry;
+            pub const Group = IdentityStoredProfileTargetTurnPolicyGroup;
+            pub const Storage = IdentityStoredProfileTargetTurnPolicyStorage;
+            pub const Request = IdentityStoredProfileTargetTurnPolicyRequest;
+            pub const Plan = IdentityStoredProfileTargetTurnPolicyPlan;
+            pub const Step = IdentityStoredProfileTargetTurnPolicyStep;
+        };
     };
 
     pub const Remembered = struct {

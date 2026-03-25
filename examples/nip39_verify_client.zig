@@ -118,38 +118,38 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     _ = try watched_target_store.rememberTarget(.{ .provider = .github, .identity = "dave" });
 
     var listed_records: [4]Planning.Record.Watched = undefined;
-    var targets: [4]Planning.Target = undefined;
+    var targets: [4]Planning.Target.Value = undefined;
     var matches: [2]Planning.Match = undefined;
-    var latest_entries: [4]Planning.Latest.Entry = undefined;
-    var policy_entries: [4]Planning.Policy.Entry = undefined;
-    var policy_groups: [4]Planning.Policy.Group = undefined;
-    var cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var batch_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var latest_entries: [4]Planning.Target.Latest.Entry = undefined;
+    var policy_entries: [4]Planning.Target.Policy.Entry = undefined;
+    var policy_groups: [4]Planning.Target.Policy.Group = undefined;
+    var cadence_entries: [4]Planning.Target.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
+    var batch_latest_entries: [4]Planning.Target.Latest.Entry = undefined;
+    var batch_cadence_entries: [4]Planning.Target.Cadence.Entry = undefined;
+    var batch_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     var runtime_policy_matches: [2]Planning.Match = undefined;
-    var runtime_policy_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var runtime_policy_entries: [4]Planning.Policy.Entry = undefined;
-    var runtime_policy_groups: [4]Planning.Policy.Group = undefined;
+    var runtime_policy_latest_entries: [4]Planning.Target.Latest.Entry = undefined;
+    var runtime_policy_entries: [4]Planning.Target.Policy.Entry = undefined;
+    var runtime_policy_groups: [4]Planning.Target.Policy.Group = undefined;
     var runtime_cadence_matches: [2]Planning.Match = undefined;
-    var runtime_cadence_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var runtime_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var runtime_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var runtime_cadence_latest_entries: [4]Planning.Target.Latest.Entry = undefined;
+    var runtime_cadence_entries: [4]Planning.Target.Cadence.Entry = undefined;
+    var runtime_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     var runtime_batch_matches: [2]Planning.Match = undefined;
-    var runtime_batch_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var runtime_batch_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var runtime_batch_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var runtime_batch_latest_entries: [4]Planning.Target.Latest.Entry = undefined;
+    var runtime_batch_cadence_entries: [4]Planning.Target.Cadence.Entry = undefined;
+    var runtime_batch_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     var runtime_turn_matches: [2]Planning.Match = undefined;
-    var runtime_turn_latest_entries: [4]Planning.Latest.Entry = undefined;
-    var runtime_turn_policy_entries: [4]Planning.Policy.Entry = undefined;
-    var runtime_turn_policy_groups: [4]Planning.Policy.Group = undefined;
-    var runtime_turn_cadence_entries: [4]Planning.Cadence.Entry = undefined;
-    var runtime_turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var turn_entries: [4]Planning.Turn.Entry = undefined;
-    var turn_groups: [4]Planning.Turn.Group = undefined;
-    var runtime_turn_entries: [4]Planning.Turn.Entry = undefined;
-    var runtime_turn_groups: [4]Planning.Turn.Group = undefined;
+    var runtime_turn_latest_entries: [4]Planning.Target.Latest.Entry = undefined;
+    var runtime_turn_policy_entries: [4]Planning.Target.Policy.Entry = undefined;
+    var runtime_turn_policy_groups: [4]Planning.Target.Policy.Group = undefined;
+    var runtime_turn_cadence_entries: [4]Planning.Target.Cadence.Entry = undefined;
+    var runtime_turn_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
+    var turn_entries: [4]Planning.Target.Turn.Entry = undefined;
+    var turn_groups: [4]Planning.Target.Turn.Group = undefined;
+    var runtime_turn_entries: [4]Planning.Target.Turn.Entry = undefined;
+    var runtime_turn_groups: [4]Planning.Target.Turn.Group = undefined;
 
     const cadence = try client.inspectWatchedCadence(
         profile_store.asStore(),
@@ -162,7 +162,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Watched.Cadence.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.Cadence.Storage.init(
+                Planning.Target.Cadence.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     cadence_entries[0..],
@@ -191,7 +191,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Watched.Batch.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.Batch.Storage.init(
+                Planning.Target.Batch.Storage.init(
                     matches[0..],
                     batch_latest_entries[0..],
                     batch_cadence_entries[0..],
@@ -219,7 +219,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Watched.Turn.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.Turn.Storage.init(
+                Planning.Target.Turn.Storage.init(
                     matches[0..],
                     latest_entries[0..],
                     policy_entries[0..],
@@ -254,25 +254,25 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Watched.Runtime.Storage.init(
                 listed_records[0..],
                 targets[0..],
-                Planning.Policy.Storage.init(
+                Planning.Target.Policy.Storage.init(
                     runtime_policy_matches[0..],
                     runtime_policy_latest_entries[0..],
                     runtime_policy_entries[0..],
                     runtime_policy_groups[0..],
                 ),
-                Planning.Cadence.Storage.init(
+                Planning.Target.Cadence.Storage.init(
                     runtime_cadence_matches[0..],
                     runtime_cadence_latest_entries[0..],
                     runtime_cadence_entries[0..],
                     runtime_cadence_groups[0..],
                 ),
-                Planning.Batch.Storage.init(
+                Planning.Target.Batch.Storage.init(
                     runtime_batch_matches[0..],
                     runtime_batch_latest_entries[0..],
                     runtime_batch_cadence_entries[0..],
                     runtime_batch_cadence_groups[0..],
                 ),
-                Planning.Turn.Storage.init(
+                Planning.Target.Turn.Storage.init(
                     runtime_turn_matches[0..],
                     runtime_turn_latest_entries[0..],
                     runtime_turn_policy_entries[0..],
@@ -306,11 +306,11 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
     try std.testing.expectEqualStrings("bob", runtime.deferredEntries()[0].target.identity);
 
     var remembered_records: [2]Planning.Record.Remembered = undefined;
-    var remembered_targets: [2]Planning.Target = undefined;
+    var remembered_targets: [2]Planning.Target.Value = undefined;
     var remembered_matches: [1]Planning.Match = undefined;
-    var remembered_latest_entries: [2]Planning.Latest.Entry = undefined;
-    var remembered_cadence_entries: [2]Planning.Cadence.Entry = undefined;
-    var remembered_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var remembered_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
+    var remembered_cadence_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var remembered_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
 
     const remembered_freshness = try client.inspectRememberedFreshness(
         profile_store.asStore(),
@@ -320,7 +320,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Remembered.Freshness.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                Planning.Latest.Storage.init(
+                Planning.Target.Latest.Storage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                 ),
@@ -342,7 +342,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Remembered.Cadence.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                Planning.Cadence.Storage.init(
+                Planning.Target.Cadence.Storage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                     remembered_cadence_entries[0..],
@@ -370,7 +370,7 @@ test "recipe: nip39 verify client verifies and inspects remembered identity stra
             .storage = Planning.Remembered.Batch.Storage.init(
                 remembered_records[0..],
                 remembered_targets[0..],
-                Planning.Batch.Storage.init(
+                Planning.Target.Batch.Storage.init(
                     remembered_matches[0..],
                     remembered_latest_entries[0..],
                     remembered_cadence_entries[0..],
