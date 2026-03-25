@@ -1014,7 +1014,7 @@ test "relay management client prepares caller-driven NIP-98 auth for POST bodies
         authorization[0..],
         authorization_json[0..],
     );
-    const verified = try noztr.nip98_http_auth.http_auth_verify_authorization_header(
+    const verified = try noztr.nip98_http_auth.verify_authorization_header(
         decoded_json[0..],
         header,
         prepared.url,
@@ -2478,7 +2478,7 @@ test "relay management client accepts explicit NIP-98 authorization headers" {
             const self: *@This() = @ptrCast(@alignCast(ctx));
             const header = request.authorization orelse return error.InvalidResponse;
             var payload_hex: [noztr.nip98_http_auth.payload_hash_hex_length]u8 = undefined;
-            const expected_payload = noztr.nip98_http_auth.http_auth_payload_sha256_hex(
+            const expected_payload = noztr.nip98_http_auth.payload_sha256_hex(
                 payload_hex[0..],
                 request.body,
             ) catch return error.InvalidResponse;
@@ -2486,7 +2486,7 @@ test "relay management client accepts explicit NIP-98 authorization headers" {
             var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
             defer arena.deinit();
 
-            _ = noztr.nip98_http_auth.http_auth_verify_authorization_header(
+            _ = noztr.nip98_http_auth.verify_authorization_header(
                 decoded_json[0..],
                 header,
                 request.url,

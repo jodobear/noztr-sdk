@@ -38,7 +38,7 @@ pub fn preparePost(
     payload_hex_out: []u8,
 ) (TargetError || noztr.nip98_http_auth.HttpAuthError)!PreparedPost {
     try validatePostTarget(url);
-    const payload_hex = try noztr.nip98_http_auth.http_auth_payload_sha256_hex(payload_hex_out, body);
+    const payload_hex = try noztr.nip98_http_auth.payload_sha256_hex(payload_hex_out, body);
     return .{
         .url = url,
         .body = body,
@@ -54,7 +54,7 @@ pub fn encodePreparedAuthorization(
     authorization_out: []u8,
     authorization_json_out: []u8,
 ) noztr.nip98_http_auth.HttpAuthError![]const u8 {
-    _ = try noztr.nip98_http_auth.http_auth_verify_request(
+    _ = try noztr.nip98_http_auth.verify_request(
         auth_event,
         prepared.url,
         PreparedPost.method,
@@ -63,7 +63,7 @@ pub fn encodePreparedAuthorization(
         0,
         0,
     );
-    return noztr.nip98_http_auth.http_auth_encode_authorization_header(
+    return noztr.nip98_http_auth.encode_authorization_header(
         authorization_out,
         auth_event,
         authorization_json_out,
@@ -85,9 +85,9 @@ pub fn prepareSignedPostAuthorization(
         .event = undefined,
     };
     signed.tags = .{
-        try noztr.nip98_http_auth.http_auth_build_url_tag(&signed.url_tag, url),
-        try noztr.nip98_http_auth.http_auth_build_method_tag(&signed.method_tag, PreparedPost.method),
-        try noztr.nip98_http_auth.http_auth_build_payload_tag(&signed.payload_tag, payload_hex),
+        try noztr.nip98_http_auth.build_url_tag(&signed.url_tag, url),
+        try noztr.nip98_http_auth.build_method_tag(&signed.method_tag, PreparedPost.method),
+        try noztr.nip98_http_auth.build_payload_tag(&signed.payload_tag, payload_hex),
     };
     signed.event = .{
         .id = [_]u8{0} ** 32,
