@@ -124,8 +124,8 @@ zig build
 
 ## Version Line And Toolchain
 
-- project line: `0.1.0-dev.0`
-- first intended public release candidate: `0.1.0-rc.1`
+- project line: `0.1.0-rc.1`
+- current public release candidate
 - current toolchain baseline: Zig `0.15.2`
 
 These are separate on purpose: the Zig version is compatibility information, not the SDK version.

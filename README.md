@@ -138,8 +138,8 @@ Import/module naming uses `noztr_sdk` in Zig-facing package metadata.
 It does not use the Zig toolchain version as the library version.
 
 Current project line:
-- `0.1.0-dev.0`
-- first intended public release target: `0.1.0-rc.1`
+- `0.1.0-rc.1`
+- first public release candidate
 
 Current toolchain baseline:
 - Zig `0.15.2`

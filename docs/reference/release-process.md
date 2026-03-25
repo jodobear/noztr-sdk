@@ -21,8 +21,7 @@ This document defines the public release baseline for `noztr-sdk`.
 It does not use the Zig toolchain version as the library version.
 
 Current project line:
-- development line: `0.1.0-dev.0`
-- first intended public release candidate: `0.1.0-rc.1`
+- current public release candidate: `0.1.0-rc.1`
 
 Toolchain compatibility is tracked separately from the project version.
 
@@ -32,9 +31,9 @@ Current baseline:
 That toolchain floor should be stated in release notes and public docs for each release, but it is
 not the package version.
 
-## First Public Release Target
+## Current Public Release Candidate
 
-The first intended public release target is:
+The current public release candidate is:
 - `v0.1.0-rc.1`
 
 That release should mean:
@@ -152,14 +151,16 @@ Adoption guidance
 
 ## Recommendation
 
-`noztr-sdk` is close to `0.1.0-rc.1`, but a tag should wait until:
-- the first actual RC notes are written from the template above
-- maintainers do one final downstream-evaluation pass from the public docs route
-- the release commit is intentionally chosen and tagged
+`noztr-sdk` should now be evaluated on the `0.1.0-rc.1` line as a real public RC.
+
+If follow-up corrections are needed, prefer:
+- targeted post-RC fixes
+- migration-note updates when needed
+- a new RC tag instead of rewriting public tag history
 
 ## Current Stabilization State
 
-The current repo state should be treated as the downstream-evaluation baseline.
+The current repo state is now the public RC baseline.
 
 That means:
 - the broad cleanup/remediation campaign is finished
@@ -167,12 +168,12 @@ That means:
 - the first Blossom-forced shared substrate seam is landed
 - migration notes are now routed through one canonical guide
 
-It does not mean a tag should be cut immediately.
+That does not mean the line is frozen forever.
 
-The remaining work before `v0.1.0-rc.1` is still:
-- final downstream-evaluation pass
-- actual RC release notes
-- one intentionally chosen clean release commit and annotated tag
+The remaining work after `v0.1.0-rc.1` should be:
+- downstream evaluation and issue intake
+- targeted RC follow-up fixes where justified
+- a later `rc.2` or stable cut only when evidence supports it
 
 Many NIPs still remain unimplemented. That does not block `0.1.0-rc.1` by itself if the release
 notes and docs describe current coverage honestly.

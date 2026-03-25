@@ -41,6 +41,8 @@ If you are evaluating `noztr-sdk` for another Zig SDK, read the downstream bound
   - explicit `noztr` versus `noztr-sdk` split for another Zig SDK
 - [release process](./reference/release-process.md)
   - project versioning, RC criteria, tagging guidance, and first-release framing
+- [releases/0.1.0-rc.1](./releases/0.1.0-rc.1.md)
+  - first intentional public release candidate for the SDK as a whole
 - [CHANGELOG.md](../CHANGELOG.md)
   - project-level release line and notable changes
 - [pre-1.0 migration guide](./reference/migration-guide.md)
