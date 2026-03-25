@@ -6,44 +6,44 @@ const signer_job_support = @import("signer_job_support.zig");
 const signer_runtime_support = @import("signer_runtime_support.zig");
 const workflows = @import("../workflows/mod.zig");
 
-pub const SignerNip44EncryptJobClientError =
+pub const Error =
     signer_client.SignerClientError ||
     signer_job_support.SignerJobAuthError;
 
-pub const SignerNip44EncryptJobClientConfig = struct {
+pub const Config = struct {
     signer: signer_client.SignerClientConfig = .{},
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
 
-pub const SignerNip44EncryptJobClientStorage = struct {
+pub const Storage = struct {
     signer: signer_client.SignerClientStorage = .{},
     auth_state: signer_job_support.SignerJobAuthState = .{},
 };
 
-pub const SignerNip44EncryptJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
-pub const PreparedSignerNip44EncryptJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
-pub const SignerNip44EncryptJobRequest = workflows.signer.remote.OutboundRequest;
+pub const AuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
+pub const PreparedAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
+pub const Request = workflows.signer.remote.OutboundRequest;
 
-pub const SignerNip44EncryptJobReady = union(enum) {
-    authenticate: PreparedSignerNip44EncryptJobAuthEvent,
-    encrypt: SignerNip44EncryptJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    encrypt: Request,
 };
 
-pub const SignerNip44EncryptJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: []const u8,
     ciphertext: []const u8,
 };
 
-pub const SignerNip44EncryptJobClient = struct {
-    config: SignerNip44EncryptJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
     signer: signer_client.SignerClient,
 
     pub fn init(
-        config: SignerNip44EncryptJobClientConfig,
+        config: Config,
         signer: signer_client.SignerClient,
-        storage: *SignerNip44EncryptJobClientStorage,
-    ) SignerNip44EncryptJobClient {
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = config,
@@ -53,11 +53,11 @@ pub const SignerNip44EncryptJobClient = struct {
     }
 
     pub fn initFromBunkerUriText(
-        config: SignerNip44EncryptJobClientConfig,
-        storage: *SignerNip44EncryptJobClientStorage,
+        config: Config,
+        storage: *Storage,
         uri_text: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerNip44EncryptJobClientError!SignerNip44EncryptJobClient {
+    ) Error!Client {
         return .init(
             config,
             try signer_client.SignerClient.initFromBunkerUriText(
@@ -70,10 +70,10 @@ pub const SignerNip44EncryptJobClient = struct {
     }
 
     pub fn attach(
-        config: SignerNip44EncryptJobClientConfig,
+        config: Config,
         signer: signer_client.SignerClient,
-        storage: *SignerNip44EncryptJobClientStorage,
-    ) SignerNip44EncryptJobClient {
+        storage: *Storage,
+    ) Client {
         _ = storage;
         return .{
             .config = config,
@@ -82,39 +82,39 @@ pub const SignerNip44EncryptJobClient = struct {
         };
     }
 
-    pub fn currentRelayUrl(self: *const SignerNip44EncryptJobClient) []const u8 {
+    pub fn currentRelayUrl(self: *const Client) []const u8 {
         return self.signer.currentRelayUrl();
     }
 
-    pub fn currentRelayCanSendRequests(self: *const SignerNip44EncryptJobClient) bool {
+    pub fn currentRelayCanSendRequests(self: *const Client) bool {
         return self.signer.currentRelayCanSendRequests();
     }
 
-    pub fn isConnected(self: *const SignerNip44EncryptJobClient) bool {
+    pub fn isConnected(self: *const Client) bool {
         return self.signer.isConnected();
     }
 
-    pub fn lastSignerError(self: *const SignerNip44EncryptJobClient) ?[]const u8 {
+    pub fn lastSignerError(self: *const Client) ?[]const u8 {
         return self.signer.lastSignerError();
     }
 
-    pub fn markCurrentRelayConnected(self: *SignerNip44EncryptJobClient) void {
+    pub fn markCurrentRelayConnected(self: *Client) void {
         self.signer.markCurrentRelayConnected();
     }
 
     pub fn noteCurrentRelayDisconnected(
-        self: *SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
+        self: *Client,
+        storage: *Storage,
     ) void {
         self.signer.noteCurrentRelayDisconnected();
         storage.auth_state.clear();
     }
 
     pub fn noteCurrentRelayAuthChallenge(
-        self: *SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         challenge: []const u8,
-    ) SignerNip44EncryptJobClientError!void {
+    ) Error!void {
         return signer_runtime_support.noteCurrentRelayAuthChallenge(
             &self.signer,
             &storage.auth_state,
@@ -123,17 +123,17 @@ pub const SignerNip44EncryptJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
+        self: *const Client,
+        storage: *Storage,
     ) runtime.RelayPoolPlan {
         return signer_runtime_support.inspectRelayRuntime(&self.signer, &storage.signer);
     }
 
     pub fn selectRelayRuntimeStep(
-        self: *SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         step: *const runtime.RelayPoolStep,
-    ) SignerNip44EncryptJobClientError![]const u8 {
+    ) Error![]const u8 {
         return signer_runtime_support.selectRelayRuntimeStep(
             &self.signer,
             &storage.auth_state,
@@ -142,23 +142,23 @@ pub const SignerNip44EncryptJobClient = struct {
     }
 
     pub fn advanceRelay(
-        self: *SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
-    ) SignerNip44EncryptJobClientError![]const u8 {
+        self: *Client,
+        storage: *Storage,
+    ) Error![]const u8 {
         return signer_runtime_support.advanceRelay(&self.signer, &storage.auth_state);
     }
 
     pub fn prepareJob(
-        self: *SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
-        auth_storage: *SignerNip44EncryptJobAuthEventStorage,
+        self: *Client,
+        storage: *Storage,
+        auth_storage: *AuthEventStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         scratch: std.mem.Allocator,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         request: *const workflows.signer.remote.PubkeyTextRequest,
         created_at: u64,
-    ) SignerNip44EncryptJobClientError!SignerNip44EncryptJobReady {
+    ) Error!Ready {
         if (self.signer.currentRelayCanSendRequests()) {
             return .{
                 .encrypt = try self.signer.beginNip44Encrypt(
@@ -196,13 +196,13 @@ pub const SignerNip44EncryptJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *SignerNip44EncryptJobClient,
-        storage: *SignerNip44EncryptJobClientStorage,
-        prepared: *const PreparedSignerNip44EncryptJobAuthEvent,
+        self: *Client,
+        storage: *Storage,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
         scratch: std.mem.Allocator,
-    ) SignerNip44EncryptJobClientError!SignerNip44EncryptJobResult {
+    ) Error!Result {
         try signer_job_support.requireCurrentAuthState(
             &storage.auth_state,
             self.signer.currentRelayUrl(),
@@ -219,10 +219,10 @@ pub const SignerNip44EncryptJobClient = struct {
     }
 
     pub fn acceptEncryptResponseJson(
-        self: *SignerNip44EncryptJobClient,
+        self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerNip44EncryptJobClientError!SignerNip44EncryptJobResult {
+    ) Error!Result {
         const result = try self.signer.acceptResponseJson(response_json, scratch);
         std.debug.assert(result == .text_response);
         std.debug.assert(result.text_response.method == .nip44_encrypt);
@@ -237,8 +237,8 @@ test "signer nip44 encrypt job client exposes caller-owned config and storage" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerNip44EncryptJobClientStorage{};
-    var client = try SignerNip44EncryptJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -257,8 +257,8 @@ test "signer nip44 encrypt job client prepares ready encrypt work after an expli
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerNip44EncryptJobClientStorage{};
-    var client = try SignerNip44EncryptJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -268,7 +268,7 @@ test "signer nip44 encrypt job client prepares ready encrypt work after an expli
 
     const secret_key = [_]u8{0xb1} ** 32;
     const peer_pubkey = [_]u8{0x44} ** 32;
-    var auth_storage = SignerNip44EncryptJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_scratch_bytes: [1024]u8 = undefined;
@@ -302,8 +302,8 @@ test "signer nip44 encrypt job client drives auth-gated encrypt progression thro
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerNip44EncryptJobClientStorage{};
-    var client = try SignerNip44EncryptJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -314,7 +314,7 @@ test "signer nip44 encrypt job client drives auth-gated encrypt progression thro
 
     const secret_key = [_]u8{0xb2} ** 32;
     const peer_pubkey = [_]u8{0x55} ** 32;
-    var auth_storage = SignerNip44EncryptJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var first_scratch_bytes: [1024]u8 = undefined;

@@ -37,6 +37,8 @@ Use this first, then jump by route family.
 
 - [Remote signer naming migration](./remote-signer-naming-migration.md)
   - `workflows.signer.remote.*` role-based cleanup
+- [Signer job naming migration](./signer-job-naming-migration.md)
+  - canonical route-local `client.signer.*` job naming
 - [Proof, identity, and NIP-05 planning migration](./proof-identity-planning-migration.md)
   - planning families under grouped proof/identity/nip05 routes
 - [Noztr core rc4 migration](./noztr-core-rc4-migration.md)

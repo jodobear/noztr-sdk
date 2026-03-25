@@ -6,44 +6,44 @@ const signer_job_support = @import("signer_job_support.zig");
 const signer_runtime_support = @import("signer_runtime_support.zig");
 const workflows = @import("../workflows/mod.zig");
 
-pub const SignerConnectJobClientError =
+pub const Error =
     signer_client.SignerClientError ||
     signer_job_support.SignerJobAuthError;
 
-pub const SignerConnectJobClientConfig = struct {
+pub const Config = struct {
     signer: signer_client.SignerClientConfig = .{},
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
 
-pub const SignerConnectJobClientStorage = struct {
+pub const Storage = struct {
     signer: signer_client.SignerClientStorage = .{},
     auth_state: signer_job_support.SignerJobAuthState = .{},
 };
 
-pub const SignerConnectJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
-pub const PreparedSignerConnectJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
-pub const SignerConnectJobRequest = workflows.signer.remote.OutboundRequest;
+pub const AuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
+pub const PreparedAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
+pub const Request = workflows.signer.remote.OutboundRequest;
 
-pub const SignerConnectJobReady = union(enum) {
-    authenticate: PreparedSignerConnectJobAuthEvent,
-    connect: SignerConnectJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    connect: Request,
 };
 
-pub const SignerConnectJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: []const u8,
     connected,
 };
 
-pub const SignerConnectJobClient = struct {
-    config: SignerConnectJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
     signer: signer_client.SignerClient,
 
     pub fn init(
-        config: SignerConnectJobClientConfig,
+        config: Config,
         signer: signer_client.SignerClient,
-        storage: *SignerConnectJobClientStorage,
-    ) SignerConnectJobClient {
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = config,
@@ -53,11 +53,11 @@ pub const SignerConnectJobClient = struct {
     }
 
     pub fn initFromBunkerUriText(
-        config: SignerConnectJobClientConfig,
-        storage: *SignerConnectJobClientStorage,
+        config: Config,
+        storage: *Storage,
         uri_text: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerConnectJobClientError!SignerConnectJobClient {
+    ) Error!Client {
         return .init(
             config,
             try signer_client.SignerClient.initFromBunkerUriText(
@@ -70,10 +70,10 @@ pub const SignerConnectJobClient = struct {
     }
 
     pub fn attach(
-        config: SignerConnectJobClientConfig,
+        config: Config,
         signer: signer_client.SignerClient,
-        storage: *SignerConnectJobClientStorage,
-    ) SignerConnectJobClient {
+        storage: *Storage,
+    ) Client {
         _ = storage;
         return .{
             .config = config,
@@ -82,43 +82,43 @@ pub const SignerConnectJobClient = struct {
         };
     }
 
-    pub fn currentRelayUrl(self: *const SignerConnectJobClient) []const u8 {
+    pub fn currentRelayUrl(self: *const Client) []const u8 {
         return self.signer.currentRelayUrl();
     }
 
-    pub fn currentRelayCanSendRequests(self: *const SignerConnectJobClient) bool {
+    pub fn currentRelayCanSendRequests(self: *const Client) bool {
         return self.signer.currentRelayCanSendRequests();
     }
 
-    pub fn isConnected(self: *const SignerConnectJobClient) bool {
+    pub fn isConnected(self: *const Client) bool {
         return self.signer.isConnected();
     }
 
-    pub fn remoteSignerPubkey(self: *const SignerConnectJobClient) [32]u8 {
+    pub fn remoteSignerPubkey(self: *const Client) [32]u8 {
         return self.signer.remoteSignerPubkey();
     }
 
-    pub fn lastSignerError(self: *const SignerConnectJobClient) ?[]const u8 {
+    pub fn lastSignerError(self: *const Client) ?[]const u8 {
         return self.signer.lastSignerError();
     }
 
-    pub fn markCurrentRelayConnected(self: *SignerConnectJobClient) void {
+    pub fn markCurrentRelayConnected(self: *Client) void {
         self.signer.markCurrentRelayConnected();
     }
 
     pub fn noteCurrentRelayDisconnected(
-        self: *SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
+        self: *Client,
+        storage: *Storage,
     ) void {
         self.signer.noteCurrentRelayDisconnected();
         storage.auth_state.clear();
     }
 
     pub fn noteCurrentRelayAuthChallenge(
-        self: *SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         challenge: []const u8,
-    ) SignerConnectJobClientError!void {
+    ) Error!void {
         return signer_runtime_support.noteCurrentRelayAuthChallenge(
             &self.signer,
             &storage.auth_state,
@@ -127,17 +127,17 @@ pub const SignerConnectJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
+        self: *const Client,
+        storage: *Storage,
     ) runtime.RelayPoolPlan {
         return signer_runtime_support.inspectRelayRuntime(&self.signer, &storage.signer);
     }
 
     pub fn selectRelayRuntimeStep(
-        self: *SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         step: *const runtime.RelayPoolStep,
-    ) SignerConnectJobClientError![]const u8 {
+    ) Error![]const u8 {
         return signer_runtime_support.selectRelayRuntimeStep(
             &self.signer,
             &storage.auth_state,
@@ -146,23 +146,23 @@ pub const SignerConnectJobClient = struct {
     }
 
     pub fn advanceRelay(
-        self: *SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
-    ) SignerConnectJobClientError![]const u8 {
+        self: *Client,
+        storage: *Storage,
+    ) Error![]const u8 {
         return signer_runtime_support.advanceRelay(&self.signer, &storage.auth_state);
     }
 
     pub fn prepareJob(
-        self: *SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
-        auth_storage: *SignerConnectJobAuthEventStorage,
+        self: *Client,
+        storage: *Storage,
+        auth_storage: *AuthEventStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         scratch: std.mem.Allocator,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         created_at: u64,
         requested_permissions: []const workflows.signer.remote.Permission,
-    ) SignerConnectJobClientError!SignerConnectJobReady {
+    ) Error!Ready {
         if (self.signer.currentRelayCanSendRequests()) {
             return .{
                 .connect = try self.signer.beginConnect(
@@ -200,13 +200,13 @@ pub const SignerConnectJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *SignerConnectJobClient,
-        storage: *SignerConnectJobClientStorage,
-        prepared: *const PreparedSignerConnectJobAuthEvent,
+        self: *Client,
+        storage: *Storage,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
         scratch: std.mem.Allocator,
-    ) SignerConnectJobClientError!SignerConnectJobResult {
+    ) Error!Result {
         try signer_job_support.requireCurrentAuthState(
             &storage.auth_state,
             self.signer.currentRelayUrl(),
@@ -223,10 +223,10 @@ pub const SignerConnectJobClient = struct {
     }
 
     pub fn acceptConnectResponseJson(
-        self: *SignerConnectJobClient,
+        self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerConnectJobClientError!SignerConnectJobResult {
+    ) Error!Result {
         const result = try self.signer.acceptResponseJson(response_json, scratch);
         std.debug.assert(result == .connected);
         return .connected;
@@ -240,8 +240,8 @@ test "signer connect job client exposes caller-owned config and storage" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one";
-    var storage = SignerConnectJobClientStorage{};
-    var client = try SignerConnectJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -259,8 +259,8 @@ test "signer connect job client prepares connect work without auth gating" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerConnectJobClientStorage{};
-    var client = try SignerConnectJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -269,7 +269,7 @@ test "signer connect job client prepares connect work without auth gating" {
     client.markCurrentRelayConnected();
 
     const secret_key = [_]u8{0x91} ** 32;
-    var auth_storage = SignerConnectJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [@import("noztr").limits.event_json_max]u8 = undefined;
     var auth_message_output: [@import("noztr").limits.relay_message_bytes_max]u8 = undefined;
     var request_scratch_bytes: [1024]u8 = undefined;
@@ -308,8 +308,8 @@ test "signer connect job client drives auth-gated connect progression through on
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerConnectJobClientStorage{};
-    var client = try SignerConnectJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -319,7 +319,7 @@ test "signer connect job client drives auth-gated connect progression through on
     try client.noteCurrentRelayAuthChallenge(&storage, "challenge-1");
 
     const secret_key = [_]u8{0x92} ** 32;
-    var auth_storage = SignerConnectJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var first_scratch_bytes: [1024]u8 = undefined;

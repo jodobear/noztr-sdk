@@ -6,44 +6,44 @@ const signer_job_support = @import("signer_job_support.zig");
 const signer_runtime_support = @import("signer_runtime_support.zig");
 const workflows = @import("../workflows/mod.zig");
 
-pub const SignerPubkeyJobClientError =
+pub const Error =
     signer_client.SignerClientError ||
     signer_job_support.SignerJobAuthError;
 
-pub const SignerPubkeyJobClientConfig = struct {
+pub const Config = struct {
     signer: signer_client.SignerClientConfig = .{},
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
 
-pub const SignerPubkeyJobClientStorage = struct {
+pub const Storage = struct {
     signer: signer_client.SignerClientStorage = .{},
     auth_state: signer_job_support.SignerJobAuthState = .{},
 };
 
-pub const SignerPubkeyJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
-pub const PreparedSignerPubkeyJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
-pub const SignerPubkeyJobRequest = workflows.signer.remote.OutboundRequest;
+pub const AuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
+pub const PreparedAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
+pub const Request = workflows.signer.remote.OutboundRequest;
 
-pub const SignerPubkeyJobReady = union(enum) {
-    authenticate: PreparedSignerPubkeyJobAuthEvent,
-    pubkey: SignerPubkeyJobRequest,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
+    pubkey: Request,
 };
 
-pub const SignerPubkeyJobResult = union(enum) {
+pub const Result = union(enum) {
     authenticated: []const u8,
     pubkey: [32]u8,
 };
 
-pub const SignerPubkeyJobClient = struct {
-    config: SignerPubkeyJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
     signer: signer_client.SignerClient,
 
     pub fn init(
-        config: SignerPubkeyJobClientConfig,
+        config: Config,
         signer: signer_client.SignerClient,
-        storage: *SignerPubkeyJobClientStorage,
-    ) SignerPubkeyJobClient {
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = config,
@@ -53,11 +53,11 @@ pub const SignerPubkeyJobClient = struct {
     }
 
     pub fn initFromBunkerUriText(
-        config: SignerPubkeyJobClientConfig,
-        storage: *SignerPubkeyJobClientStorage,
+        config: Config,
+        storage: *Storage,
         uri_text: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerPubkeyJobClientError!SignerPubkeyJobClient {
+    ) Error!Client {
         return .init(
             config,
             try signer_client.SignerClient.initFromBunkerUriText(
@@ -70,10 +70,10 @@ pub const SignerPubkeyJobClient = struct {
     }
 
     pub fn attach(
-        config: SignerPubkeyJobClientConfig,
+        config: Config,
         signer: signer_client.SignerClient,
-        storage: *SignerPubkeyJobClientStorage,
-    ) SignerPubkeyJobClient {
+        storage: *Storage,
+    ) Client {
         _ = storage;
         return .{
             .config = config,
@@ -82,43 +82,43 @@ pub const SignerPubkeyJobClient = struct {
         };
     }
 
-    pub fn currentRelayUrl(self: *const SignerPubkeyJobClient) []const u8 {
+    pub fn currentRelayUrl(self: *const Client) []const u8 {
         return self.signer.currentRelayUrl();
     }
 
-    pub fn currentRelayCanSendRequests(self: *const SignerPubkeyJobClient) bool {
+    pub fn currentRelayCanSendRequests(self: *const Client) bool {
         return self.signer.currentRelayCanSendRequests();
     }
 
-    pub fn isConnected(self: *const SignerPubkeyJobClient) bool {
+    pub fn isConnected(self: *const Client) bool {
         return self.signer.isConnected();
     }
 
-    pub fn getUserPubkey(self: *const SignerPubkeyJobClient) ?[32]u8 {
+    pub fn getUserPubkey(self: *const Client) ?[32]u8 {
         return self.signer.getUserPubkey();
     }
 
-    pub fn lastSignerError(self: *const SignerPubkeyJobClient) ?[]const u8 {
+    pub fn lastSignerError(self: *const Client) ?[]const u8 {
         return self.signer.lastSignerError();
     }
 
-    pub fn markCurrentRelayConnected(self: *SignerPubkeyJobClient) void {
+    pub fn markCurrentRelayConnected(self: *Client) void {
         self.signer.markCurrentRelayConnected();
     }
 
     pub fn noteCurrentRelayDisconnected(
-        self: *SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
+        self: *Client,
+        storage: *Storage,
     ) void {
         self.signer.noteCurrentRelayDisconnected();
         storage.auth_state.clear();
     }
 
     pub fn noteCurrentRelayAuthChallenge(
-        self: *SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         challenge: []const u8,
-    ) SignerPubkeyJobClientError!void {
+    ) Error!void {
         return signer_runtime_support.noteCurrentRelayAuthChallenge(
             &self.signer,
             &storage.auth_state,
@@ -127,17 +127,17 @@ pub const SignerPubkeyJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
+        self: *const Client,
+        storage: *Storage,
     ) runtime.RelayPoolPlan {
         return signer_runtime_support.inspectRelayRuntime(&self.signer, &storage.signer);
     }
 
     pub fn selectRelayRuntimeStep(
-        self: *SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         step: *const runtime.RelayPoolStep,
-    ) SignerPubkeyJobClientError![]const u8 {
+    ) Error![]const u8 {
         return signer_runtime_support.selectRelayRuntimeStep(
             &self.signer,
             &storage.auth_state,
@@ -146,22 +146,22 @@ pub const SignerPubkeyJobClient = struct {
     }
 
     pub fn advanceRelay(
-        self: *SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
-    ) SignerPubkeyJobClientError![]const u8 {
+        self: *Client,
+        storage: *Storage,
+    ) Error![]const u8 {
         return signer_runtime_support.advanceRelay(&self.signer, &storage.auth_state);
     }
 
     pub fn prepareJob(
-        self: *SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
-        auth_storage: *SignerPubkeyJobAuthEventStorage,
+        self: *Client,
+        storage: *Storage,
+        auth_storage: *AuthEventStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         scratch: std.mem.Allocator,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         created_at: u64,
-    ) SignerPubkeyJobClientError!SignerPubkeyJobReady {
+    ) Error!Ready {
         if (self.signer.currentRelayCanSendRequests()) {
             return .{
                 .pubkey = try self.signer.beginGetPublicKey(
@@ -197,13 +197,13 @@ pub const SignerPubkeyJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *SignerPubkeyJobClient,
-        storage: *SignerPubkeyJobClientStorage,
-        prepared: *const PreparedSignerPubkeyJobAuthEvent,
+        self: *Client,
+        storage: *Storage,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
         scratch: std.mem.Allocator,
-    ) SignerPubkeyJobClientError!SignerPubkeyJobResult {
+    ) Error!Result {
         try signer_job_support.requireCurrentAuthState(
             &storage.auth_state,
             self.signer.currentRelayUrl(),
@@ -220,10 +220,10 @@ pub const SignerPubkeyJobClient = struct {
     }
 
     pub fn acceptPubkeyResponseJson(
-        self: *SignerPubkeyJobClient,
+        self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) SignerPubkeyJobClientError!SignerPubkeyJobResult {
+    ) Error!Result {
         const result = try self.signer.acceptResponseJson(response_json, scratch);
         std.debug.assert(result == .user_pubkey);
         return .{ .pubkey = result.user_pubkey };
@@ -237,8 +237,8 @@ test "signer pubkey job client exposes caller-owned config and storage" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerPubkeyJobClientStorage{};
-    var client = try SignerPubkeyJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -257,8 +257,8 @@ test "signer pubkey job client prepares ready pubkey work after an explicit conn
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerPubkeyJobClientStorage{};
-    var client = try SignerPubkeyJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -267,7 +267,7 @@ test "signer pubkey job client prepares ready pubkey work after an explicit conn
     try establishSignerSession(&client.signer, &storage.signer, "secret", arena.allocator());
 
     const secret_key = [_]u8{0xa1} ** 32;
-    var auth_storage = SignerPubkeyJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_scratch_bytes: [1024]u8 = undefined;
@@ -303,8 +303,8 @@ test "signer pubkey job client drives auth-gated pubkey progression through one 
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = SignerPubkeyJobClientStorage{};
-    var client = try SignerPubkeyJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -314,7 +314,7 @@ test "signer pubkey job client drives auth-gated pubkey progression through one 
     try client.noteCurrentRelayAuthChallenge(&storage, "challenge-2");
 
     const secret_key = [_]u8{0xa2} ** 32;
-    var auth_storage = SignerPubkeyJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var first_scratch_bytes: [1024]u8 = undefined;

@@ -11,8 +11,8 @@ test "recipe: signer pubkey job stays explicit after connect and across auth" {
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = noztr_sdk.client.signer.pubkey_job.SignerPubkeyJobClientStorage{};
-    var client = try noztr_sdk.client.signer.pubkey_job.SignerPubkeyJobClient.initFromBunkerUriText(
+    var storage = noztr_sdk.client.signer.pubkey_job.Storage{};
+    var client = try noztr_sdk.client.signer.pubkey_job.Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -22,7 +22,7 @@ test "recipe: signer pubkey job stays explicit after connect and across auth" {
     try client.noteCurrentRelayAuthChallenge(&storage, "challenge-2");
 
     const secret_key = [_]u8{0x42} ** 32;
-    var auth_storage = noztr_sdk.client.signer.pubkey_job.SignerPubkeyJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.signer.pubkey_job.AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_scratch_storage: [1024]u8 = undefined;

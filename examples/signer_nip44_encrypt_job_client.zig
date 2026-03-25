@@ -12,8 +12,8 @@ test "recipe: signer nip44 encrypt job stays explicit after connect and across a
     const bunker_uri =
         "bunker://0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = noztr_sdk.client.signer.nip44_encrypt_job.SignerNip44EncryptJobClientStorage{};
-    var client = try noztr_sdk.client.signer.nip44_encrypt_job.SignerNip44EncryptJobClient.initFromBunkerUriText(
+    var storage = noztr_sdk.client.signer.nip44_encrypt_job.Storage{};
+    var client = try noztr_sdk.client.signer.nip44_encrypt_job.Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -24,7 +24,7 @@ test "recipe: signer nip44 encrypt job stays explicit after connect and across a
 
     const secret_key = [_]u8{0x43} ** 32;
     const peer_pubkey = [_]u8{0x66} ** 32;
-    var auth_storage = noztr_sdk.client.signer.nip44_encrypt_job.SignerNip44EncryptJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.signer.nip44_encrypt_job.AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var request_scratch_storage: [1024]u8 = undefined;
