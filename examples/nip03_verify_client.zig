@@ -93,7 +93,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
 
     var runtime_matches: [2]Planning.Stored.Match = undefined;
-    var runtime_entries: [2]Planning.Stored.FreshEntry = undefined;
+    var runtime_entries: [2]Planning.Stored.Fresh.Entry = undefined;
     const runtime = try client.inspectRuntime(
         verification_store.asStore(),
         .{
@@ -101,32 +101,32 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .fallback_policy = .allow_stale_latest,
-            .storage = Planning.Runtime.Storage.init(
+            .storage = Planning.Stored.Runtime.Storage.init(
                 runtime_matches[0..],
                 runtime_entries[0..],
             ),
         },
     );
     try std.testing.expectEqual(
-        Planning.Runtime.Action.use_preferred,
+        Planning.Stored.Runtime.Action.use_preferred,
         runtime.action,
     );
 
-    const targets = [_]Planning.Target{
+    const targets = [_]Planning.Target.Value{
         .{ .target_event_id = target.id },
         .{ .target_event_id = stale_target.id },
     };
     var target_matches: [2]Planning.Stored.Match = undefined;
-    var target_latest_entries: [2]Planning.Latest.Entry = undefined;
-    var policy_entries: [2]Planning.Policy.Entry = undefined;
-    var policy_groups: [4]Planning.Policy.Group = undefined;
+    var target_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
+    var policy_entries: [2]Planning.Target.Policy.Entry = undefined;
+    var policy_groups: [4]Planning.Target.Policy.Group = undefined;
     const policy_plan = try client.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
-            .storage = Planning.Policy.Storage.init(
+            .storage = Planning.Target.Policy.Storage.init(
                 target_matches[0..],
                 target_latest_entries[0..],
                 policy_entries[0..],
@@ -149,8 +149,8 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
         policy_plan.usablePreferredEntries()[1].target.target_event_id[0..],
     );
 
-    var cadence_entries: [2]Planning.Cadence.Entry = undefined;
-    var cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var cadence_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     const cadence_plan = try client.inspectTargetCadence(
         verification_store.asStore(),
         .{
@@ -158,7 +158,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
-            .storage = Planning.Cadence.Storage.init(
+            .storage = Planning.Target.Cadence.Storage.init(
                 target_matches[0..],
                 target_latest_entries[0..],
                 cadence_entries[0..],
@@ -175,9 +175,9 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
 
     var batch_target_matches: [2]Planning.Stored.Match = undefined;
-    var batch_target_latest_entries: [2]Planning.Latest.Entry = undefined;
-    var batch_entries: [2]Planning.Cadence.Entry = undefined;
-    var batch_groups: [5]Planning.Cadence.Group = undefined;
+    var batch_target_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
+    var batch_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var batch_groups: [5]Planning.Target.Cadence.Group = undefined;
     const batch_plan = try client.inspectTargetBatch(
         verification_store.asStore(),
         .{
@@ -186,7 +186,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
-            .storage = Planning.Batch.Storage.init(
+            .storage = Planning.Target.Batch.Storage.init(
                 batch_target_matches[0..],
                 batch_target_latest_entries[0..],
                 batch_entries[0..],
@@ -203,11 +203,11 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
 
     var turn_policy_matches: [2]Planning.Stored.Match = undefined;
-    var turn_policy_latest_entries: [2]Planning.Latest.Entry = undefined;
-    var turn_policy_cadence_entries: [2]Planning.Cadence.Entry = undefined;
-    var turn_policy_cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var turn_policy_entries: [2]Planning.Turn.Entry = undefined;
-    var turn_policy_groups: [4]Planning.Turn.Group = undefined;
+    var turn_policy_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
+    var turn_policy_cadence_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var turn_policy_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
+    var turn_policy_entries: [2]Planning.Target.Turn.Entry = undefined;
+    var turn_policy_groups: [4]Planning.Target.Turn.Group = undefined;
     const turn_policy_plan = try client.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
@@ -216,7 +216,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .max_age_seconds = 20,
             .refresh_soon_age_seconds = 12,
             .max_selected = 1,
-            .storage = Planning.Turn.Storage.init(
+            .storage = Planning.Target.Turn.Storage.init(
                 turn_policy_matches[0..],
                 turn_policy_latest_entries[0..],
                 turn_policy_cadence_entries[0..],
@@ -237,16 +237,16 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
 
     var refresh_target_matches: [2]Planning.Stored.Match = undefined;
-    var refresh_target_latest_entries: [2]Planning.Latest.Entry = undefined;
-    var refresh_entries: [2]Planning.Refresh.Entry = undefined;
-    var refresh_targets: [2]Planning.TargetRefresh.Entry = undefined;
+    var refresh_target_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
+    var refresh_entries: [2]Planning.Stored.Refresh.Entry = undefined;
+    var refresh_targets: [2]Planning.Target.Refresh.Entry = undefined;
     const refresh_plan = try client.planTargetRefresh(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 51,
             .max_age_seconds = 20,
-            .storage = Planning.TargetRefresh.Storage.init(
+            .storage = Planning.Target.Refresh.Storage.init(
                 refresh_target_matches[0..],
                 refresh_target_latest_entries[0..],
                 refresh_entries[0..],
@@ -279,17 +279,17 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     );
     try archive.ingestEventJson(attestation_json, arena.allocator());
 
-    const refresh_readiness_targets = [_]Planning.Target{
+    const refresh_readiness_targets = [_]Planning.Target.Value{
         .{ .target_event_id = target.id },
     };
     var readiness_matches: [1]Planning.Stored.Match = undefined;
-    var readiness_latest_entries: [1]Planning.Latest.Entry = undefined;
-    const readiness_refresh_entries = [_]Planning.Refresh.Entry{};
-    var readiness_target_refresh_entries: [1]Planning.TargetRefresh.Entry = undefined;
+    var readiness_latest_entries: [1]Planning.Target.Latest.Entry = undefined;
+    const readiness_refresh_entries = [_]Planning.Stored.Refresh.Entry{};
+    var readiness_target_refresh_entries: [1]Planning.Target.Refresh.Entry = undefined;
     var readiness_target_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var readiness_attestation_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
-    var readiness_entries: [1]Planning.Readiness.Entry = undefined;
-    var readiness_groups: [4]Planning.Readiness.Group = undefined;
+    var readiness_entries: [1]Planning.Target.Readiness.Entry = undefined;
+    var readiness_groups: [4]Planning.Target.Readiness.Group = undefined;
     const readiness_plan = try client.inspectTargetReadiness(
         verification_store.asStore(),
         archive,
@@ -297,7 +297,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
             .targets = refresh_readiness_targets[0..],
             .now_unix_seconds = 200,
             .max_age_seconds = 20,
-            .storage = Planning.Readiness.Storage.init(
+            .storage = Planning.Target.Readiness.Storage.init(
                 readiness_matches[0..],
                 readiness_latest_entries[0..],
                 readiness_refresh_entries[0..],

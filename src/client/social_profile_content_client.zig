@@ -154,7 +154,7 @@ pub const LatestLongFormRequest = struct {
 pub const LatestLongForm = struct {
     record: store.ClientEventRecord,
     event: noztr.nip01_event.Event,
-    metadata: noztr.nip23_long_form.LongFormMetadata,
+    metadata: noztr.nip23_long_form.Metadata,
 };
 
 pub const LatestLongFormResult = struct {
@@ -305,7 +305,7 @@ pub const SocialProfileContentClient = struct {
         var built_index: usize = 0;
         var tag_index: usize = 0;
 
-        draft_storage.tags[tag_index] = try noztr.nip23_long_form.long_form_build_identifier_tag(
+        draft_storage.tags[tag_index] = try noztr.nip23_long_form.build_identifier_tag(
             &draft_storage.built_tags[built_index],
             draft.identifier,
         );
@@ -313,7 +313,7 @@ pub const SocialProfileContentClient = struct {
         tag_index += 1;
 
         if (draft.title) |title| {
-            draft_storage.tags[tag_index] = try noztr.nip23_long_form.long_form_build_title_tag(
+            draft_storage.tags[tag_index] = try noztr.nip23_long_form.build_title_tag(
                 &draft_storage.built_tags[built_index],
                 title,
             );
@@ -321,7 +321,7 @@ pub const SocialProfileContentClient = struct {
             tag_index += 1;
         }
         if (draft.image_url) |image_url| {
-            draft_storage.tags[tag_index] = try noztr.nip23_long_form.long_form_build_image_tag(
+            draft_storage.tags[tag_index] = try noztr.nip23_long_form.build_image_tag(
                 &draft_storage.built_tags[built_index],
                 image_url,
                 draft.image_dimensions,
@@ -330,7 +330,7 @@ pub const SocialProfileContentClient = struct {
             tag_index += 1;
         }
         if (draft.summary) |summary| {
-            draft_storage.tags[tag_index] = try noztr.nip23_long_form.long_form_build_summary_tag(
+            draft_storage.tags[tag_index] = try noztr.nip23_long_form.build_summary_tag(
                 &draft_storage.built_tags[built_index],
                 summary,
             );
@@ -339,7 +339,7 @@ pub const SocialProfileContentClient = struct {
         }
         if (draft.published_at) |published_at| {
             draft_storage.tags[tag_index] =
-                try noztr.nip23_long_form.long_form_build_published_at_tag(
+                try noztr.nip23_long_form.build_published_at_tag(
                     &draft_storage.built_tags[built_index],
                     published_at,
                 );
@@ -347,7 +347,7 @@ pub const SocialProfileContentClient = struct {
             tag_index += 1;
         }
         for (draft.hashtags) |hashtag| {
-            draft_storage.tags[tag_index] = try noztr.nip23_long_form.long_form_build_hashtag_tag(
+            draft_storage.tags[tag_index] = try noztr.nip23_long_form.build_hashtag_tag(
                 &draft_storage.built_tags[built_index],
                 hashtag,
             );
@@ -492,9 +492,9 @@ pub const SocialProfileContentClient = struct {
         self: SocialProfileContentClient,
         event: *const noztr.nip01_event.Event,
         out_hashtags: [][]const u8,
-    ) SocialProfileContentClientError!noztr.nip23_long_form.LongFormMetadata {
+    ) SocialProfileContentClientError!noztr.nip23_long_form.Metadata {
         _ = self;
-        return noztr.nip23_long_form.long_form_extract(event, out_hashtags);
+        return noztr.nip23_long_form.extract(event, out_hashtags);
     }
 
     pub fn storeSocialContentEventJson(
@@ -674,7 +674,7 @@ fn parseVerifiedStoredSocialContentEventJson(
 fn storedSocialContentKindSupported(kind: u32) bool {
     if (kind == profile_event_kind) return true;
     if (kind == note_event_kind) return true;
-    return noztr.nip23_long_form.long_form_kind_classify(kind) != null;
+    return noztr.nip23_long_form.kind_classify(kind) != null;
 }
 
 test "social profile content client composes publish and subscription posture over shared relay state" {

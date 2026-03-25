@@ -55,35 +55,96 @@ const Nip05Planning = nip05.Planning;
 
 ## `NIP-03` Planning Shape
 
-Older flat names like:
+The workflow/facade route stayed `noztr_sdk.workflows|client.proof.nip03.Planning`; the
+`Planning` members were regrouped to reduce top-level clutter:
 
-- `Planning.LatestTargetRequest`
-- `Planning.PreferredTargetEntry`
-- `Planning.TargetReadinessRequest`
-- `Planning.TargetCadencePlan`
-- `Planning.TargetTurnPolicyPlan`
+```zig
+pub const Planning = struct {
+    pub const Stored = struct {
+        pub const Match = ...;
+        pub const Entry = ...;
+        pub const Freshness = ...;
+        pub const FallbackPolicy = ...;
+        pub const Fresh = struct { ... };
+        pub const Latest = struct { ... };
+        pub const Runtime = struct { ... };
+        pub const Refresh = struct { ... };
+    };
 
-now live under grouped families:
+    pub const Target = struct {
+        pub const Value = ...;
+        pub const Latest = struct { ... };
+        pub const Preferred = struct { ... };
+        pub const Refresh = struct { ... };
+        pub const Readiness = struct { ... };
+        pub const Policy = struct { ... };
+        pub const Cadence = struct { ... };
+        pub const Batch = struct { ... };
+        pub const Turn = struct { ... };
+    };
+};
+```
 
-- `Planning.Stored.*`
-- `Planning.Latest.*`
-- `Planning.Preferred.*`
-- `Planning.Runtime.*`
-- `Planning.Refresh.*`
-- `Planning.TargetRefresh.*`
-- `Planning.Readiness.*`
-- `Planning.Policy.*`
-- `Planning.Cadence.*`
-- `Planning.Batch.*`
-- `Planning.Turn.*`
+Specific flattening moves:
 
-Examples:
-
-- `Planning.LatestTargetRequest` -> `Planning.Latest.Request`
-- `Planning.PreferredTargetEntry` -> `Planning.Preferred.Entry`
-- `Planning.TargetReadinessPlan` -> `Planning.Readiness.Plan`
-- `Planning.TargetCadenceStorage` -> `Planning.Cadence.Storage`
-- `Planning.TargetTurnPolicyRequest` -> `Planning.Turn.Request`
+- `Planning.LatestFreshnessRequest` -> `Planning.Stored.Latest.Request`
+- `Planning.LatestFreshness` -> `Planning.Stored.Latest.Value`
+- `Planning.StoredFreshnessEntry` -> `Planning.Stored.Fresh.Entry`
+- `Planning.StoredFreshnessStorage` -> `Planning.Stored.Fresh.Storage`
+- `Planning.StoredFreshnessRequest` -> `Planning.Stored.Fresh.Request`
+- `Planning.RuntimeAction` -> `Planning.Stored.Runtime.Action`
+- `Planning.RuntimePlan` -> `Planning.Stored.Runtime.Plan`
+- `Planning.RuntimeStep` -> `Planning.Stored.Runtime.Step`
+- `Planning.RuntimeStorage` -> `Planning.Stored.Runtime.Storage`
+- `Planning.RuntimeRequest` -> `Planning.Stored.Runtime.Request`
+- `Planning.RefreshEntry` -> `Planning.Stored.Refresh.Entry`
+- `Planning.RefreshStorage` -> `Planning.Stored.Refresh.Storage`
+- `Planning.RefreshRequest` -> `Planning.Stored.Refresh.Request`
+- `Planning.RefreshPlan` -> `Planning.Stored.Refresh.Plan`
+- `Planning.RefreshStep` -> `Planning.Stored.Refresh.Step`
+- `Planning.LatestTargetRequest` -> `Planning.Target.Latest.Request`
+- `Planning.PreferredTargetRequest` -> `Planning.Target.Preferred.Request`
+- `Planning.PreferredTargetValue` -> `Planning.Target.Preferred.Value`
+- `Planning.PreferredTargetEntry` -> `Planning.Target.Preferred.Entry`
+- `Planning.PreferredTargetStorage` -> `Planning.Target.Preferred.Storage`
+- `Planning.PreferredTargetsRequest` -> `Planning.Target.Preferred.EntriesRequest`
+- `Planning.TargetRefreshEntry` -> `Planning.Target.Refresh.Entry`
+- `Planning.TargetRefreshStorage` -> `Planning.Target.Refresh.Storage`
+- `Planning.TargetRefreshRequest` -> `Planning.Target.Refresh.Request`
+- `Planning.TargetRefreshPlan` -> `Planning.Target.Refresh.Plan`
+- `Planning.TargetRefreshStep` -> `Planning.Target.Refresh.Step`
+- `Planning.TargetReadinessAction` -> `Planning.Target.Readiness.Action`
+- `Planning.TargetReadinessEntry` -> `Planning.Target.Readiness.Entry`
+- `Planning.TargetReadinessGroup` -> `Planning.Target.Readiness.Group`
+- `Planning.TargetReadinessStorage` -> `Planning.Target.Readiness.Storage`
+- `Planning.TargetReadinessRequest` -> `Planning.Target.Readiness.Request`
+- `Planning.TargetReadinessPlan` -> `Planning.Target.Readiness.Plan`
+- `Planning.TargetReadinessStep` -> `Planning.Target.Readiness.Step`
+- `Planning.TargetPolicyEntry` -> `Planning.Target.Policy.Entry`
+- `Planning.TargetPolicyGroup` -> `Planning.Target.Policy.Group`
+- `Planning.TargetPolicyStorage` -> `Planning.Target.Policy.Storage`
+- `Planning.TargetPolicyRequest` -> `Planning.Target.Policy.Request`
+- `Planning.TargetPolicyPlan` -> `Planning.Target.Policy.Plan`
+- `Planning.TargetCadenceAction` -> `Planning.Target.Cadence.Action`
+- `Planning.TargetCadenceEntry` -> `Planning.Target.Cadence.Entry`
+- `Planning.TargetCadenceGroup` -> `Planning.Target.Cadence.Group`
+- `Planning.TargetCadenceStorage` -> `Planning.Target.Cadence.Storage`
+- `Planning.TargetCadenceRequest` -> `Planning.Target.Cadence.Request`
+- `Planning.TargetCadencePlan` -> `Planning.Target.Cadence.Plan`
+- `Planning.TargetCadenceStep` -> `Planning.Target.Cadence.Step`
+- `Planning.TargetBatchStorage` -> `Planning.Target.Batch.Storage`
+- `Planning.TargetBatchRequest` -> `Planning.Target.Batch.Request`
+- `Planning.TargetBatchPlan` -> `Planning.Target.Batch.Plan`
+- `Planning.TargetBatchStep` -> `Planning.Target.Batch.Step`
+- `Planning.TargetTurnPolicyAction` -> `Planning.Target.Turn.Action`
+- `Planning.TargetTurnPolicyEntry` -> `Planning.Target.Turn.Entry`
+- `Planning.TargetTurnPolicyGroup` -> `Planning.Target.Turn.Group`
+- `Planning.TargetTurnPolicyStorage` -> `Planning.Target.Turn.Storage`
+- `Planning.TargetTurnPolicyRequest` -> `Planning.Target.Turn.Request`
+- `Planning.TargetTurnPolicyPlan` -> `Planning.Target.Turn.Plan`
+- `Planning.TargetTurnPolicyStep` -> `Planning.Target.Turn.Step`
+- `Planning.Stored` remains as the role-focused bucket above.
+- `Planning.Target` now resolves target-domain planning families only, and there is no legacy top-level target planning namespace.
 
 ## `NIP-39` Planning Shape
 

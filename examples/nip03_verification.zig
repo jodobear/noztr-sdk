@@ -100,14 +100,14 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expectEqual(@as(u64, 60), latest_freshness.age_seconds);
 
     var preferred_matches: [2]Planning.Stored.Match = undefined;
-    var preferred_entries: [2]Planning.Stored.FreshEntry = undefined;
+    var preferred_entries: [2]Planning.Stored.Fresh.Entry = undefined;
     const preferred = (try proof.OpenTimestampsVerifier.getPreferredStoredVerification(
         verification_store.asStore(),
         .{
             .target_event_id = &target.id,
             .now_unix_seconds = 62,
             .max_age_seconds = 120,
-            .storage = Planning.Stored.FreshStorage.init(
+            .storage = Planning.Stored.Fresh.Storage.init(
                 preferred_matches[0..],
                 preferred_entries[0..],
             ),
@@ -121,7 +121,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expectEqual(@as(u64, 60), preferred.age_seconds);
 
     var freshness_matches: [2]Planning.Stored.Match = undefined;
-    var freshness_entries: [2]Planning.Stored.FreshEntry = undefined;
+    var freshness_entries: [2]Planning.Stored.Fresh.Entry = undefined;
     const discovered_with_freshness =
         try proof.OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
             verification_store.asStore(),
@@ -129,7 +129,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
                 .target_event_id = &target.id,
                 .now_unix_seconds = 62,
                 .max_age_seconds = 120,
-                .storage = Planning.Stored.FreshStorage.init(
+                .storage = Planning.Stored.Fresh.Storage.init(
                     freshness_matches[0..],
                     freshness_entries[0..],
                 ),
@@ -143,28 +143,28 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expectEqual(@as(u64, 60), discovered_with_freshness[0].age_seconds);
 
     var runtime_matches: [2]Planning.Stored.Match = undefined;
-    var runtime_entries: [2]Planning.Stored.FreshEntry = undefined;
+    var runtime_entries: [2]Planning.Stored.Fresh.Entry = undefined;
     const runtime = try proof.OpenTimestampsVerifier.inspectStoredVerificationRuntime(
         verification_store.asStore(),
         .{
             .target_event_id = &target.id,
             .now_unix_seconds = 62,
             .max_age_seconds = 120,
-            .storage = Planning.Runtime.Storage.init(
+            .storage = Planning.Stored.Runtime.Storage.init(
                 runtime_matches[0..],
                 runtime_entries[0..],
             ),
         },
     );
     try std.testing.expectEqual(
-        Planning.Runtime.Action.use_preferred,
+        Planning.Stored.Runtime.Action.use_preferred,
         runtime.action,
     );
     try std.testing.expectEqual(@as(u32, 1), runtime.fresh_count);
     try std.testing.expectEqual(@as(u32, 0), runtime.stale_count);
     const next_step = runtime.nextStep();
     try std.testing.expectEqual(
-        Planning.Runtime.Action.use_preferred,
+        Planning.Stored.Runtime.Action.use_preferred,
         next_step.action,
     );
     const next_entry = next_step.entry.?;
@@ -178,8 +178,8 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
 
     var refresh_matches: [2]Planning.Stored.Match = undefined;
-    var refresh_freshness_entries: [2]Planning.Stored.FreshEntry = undefined;
-    var refresh_entries: [2]Planning.Refresh.Entry = undefined;
+    var refresh_freshness_entries: [2]Planning.Stored.Fresh.Entry = undefined;
+    var refresh_entries: [2]Planning.Stored.Refresh.Entry = undefined;
     const refresh_plan = try proof.OpenTimestampsVerifier.planStoredVerificationRefresh(
         verification_store.asStore(),
         .{
@@ -203,12 +203,12 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
         refresh_plan.nextStep().?.entry.entry.entry.verification.proofUrl(),
     );
 
-    const grouped_targets = [_]Planning.Target{
+    const grouped_targets = [_]Planning.Target.Value{
         .{ .target_event_id = target.id },
         .{ .target_event_id = [_]u8{0x99} ** 32 },
     };
     var grouped_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_latest_entries: [2]Planning.Latest.Entry = undefined;
+    var grouped_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
     const grouped_latest =
         try proof.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
             verification_store.asStore(),
@@ -227,8 +227,8 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expect(grouped_latest[1].latest == null);
 
     var grouped_preferred_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_preferred_freshness: [1]Planning.Stored.FreshEntry = undefined;
-    var grouped_preferred_entries: [2]Planning.Preferred.Entry = undefined;
+    var grouped_preferred_freshness: [1]Planning.Stored.Fresh.Entry = undefined;
+    var grouped_preferred_entries: [2]Planning.Target.Preferred.Entry = undefined;
     const grouped_preferred =
         (try proof.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
             verification_store.asStore(),
@@ -246,9 +246,9 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     try std.testing.expectEqualSlices(u8, &target.id, &grouped_preferred.target.target_event_id);
 
     var grouped_policy_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_policy_latest: [2]Planning.Latest.Entry = undefined;
-    var grouped_policy_entries: [2]Planning.Policy.Entry = undefined;
-    var grouped_policy_groups: [4]Planning.Policy.Group = undefined;
+    var grouped_policy_latest: [2]Planning.Target.Latest.Entry = undefined;
+    var grouped_policy_entries: [2]Planning.Target.Policy.Entry = undefined;
+    var grouped_policy_groups: [4]Planning.Target.Policy.Group = undefined;
     const grouped_policy =
         try proof.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
             verification_store.asStore(),
@@ -280,9 +280,9 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
 
     var grouped_cadence_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_cadence_latest: [2]Planning.Latest.Entry = undefined;
-    var grouped_cadence_entries: [2]Planning.Cadence.Entry = undefined;
-    var grouped_cadence_groups: [5]Planning.Cadence.Group = undefined;
+    var grouped_cadence_latest: [2]Planning.Target.Latest.Entry = undefined;
+    var grouped_cadence_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var grouped_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     const grouped_cadence =
         try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
             verification_store.asStore(),
@@ -316,9 +316,9 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
 
     var grouped_batch_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_batch_latest: [2]Planning.Latest.Entry = undefined;
-    var grouped_batch_entries: [2]Planning.Cadence.Entry = undefined;
-    var grouped_batch_groups: [5]Planning.Cadence.Group = undefined;
+    var grouped_batch_latest: [2]Planning.Target.Latest.Entry = undefined;
+    var grouped_batch_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var grouped_batch_groups: [5]Planning.Target.Cadence.Group = undefined;
     const grouped_batch =
         try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
             verification_store.asStore(),
@@ -350,11 +350,11 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
 
     var grouped_turn_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_turn_latest: [2]Planning.Latest.Entry = undefined;
-    var grouped_turn_cadence_entries: [2]Planning.Cadence.Entry = undefined;
-    var grouped_turn_cadence_groups: [5]Planning.Cadence.Group = undefined;
-    var grouped_turn_entries: [2]Planning.Turn.Entry = undefined;
-    var grouped_turn_groups: [4]Planning.Turn.Group = undefined;
+    var grouped_turn_latest: [2]Planning.Target.Latest.Entry = undefined;
+    var grouped_turn_cadence_entries: [2]Planning.Target.Cadence.Entry = undefined;
+    var grouped_turn_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
+    var grouped_turn_entries: [2]Planning.Target.Turn.Entry = undefined;
+    var grouped_turn_groups: [4]Planning.Target.Turn.Group = undefined;
     const grouped_turn =
         try proof.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
             verification_store.asStore(),
@@ -385,9 +385,9 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
 
     var grouped_refresh_matches: [1]Planning.Stored.Match = undefined;
-    var grouped_refresh_freshness: [2]Planning.Latest.Entry = undefined;
-    const grouped_refresh_entries = [_]Planning.Refresh.Entry{};
-    var grouped_refresh_targets: [1]Planning.TargetRefresh.Entry = undefined;
+    var grouped_refresh_freshness: [2]Planning.Target.Latest.Entry = undefined;
+    const grouped_refresh_entries = [_]Planning.Stored.Refresh.Entry{};
+    var grouped_refresh_targets: [1]Planning.Target.Refresh.Entry = undefined;
     const grouped_refresh =
         try proof.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
             verification_store.asStore(),
@@ -426,17 +426,17 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     );
     try archive.ingestEventJson(attestation_json, arena.allocator());
 
-    const readiness_targets = [_]Planning.Target{
+    const readiness_targets = [_]Planning.Target.Value{
         .{ .target_event_id = target.id },
     };
     var readiness_matches: [1]Planning.Stored.Match = undefined;
-    var readiness_latest_entries: [1]Planning.Latest.Entry = undefined;
-    const readiness_refresh_entries = [_]Planning.Refresh.Entry{};
-    var readiness_target_refresh_entries: [1]Planning.TargetRefresh.Entry = undefined;
+    var readiness_latest_entries: [1]Planning.Target.Latest.Entry = undefined;
+    const readiness_refresh_entries = [_]Planning.Stored.Refresh.Entry{};
+    var readiness_target_refresh_entries: [1]Planning.Target.Refresh.Entry = undefined;
     var readiness_target_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
     var readiness_attestation_records: [1]noztr_sdk.store.ClientEventRecord = undefined;
-    var readiness_entries: [1]Planning.Readiness.Entry = undefined;
-    var readiness_groups: [4]Planning.Readiness.Group = undefined;
+    var readiness_entries: [1]Planning.Target.Readiness.Entry = undefined;
+    var readiness_groups: [4]Planning.Target.Readiness.Group = undefined;
     const readiness =
         try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
             verification_store.asStore(),
