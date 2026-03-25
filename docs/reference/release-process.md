@@ -158,6 +158,11 @@ If follow-up corrections are needed, prefer:
 - migration-note updates when needed
 - a new RC tag instead of rewriting public tag history
 
+Pre-stable cleanup is still allowed on this line when it materially improves simplicity,
+determinism, consistency, or usability. An RC does not freeze bad names or noisy surface shape.
+If such cleanup is justified, prefer explicit migration notes and a later RC tag over preserving an
+awkward public contract for the sake of shallow continuity.
+
 ## Current Stabilization State
 
 The current repo state is now the public RC baseline.
