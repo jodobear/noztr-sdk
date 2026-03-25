@@ -18,8 +18,8 @@ test "recipe: mailbox signer job client prepares signer-backed mailbox delivery 
     const author_pubkey = try common.derivePublicKey(&author_secret);
     const recipient_pubkey = try common.derivePublicKey(&recipient_secret);
 
-    var storage = noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClientStorage{};
-    var client = try noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClient.initFromBunkerUriText(
+    var storage = noztr_sdk.client.dm.mailbox.signer_job.Storage{};
+    var client = try noztr_sdk.client.dm.mailbox.signer_job.Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -42,7 +42,7 @@ test "recipe: mailbox signer job client prepares signer-backed mailbox delivery 
         101,
     );
 
-    const request = noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerDirectMessageRequest{
+    const request = noztr_sdk.client.dm.mailbox.signer_job.DirectMessageRequest{
         .recipient_pubkey = recipient_pubkey,
         .recipient_relay_hint = "wss://relay.shared",
         .recipient_relay_list_event_json = recipient_relay_list_json,
@@ -53,7 +53,7 @@ test "recipe: mailbox signer job client prepares signer-backed mailbox delivery 
         .wrap_nonce = [_]u8{0x44} ** 32,
     };
 
-    var auth_storage = noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobAuthEventStorage{};
+    var auth_storage = noztr_sdk.client.dm.mailbox.signer_job.AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     var noop_delivery_storage = noztr_sdk.workflows.dm.mailbox.MailboxDeliveryStorage{};
@@ -208,8 +208,8 @@ test "recipe: mailbox signer job client prepares signer-backed mailbox delivery 
 }
 
 fn establishSignerSession(
-    client: *noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClient,
-    storage: *noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClientStorage,
+    client: *noztr_sdk.client.dm.mailbox.signer_job.Client,
+    storage: *noztr_sdk.client.dm.mailbox.signer_job.Storage,
     secret_text: []const u8,
     scratch: std.mem.Allocator,
 ) !void {
@@ -230,14 +230,14 @@ fn establishSignerSession(
 }
 
 fn acceptProgress(
-    client: *noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClient,
-    storage: *noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerJobClientStorage,
+    client: *noztr_sdk.client.dm.mailbox.signer_job.Client,
+    storage: *noztr_sdk.client.dm.mailbox.signer_job.Storage,
     response_json: []const u8,
     scratch_output: []u8,
     delivery_storage: *noztr_sdk.workflows.dm.mailbox.MailboxDeliveryStorage,
-    request: *const noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerDirectMessageRequest,
+    request: *const noztr_sdk.client.dm.mailbox.signer_job.DirectMessageRequest,
     scratch: std.mem.Allocator,
-) !noztr_sdk.client.dm.mailbox.signer_job.MailboxSignerDirectMessageProgress {
+) !noztr_sdk.client.dm.mailbox.signer_job.DirectMessageProgress {
     const result = try client.acceptDirectMessageResponseJson(
         storage,
         response_json,

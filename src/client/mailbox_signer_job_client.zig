@@ -8,7 +8,7 @@ const runtime = @import("../runtime/mod.zig");
 const relay_url = @import("../relay/url.zig");
 const noztr = @import("noztr");
 
-pub const MailboxSignerJobClientError =
+pub const Error =
     signer_client.Error ||
     signer_job_support.SignerJobAuthError ||
     workflows.dm.mailbox.MailboxError ||
@@ -23,7 +23,7 @@ pub const MailboxSignerJobClientError =
         InvalidSignedWrapAuthor,
     };
 
-pub const MailboxSignerJobClientConfig = struct {
+pub const Config = struct {
     signer: signer_client.Config = .{},
     local_operator: local_operator.LocalOperatorClientConfig = .{},
 };
@@ -40,11 +40,11 @@ const DirectMessageStage = enum {
     waiting_sign_wrap,
 };
 
-pub const MailboxSignerJobAuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
-pub const PreparedMailboxSignerJobAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
+pub const AuthEventStorage = signer_job_support.SignerJobAuthEventStorage;
+pub const PreparedAuthEvent = signer_job_support.PreparedSignerJobAuthEvent;
 
-pub const MailboxSignerJobReady = union(enum) {
-    authenticate: PreparedMailboxSignerJobAuthEvent,
+pub const Ready = union(enum) {
+    authenticate: PreparedAuthEvent,
     get_public_key: workflows.signer.remote.OutboundRequest,
     encrypt_rumor: workflows.signer.remote.OutboundRequest,
     sign_seal: workflows.signer.remote.OutboundRequest,
@@ -52,7 +52,7 @@ pub const MailboxSignerJobReady = union(enum) {
     sign_wrap: workflows.signer.remote.OutboundRequest,
 };
 
-pub const MailboxSignerDirectMessageRequest = struct {
+pub const DirectMessageRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
     reply_to: ?noztr.nip17_private_messages.ReplyRef = null,
@@ -64,25 +64,25 @@ pub const MailboxSignerDirectMessageRequest = struct {
     wrap_nonce: [32]u8,
 };
 
-pub const MailboxSignerDirectMessageProgress = enum {
+pub const DirectMessageProgress = enum {
     got_public_key,
     encrypted_rumor,
     signed_seal,
     encrypted_seal,
 };
 
-pub const PreparedMailboxSignerDirectMessage = struct {
+pub const PreparedDirectMessage = struct {
     wrap_event: noztr.nip01_event.Event,
     wrap_event_json: []const u8,
     delivery: workflows.dm.mailbox.MailboxDeliveryPlan,
 };
 
-pub const MailboxSignerDirectMessageResult = union(enum) {
-    progressed: MailboxSignerDirectMessageProgress,
-    ready: PreparedMailboxSignerDirectMessage,
+pub const DirectMessageResult = union(enum) {
+    progressed: DirectMessageProgress,
+    ready: PreparedDirectMessage,
 };
 
-const DirectMessageAuthoringStorage = struct {
+const AuthoringStorage = struct {
     stage: DirectMessageStage = .idle,
     author_pubkey_known: bool = false,
     author_pubkey: [32]u8 = [_]u8{0} ** 32,
@@ -96,7 +96,7 @@ const DirectMessageAuthoringStorage = struct {
     wrap_payload_len: u16 = 0,
     request_json_storage: [noztr.limits.event_json_max]u8 = [_]u8{0} ** noztr.limits.event_json_max,
 
-    fn reset(self: *DirectMessageAuthoringStorage) void {
+    fn reset(self: *AuthoringStorage) void {
         const known_pubkey = self.author_pubkey_known;
         const author_pubkey = self.author_pubkey;
         self.* = .{};
@@ -104,79 +104,79 @@ const DirectMessageAuthoringStorage = struct {
         self.author_pubkey = author_pubkey;
     }
 
-    fn rememberAuthorPubkey(self: *DirectMessageAuthoringStorage, pubkey: [32]u8) void {
+    fn rememberAuthorPubkey(self: *AuthoringStorage, pubkey: [32]u8) void {
         self.author_pubkey = pubkey;
         self.author_pubkey_known = true;
     }
 
-    fn authorPubkey(self: *const DirectMessageAuthoringStorage) ?[32]u8 {
+    fn authorPubkey(self: *const AuthoringStorage) ?[32]u8 {
         if (!self.author_pubkey_known) return null;
         return self.author_pubkey;
     }
 
-    fn requestJsonBuffer(self: *DirectMessageAuthoringStorage) []u8 {
+    fn requestJsonBuffer(self: *AuthoringStorage) []u8 {
         return self.request_json_storage[0..];
     }
 
     fn rememberSealPayload(
-        self: *DirectMessageAuthoringStorage,
+        self: *AuthoringStorage,
         payload: []const u8,
-    ) MailboxSignerJobClientError!void {
+    ) Error!void {
         if (payload.len > self.seal_payload_storage.len) return error.BufferTooSmall;
         @memset(self.seal_payload_storage[0..], 0);
         @memcpy(self.seal_payload_storage[0..payload.len], payload);
         self.seal_payload_len = @intCast(payload.len);
     }
 
-    fn sealPayload(self: *const DirectMessageAuthoringStorage) []const u8 {
+    fn sealPayload(self: *const AuthoringStorage) []const u8 {
         return self.seal_payload_storage[0..self.seal_payload_len];
     }
 
     fn rememberSealJson(
-        self: *DirectMessageAuthoringStorage,
+        self: *AuthoringStorage,
         json: []const u8,
-    ) MailboxSignerJobClientError!void {
+    ) Error!void {
         if (json.len > self.seal_json_storage.len) return error.BufferTooSmall;
         @memset(self.seal_json_storage[0..], 0);
         @memcpy(self.seal_json_storage[0..json.len], json);
         self.seal_json_len = @intCast(json.len);
     }
 
-    fn sealJson(self: *const DirectMessageAuthoringStorage) []const u8 {
+    fn sealJson(self: *const AuthoringStorage) []const u8 {
         return self.seal_json_storage[0..self.seal_json_len];
     }
 
     fn rememberWrapPayload(
-        self: *DirectMessageAuthoringStorage,
+        self: *AuthoringStorage,
         payload: []const u8,
-    ) MailboxSignerJobClientError!void {
+    ) Error!void {
         if (payload.len > self.wrap_payload_storage.len) return error.BufferTooSmall;
         @memset(self.wrap_payload_storage[0..], 0);
         @memcpy(self.wrap_payload_storage[0..payload.len], payload);
         self.wrap_payload_len = @intCast(payload.len);
     }
 
-    fn wrapPayload(self: *const DirectMessageAuthoringStorage) []const u8 {
+    fn wrapPayload(self: *const AuthoringStorage) []const u8 {
         return self.wrap_payload_storage[0..self.wrap_payload_len];
     }
 };
 
-pub const MailboxSignerJobClientStorage = struct {
+pub const Storage = struct {
     signer: signer_client.Storage = .{},
     auth_state: signer_job_support.SignerJobAuthState = .{},
-    direct_message: DirectMessageAuthoringStorage = .{},
+    direct_message: AuthoringStorage = .{},
 };
 
-pub const MailboxSignerJobClient = struct {
-    config: MailboxSignerJobClientConfig,
+pub const Client = struct {
+    config: Config,
     local_operator: local_operator.LocalOperatorClient,
     signer: signer_client.Client,
 
     pub fn init(
-        config: MailboxSignerJobClientConfig,
+        config: Config,
         signer: signer_client.Client,
-        storage: *MailboxSignerJobClientStorage,
-    ) MailboxSignerJobClient {
+        storage: *Storage,
+    ) Client {
         storage.* = .{};
         return .{
             .config = config,
@@ -186,11 +186,11 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn initFromBunkerUriText(
-        config: MailboxSignerJobClientConfig,
-        storage: *MailboxSignerJobClientStorage,
+        config: Config,
+        storage: *Storage,
         uri_text: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxSignerJobClientError!MailboxSignerJobClient {
+    ) Error!Client {
         return .init(
             config,
             try signer_client.Client.initFromBunkerUriText(config.signer, uri_text, scratch),
@@ -199,10 +199,10 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn attach(
-        config: MailboxSignerJobClientConfig,
+        config: Config,
         signer: signer_client.Client,
-        storage: *MailboxSignerJobClientStorage,
-    ) MailboxSignerJobClient {
+        storage: *Storage,
+    ) Client {
         _ = storage;
         return .{
             .config = config,
@@ -211,29 +211,29 @@ pub const MailboxSignerJobClient = struct {
         };
     }
 
-    pub fn currentRelayUrl(self: *const MailboxSignerJobClient) []const u8 {
+    pub fn currentRelayUrl(self: *const Client) []const u8 {
         return self.signer.currentRelayUrl();
     }
 
-    pub fn currentRelayCanSendRequests(self: *const MailboxSignerJobClient) bool {
+    pub fn currentRelayCanSendRequests(self: *const Client) bool {
         return self.signer.currentRelayCanSendRequests();
     }
 
-    pub fn isConnected(self: *const MailboxSignerJobClient) bool {
+    pub fn isConnected(self: *const Client) bool {
         return self.signer.isConnected();
     }
 
-    pub fn lastSignerError(self: *const MailboxSignerJobClient) ?[]const u8 {
+    pub fn lastSignerError(self: *const Client) ?[]const u8 {
         return self.signer.lastSignerError();
     }
 
-    pub fn markCurrentRelayConnected(self: *MailboxSignerJobClient) void {
+    pub fn markCurrentRelayConnected(self: *Client) void {
         self.signer.markCurrentRelayConnected();
     }
 
     pub fn noteCurrentRelayDisconnected(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
+        self: *Client,
+        storage: *Storage,
     ) void {
         self.signer.noteCurrentRelayDisconnected();
         storage.auth_state.clear();
@@ -241,10 +241,10 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn noteCurrentRelayAuthChallenge(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         challenge: []const u8,
-    ) MailboxSignerJobClientError!void {
+    ) Error!void {
         return signer_runtime_support.noteCurrentRelayAuthChallenge(
             &self.signer,
             &storage.auth_state,
@@ -253,17 +253,17 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn inspectRelayRuntime(
-        self: *const MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
+        self: *const Client,
+        storage: *Storage,
     ) runtime.RelayPoolPlan {
         return signer_runtime_support.inspectRelayRuntime(&self.signer, &storage.signer);
     }
 
     pub fn selectRelayRuntimeStep(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         step: *const runtime.RelayPoolStep,
-    ) MailboxSignerJobClientError![]const u8 {
+    ) Error![]const u8 {
         return signer_runtime_support.selectRelayRuntimeStep(
             &self.signer,
             &storage.auth_state,
@@ -272,39 +272,39 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn advanceRelay(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
-    ) MailboxSignerJobClientError![]const u8 {
+        self: *Client,
+        storage: *Storage,
+    ) Error![]const u8 {
         return signer_runtime_support.advanceRelay(&self.signer, &storage.auth_state);
     }
 
     pub fn beginConnect(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         scratch: std.mem.Allocator,
         requested_permissions: []const workflows.signer.remote.Permission,
-    ) MailboxSignerJobClientError!workflows.signer.remote.OutboundRequest {
+    ) Error!workflows.signer.remote.OutboundRequest {
         return self.signer.beginConnect(&storage.signer, scratch, requested_permissions);
     }
 
     pub fn acceptConnectResponseJson(
-        self: *MailboxSignerJobClient,
+        self: *Client,
         response_json: []const u8,
         scratch: std.mem.Allocator,
-    ) MailboxSignerJobClientError!void {
+    ) Error!void {
         const outcome = try self.signer.acceptResponseJson(response_json, scratch);
         if (outcome != .connected) return error.UnexpectedSignerOutcome;
     }
 
     pub fn prepareAuthEvent(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
-        auth_storage: *MailboxSignerJobAuthEventStorage,
+        self: *Client,
+        storage: *Storage,
+        auth_storage: *AuthEventStorage,
         event_json_output: []u8,
         auth_message_output: []u8,
         secret_key: *const [local_operator.secret_key_bytes]u8,
         created_at: u64,
-    ) MailboxSignerJobClientError!PreparedMailboxSignerJobAuthEvent {
+    ) Error!PreparedAuthEvent {
         return signer_job_support.prepareAuthEvent(
             &self.local_operator,
             &storage.auth_state,
@@ -317,13 +317,13 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn acceptPreparedAuthEvent(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
-        prepared: *const PreparedMailboxSignerJobAuthEvent,
+        self: *Client,
+        storage: *Storage,
+        prepared: *const PreparedAuthEvent,
         now_unix_seconds: u64,
         window_seconds: u32,
         scratch: std.mem.Allocator,
-    ) MailboxSignerJobClientError![]const u8 {
+    ) Error![]const u8 {
         try signer_job_support.requireCurrentAuthState(
             &storage.auth_state,
             self.signer.currentRelayUrl(),
@@ -340,16 +340,16 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn prepareDirectMessageJob(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
-        auth_storage: *MailboxSignerJobAuthEventStorage,
+        self: *Client,
+        storage: *Storage,
+        auth_storage: *AuthEventStorage,
         auth_event_json_output: []u8,
         auth_message_output: []u8,
         auth_secret_key: *const [local_operator.secret_key_bytes]u8,
         auth_created_at: u64,
-        request: *const MailboxSignerDirectMessageRequest,
+        request: *const DirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxSignerJobClientError!MailboxSignerJobReady {
+    ) Error!Ready {
         if (storage.auth_state.active and !self.signer.currentRelayCanSendRequests()) {
             return .{
                 .authenticate = try self.prepareAuthEvent(
@@ -450,14 +450,14 @@ pub const MailboxSignerJobClient = struct {
     }
 
     pub fn acceptDirectMessageResponseJson(
-        self: *MailboxSignerJobClient,
-        storage: *MailboxSignerJobClientStorage,
+        self: *Client,
+        storage: *Storage,
         response_json: []const u8,
         signed_wrap_json_output: []u8,
         delivery_storage: *workflows.dm.mailbox.MailboxDeliveryStorage,
-        request: *const MailboxSignerDirectMessageRequest,
+        request: *const DirectMessageRequest,
         scratch: std.mem.Allocator,
-    ) MailboxSignerJobClientError!MailboxSignerDirectMessageResult {
+    ) Error!DirectMessageResult {
         const outcome = try self.signer.acceptResponseJson(response_json, scratch);
         switch (storage.direct_message.stage) {
             .waiting_get_public_key => {
@@ -530,8 +530,8 @@ pub const MailboxSignerJobClient = struct {
     }
 
     fn currentAuthorPubkey(
-        self: *const MailboxSignerJobClient,
-        storage: *const MailboxSignerJobClientStorage,
+        self: *const Client,
+        storage: *const Storage,
     ) ?[32]u8 {
         if (self.signer.getUserPubkey()) |pubkey| return pubkey;
         return storage.direct_message.authorPubkey();
@@ -541,8 +541,8 @@ pub const MailboxSignerJobClient = struct {
 fn buildDirectMessageRumorJson(
     output: []u8,
     author_pubkey: [32]u8,
-    request: *const MailboxSignerDirectMessageRequest,
-) MailboxSignerJobClientError![]const u8 {
+    request: *const DirectMessageRequest,
+) Error![]const u8 {
     var built_recipient_tag: noztr.nip17_private_messages.TagBuilder = .{};
     var reply_tag_storage: MailboxSignerReplyTagStorage = .{};
     const recipient_hex = std.fmt.bytesToHex(request.recipient_pubkey, .lower);
@@ -576,7 +576,7 @@ fn buildUnsignedSealJson(
     author_pubkey: [32]u8,
     created_at: u64,
     seal_payload: []const u8,
-) MailboxSignerJobClientError![]const u8 {
+) Error![]const u8 {
     const event = noztr.nip01_event.Event{
         .id = [_]u8{0} ** 32,
         .pubkey = author_pubkey,
@@ -595,7 +595,7 @@ fn buildUnsignedWrapJson(
     recipient_pubkey: *const [32]u8,
     created_at: u64,
     wrap_payload: []const u8,
-) MailboxSignerJobClientError![]const u8 {
+) Error![]const u8 {
     var built_recipient_tag: noztr.nip17_private_messages.TagBuilder = .{};
     const recipient_hex = std.fmt.bytesToHex(recipient_pubkey, .lower);
     const recipient_tag = try noztr.nip17_private_messages.nip17_build_recipient_tag(
@@ -627,7 +627,7 @@ const MailboxSignerReplyTagStorage = struct {
 fn buildReplyTag(
     storage: *MailboxSignerReplyTagStorage,
     reply_to: *const noztr.nip17_private_messages.ReplyRef,
-) MailboxSignerJobClientError!noztr.nip01_event.EventTag {
+) Error!noztr.nip01_event.EventTag {
     const event_id_hex = std.fmt.bytesToHex(reply_to.event_id, .lower);
     @memcpy(storage.event_id_hex[0..], event_id_hex[0..]);
     storage.items[0] = "e";
@@ -645,7 +645,7 @@ fn buildReplyTag(
 fn validateSignedSealEvent(
     event: *const noztr.nip01_event.Event,
     expected_author: [32]u8,
-) MailboxSignerJobClientError!void {
+) Error!void {
     try noztr.nip01_event.event_verify(event);
     if (event.kind != 13) return error.InvalidSignedSealEvent;
     if (event.tags.len != 0) return error.InvalidSignedSealEvent;
@@ -656,7 +656,7 @@ fn validateSignedWrapEvent(
     event: *const noztr.nip01_event.Event,
     expected_author: [32]u8,
     recipient_pubkey: *const [32]u8,
-) MailboxSignerJobClientError!void {
+) Error!void {
     try noztr.nip59_wrap.nip59_validate_wrap_structure(event);
     if (!std.mem.eql(u8, &event.pubkey, &expected_author)) return error.InvalidSignedWrapAuthor;
     if (!wrapTargetsRecipient(event, recipient_pubkey)) return error.InvalidSignedWrapRecipientTag;
@@ -685,7 +685,7 @@ fn buildDeliveryPlan(
     wrap_event_id: [32]u8,
     wrap_event_json: []const u8,
     scratch: std.mem.Allocator,
-) MailboxSignerJobClientError!workflows.dm.mailbox.MailboxDeliveryPlan {
+) Error!workflows.dm.mailbox.MailboxDeliveryPlan {
     const relay_list_event = try noztr.nip01_event.event_parse_json(
         recipient_relay_list_event_json,
         scratch,
@@ -762,7 +762,7 @@ fn relayListContainsEquivalent(relays: []const []const u8, candidate: []const u8
 fn rememberPublishRelay(
     storage: *workflows.dm.mailbox.MailboxDeliveryStorage,
     relay: []const u8,
-) MailboxSignerJobClientError!u8 {
+) Error!u8 {
     var used: u8 = 0;
     while (used < runtime.pool_capacity and storage.relay_url_lens[used] != 0) : (used += 1) {
         const existing = storage.relay_urls[used][0..storage.relay_url_lens[used]];
@@ -784,8 +784,8 @@ test "mailbox signer job client drives signer-backed mailbox direct-message auth
     const bunker_uri =
         "bunker://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ++
         "?relay=wss%3A%2F%2Frelay.one&secret=secret";
-    var storage = MailboxSignerJobClientStorage{};
-    var client = try MailboxSignerJobClient.initFromBunkerUriText(
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(
         .{},
         &storage,
         bunker_uri,
@@ -828,7 +828,7 @@ test "mailbox signer job client drives signer-backed mailbox direct-message auth
         101,
     );
 
-    const request = MailboxSignerDirectMessageRequest{
+    const request = DirectMessageRequest{
         .recipient_pubkey = recipient_pubkey,
         .recipient_relay_hint = "wss://relay.shared",
         .reply_to = .{
@@ -843,7 +843,7 @@ test "mailbox signer job client drives signer-backed mailbox direct-message auth
         .wrap_nonce = [_]u8{0x44} ** 32,
     };
 
-    var auth_storage = MailboxSignerJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
 
@@ -1032,8 +1032,8 @@ test "mailbox signer job client prefers auth event over direct-message step when
     const recipient_secret = [_]u8{0x22} ** 32;
     const recipient_pubkey = try noztr.nostr_keys.nostr_derive_public_key(&recipient_secret);
 
-    var storage = MailboxSignerJobClientStorage{};
-    var client = try MailboxSignerJobClient.initFromBunkerUriText(.{}, &storage, bunker_uri, arena.allocator());
+    var storage = Storage{};
+    var client = try Client.initFromBunkerUriText(.{}, &storage, bunker_uri, arena.allocator());
     client.markCurrentRelayConnected();
 
     var connect_scratch_bytes: [1024]u8 = undefined;
@@ -1060,7 +1060,7 @@ test "mailbox signer job client prefers auth event over direct-message step when
         &.{"wss://relay.recipient"},
         100,
     );
-    const request = MailboxSignerDirectMessageRequest{
+    const request = DirectMessageRequest{
         .recipient_pubkey = recipient_pubkey,
         .recipient_relay_list_event_json = recipient_relay_list_json,
         .content = "hello auth",
@@ -1069,7 +1069,7 @@ test "mailbox signer job client prefers auth event over direct-message step when
         .wrap_nonce = [_]u8{0x44} ** 32,
     };
 
-    var auth_storage = MailboxSignerJobAuthEventStorage{};
+    var auth_storage = AuthEventStorage{};
     var auth_event_json_output: [noztr.limits.event_json_max]u8 = undefined;
     var auth_message_output: [noztr.limits.relay_message_bytes_max]u8 = undefined;
     const ready = try client.prepareDirectMessageJob(
@@ -1108,7 +1108,7 @@ fn buildRelayListEventJson(
     secret_key: *const [32]u8,
     relays: []const []const u8,
     created_at: u64,
-) MailboxSignerJobClientError![]const u8 {
+) Error![]const u8 {
     var operator = local_operator.LocalOperatorClient.init(.{});
     const public_key = try operator.derivePublicKey(secret_key);
     var built_tags: [8]noztr.nip17_private_messages.TagBuilder = undefined;
@@ -1137,7 +1137,7 @@ fn buildSignedEventJson(
     created_at: u64,
     content: []const u8,
     tags: []const noztr.nip01_event.EventTag,
-) MailboxSignerJobClientError![]const u8 {
+) Error![]const u8 {
     var operator = local_operator.LocalOperatorClient.init(.{});
     const draft = local_operator.LocalEventDraft{
         .kind = kind,
