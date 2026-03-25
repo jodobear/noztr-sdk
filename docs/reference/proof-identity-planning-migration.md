@@ -148,42 +148,69 @@ Specific flattening moves:
 
 ## `NIP-39` Planning Shape
 
-Old flat names like:
+Old flat names now resolve under grouped buckets:
 
-- `Planning.TargetDiscoveryRequest`
-- `Planning.StoredProfileDiscoveryFreshnessEntry`
-- `Planning.TargetLatestRequest`
-- `Planning.PreferredTargetSelectionRequest`
-- `Planning.RememberedCadencePlan`
-- `Planning.WatchedOrchestrationPlan`
-
-now live under grouped families:
-
-- `Planning.Match`
-- `Planning.Record.*`
-- `Planning.Stored.*`
+- `Planning.Stored`
 - `Planning.Target`
-- `Planning.Discovery.*`
-- `Planning.DiscoveryFresh.*`
-- `Planning.Latest.*`
-- `Planning.Preferred.*`
-- `Planning.Refresh.*`
-- `Planning.Runtime.*`
-- `Planning.Policy.*`
-- `Planning.Cadence.*`
-- `Planning.Batch.*`
-- `Planning.Turn.*`
-- `Planning.Remembered.*`
-- `Planning.Watched.*`
+- `Planning.Remembered`
+- `Planning.Watched`
+
+In this route the `Planning.Stored` and `Planning.Target` families are:
+
+```zig
+pub const Planning = struct {
+    pub const Stored = struct {
+        pub const Match = ...;
+        pub const Entry = ...;
+        pub const Freshness = ...;
+        pub const FallbackPolicy = ...;
+        pub const Fresh = struct {
+            pub const Entry = ...;
+            pub const Storage = ...;
+            pub const Request = ...;
+        };
+        pub const Discovery = struct {
+            pub const Group = ...;
+            pub const Storage = ...;
+            pub const Request = ...;
+        };
+        pub const Runtime = struct { ... };
+        pub const Refresh = struct { ... };
+    };
+
+    pub const Target = struct {
+        pub const Value = ...;
+        pub const Discovery = struct { ... };
+        pub const Fresh = struct { ... };
+        pub const Latest = struct {
+            pub const Entry = ...;
+            pub const Storage = ...;
+            pub const Request = ...;
+            pub const Plan = ...;
+        };
+        pub const Preferred = struct { ... };
+        pub const Refresh = struct { ... };
+        pub const Runtime = struct { ... };
+        pub const Policy = struct { ... };
+        pub const Cadence = struct { ... };
+        pub const Batch = struct { ... };
+        pub const Turn = struct { ... };
+    };
+};
+```
 
 Examples:
 
-- `Planning.TargetDiscoveryRequest` -> `Planning.Discovery.Request`
-- `Planning.StoredProfileDiscoveryFreshnessEntry` -> `Planning.Stored.FreshEntry`
-- `Planning.TargetLatestRequest` -> `Planning.Latest.Request`
-- `Planning.PreferredTargetSelectionRequest` -> `Planning.Preferred.EntriesRequest`
+- `Planning.TargetDiscoveryRequest` -> `Planning.Target.Discovery.Request`
+- `Planning.StoredProfileDiscoveryFreshnessEntry` -> `Planning.Stored.Fresh.Entry`
+- `Planning.StoredProfileDiscoveryFreshnessStorage` -> `Planning.Stored.Fresh.Storage`
+- `Planning.StoredProfileDiscoveryFreshnessRequest` -> `Planning.Stored.Fresh.Request`
+- `Planning.TargetLatestRequest` -> `Planning.Target.Latest.Request`
+- `Planning.PreferredTargetSelectionRequest` -> `Planning.Target.Preferred.EntriesRequest`
+- `Planning.PreferredTargetValue` -> `Planning.Target.Preferred.Value`
 - `Planning.RememberedCadencePlan` -> `Planning.Remembered.Cadence.Plan`
-- `Planning.WatchedOrchestrationPlan` -> `Planning.Watched.Orchestration.Plan`
+- `Planning.WatchedOrchestrationPlan` -> `Planning.Watched.Runtime.Plan`
+
 
 ## `NIP-39` Follow-On Cleanup
 
@@ -209,16 +236,49 @@ Use:
 The grouped family is now:
 
 - `Planning.Store.*`
-- `Planning.Target`
-- `Planning.Latest.*`
-- `Planning.Refresh.*`
+- `Planning.Target.Value`
+- `Planning.Target.Latest.*`
+- `Planning.Target.Refresh.*`
 
 Examples:
 
 - `Nip05RememberedResolutionPlanning.StorePutOutcome` -> `Planning.Store.PutOutcome`
 - `Nip05RememberedResolutionPlanning.Record` -> `Planning.Store.Record`
-- `Nip05RememberedResolutionPlanning.LatestTargetRequest` -> `Planning.Latest.Request`
-- `Nip05RememberedResolutionPlanning.RefreshPlan` -> `Planning.Refresh.Plan`
+- `Nip05RememberedResolutionPlanning.LatestTargetRequest` -> `Planning.Target.Latest.Request`
+- `Nip05RememberedResolutionPlanning.RefreshPlan` -> `Planning.Target.Refresh.Plan`
+
+Route shape:
+
+```zig
+pub const Planning = struct {
+    pub const Store = struct {
+        pub const PutOutcome = ...;
+        pub const Record = ...;
+        pub const Backend = ...;
+        pub const Memory = ...;
+    };
+
+    pub const Target = struct {
+        pub const Value = ...;
+        pub const Latest = struct {
+            pub const Freshness = ...;
+            pub const Entry = ...;
+            pub const Storage = ...;
+            pub const Request = ...;
+            pub const Plan = ...;
+            pub const Step = ...;
+        };
+        pub const Refresh = struct {
+            pub const Action = ...;
+            pub const Entry = ...;
+            pub const Storage = ...;
+            pub const Request = ...;
+            pub const Plan = ...;
+            pub const Step = ...;
+        };
+    };
+};
+```
 
 ## `NIP-05` Method Renames
 

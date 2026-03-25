@@ -56,19 +56,19 @@ test "recipe: nip05 resolver uses the public http seam and remembered resolution
     );
     try std.testing.expectEqual(@as(usize, 1), outcome.verified.profile.relays.len);
 
-    const targets = [_]planning.Target{
+    const targets = [_]planning.Target.Value{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]planning.Latest.Entry = undefined;
-    var refresh_entries: [2]planning.Refresh.Entry = undefined;
+    var latest_entries: [2]planning.Target.Latest.Entry = undefined;
+    var refresh_entries: [2]planning.Target.Refresh.Entry = undefined;
     const refresh_plan = try noztr_sdk.workflows.identity.nip05.Nip05Resolver.planRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = planning.Refresh.Storage.init(
+            .storage = planning.Target.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

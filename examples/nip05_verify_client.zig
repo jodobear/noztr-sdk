@@ -56,19 +56,19 @@ test "recipe: nip05 verify client remembers verified resolution and plans refres
     );
     try std.testing.expectEqual(@as(usize, 1), result.verified.profile.relays.len);
 
-    const targets = [_]noztr_sdk.client.identity.nip05.Planning.Target{
+    const targets = [_]noztr_sdk.client.identity.nip05.Planning.Target.Value{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]noztr_sdk.client.identity.nip05.Planning.Latest.Entry = undefined;
-    var refresh_entries: [2]noztr_sdk.client.identity.nip05.Planning.Refresh.Entry = undefined;
+    var latest_entries: [2]noztr_sdk.client.identity.nip05.Planning.Target.Latest.Entry = undefined;
+    var refresh_entries: [2]noztr_sdk.client.identity.nip05.Planning.Target.Refresh.Entry = undefined;
     const plan = try client.planRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = noztr_sdk.client.identity.nip05.Planning.Refresh.Storage.init(
+            .storage = noztr_sdk.client.identity.nip05.Planning.Target.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

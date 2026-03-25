@@ -137,8 +137,8 @@ pub const Nip05VerifyClient = struct {
     pub fn inspectLatestForTargets(
         self: *const Nip05VerifyClient,
         store: Planning.Store.Backend,
-        request: Planning.Latest.Request,
-    ) Nip05VerifyClientError!Planning.Latest.Plan {
+        request: Planning.Target.Latest.Request,
+    ) Nip05VerifyClientError!Planning.Target.Latest.Plan {
         _ = self;
         return workflows.identity.nip05.Nip05Resolver.inspectLatestForTargets(
             store,
@@ -149,8 +149,8 @@ pub const Nip05VerifyClient = struct {
     pub fn planRefreshForTargets(
         self: *const Nip05VerifyClient,
         store: Planning.Store.Backend,
-        request: Planning.Refresh.Request,
-    ) Nip05VerifyClientError!Planning.Refresh.Plan {
+        request: Planning.Target.Refresh.Request,
+    ) Nip05VerifyClientError!Planning.Target.Refresh.Plan {
         _ = self;
         return workflows.identity.nip05.Nip05Resolver.planRefreshForTargets(store, request);
     }
@@ -302,18 +302,18 @@ test "nip05 verify client remembers successful verify outcomes and inspects fres
     try std.testing.expect(restored != null);
     try std.testing.expectEqualStrings("alice@example.com", restored.?.addressText());
 
-    const targets = [_]Planning.Target{
+    const targets = [_]Planning.Target.Value{
         .{ .address_text = "alice@example.com" },
         .{ .address_text = "bob@example.com" },
     };
-    var latest_entries: [2]Planning.Latest.Entry = undefined;
+    var latest_entries: [2]Planning.Target.Latest.Entry = undefined;
     const latest_plan = try client.inspectLatestForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 110,
             .max_age_seconds = 20,
-            .storage = Planning.Latest.Storage.init(
+            .storage = Planning.Target.Latest.Storage.init(
                 latest_entries[0..],
             ),
             .scratch = arena.allocator(),
@@ -350,20 +350,20 @@ test "nip05 verify client plans remembered refresh work through one client surfa
     _ = try workflows.identity.nip05.Nip05Resolver.rememberResolution(remembered_store.asStore(), &resolution, 95);
     _ = try workflows.identity.nip05.Nip05Resolver.rememberResolution(remembered_store.asStore(), &stale_resolution, 10);
 
-    const targets = [_]Planning.Target{
+    const targets = [_]Planning.Target.Value{
         .{ .address_text = "carol@example.com" },
         .{ .address_text = "bob@example.com" },
         .{ .address_text = "alice@example.com" },
     };
-    var latest_entries: [3]Planning.Latest.Entry = undefined;
-    var refresh_entries: [3]Planning.Refresh.Entry = undefined;
+    var latest_entries: [3]Planning.Target.Latest.Entry = undefined;
+    var refresh_entries: [3]Planning.Target.Refresh.Entry = undefined;
     const plan = try client.planRefreshForTargets(
         remembered_store.asStore(),
         .{
             .targets = targets[0..],
             .now_unix_seconds = 100,
             .max_age_seconds = 20,
-            .storage = Planning.Refresh.Storage.init(
+            .storage = Planning.Target.Refresh.Storage.init(
                 latest_entries[0..],
                 refresh_entries[0..],
             ),

@@ -324,24 +324,26 @@ pub const Planning = struct {
         pub const Memory = MemoryNip05RememberedResolutionStore;
     };
 
-    pub const Target = Nip05RememberedResolutionTarget;
+    pub const Target = struct {
+        pub const Value = Nip05RememberedResolutionTarget;
 
-    pub const Latest = struct {
-        pub const Freshness = Nip05RememberedResolutionFreshness;
-        pub const Entry = Nip05LatestRememberedResolutionTargetEntry;
-        pub const Storage = Nip05LatestRememberedResolutionTargetStorage;
-        pub const Request = Nip05LatestRememberedResolutionTargetRequest;
-        pub const Plan = Nip05LatestRememberedResolutionTargetPlan;
-        pub const Step = Nip05LatestRememberedResolutionTargetStep;
-    };
+        pub const Latest = struct {
+            pub const Freshness = Nip05RememberedResolutionFreshness;
+            pub const Entry = Nip05LatestRememberedResolutionTargetEntry;
+            pub const Storage = Nip05LatestRememberedResolutionTargetStorage;
+            pub const Request = Nip05LatestRememberedResolutionTargetRequest;
+            pub const Plan = Nip05LatestRememberedResolutionTargetPlan;
+            pub const Step = Nip05LatestRememberedResolutionTargetStep;
+        };
 
-    pub const Refresh = struct {
-        pub const Action = Nip05RememberedResolutionRefreshAction;
-        pub const Entry = Nip05RememberedResolutionRefreshEntry;
-        pub const Storage = Nip05RememberedResolutionRefreshStorage;
-        pub const Request = Nip05RememberedResolutionRefreshRequest;
-        pub const Plan = Nip05RememberedResolutionRefreshPlan;
-        pub const Step = Nip05RememberedResolutionRefreshStep;
+        pub const Refresh = struct {
+            pub const Action = Nip05RememberedResolutionRefreshAction;
+            pub const Entry = Nip05RememberedResolutionRefreshEntry;
+            pub const Storage = Nip05RememberedResolutionRefreshStorage;
+            pub const Request = Nip05RememberedResolutionRefreshRequest;
+            pub const Plan = Nip05RememberedResolutionRefreshPlan;
+            pub const Step = Nip05RememberedResolutionRefreshStep;
+        };
     };
 };
 
