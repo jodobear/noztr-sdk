@@ -39,7 +39,7 @@ pub const Error =
 pub const Method = noztr.nip46_remote_signing.Method;
 pub const PermissionScope = noztr.nip46_remote_signing.Scope;
 pub const Permission = noztr.nip46_remote_signing.Permission;
-pub const PubkeyTextRequest = noztr.nip46_remote_signing.PubkeyTextParams;
+pub const PubkeyTextRequest = noztr.nip46_remote_signing.PubkeyText;
 
 /// Caller-owned storage for serialized request JSON.
 /// `OutboundRequest.json` borrows from this buffer until it is overwritten.
