@@ -124,7 +124,7 @@ zig build
 
 ## Version Line And Toolchain
 
-- project line: `0.1.0-rc.2`
+- project line: `0.1.0-rc.3`
 - current public release candidate
 - current toolchain baseline: Zig `0.15.2`
 
@@ -137,18 +137,12 @@ If you are updating an older pre-`1.0` downstream, start here:
 - [pre-1.0 migration guide](./reference/migration-guide.md)
   - canonical grouped migration route for the current namespace and naming cleanups
 
-## Add As A Local Dependency
+## Add As A Remote Dependency
 
-`build.zig.zon`:
+Use `zig fetch --save`:
 
-```zig
-.{
-    .dependencies = .{
-        .noztr_sdk = .{
-            .path = "../noztr-sdk",
-        },
-    },
-}
+```bash
+zig fetch --save "git+https://github.com/jodobear/noztr-sdk.git#v0.1.0-rc.3"
 ```
 
 `build.zig`:

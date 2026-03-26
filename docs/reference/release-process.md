@@ -21,7 +21,7 @@ This document defines the public release baseline for `noztr-sdk`.
 It does not use the Zig toolchain version as the library version.
 
 Current project line:
-- current public release candidate: `0.1.0-rc.2`
+- current public release candidate: `0.1.0-rc.3`
 
 Toolchain compatibility is tracked separately from the project version.
 
@@ -34,7 +34,7 @@ not the package version.
 ## Current Public Release Candidate
 
 The current public release candidate is:
-- `v0.1.0-rc.2`
+- `v0.1.0-rc.3`
 
 That release should mean:
 - the public docs route exists
@@ -85,7 +85,7 @@ Before cutting a public tag, all of these should be true:
 
 ## Tagging Guidance
 
-- prefer annotated tags such as `v0.1.0-rc.2`
+- prefer annotated tags such as `v0.1.0-rc.3`
 - tag from a clean verified commit
 - do not move public tags casually
 - if a release candidate must be superseded, cut a new tag instead of rewriting the old one
@@ -93,7 +93,7 @@ Before cutting a public tag, all of these should be true:
 Example:
 
 ```bash
-git tag -a v0.1.0-rc.2 -m "noztr-sdk v0.1.0-rc.2"
+git tag -a v0.1.0-rc.3 -m "noztr-sdk v0.1.0-rc.3"
 ```
 
 ## Release Notes Shape
@@ -151,7 +151,7 @@ Adoption guidance
 
 ## Recommendation
 
-`noztr-sdk` should now be evaluated on the `0.1.0-rc.2` line as the current public RC.
+`noztr-sdk` should now be evaluated on the `0.1.0-rc.3` line as the current public RC.
 
 If follow-up corrections are needed, prefer:
 - targeted post-RC fixes
@@ -175,7 +175,7 @@ That means:
 
 That does not mean the line is frozen forever.
 
-The remaining work after `v0.1.0-rc.2` should be:
+The remaining work after `v0.1.0-rc.3` should be:
 - downstream evaluation and issue intake
 - targeted RC follow-up fixes where justified
 - a later `rc.2` or stable cut only when evidence supports it

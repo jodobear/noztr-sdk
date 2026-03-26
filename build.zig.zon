@@ -1,6 +1,6 @@
 .{
     .name = .noztr_sdk,
-    .version = "0.1.0-rc.2",
+    .version = "0.1.0-rc.3",
     .dependencies = .{
         .noztr = .{
             .url = "git+https://github.com/jodobear/noztr-core.git#v0.1.0-rc.6",
