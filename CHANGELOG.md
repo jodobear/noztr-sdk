@@ -22,10 +22,6 @@ This RC is a narrow downstream-consumability release. It keeps the `0.1.0-rc.2` 
 but fixes the published package manifest so other Zig packages can pin `noztr-sdk` remotely
 without failing on a sibling `../noztr-core` path.
 
-### Added
-
-- current whole-library release note under `docs/releases/0.1.0-rc.3.md`
-
 ### Changed
 
 - current package version line is now `0.1.0-rc.3`
@@ -43,13 +39,6 @@ without failing on a sibling `../noztr-core` path.
 - Zig toolchain floor for this RC line remains `0.15.2`
 - `noztr-core` is expected at `v0.1.0-rc.6`
 - published remote consumption is now supported for `noztr-sdk` itself
-
-### Docs And Examples
-
-- public routing still starts at `README.md`, `docs/INDEX.md`, `docs/getting-started.md`, and
-  `docs/reference/contract-map.md`
-- current release note is `docs/releases/0.1.0-rc.3.md`
-- migration routing remains `docs/reference/migration-guide.md`
 
 ## [0.1.0-rc.2] - 2026-03-26
 
