@@ -3,7 +3,8 @@
     .version = "0.1.0-rc.2",
     .dependencies = .{
         .noztr = .{
-            .path = "../noztr-core",
+            .url = "git+https://github.com/jodobear/noztr-core.git#v0.1.0-rc.6",
+            .hash = "noztr-0.1.0-rc.6-y9hMXuVvMwDf1ZskWzSpiJOJN3zr4QIe6wQQd_ZuDPtC",
         },
     },
     .paths = .{
