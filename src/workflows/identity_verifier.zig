@@ -2526,7 +2526,7 @@ pub const IdentityVerifier = struct {
             request.storage.remembered_identity_records,
             request.storage.targets,
         );
-        const freshness = try inspectLatestStoredProfileFreshnessForTargets(
+        const freshness = try inspectTargetLatest(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -2550,7 +2550,7 @@ pub const IdentityVerifier = struct {
             request.storage.remembered_identity_records,
             request.storage.targets,
         );
-        const cadence = try inspectStoredProfileRefreshCadenceForTargets(
+        const cadence = try inspectTargetCadence(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -2576,7 +2576,7 @@ pub const IdentityVerifier = struct {
             request.storage.remembered_identity_records,
             request.storage.targets,
         );
-        const batch = try inspectStoredProfileRefreshBatchForTargets(
+        const batch = try inspectTargetBatch(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -2594,7 +2594,7 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn discoverStoredProfileEntriesForTargets(
+    pub fn discoverTargets(
         store: IdentityProfileStore,
         request: TargetDiscoveryRequest,
     ) StoredDiscoveryError![]const TargetDiscoveryGroup {
@@ -2650,7 +2650,7 @@ pub const IdentityVerifier = struct {
         return request.storage.entries[0..matches.len];
     }
 
-    pub fn discoverStoredProfileEntriesWithFreshnessForTargets(
+    pub fn discoverTargetsWithFreshness(
         store: IdentityProfileStore,
         request: TargetFreshRequest,
     ) StoredDiscoveryError![]const TargetFreshGroup {
@@ -2736,7 +2736,7 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn getLatestStoredProfilesForTargets(
+    pub fn getLatestForTargets(
         store: IdentityProfileStore,
         request: TargetLatestDiscoveryRequest,
     ) StoredDiscoveryError![]const TargetLatestDiscoveryEntry {
@@ -2759,7 +2759,7 @@ pub const IdentityVerifier = struct {
         return request.storage.entries[0..request.targets.len];
     }
 
-    pub fn discoverLatestStoredProfileFreshnessForTargets(
+    pub fn discoverLatestForTargets(
         store: IdentityProfileStore,
         request: TargetLatestRequest,
     ) StoredDiscoveryError![]const TargetLatestEntry {
@@ -2784,11 +2784,11 @@ pub const IdentityVerifier = struct {
         return request.storage.entries[0..request.targets.len];
     }
 
-    pub fn inspectLatestStoredProfileFreshnessForTargets(
+    pub fn inspectTargetLatest(
         store: IdentityProfileStore,
         request: TargetLatestRequest,
     ) StoredDiscoveryError!TargetLatestPlan {
-        const entries = try discoverLatestStoredProfileFreshnessForTargets(store, request);
+        const entries = try discoverLatestForTargets(store, request);
 
         var plan: TargetLatestPlan = .{
             .entries = entries,
@@ -2806,11 +2806,11 @@ pub const IdentityVerifier = struct {
         return plan;
     }
 
-    pub fn getPreferredStoredProfileForTargets(
+    pub fn getPreferredTarget(
         store: IdentityProfileStore,
         request: TargetPreferredRequest,
     ) StoredDiscoveryError!?TargetPreferredValue {
-        const entries = try discoverLatestStoredProfileFreshnessForTargets(
+        const entries = try discoverLatestForTargets(
             store,
             .{
                 .targets = request.targets,
@@ -2853,11 +2853,11 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn planStoredProfileRefreshForTargets(
+    pub fn planTargetRefresh(
         store: IdentityProfileStore,
         request: TargetRefreshRequest,
     ) StoredDiscoveryError!TargetRefreshPlan {
-        const freshness_entries = try discoverLatestStoredProfileFreshnessForTargets(
+        const freshness_entries = try discoverLatestForTargets(
             store,
             .{
                 .targets = request.targets,
@@ -2894,11 +2894,11 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn inspectStoredProfileRuntimeForTargets(
+    pub fn inspectTargetRuntime(
         store: IdentityProfileStore,
         request: TargetRuntimeRequest,
     ) StoredDiscoveryError!TargetRuntimePlan {
-        const entries = try discoverLatestStoredProfileFreshnessForTargets(
+        const entries = try discoverLatestForTargets(
             store,
             .{
                 .targets = request.targets,
@@ -2986,14 +2986,14 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn inspectStoredProfilePolicyForTargets(
+    pub fn inspectTargetPolicy(
         store: IdentityProfileStore,
         request: TargetPolicyRequest,
     ) StoredDiscoveryError!TargetPolicyPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
-        const latest_entries = try discoverLatestStoredProfileFreshnessForTargets(
+        const latest_entries = try discoverLatestForTargets(
             store,
             .{
                 .targets = request.targets,
@@ -3122,14 +3122,14 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn inspectStoredProfileRefreshCadenceForTargets(
+    pub fn inspectTargetCadence(
         store: IdentityProfileStore,
         request: TargetCadenceRequest,
     ) StoredDiscoveryError!TargetCadencePlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 5) return error.BufferTooSmall;
 
-        const latest_entries = try discoverLatestStoredProfileFreshnessForTargets(
+        const latest_entries = try discoverLatestForTargets(
             store,
             .{
                 .targets = request.targets,
@@ -3277,11 +3277,11 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn inspectStoredProfileRefreshBatchForTargets(
+    pub fn inspectTargetBatch(
         store: IdentityProfileStore,
         request: TargetBatchRequest,
     ) StoredDiscoveryError!TargetBatchPlan {
-        const cadence = try inspectStoredProfileRefreshCadenceForTargets(
+        const cadence = try inspectTargetCadence(
             store,
             .{
                 .targets = request.targets,
@@ -3312,14 +3312,14 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn inspectStoredProfileTurnPolicyForTargets(
+    pub fn inspectTargetTurnPolicy(
         store: IdentityProfileStore,
         request: TargetTurnRequest,
     ) StoredDiscoveryError!TargetTurnPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
-        const policy = try inspectStoredProfilePolicyForTargets(
+        const policy = try inspectTargetPolicy(
             store,
             .{
                 .targets = request.targets,
@@ -3334,7 +3334,7 @@ pub const IdentityVerifier = struct {
                 ),
             },
         );
-        const batch = try inspectStoredProfileRefreshBatchForTargets(
+        const batch = try inspectTargetBatch(
             store,
             .{
                 .targets = request.targets,
@@ -3497,7 +3497,7 @@ pub const IdentityVerifier = struct {
             request.storage.targets,
         );
 
-        const policy = try inspectStoredProfilePolicyForTargets(
+        const policy = try inspectTargetPolicy(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -3525,7 +3525,7 @@ pub const IdentityVerifier = struct {
             request.storage.targets,
         );
 
-        const cadence = try inspectStoredProfileRefreshCadenceForTargets(
+        const cadence = try inspectTargetCadence(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -3554,7 +3554,7 @@ pub const IdentityVerifier = struct {
             request.storage.targets,
         );
 
-        const batch = try inspectStoredProfileRefreshBatchForTargets(
+        const batch = try inspectTargetBatch(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -3585,7 +3585,7 @@ pub const IdentityVerifier = struct {
         );
         const targets = request.storage.targets[0..count];
 
-        const policy = try inspectStoredProfilePolicyForTargets(
+        const policy = try inspectTargetPolicy(
             store,
             .{
                 .targets = targets,
@@ -3595,7 +3595,7 @@ pub const IdentityVerifier = struct {
                 .storage = request.storage.policy,
             },
         );
-        const cadence = try inspectStoredProfileRefreshCadenceForTargets(
+        const cadence = try inspectTargetCadence(
             store,
             .{
                 .targets = targets,
@@ -3606,7 +3606,7 @@ pub const IdentityVerifier = struct {
                 .storage = request.storage.cadence,
             },
         );
-        const batch = try inspectStoredProfileRefreshBatchForTargets(
+        const batch = try inspectTargetBatch(
             store,
             .{
                 .targets = targets,
@@ -3618,7 +3618,7 @@ pub const IdentityVerifier = struct {
                 .storage = request.storage.batch,
             },
         );
-        const turn = try inspectStoredProfileTurnPolicyForTargets(
+        const turn = try inspectTargetTurnPolicy(
             store,
             .{
                 .targets = targets,
@@ -3651,7 +3651,7 @@ pub const IdentityVerifier = struct {
             request.storage.targets,
         );
 
-        const turn_policy = try inspectStoredProfileTurnPolicyForTargets(
+        const turn_policy = try inspectTargetTurnPolicy(
             store,
             .{
                 .targets = request.storage.targets[0..count],
@@ -3751,7 +3751,7 @@ pub const IdentityVerifier = struct {
         };
     }
 
-    pub fn getPreferredStoredProfilesForTargets(
+    pub fn getPreferredForTargets(
         store: IdentityProfileStore,
         request: TargetPreferredEntriesRequest,
     ) StoredDiscoveryError![]const TargetPreferredEntry {
@@ -5519,7 +5519,7 @@ test "identity verifier discovers remembered profile entries for watched target 
     var matches_storage: [2]IdentityProfileMatch = undefined;
     var target_entries: [3]StoredDiscoveryEntry = undefined;
     var groups_storage: [3]TargetDiscoveryGroup = undefined;
-    const groups = try IdentityVerifier.discoverStoredProfileEntriesForTargets(
+    const groups = try IdentityVerifier.discoverTargets(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -5597,7 +5597,7 @@ test "identity verifier target discovery stays bounded by caller-owned entry sto
     var groups_storage: [2]TargetDiscoveryGroup = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
-        IdentityVerifier.discoverStoredProfileEntriesForTargets(
+        IdentityVerifier.discoverTargets(
             store.asStore(),
             .{
                 .targets = targets[0..],
@@ -5684,7 +5684,7 @@ test "identity verifier discovers freshness-classified remembered entries for wa
     var matches_storage: [2]IdentityProfileMatch = undefined;
     var target_entries: [3]StoredFreshEntry = undefined;
     var groups_storage: [3]TargetFreshGroup = undefined;
-    const groups = try IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
+    const groups = try IdentityVerifier.discoverTargetsWithFreshness(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -5720,7 +5720,7 @@ test "identity verifier grouped freshness discovery returns empty groups for mis
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var target_entries: [1]StoredFreshEntry = undefined;
     var groups_storage: [2]TargetFreshGroup = undefined;
-    const groups = try IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
+    const groups = try IdentityVerifier.discoverTargetsWithFreshness(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -5810,7 +5810,7 @@ test "identity verifier gets latest remembered profile per watched target in cal
     };
     var matches_storage: [2]IdentityProfileMatch = undefined;
     var latest_entries: [3]TargetLatestDiscoveryEntry = undefined;
-    const latest = try IdentityVerifier.getLatestStoredProfilesForTargets(
+    const latest = try IdentityVerifier.getLatestForTargets(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -5840,7 +5840,7 @@ test "identity verifier latest per-target helper stays bounded by caller-owned t
     var latest_entries: [0]TargetLatestDiscoveryEntry = .{};
     try std.testing.expectError(
         error.BufferTooSmall,
-        IdentityVerifier.getLatestStoredProfilesForTargets(
+        IdentityVerifier.getLatestForTargets(
             store.asStore(),
             .{
                 .targets = targets[0..],
@@ -5905,7 +5905,7 @@ test "identity verifier gets preferred remembered profile per watched target in 
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var preferred_entries: [3]TargetPreferredEntry = undefined;
-    const preferred = try IdentityVerifier.getPreferredStoredProfilesForTargets(
+    const preferred = try IdentityVerifier.getPreferredForTargets(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -5960,7 +5960,7 @@ test "identity verifier preferred per-target helper respects require-fresh polic
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var preferred_entries: [1]TargetPreferredEntry = undefined;
-    const preferred = try IdentityVerifier.getPreferredStoredProfilesForTargets(
+    const preferred = try IdentityVerifier.getPreferredForTargets(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6031,7 +6031,7 @@ test "identity verifier groups watched-target policy entries by action in stable
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var policy_entries_storage: [3]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6081,7 +6081,7 @@ test "identity verifier target policy inspection stays bounded by caller-owned g
     var groups_storage: [3]TargetPolicyGroup = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
-        IdentityVerifier.inspectStoredProfilePolicyForTargets(
+        IdentityVerifier.inspectTargetPolicy(
             store.asStore(),
             .{
                 .targets = targets[0..],
@@ -6140,7 +6140,7 @@ test "identity verifier target policy exposes usable preferred targets in stable
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var policy_entries_storage: [3]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6192,7 +6192,7 @@ test "identity verifier target policy exposes verify-now targets in stable calle
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var policy_entries_storage: [3]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6242,7 +6242,7 @@ test "identity verifier target policy exposes refresh-needed targets under expli
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var policy_entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfilePolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6324,7 +6324,7 @@ test "identity verifier groups watched-target refresh cadence entries by action 
     var latest_entries_storage: [4]TargetLatestEntry = undefined;
     var cadence_entries_storage: [4]TargetCadenceEntry = undefined;
     var groups_storage: [5]TargetCadenceGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const plan = try IdentityVerifier.inspectTargetCadence(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6374,7 +6374,7 @@ test "identity verifier refresh cadence inspection stays bounded by caller-owned
     var groups_storage: [4]TargetCadenceGroup = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
-        IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+        IdentityVerifier.inspectTargetCadence(
             store.asStore(),
             .{
                 .targets = targets[0..],
@@ -6434,7 +6434,7 @@ test "identity verifier refresh cadence next-due selector prefers missing then s
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetCadenceEntry = undefined;
     var groups_storage: [5]TargetCadenceGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const plan = try IdentityVerifier.inspectTargetCadence(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6460,7 +6460,7 @@ test "identity verifier refresh cadence next-due selector prefers missing then s
     var due_latest_entries: [2]TargetLatestEntry = undefined;
     var due_cadence_entries: [2]TargetCadenceEntry = undefined;
     var due_groups: [5]TargetCadenceGroup = undefined;
-    const due_plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const due_plan = try IdentityVerifier.inspectTargetCadence(
         store.asStore(),
         .{
             .targets = due_targets[0..],
@@ -6505,7 +6505,7 @@ test "identity verifier refresh cadence next-due selector returns null when all 
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetCadenceEntry = undefined;
     var groups_storage: [5]TargetCadenceGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const plan = try IdentityVerifier.inspectTargetCadence(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6549,7 +6549,7 @@ test "identity verifier refresh cadence exposes typed next-due step" {
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetCadenceEntry = undefined;
     var groups_storage: [5]TargetCadenceGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const plan = try IdentityVerifier.inspectTargetCadence(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6611,7 +6611,7 @@ test "identity verifier refresh cadence exposes usable-while-refreshing and refr
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var cadence_entries_storage: [2]TargetCadenceEntry = undefined;
     var groups_storage: [5]TargetCadenceGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const plan = try IdentityVerifier.inspectTargetCadence(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6684,7 +6684,7 @@ test "identity verifier selects a bounded refresh batch from due watched targets
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
-    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+    const batch = try IdentityVerifier.inspectTargetBatch(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6736,7 +6736,7 @@ test "identity verifier refresh batch selection allows zero selected entries" {
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
-    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+    const batch = try IdentityVerifier.inspectTargetBatch(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6800,7 +6800,7 @@ test "identity verifier refresh batch exposes next selected entry" {
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
-    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+    const batch = try IdentityVerifier.inspectTargetBatch(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6847,7 +6847,7 @@ test "identity verifier refresh batch exposes typed next selected step" {
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
-    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+    const batch = try IdentityVerifier.inspectTargetBatch(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6910,7 +6910,7 @@ test "identity verifier refresh batch exposes selected and deferred views" {
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
-    const batch = try IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+    const batch = try IdentityVerifier.inspectTargetBatch(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -6982,7 +6982,7 @@ test "identity verifier inspects watched-target turn policy with mixed actions" 
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [4]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7075,7 +7075,7 @@ test "identity verifier turn policy tracks deferred refresh entries when selecti
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [4]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7153,7 +7153,7 @@ test "identity verifier turn policy exposes next work entry" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7208,7 +7208,7 @@ test "identity verifier turn policy exposes typed next work step" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [1]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7267,7 +7267,7 @@ test "identity verifier turn policy exposes verify-now view" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7340,7 +7340,7 @@ test "identity verifier turn policy exposes refresh-selected view" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7412,7 +7412,7 @@ test "identity verifier turn policy exposes work view" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7500,7 +7500,7 @@ test "identity verifier turn policy exposes idle view" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [4]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7588,7 +7588,7 @@ test "identity verifier turn policy exposes cached and deferred views" {
     var cadence_groups_storage: [5]TargetCadenceGroup = undefined;
     var entries_storage: [4]TargetTurnEntry = undefined;
     var groups_storage: [4]TargetTurnGroup = undefined;
-    const plan = try IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+    const plan = try IdentityVerifier.inspectTargetTurnPolicy(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7668,7 +7668,7 @@ test "identity verifier discovers latest remembered freshness for watched target
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [3]TargetLatestEntry = undefined;
-    const entries = try IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+    const entries = try IdentityVerifier.discoverLatestForTargets(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7720,7 +7720,7 @@ test "identity verifier target-set latest freshness preserves caller-owned capac
 
     try std.testing.expectError(
         error.BufferTooSmall,
-        IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+        IdentityVerifier.discoverLatestForTargets(
             store.asStore(),
             .{
                 .targets = targets[0..],
@@ -7787,7 +7787,7 @@ test "identity verifier target-set latest freshness plan selects first non-fresh
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [3]TargetLatestEntry = undefined;
-    const plan = try IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
+    const plan = try IdentityVerifier.inspectTargetLatest(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -7862,7 +7862,7 @@ test "identity verifier target-set latest freshness plan returns null when all w
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [2]TargetLatestEntry = undefined;
-    const plan = try IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
+    const plan = try IdentityVerifier.inspectTargetLatest(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8312,7 +8312,7 @@ test "identity verifier selects preferred remembered profile across watched targ
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [3]TargetLatestEntry = undefined;
-    const preferred = (try IdentityVerifier.getPreferredStoredProfileForTargets(
+    const preferred = (try IdentityVerifier.getPreferredTarget(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8381,7 +8381,7 @@ test "identity verifier can fall back to newest stale preferred remembered targe
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [2]TargetLatestEntry = undefined;
-    const preferred = (try IdentityVerifier.getPreferredStoredProfileForTargets(
+    const preferred = (try IdentityVerifier.getPreferredTarget(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8430,7 +8430,7 @@ test "identity verifier returns null when watched-target preferred selection req
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [1]TargetLatestEntry = undefined;
-    const preferred = try IdentityVerifier.getPreferredStoredProfileForTargets(
+    const preferred = try IdentityVerifier.getPreferredTarget(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8496,7 +8496,7 @@ test "identity verifier target-set refresh plan returns stale watched targets ne
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var freshness_entries: [3]TargetLatestEntry = undefined;
     var refresh_entries: [2]TargetRefreshEntry = undefined;
-    const plan = try IdentityVerifier.planStoredProfileRefreshForTargets(
+    const plan = try IdentityVerifier.planTargetRefresh(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8547,7 +8547,7 @@ test "identity verifier target-set refresh plan returns empty for fresh or missi
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var freshness_entries: [2]TargetLatestEntry = undefined;
     var refresh_entries: [1]TargetRefreshEntry = undefined;
-    const plan = try IdentityVerifier.planStoredProfileRefreshForTargets(
+    const plan = try IdentityVerifier.planTargetRefresh(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8614,7 +8614,7 @@ test "identity verifier watched-target runtime prefers verifying the first missi
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [3]TargetLatestEntry = undefined;
-    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+    const runtime = try IdentityVerifier.inspectTargetRuntime(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8687,7 +8687,7 @@ test "identity verifier watched-target runtime can prefer the freshest remembere
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [2]TargetLatestEntry = undefined;
-    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+    const runtime = try IdentityVerifier.inspectTargetRuntime(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8760,7 +8760,7 @@ test "identity verifier watched-target runtime can require refresh for stale tar
     };
     var matches_storage: [1]IdentityProfileMatch = undefined;
     var entries_storage: [2]TargetLatestEntry = undefined;
-    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+    const runtime = try IdentityVerifier.inspectTargetRuntime(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -8792,7 +8792,7 @@ test "identity verifier watched-target runtime handles an empty watched set" {
     const targets = [_]StoredTarget{};
     var matches_storage: [0]IdentityProfileMatch = .{};
     var entries_storage: [0]TargetLatestEntry = .{};
-    const runtime = try IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+    const runtime = try IdentityVerifier.inspectTargetRuntime(
         store.asStore(),
         .{
             .targets = targets[0..],
@@ -9425,7 +9425,7 @@ test "identity verifier returns typed error for inconsistent remembered profile 
     var target_entries: [1]TargetLatestEntry = undefined;
     try std.testing.expectError(
         error.InconsistentStoreData,
-        IdentityVerifier.discoverLatestStoredProfileFreshnessForTargets(
+        IdentityVerifier.discoverLatestForTargets(
             store.asStore(),
             .{
                 .targets = targets[0..],

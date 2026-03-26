@@ -222,7 +222,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_group_matches: [2]Planning.Match = undefined;
     var watched_group_entries: [2]Planning.Stored.Entry = undefined;
     var watched_group_groups: [3]Planning.Target.Discovery.Group = undefined;
-    const watched_groups = try identity.IdentityVerifier.discoverStoredProfileEntriesForTargets(
+    const watched_groups = try identity.IdentityVerifier.discoverTargets(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -247,7 +247,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_fresh_group_entries: [2]Planning.Stored.Fresh.Entry = undefined;
     var watched_fresh_group_groups: [3]Planning.Target.Fresh.Group = undefined;
     const watched_groups_with_freshness =
-        try identity.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
+        try identity.IdentityVerifier.discoverTargetsWithFreshness(
             profile_store.asStore(),
             .{
                 .targets = watched_targets[0..],
@@ -275,7 +275,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
 
     var watched_matches: [2]Planning.Match = undefined;
     var watched_entries: [3]Planning.Target.Latest.Entry = undefined;
-    const watched_latest = try identity.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
+    const watched_latest = try identity.IdentityVerifier.inspectTargetLatest(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -316,7 +316,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_preferred_matches: [2]Planning.Match = undefined;
     var watched_preferred_entries: [3]Planning.Target.Preferred.Entry = undefined;
     const watched_preferred_per_target =
-        try identity.IdentityVerifier.getPreferredStoredProfilesForTargets(
+        try identity.IdentityVerifier.getPreferredForTargets(
             profile_store.asStore(),
             .{
                 .targets = watched_targets[0..],
@@ -342,7 +342,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     );
     try std.testing.expectEqualStrings("carol", watched_preferred_per_target[2].target.identity);
     try std.testing.expect(watched_preferred_per_target[2].preferred == null);
-    const watched_preferred = (try identity.IdentityVerifier.getPreferredStoredProfileForTargets(
+    const watched_preferred = (try identity.IdentityVerifier.getPreferredTarget(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -367,7 +367,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_refresh_matches: [2]Planning.Match = undefined;
     var watched_refresh_freshness: [3]Planning.Target.Latest.Entry = undefined;
     var watched_refresh_entries: [2]Planning.Target.Refresh.Entry = undefined;
-    const watched_refresh = try identity.IdentityVerifier.planStoredProfileRefreshForTargets(
+    const watched_refresh = try identity.IdentityVerifier.planTargetRefresh(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -387,7 +387,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     try std.testing.expectEqualStrings("bob", watched_refresh.nextStep().?.entry.target.identity);
     var watched_runtime_matches: [2]Planning.Match = undefined;
     var watched_runtime_entries: [3]Planning.Target.Latest.Entry = undefined;
-    const watched_runtime = try identity.IdentityVerifier.inspectStoredProfileRuntimeForTargets(
+    const watched_runtime = try identity.IdentityVerifier.inspectTargetRuntime(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -416,7 +416,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_policy_latest_entries: [3]Planning.Target.Latest.Entry = undefined;
     var watched_policy_entries: [3]Planning.Target.Policy.Entry = undefined;
     var watched_policy_groups: [4]Planning.Target.Policy.Group = undefined;
-    const watched_policy = try identity.IdentityVerifier.inspectStoredProfilePolicyForTargets(
+    const watched_policy = try identity.IdentityVerifier.inspectTargetPolicy(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -446,7 +446,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_cadence_latest_entries: [3]Planning.Target.Latest.Entry = undefined;
     var watched_cadence_entries: [3]Planning.Target.Cadence.Entry = undefined;
     var watched_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
-    const watched_cadence = try identity.IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+    const watched_cadence = try identity.IdentityVerifier.inspectTargetCadence(
         profile_store.asStore(),
         .{
             .targets = watched_targets[0..],
@@ -479,7 +479,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_batch_cadence_entries: [3]Planning.Target.Cadence.Entry = undefined;
     var watched_batch_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     const watched_refresh_batch =
-        try identity.IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+        try identity.IdentityVerifier.inspectTargetBatch(
             profile_store.asStore(),
             .{
                 .targets = watched_targets[0..],
@@ -517,7 +517,7 @@ test "recipe: identity verifier verifies, remembers, groups watched-target disco
     var watched_turn_entries: [3]Planning.Target.Turn.Entry = undefined;
     var watched_turn_groups: [4]Planning.Target.Turn.Group = undefined;
     const watched_turn_policy =
-        try identity.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(
+        try identity.IdentityVerifier.inspectTargetTurnPolicy(
             profile_store.asStore(),
             .{
                 .targets = watched_targets[0..],

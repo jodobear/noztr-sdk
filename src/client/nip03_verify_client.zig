@@ -116,7 +116,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Latest.Request,
     ) Nip03VerifyClientError![]const Planning.Target.Latest.Entry {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.discoverLatestForTargets(
             verification_store,
             request,
         );
@@ -140,7 +140,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Preferred.EntriesRequest,
     ) Nip03VerifyClientError!?Planning.Target.Preferred.Entry {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.getPreferredForTargets(
             verification_store,
             request,
         );
@@ -176,7 +176,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Refresh.Request,
     ) Nip03VerifyClientError!Planning.Target.Refresh.Plan {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.planTargetRefresh(
             verification_store,
             request,
         );
@@ -189,7 +189,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Readiness.Request,
     ) StoredRefreshReadinessError!Planning.Target.Readiness.Plan {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectTargetReadiness(
             verification_store,
             event_archive,
             request,
@@ -202,7 +202,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Policy.Request,
     ) Nip03VerifyClientError!Planning.Target.Policy.Plan {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectTargetPolicy(
             verification_store,
             request,
         );
@@ -214,7 +214,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Cadence.Request,
     ) Nip03VerifyClientError!Planning.Target.Cadence.Plan {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectTargetCadence(
             verification_store,
             request,
         );
@@ -226,7 +226,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Batch.Request,
     ) Nip03VerifyClientError!Planning.Target.Batch.Plan {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectTargetBatch(
             verification_store,
             request,
         );
@@ -238,7 +238,7 @@ pub const Nip03VerifyClient = struct {
         request: Planning.Target.Turn.Request,
     ) Nip03VerifyClientError!Planning.Target.Turn.Plan {
         _ = self;
-        return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        return workflows.proof.nip03.OpenTimestampsVerifier.inspectTargetTurnPolicy(
             verification_store,
             request,
         );

@@ -123,7 +123,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var freshness_matches: [2]Planning.Stored.Match = undefined;
     var freshness_entries: [2]Planning.Stored.Fresh.Entry = undefined;
     const discovered_with_freshness =
-        try proof.OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
+        try proof.OpenTimestampsVerifier.discoverStoredEntriesWithFreshness(
             verification_store.asStore(),
             .{
                 .target_event_id = &target.id,
@@ -210,7 +210,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var grouped_matches: [1]Planning.Stored.Match = undefined;
     var grouped_latest_entries: [2]Planning.Target.Latest.Entry = undefined;
     const grouped_latest =
-        try proof.OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+        try proof.OpenTimestampsVerifier.discoverLatestForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -230,7 +230,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var grouped_preferred_freshness: [1]Planning.Stored.Fresh.Entry = undefined;
     var grouped_preferred_entries: [2]Planning.Target.Preferred.Entry = undefined;
     const grouped_preferred =
-        (try proof.OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+        (try proof.OpenTimestampsVerifier.getPreferredForTargets(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -250,7 +250,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var grouped_policy_entries: [2]Planning.Target.Policy.Entry = undefined;
     var grouped_policy_groups: [4]Planning.Target.Policy.Group = undefined;
     const grouped_policy =
-        try proof.OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+        try proof.OpenTimestampsVerifier.inspectTargetPolicy(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -284,7 +284,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var grouped_cadence_entries: [2]Planning.Target.Cadence.Entry = undefined;
     var grouped_cadence_groups: [5]Planning.Target.Cadence.Group = undefined;
     const grouped_cadence =
-        try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        try proof.OpenTimestampsVerifier.inspectTargetCadence(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -320,7 +320,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var grouped_batch_entries: [2]Planning.Target.Cadence.Entry = undefined;
     var grouped_batch_groups: [5]Planning.Target.Cadence.Group = undefined;
     const grouped_batch =
-        try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+        try proof.OpenTimestampsVerifier.inspectTargetBatch(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -356,7 +356,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var grouped_turn_entries: [2]Planning.Target.Turn.Entry = undefined;
     var grouped_turn_groups: [4]Planning.Target.Turn.Group = undefined;
     const grouped_turn =
-        try proof.OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+        try proof.OpenTimestampsVerifier.inspectTargetTurnPolicy(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -389,7 +389,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     const grouped_refresh_entries = [_]Planning.Stored.Refresh.Entry{};
     var grouped_refresh_targets: [1]Planning.Target.Refresh.Entry = undefined;
     const grouped_refresh =
-        try proof.OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+        try proof.OpenTimestampsVerifier.planTargetRefresh(
             verification_store.asStore(),
             .{
                 .targets = grouped_targets[0..],
@@ -438,7 +438,7 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var readiness_entries: [1]Planning.Target.Readiness.Entry = undefined;
     var readiness_groups: [4]Planning.Target.Readiness.Group = undefined;
     const readiness =
-        try proof.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        try proof.OpenTimestampsVerifier.inspectTargetReadiness(
             verification_store.asStore(),
             archive,
             .{

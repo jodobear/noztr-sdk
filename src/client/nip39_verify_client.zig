@@ -110,7 +110,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Discovery.Request,
     ) Nip39VerifyClientError![]const Planning.Target.Discovery.Group {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.discoverStoredProfileEntriesForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.discoverTargets(store, request);
     }
 
     pub fn discoverTargetsWithFreshness(
@@ -119,7 +119,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Fresh.Request,
     ) Nip39VerifyClientError![]const Planning.Target.Fresh.Group {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.discoverStoredProfileEntriesWithFreshnessForTargets(
+        return workflows.identity.verify.IdentityVerifier.discoverTargetsWithFreshness(
             store,
             request,
         );
@@ -131,7 +131,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Latest.Request,
     ) Nip39VerifyClientError!Planning.Target.Latest.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectLatestStoredProfileFreshnessForTargets(
+        return workflows.identity.verify.IdentityVerifier.inspectTargetLatest(
             store,
             request,
         );
@@ -152,7 +152,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Preferred.EntriesRequest,
     ) Nip39VerifyClientError![]const Planning.Target.Preferred.Entry {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.getPreferredStoredProfilesForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.getPreferredForTargets(store, request);
     }
 
     pub fn getPreferredTarget(
@@ -161,7 +161,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Preferred.Request,
     ) Nip39VerifyClientError!?Planning.Target.Preferred.Value {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.getPreferredStoredProfileForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.getPreferredTarget(store, request);
     }
 
     pub fn planTargetRefresh(
@@ -170,7 +170,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Refresh.Request,
     ) Nip39VerifyClientError!Planning.Target.Refresh.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.planStoredProfileRefreshForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.planTargetRefresh(store, request);
     }
 
     pub fn inspectTargetRuntime(
@@ -179,7 +179,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Runtime.Request,
     ) Nip39VerifyClientError!Planning.Target.Runtime.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRuntimeForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectTargetRuntime(store, request);
     }
 
     pub fn inspectTargetPolicy(
@@ -188,7 +188,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Policy.Request,
     ) Nip39VerifyClientError!Planning.Target.Policy.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectStoredProfilePolicyForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectTargetPolicy(store, request);
     }
 
     pub fn inspectTargetCadence(
@@ -197,7 +197,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Cadence.Request,
     ) Nip39VerifyClientError!Planning.Target.Cadence.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRefreshCadenceForTargets(
+        return workflows.identity.verify.IdentityVerifier.inspectTargetCadence(
             store,
             request,
         );
@@ -209,7 +209,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Batch.Request,
     ) Nip39VerifyClientError!Planning.Target.Batch.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileRefreshBatchForTargets(
+        return workflows.identity.verify.IdentityVerifier.inspectTargetBatch(
             store,
             request,
         );
@@ -221,7 +221,7 @@ pub const Nip39VerifyClient = struct {
         request: Planning.Target.Turn.Request,
     ) Nip39VerifyClientError!Planning.Target.Turn.Plan {
         _ = self;
-        return workflows.identity.verify.IdentityVerifier.inspectStoredProfileTurnPolicyForTargets(store, request);
+        return workflows.identity.verify.IdentityVerifier.inspectTargetTurnPolicy(store, request);
     }
 
     pub fn inspectWatchedPolicy(

@@ -1683,7 +1683,7 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn discoverLatestStoredVerificationFreshnessForTargets(
+    pub fn discoverLatestForTargets(
         verification_store: VerificationStore,
         request: TargetLatestRequest,
     ) StoredDiscoveryError![]const TargetLatestEntry {
@@ -1710,7 +1710,7 @@ pub const OpenTimestampsVerifier = struct {
         verification_store: VerificationStore,
         request: TargetPreferredRequest,
     ) StoredDiscoveryError!?TargetPreferredValue {
-        const entries = try discoverStoredVerificationEntriesWithFreshness(
+        const entries = try discoverStoredEntriesWithFreshness(
             verification_store,
             .{
                 .target_event_id = request.target_event_id,
@@ -1751,7 +1751,7 @@ pub const OpenTimestampsVerifier = struct {
         return null;
     }
 
-    pub fn getPreferredStoredVerificationForTargets(
+    pub fn getPreferredForTargets(
         verification_store: VerificationStore,
         request: TargetPreferredEntriesRequest,
     ) StoredDiscoveryError!?TargetPreferredEntry {
@@ -1803,7 +1803,7 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn discoverStoredVerificationEntriesWithFreshness(
+    pub fn discoverStoredEntriesWithFreshness(
         verification_store: VerificationStore,
         request: StoredFreshRequest,
     ) StoredDiscoveryError![]const StoredFreshEntry {
@@ -1835,7 +1835,7 @@ pub const OpenTimestampsVerifier = struct {
         verification_store: VerificationStore,
         request: StoredRuntimeRequest,
     ) StoredDiscoveryError!StoredRuntimePlan {
-        const entries = try discoverStoredVerificationEntriesWithFreshness(
+        const entries = try discoverStoredEntriesWithFreshness(
             verification_store,
             .{
                 .target_event_id = request.target_event_id,
@@ -1910,7 +1910,7 @@ pub const OpenTimestampsVerifier = struct {
         verification_store: VerificationStore,
         request: StoredRefreshRequest,
     ) StoredDiscoveryError!StoredRefreshPlan {
-        const freshness_entries = try discoverStoredVerificationEntriesWithFreshness(
+        const freshness_entries = try discoverStoredEntriesWithFreshness(
             verification_store,
             .{
                 .target_event_id = request.target_event_id,
@@ -1943,11 +1943,11 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn planStoredVerificationRefreshForTargets(
+    pub fn planTargetRefresh(
         verification_store: VerificationStore,
         request: TargetRefreshRequest,
     ) StoredDiscoveryError!TargetRefreshPlan {
-        const freshness_entries = try discoverLatestStoredVerificationFreshnessForTargets(
+        const freshness_entries = try discoverLatestForTargets(
             verification_store,
             .{
                 .targets = request.targets,
@@ -1984,14 +1984,14 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn inspectStoredVerificationPolicyForTargets(
+    pub fn inspectTargetPolicy(
         verification_store: VerificationStore,
         request: TargetPolicyRequest,
     ) StoredDiscoveryError!TargetPolicyPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
-        const latest_entries = try discoverLatestStoredVerificationFreshnessForTargets(
+        const latest_entries = try discoverLatestForTargets(
             verification_store,
             .{
                 .targets = request.targets,
@@ -2120,14 +2120,14 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn inspectStoredVerificationRefreshCadenceForTargets(
+    pub fn inspectTargetCadence(
         verification_store: VerificationStore,
         request: TargetRefreshCadenceRequest,
     ) StoredDiscoveryError!TargetRefreshCadencePlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 5) return error.BufferTooSmall;
 
-        const latest_entries = try discoverLatestStoredVerificationFreshnessForTargets(
+        const latest_entries = try discoverLatestForTargets(
             verification_store,
             .{
                 .targets = request.targets,
@@ -2275,11 +2275,11 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn inspectStoredVerificationRefreshBatchForTargets(
+    pub fn inspectTargetBatch(
         verification_store: VerificationStore,
         request: TargetRefreshBatchRequest,
     ) StoredDiscoveryError!TargetRefreshBatchPlan {
-        const cadence = try inspectStoredVerificationRefreshCadenceForTargets(
+        const cadence = try inspectTargetCadence(
             verification_store,
             .{
                 .targets = request.targets,
@@ -2310,14 +2310,14 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn inspectStoredVerificationTurnPolicyForTargets(
+    pub fn inspectTargetTurnPolicy(
         verification_store: VerificationStore,
         request: TargetTurnPolicyRequest,
     ) StoredDiscoveryError!TargetTurnPolicyPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
-        const latest_entries = try discoverLatestStoredVerificationFreshnessForTargets(
+        const latest_entries = try discoverLatestForTargets(
             verification_store,
             .{
                 .targets = request.targets,
@@ -2329,7 +2329,7 @@ pub const OpenTimestampsVerifier = struct {
                 },
             },
         );
-        const batch = try inspectStoredVerificationRefreshBatchForTargets(
+        const batch = try inspectTargetBatch(
             verification_store,
             .{
                 .targets = request.targets,
@@ -2461,14 +2461,14 @@ pub const OpenTimestampsVerifier = struct {
         };
     }
 
-    pub fn inspectStoredVerificationRefreshReadinessForTargets(
+    pub fn inspectTargetReadiness(
         verification_store: VerificationStore,
         event_archive: store_archive.EventArchive,
         request: TargetReadinessRequest,
     ) TargetReadinessError!TargetReadinessPlan {
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
-        const refresh = try planStoredVerificationRefreshForTargets(
+        const refresh = try planTargetRefresh(
             verification_store,
             .{
                 .targets = request.targets,
@@ -2494,7 +2494,7 @@ pub const OpenTimestampsVerifier = struct {
                 std.fmt.bytesToHex(entry.latest.latest.match.attestation_event_id, .lower);
             const target_record = try event_archive.getEventById(target_event_id_hex[0..]);
             const attestation_record = try event_archive.getEventById(attestation_event_id_hex[0..]);
-            const action = classifyStoredVerificationTargetRefreshReadiness(
+            const action = classifyTargetReadiness(
                 target_record != null,
                 attestation_record != null,
             );
@@ -2527,7 +2527,7 @@ pub const OpenTimestampsVerifier = struct {
                 std.fmt.bytesToHex(entry.latest.latest.match.attestation_event_id, .lower);
             const target_record = try event_archive.getEventById(target_event_id_hex[0..]);
             const attestation_record = try event_archive.getEventById(attestation_event_id_hex[0..]);
-            const action = classifyStoredVerificationTargetRefreshReadiness(
+            const action = classifyTargetReadiness(
                 target_record != null,
                 attestation_record != null,
             );
@@ -2612,7 +2612,7 @@ fn containsStoredVerificationTarget(
     return false;
 }
 
-fn classifyStoredVerificationTargetRefreshReadiness(
+fn classifyTargetReadiness(
     has_target_event: bool,
     has_attestation_event: bool,
 ) TargetReadinessAction {
@@ -3482,7 +3482,7 @@ test "opentimestamps verifier classifies remembered discovery entries by freshne
 
     var discovery_matches: [2]StoredMatch = undefined;
     var freshness_entries: [2]StoredFreshEntry = undefined;
-    const entries = try OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
+    const entries = try OpenTimestampsVerifier.discoverStoredEntriesWithFreshness(
         verification_store.asStore(),
         .{
             .target_event_id = &target_event.id,
@@ -3518,7 +3518,7 @@ test "opentimestamps verifier returns empty remembered freshness discovery for m
     var discovery_matches: [1]StoredMatch = undefined;
     var freshness_entries: [1]StoredFreshEntry = undefined;
 
-    const entries = try OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
+    const entries = try OpenTimestampsVerifier.discoverStoredEntriesWithFreshness(
         verification_store.asStore(),
         .{
             .target_event_id = &target_event.id,
@@ -3982,7 +3982,7 @@ test "opentimestamps verifier returns typed error for inconsistent remembered ve
     var entries: [1]StoredFreshEntry = undefined;
     try std.testing.expectError(
         error.InconsistentStoreData,
-        OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
+        OpenTimestampsVerifier.discoverStoredEntriesWithFreshness(
             store.asStore(),
             .{
                 .target_event_id = &target_event.id,
@@ -4231,7 +4231,7 @@ test "opentimestamps verifier discovers latest remembered freshness for grouped 
     };
     var matches_storage: [1]StoredMatch = undefined;
     var entries_storage: [3]TargetLatestEntry = undefined;
-    const entries = try OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
+    const entries = try OpenTimestampsVerifier.discoverLatestForTargets(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4329,7 +4329,7 @@ test "opentimestamps verifier prefers the freshest grouped remembered proof targ
     var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [1]StoredFreshEntry = undefined;
     var entries_storage: [3]TargetPreferredEntry = undefined;
-    const preferred = (try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+    const preferred = (try OpenTimestampsVerifier.getPreferredForTargets(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4429,7 +4429,7 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
     var freshness_entries: [1]StoredFreshEntry = undefined;
     var entries_storage: [2]TargetPreferredEntry = undefined;
 
-    try std.testing.expect((try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+    try std.testing.expect((try OpenTimestampsVerifier.getPreferredForTargets(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4444,7 +4444,7 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
         },
     )) == null);
 
-    const preferred = (try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
+    const preferred = (try OpenTimestampsVerifier.getPreferredForTargets(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4501,7 +4501,7 @@ test "opentimestamps verifier groups remembered-proof target policy entries by a
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var entries_storage: [3]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4549,7 +4549,7 @@ test "opentimestamps verifier target policy inspection stays bounded by caller-o
     var groups_storage: [3]TargetPolicyGroup = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
-        OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+        OpenTimestampsVerifier.inspectTargetPolicy(
             verification_store.asStore(),
             .{
                 .targets = targets[0..],
@@ -4586,7 +4586,7 @@ test "opentimestamps verifier target policy exposes usable preferred targets in 
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4619,7 +4619,7 @@ test "opentimestamps verifier target policy exposes verify-now targets in stable
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4659,7 +4659,7 @@ test "opentimestamps verifier target policy exposes refresh-needed targets under
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4726,7 +4726,7 @@ test "opentimestamps verifier grouped refresh cadence classifies missing stale s
     var latest_entries_storage: [4]TargetLatestEntry = undefined;
     var cadence_entries_storage: [4]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetCadence(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4782,7 +4782,7 @@ test "opentimestamps verifier grouped refresh cadence stays bounded by caller-ow
     var groups_storage: [4]TargetRefreshCadenceGroup = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
-        OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+        OpenTimestampsVerifier.inspectTargetCadence(
             verification_store.asStore(),
             .{
                 .targets = targets[0..],
@@ -4835,7 +4835,7 @@ test "opentimestamps verifier grouped refresh cadence next-due selector prefers 
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetCadence(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4860,7 +4860,7 @@ test "opentimestamps verifier grouped refresh cadence next-due selector prefers 
     var due_latest_entries: [2]TargetLatestEntry = undefined;
     var due_cadence_entries: [2]TargetRefreshCadenceEntry = undefined;
     var due_groups: [5]TargetRefreshCadenceGroup = undefined;
-    const due_plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+    const due_plan = try OpenTimestampsVerifier.inspectTargetCadence(
         verification_store.asStore(),
         .{
             .targets = due_targets[0..],
@@ -4902,7 +4902,7 @@ test "opentimestamps verifier grouped refresh cadence exposes typed next-due ste
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetCadence(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -4957,7 +4957,7 @@ test "opentimestamps verifier grouped refresh cadence exposes usable-while-refre
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var cadence_entries_storage: [2]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshCadenceForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetCadence(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5031,7 +5031,7 @@ test "opentimestamps verifier selects a bounded refresh batch from due remembere
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const batch = try OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+    const batch = try OpenTimestampsVerifier.inspectTargetBatch(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5080,7 +5080,7 @@ test "opentimestamps verifier refresh batch selection allows zero selected entri
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const batch = try OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+    const batch = try OpenTimestampsVerifier.inspectTargetBatch(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5137,7 +5137,7 @@ test "opentimestamps verifier refresh batch exposes next selected entry" {
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const batch = try OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+    const batch = try OpenTimestampsVerifier.inspectTargetBatch(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5181,7 +5181,7 @@ test "opentimestamps verifier refresh batch exposes typed next selected step" {
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const batch = try OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+    const batch = try OpenTimestampsVerifier.inspectTargetBatch(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5237,7 +5237,7 @@ test "opentimestamps verifier refresh batch exposes selected and deferred views"
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
-    const batch = try OpenTimestampsVerifier.inspectStoredVerificationRefreshBatchForTargets(
+    const batch = try OpenTimestampsVerifier.inspectTargetBatch(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5299,7 +5299,7 @@ test "opentimestamps verifier turn policy classifies verify refresh cached and d
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnPolicyEntry = undefined;
     var groups_storage: [4]TargetTurnPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5354,7 +5354,7 @@ test "opentimestamps verifier turn policy tracks selected refresh entries when b
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnPolicyEntry = undefined;
     var groups_storage: [4]TargetTurnPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5407,7 +5407,7 @@ test "opentimestamps verifier turn policy exposes typed next work step" {
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
     var entries_storage: [1]TargetTurnPolicyEntry = undefined;
     var groups_storage: [4]TargetTurnPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5457,7 +5457,7 @@ test "opentimestamps verifier turn policy exposes work idle cached and deferred 
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
     var entries_storage: [3]TargetTurnPolicyEntry = undefined;
     var groups_storage: [4]TargetTurnPolicyGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationTurnPolicyForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetTurnPolicy(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5565,7 +5565,7 @@ test "opentimestamps verifier target-set refresh plan returns stale remembered p
     var freshness_entries: [3]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var refresh_entries: [2]TargetRefreshEntry = undefined;
-    const plan = try OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+    const plan = try OpenTimestampsVerifier.planTargetRefresh(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5641,7 +5641,7 @@ test "opentimestamps verifier target-set refresh plan returns empty for fresh or
     var freshness_entries: [2]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var refresh_entries: [1]TargetRefreshEntry = undefined;
-    const plan = try OpenTimestampsVerifier.planStoredVerificationRefreshForTargets(
+    const plan = try OpenTimestampsVerifier.planTargetRefresh(
         verification_store.asStore(),
         .{
             .targets = targets[0..],
@@ -5762,7 +5762,7 @@ test "opentimestamps verifier refresh readiness groups stale targets by archive 
     var attestation_records: [2]client_store.ClientEventRecord = undefined;
     var readiness_entries: [4]TargetReadinessEntry = undefined;
     var readiness_groups: [4]TargetReadinessGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetReadiness(
         verification_store.asStore(),
         archive,
         .{
@@ -5878,7 +5878,7 @@ test "opentimestamps verifier refresh readiness stays bounded by caller-owned ar
 
     try std.testing.expectError(
         error.BufferTooSmall,
-        OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+        OpenTimestampsVerifier.inspectTargetReadiness(
             verification_store.asStore(),
             archive,
             .{
@@ -5961,7 +5961,7 @@ test "opentimestamps verifier refresh readiness exposes blocked stale targets ex
     var attestation_records: [1]client_store.ClientEventRecord = undefined;
     var readiness_entries: [2]TargetReadinessEntry = undefined;
     var readiness_groups: [4]TargetReadinessGroup = undefined;
-    const plan = try OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
+    const plan = try OpenTimestampsVerifier.inspectTargetReadiness(
         verification_store.asStore(),
         archive,
         .{
