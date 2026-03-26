@@ -2174,16 +2174,26 @@ pub const Planning = struct {
         pub const Freshness = IdentityStoredProfileFreshness;
         pub const FallbackPolicy = IdentityStoredProfileFallbackPolicy;
 
+        pub const Discovery = struct {
+            pub const Entry = IdentityStoredProfileDiscoveryEntry;
+            pub const Storage = IdentityStoredProfileDiscoveryStorage;
+            pub const Request = IdentityStoredProfileDiscoveryRequest;
+        };
+
+        pub const Latest = struct {
+            pub const Request = IdentityLatestStoredProfileFreshnessRequest;
+            pub const Value = IdentityLatestStoredProfileFreshness;
+        };
+
+        pub const Preferred = struct {
+            pub const Request = IdentityPreferredStoredProfileRequest;
+            pub const Value = IdentityPreferredStoredProfile;
+        };
+
         pub const Fresh = struct {
             pub const Entry = IdentityStoredProfileDiscoveryFreshnessEntry;
             pub const Storage = IdentityStoredProfileDiscoveryFreshnessStorage;
             pub const Request = IdentityStoredProfileDiscoveryFreshnessRequest;
-        };
-
-        pub const Discovery = struct {
-            pub const Group = IdentityStoredProfileTargetDiscoveryGroup;
-            pub const Storage = IdentityStoredProfileDiscoveryStorage;
-            pub const Request = IdentityStoredProfileDiscoveryRequest;
         };
 
         pub const Runtime = struct {
@@ -2223,6 +2233,7 @@ pub const Planning = struct {
             pub const Storage = IdentityStoredProfileTargetLatestFreshnessStorage;
             pub const Request = IdentityStoredProfileTargetLatestFreshnessRequest;
             pub const Plan = IdentityStoredProfileTargetLatestFreshnessPlan;
+            pub const Step = IdentityStoredProfileTargetLatestFreshnessStep;
         };
 
         pub const Preferred = struct {

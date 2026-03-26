@@ -167,17 +167,24 @@ In this route the `Planning.Stored` and `Planning.Target` families are:
 ```zig
 pub const Planning = struct {
     pub const Stored = struct {
-        pub const Match = ...;
         pub const Entry = ...;
         pub const Freshness = ...;
         pub const FallbackPolicy = ...;
-        pub const Fresh = struct {
+        pub const Discovery = struct {
             pub const Entry = ...;
             pub const Storage = ...;
             pub const Request = ...;
         };
-        pub const Discovery = struct {
-            pub const Group = ...;
+        pub const Latest = struct {
+            pub const Request = ...;
+            pub const Value = ...;
+        };
+        pub const Preferred = struct {
+            pub const Request = ...;
+            pub const Value = ...;
+        };
+        pub const Fresh = struct {
+            pub const Entry = ...;
             pub const Storage = ...;
             pub const Request = ...;
         };
@@ -194,6 +201,7 @@ pub const Planning = struct {
             pub const Storage = ...;
             pub const Request = ...;
             pub const Plan = ...;
+            pub const Step = ...;
         };
         pub const Preferred = struct { ... };
         pub const Refresh = struct { ... };
@@ -209,10 +217,18 @@ pub const Planning = struct {
 Examples:
 
 - `Planning.TargetDiscoveryRequest` -> `Planning.Target.Discovery.Request`
+- `Planning.StoredProfileDiscoveryEntry` -> `Planning.Stored.Discovery.Entry`
+- `Planning.StoredProfileDiscoveryStorage` -> `Planning.Stored.Discovery.Storage`
+- `Planning.StoredProfileDiscoveryRequest` -> `Planning.Stored.Discovery.Request`
+- `Planning.LatestFreshnessRequest` -> `Planning.Stored.Latest.Request`
+- `Planning.LatestFreshness` -> `Planning.Stored.Latest.Value`
+- `Planning.PreferredStoredProfileRequest` -> `Planning.Stored.Preferred.Request`
+- `Planning.PreferredStoredProfileValue` -> `Planning.Stored.Preferred.Value`
 - `Planning.StoredProfileDiscoveryFreshnessEntry` -> `Planning.Stored.Fresh.Entry`
 - `Planning.StoredProfileDiscoveryFreshnessStorage` -> `Planning.Stored.Fresh.Storage`
 - `Planning.StoredProfileDiscoveryFreshnessRequest` -> `Planning.Stored.Fresh.Request`
 - `Planning.TargetLatestRequest` -> `Planning.Target.Latest.Request`
+- `Planning.TargetLatestStep` -> `Planning.Target.Latest.Step`
 - `Planning.PreferredTargetSelectionRequest` -> `Planning.Target.Preferred.EntriesRequest`
 - `Planning.PreferredTargetValue` -> `Planning.Target.Preferred.Value`
 - `Planning.RememberedCadencePlan` -> `Planning.Remembered.Cadence.Plan`
