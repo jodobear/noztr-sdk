@@ -17,7 +17,7 @@ pub const Nip03VerifyClientError =
     workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationError ||
     workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryError;
 pub const Nip03StoredVerificationRefreshReadinessError =
-    workflows.proof.nip03.OpenTimestampsStoredVerificationTargetRefreshReadinessError;
+    workflows.proof.nip03.Planning.Target.Readiness.Error;
 
 pub const Nip03VerifyClientConfig = struct {};
 

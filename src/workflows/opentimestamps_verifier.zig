@@ -141,17 +141,17 @@ pub const OpenTimestampsStoredVerificationMatch = struct {
     created_at: u64,
 };
 
-pub const OpenTimestampsVerificationDiscoveryRequest = struct {
+const OpenTimestampsVerificationDiscoveryRequest = struct {
     target_event_id: *const [32]u8,
     results: []OpenTimestampsStoredVerificationMatch,
 };
 
-pub const OpenTimestampsStoredVerificationDiscoveryEntry = struct {
+const OpenTimestampsStoredVerificationDiscoveryEntry = struct {
     match: OpenTimestampsStoredVerificationMatch,
     verification: OpenTimestampsStoredVerificationRecord,
 };
 
-pub const OpenTimestampsStoredVerificationDiscoveryStorage = struct {
+const OpenTimestampsStoredVerificationDiscoveryStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     entries: []OpenTimestampsStoredVerificationDiscoveryEntry,
 
@@ -166,45 +166,45 @@ pub const OpenTimestampsStoredVerificationDiscoveryStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationDiscoveryRequest = struct {
+const OpenTimestampsStoredVerificationDiscoveryRequest = struct {
     target_event_id: *const [32]u8,
     storage: OpenTimestampsStoredVerificationDiscoveryStorage,
 };
 
-pub const OpenTimestampsLatestStoredVerificationRequest = struct {
+const OpenTimestampsLatestStoredVerificationRequest = struct {
     target_event_id: *const [32]u8,
     matches: []OpenTimestampsStoredVerificationMatch,
 };
 
-pub const OpenTimestampsLatestStoredVerificationFreshnessRequest = struct {
+const OpenTimestampsLatestStoredVerificationFreshnessRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
     matches: []OpenTimestampsStoredVerificationMatch,
 };
 
-pub const OpenTimestampsStoredVerificationTarget = struct {
+const OpenTimestampsStoredVerificationTarget = struct {
     target_event_id: [32]u8,
 };
 
-pub const OpenTimestampsStoredVerificationFreshness = enum {
+const OpenTimestampsStoredVerificationFreshness = enum {
     fresh,
     stale,
 };
 
-pub const OpenTimestampsLatestStoredVerificationFreshness = struct {
+const OpenTimestampsLatestStoredVerificationFreshness = struct {
     latest: OpenTimestampsStoredVerificationDiscoveryEntry,
     freshness: OpenTimestampsStoredVerificationFreshness,
     age_seconds: u64,
 };
 
-pub const OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = struct {
+const OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = struct {
     entry: OpenTimestampsStoredVerificationDiscoveryEntry,
     freshness: OpenTimestampsStoredVerificationFreshness,
     age_seconds: u64,
 };
 
-pub const OpenTimestampsStoredVerificationDiscoveryFreshnessStorage = struct {
+const OpenTimestampsStoredVerificationDiscoveryFreshnessStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     entries: []OpenTimestampsStoredVerificationDiscoveryFreshnessEntry,
 
@@ -219,19 +219,19 @@ pub const OpenTimestampsStoredVerificationDiscoveryFreshnessStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationDiscoveryFreshnessRequest = struct {
+const OpenTimestampsStoredVerificationDiscoveryFreshnessRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
     storage: OpenTimestampsStoredVerificationDiscoveryFreshnessStorage,
 };
 
-pub const OpenTimestampsLatestStoredVerificationTargetEntry = struct {
+const OpenTimestampsLatestStoredVerificationTargetEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     latest: ?OpenTimestampsLatestStoredVerificationFreshness = null,
 };
 
-pub const OpenTimestampsLatestStoredVerificationTargetStorage = struct {
+const OpenTimestampsLatestStoredVerificationTargetStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
 
@@ -246,19 +246,19 @@ pub const OpenTimestampsLatestStoredVerificationTargetStorage = struct {
     }
 };
 
-pub const OpenTimestampsLatestStoredVerificationTargetRequest = struct {
+const OpenTimestampsLatestStoredVerificationTargetRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
     storage: OpenTimestampsLatestStoredVerificationTargetStorage,
 };
 
-pub const OpenTimestampsStoredVerificationFallbackPolicy = enum {
+const OpenTimestampsStoredVerificationFallbackPolicy = enum {
     require_fresh,
     allow_stale_latest,
 };
 
-pub const OpenTimestampsPreferredStoredVerificationRequest = struct {
+const OpenTimestampsPreferredStoredVerificationRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -266,18 +266,18 @@ pub const OpenTimestampsPreferredStoredVerificationRequest = struct {
     fallback_policy: OpenTimestampsStoredVerificationFallbackPolicy = .allow_stale_latest,
 };
 
-pub const OpenTimestampsPreferredStoredVerification = struct {
+const OpenTimestampsPreferredStoredVerification = struct {
     entry: OpenTimestampsStoredVerificationDiscoveryEntry,
     freshness: OpenTimestampsStoredVerificationFreshness,
     age_seconds: u64,
 };
 
-pub const OpenTimestampsPreferredStoredVerificationTargetEntry = struct {
+const OpenTimestampsPreferredStoredVerificationTargetEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     preferred: ?OpenTimestampsPreferredStoredVerification = null,
 };
 
-pub const OpenTimestampsPreferredStoredVerificationTargetStorage = struct {
+const OpenTimestampsPreferredStoredVerificationTargetStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     freshness_entries: []OpenTimestampsStoredVerificationDiscoveryFreshnessEntry,
     entries: []OpenTimestampsPreferredStoredVerificationTargetEntry,
@@ -295,7 +295,7 @@ pub const OpenTimestampsPreferredStoredVerificationTargetStorage = struct {
     }
 };
 
-pub const OpenTimestampsPreferredStoredVerificationTargetRequest = struct {
+const OpenTimestampsPreferredStoredVerificationTargetRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -303,14 +303,14 @@ pub const OpenTimestampsPreferredStoredVerificationTargetRequest = struct {
     storage: OpenTimestampsPreferredStoredVerificationTargetStorage,
 };
 
-pub const OpenTimestampsStoredVerificationRuntimeAction = enum {
+const OpenTimestampsStoredVerificationRuntimeAction = enum {
     verify_now,
     refresh_existing,
     use_preferred,
     use_stale_and_refresh,
 };
 
-pub const OpenTimestampsStoredVerificationRuntimeStorage = struct {
+const OpenTimestampsStoredVerificationRuntimeStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     entries: []OpenTimestampsStoredVerificationDiscoveryFreshnessEntry,
 
@@ -325,7 +325,7 @@ pub const OpenTimestampsStoredVerificationRuntimeStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationRuntimeRequest = struct {
+const OpenTimestampsStoredVerificationRuntimeRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -333,7 +333,7 @@ pub const OpenTimestampsStoredVerificationRuntimeRequest = struct {
     storage: OpenTimestampsStoredVerificationRuntimeStorage,
 };
 
-pub const OpenTimestampsStoredVerificationRuntimePlan = struct {
+const OpenTimestampsStoredVerificationRuntimePlan = struct {
     action: OpenTimestampsStoredVerificationRuntimeAction,
     entries: []const OpenTimestampsStoredVerificationDiscoveryFreshnessEntry,
     preferred_index: ?u32 = null,
@@ -368,16 +368,16 @@ pub const OpenTimestampsStoredVerificationRuntimePlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationRuntimeStep = struct {
+const OpenTimestampsStoredVerificationRuntimeStep = struct {
     action: OpenTimestampsStoredVerificationRuntimeAction,
     entry: ?OpenTimestampsStoredVerificationDiscoveryFreshnessEntry = null,
 };
 
-pub const OpenTimestampsStoredVerificationRefreshEntry = struct {
+const OpenTimestampsStoredVerificationRefreshEntry = struct {
     entry: OpenTimestampsStoredVerificationDiscoveryFreshnessEntry,
 };
 
-pub const OpenTimestampsStoredVerificationRefreshStorage = struct {
+const OpenTimestampsStoredVerificationRefreshStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     freshness_entries: []OpenTimestampsStoredVerificationDiscoveryFreshnessEntry,
     entries: []OpenTimestampsStoredVerificationRefreshEntry,
@@ -395,14 +395,14 @@ pub const OpenTimestampsStoredVerificationRefreshStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationRefreshRequest = struct {
+const OpenTimestampsStoredVerificationRefreshRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
     storage: OpenTimestampsStoredVerificationRefreshStorage,
 };
 
-pub const OpenTimestampsStoredVerificationRefreshPlan = struct {
+const OpenTimestampsStoredVerificationRefreshPlan = struct {
     entries: []const OpenTimestampsStoredVerificationRefreshEntry,
 
     pub fn nextEntry(
@@ -426,16 +426,16 @@ pub const OpenTimestampsStoredVerificationRefreshPlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationRefreshStep = struct {
+const OpenTimestampsStoredVerificationRefreshStep = struct {
     entry: OpenTimestampsStoredVerificationRefreshEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshEntry = struct {
+const OpenTimestampsStoredVerificationTargetRefreshEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     latest: OpenTimestampsLatestStoredVerificationFreshness,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshStorage = struct {
+const OpenTimestampsStoredVerificationTargetRefreshStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     freshness_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
     refresh_entries: []OpenTimestampsStoredVerificationRefreshEntry,
@@ -456,14 +456,14 @@ pub const OpenTimestampsStoredVerificationTargetRefreshStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshRequest = struct {
+const OpenTimestampsStoredVerificationTargetRefreshRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
     storage: OpenTimestampsStoredVerificationTargetRefreshStorage,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshPlan = struct {
+const OpenTimestampsStoredVerificationTargetRefreshPlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetRefreshEntry,
 
     pub fn nextEntry(
@@ -481,21 +481,21 @@ pub const OpenTimestampsStoredVerificationTargetRefreshPlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshStep = struct {
+const OpenTimestampsStoredVerificationTargetRefreshStep = struct {
     entry: OpenTimestampsStoredVerificationTargetRefreshEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessError =
+const OpenTimestampsStoredVerificationTargetRefreshReadinessError =
     OpenTimestampsStoredVerificationDiscoveryError || store_archive.EventArchiveError;
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessAction = enum {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessAction = enum {
     ready_refresh,
     missing_target_event,
     missing_attestation_event,
     missing_events,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = struct {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     latest: OpenTimestampsLatestStoredVerificationFreshness,
     action: OpenTimestampsStoredVerificationTargetRefreshReadinessAction,
@@ -503,12 +503,12 @@ pub const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry = struct {
     attestation_record_index: ?u32 = null,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = struct {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessGroup = struct {
     action: OpenTimestampsStoredVerificationTargetRefreshReadinessAction,
     entries: []const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessStorage = struct {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     freshness_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
     refresh_entries: []OpenTimestampsStoredVerificationRefreshEntry,
@@ -541,14 +541,14 @@ pub const OpenTimestampsStoredVerificationTargetRefreshReadinessStorage = struct
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessRequest = struct {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
     storage: OpenTimestampsStoredVerificationTargetRefreshReadinessStorage,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan = struct {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
     groups: []const OpenTimestampsStoredVerificationTargetRefreshReadinessGroup,
     target_records: []const client_store.ClientEventRecord,
@@ -604,23 +604,23 @@ pub const OpenTimestampsStoredVerificationTargetRefreshReadinessPlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshReadinessStep = struct {
+const OpenTimestampsStoredVerificationTargetRefreshReadinessStep = struct {
     action: OpenTimestampsStoredVerificationTargetRefreshReadinessAction,
     entry: OpenTimestampsStoredVerificationTargetRefreshReadinessEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetPolicyEntry = struct {
+const OpenTimestampsStoredVerificationTargetPolicyEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     action: OpenTimestampsStoredVerificationRuntimeAction,
     latest: ?OpenTimestampsLatestStoredVerificationFreshness = null,
 };
 
-pub const OpenTimestampsStoredVerificationTargetPolicyGroup = struct {
+const OpenTimestampsStoredVerificationTargetPolicyGroup = struct {
     action: OpenTimestampsStoredVerificationRuntimeAction,
     entries: []const OpenTimestampsStoredVerificationTargetPolicyEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetPolicyStorage = struct {
+const OpenTimestampsStoredVerificationTargetPolicyStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
     entries: []OpenTimestampsStoredVerificationTargetPolicyEntry,
@@ -641,7 +641,7 @@ pub const OpenTimestampsStoredVerificationTargetPolicyStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetPolicyRequest = struct {
+const OpenTimestampsStoredVerificationTargetPolicyRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -649,7 +649,7 @@ pub const OpenTimestampsStoredVerificationTargetPolicyRequest = struct {
     storage: OpenTimestampsStoredVerificationTargetPolicyStorage,
 };
 
-pub const OpenTimestampsStoredVerificationTargetPolicyPlan = struct {
+const OpenTimestampsStoredVerificationTargetPolicyPlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetPolicyEntry,
     groups: []const OpenTimestampsStoredVerificationTargetPolicyGroup,
     verify_now_count: u32 = 0,
@@ -684,7 +684,7 @@ pub const OpenTimestampsStoredVerificationTargetPolicyPlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadenceAction = enum {
+const OpenTimestampsStoredVerificationTargetRefreshCadenceAction = enum {
     verify_now,
     refresh_now,
     usable_while_refreshing,
@@ -692,18 +692,18 @@ pub const OpenTimestampsStoredVerificationTargetRefreshCadenceAction = enum {
     stable,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = struct {
+const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction,
     latest: ?OpenTimestampsLatestStoredVerificationFreshness = null,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = struct {
+const OpenTimestampsStoredVerificationTargetRefreshCadenceGroup = struct {
     action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction,
     entries: []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadenceStorage = struct {
+const OpenTimestampsStoredVerificationTargetRefreshCadenceStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
     entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
@@ -724,7 +724,7 @@ pub const OpenTimestampsStoredVerificationTargetRefreshCadenceStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadenceRequest = struct {
+const OpenTimestampsStoredVerificationTargetRefreshCadenceRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -733,7 +733,7 @@ pub const OpenTimestampsStoredVerificationTargetRefreshCadenceRequest = struct {
     storage: OpenTimestampsStoredVerificationTargetRefreshCadenceStorage,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadencePlan = struct {
+const OpenTimestampsStoredVerificationTargetRefreshCadencePlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
     groups: []const OpenTimestampsStoredVerificationTargetRefreshCadenceGroup,
     verify_now_count: u32 = 0,
@@ -787,12 +787,12 @@ pub const OpenTimestampsStoredVerificationTargetRefreshCadencePlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshCadenceStep = struct {
+const OpenTimestampsStoredVerificationTargetRefreshCadenceStep = struct {
     action: OpenTimestampsStoredVerificationTargetRefreshCadenceAction,
     entry: OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshBatchStorage = struct {
+const OpenTimestampsStoredVerificationTargetRefreshBatchStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
     cadence_entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
@@ -813,7 +813,7 @@ pub const OpenTimestampsStoredVerificationTargetRefreshBatchStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshBatchRequest = struct {
+const OpenTimestampsStoredVerificationTargetRefreshBatchRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -823,7 +823,7 @@ pub const OpenTimestampsStoredVerificationTargetRefreshBatchRequest = struct {
     storage: OpenTimestampsStoredVerificationTargetRefreshBatchStorage,
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshBatchPlan = struct {
+const OpenTimestampsStoredVerificationTargetRefreshBatchPlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
     selected_count: u32 = 0,
     deferred_count: u32 = 0,
@@ -856,29 +856,29 @@ pub const OpenTimestampsStoredVerificationTargetRefreshBatchPlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetRefreshBatchStep = struct {
+const OpenTimestampsStoredVerificationTargetRefreshBatchStep = struct {
     entry: OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyAction = enum {
+const OpenTimestampsStoredVerificationTargetTurnPolicyAction = enum {
     verify_now,
     refresh_selected,
     use_cached,
     defer_refresh,
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyEntry = struct {
+const OpenTimestampsStoredVerificationTargetTurnPolicyEntry = struct {
     target: OpenTimestampsStoredVerificationTarget,
     action: OpenTimestampsStoredVerificationTargetTurnPolicyAction,
     latest: ?OpenTimestampsLatestStoredVerificationFreshness = null,
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyGroup = struct {
+const OpenTimestampsStoredVerificationTargetTurnPolicyGroup = struct {
     action: OpenTimestampsStoredVerificationTargetTurnPolicyAction,
     entries: []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyStorage = struct {
+const OpenTimestampsStoredVerificationTargetTurnPolicyStorage = struct {
     matches: []OpenTimestampsStoredVerificationMatch,
     latest_entries: []OpenTimestampsLatestStoredVerificationTargetEntry,
     cadence_entries: []OpenTimestampsStoredVerificationTargetRefreshCadenceEntry,
@@ -905,7 +905,7 @@ pub const OpenTimestampsStoredVerificationTargetTurnPolicyStorage = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyRequest = struct {
+const OpenTimestampsStoredVerificationTargetTurnPolicyRequest = struct {
     targets: []const OpenTimestampsStoredVerificationTarget,
     now_unix_seconds: u64,
     max_age_seconds: u64,
@@ -915,7 +915,7 @@ pub const OpenTimestampsStoredVerificationTargetTurnPolicyRequest = struct {
     storage: OpenTimestampsStoredVerificationTargetTurnPolicyStorage,
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyPlan = struct {
+const OpenTimestampsStoredVerificationTargetTurnPolicyPlan = struct {
     entries: []const OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
     groups: []const OpenTimestampsStoredVerificationTargetTurnPolicyGroup,
     verify_now_count: u32 = 0,
@@ -994,7 +994,7 @@ pub const OpenTimestampsStoredVerificationTargetTurnPolicyPlan = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationTargetTurnPolicyStep = struct {
+const OpenTimestampsStoredVerificationTargetTurnPolicyStep = struct {
     action: OpenTimestampsStoredVerificationTargetTurnPolicyAction,
     entry: OpenTimestampsStoredVerificationTargetTurnPolicyEntry,
 };
@@ -1317,6 +1317,7 @@ pub const Planning = struct {
         };
 
         pub const Readiness = struct {
+            pub const Error = OpenTimestampsStoredVerificationTargetRefreshReadinessError;
             pub const Action = OpenTimestampsStoredVerificationTargetRefreshReadinessAction;
             pub const Entry = OpenTimestampsStoredVerificationTargetRefreshReadinessEntry;
             pub const Group = OpenTimestampsStoredVerificationTargetRefreshReadinessGroup;

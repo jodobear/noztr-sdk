@@ -58,6 +58,9 @@ const Nip05Planning = nip05.Planning;
 The workflow/facade route stayed `noztr_sdk.workflows|client.proof.nip03.Planning`; the
 `Planning` members were regrouped to reduce top-level clutter:
 
+The old flat workflow-floor planning aliases are no longer part of the public surface. Use the
+grouped `Planning.Stored.*` and `Planning.Target.*` routes directly.
+
 ```zig
 pub const Planning = struct {
     pub const Stored = struct {
@@ -145,6 +148,10 @@ Specific flattening moves:
 - `Planning.TargetTurnPolicyStep` -> `Planning.Target.Turn.Step`
 - `Planning.Stored` remains as the role-focused bucket above.
 - `Planning.Target` now resolves target-domain planning families only, and there is no legacy top-level target planning namespace.
+- flat workflow-floor proof planning aliases like `OpenTimestampsStoredVerificationRuntimePlan`,
+  `OpenTimestampsStoredVerificationTargetRefreshRequest`, and
+  `OpenTimestampsStoredVerificationTargetTurnPolicyPlan` are removed in favor of the grouped
+  `Planning.*` route
 
 ## `NIP-39` Planning Shape
 
