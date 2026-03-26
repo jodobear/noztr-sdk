@@ -285,8 +285,8 @@ move to the shorter route-local names instead:
 - `workflows.proof.nip03.StoredDiscoveryError`
 - `workflows.proof.nip03.RemoteVerification`
 - `workflows.proof.nip03.RemoteVerificationOutcome`
-- `workflows.proof.nip03.RememberedRemoteVerification`
-- `workflows.proof.nip03.RememberedRemoteVerificationOutcome`
+- `workflows.proof.nip03.RememberedVerification`
+- `workflows.proof.nip03.RememberedVerificationOutcome`
 
 The same route-local cleanup now also applies to the proof store substrate:
 

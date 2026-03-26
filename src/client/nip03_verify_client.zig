@@ -14,9 +14,9 @@ const ots_header_magic = [_]u8{
 const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 pub const Nip03VerifyClientError =
-    workflows.proof.nip03.RememberedRemoteVerificationError ||
+    workflows.proof.nip03.RememberedVerificationError ||
     workflows.proof.nip03.StoredDiscoveryError;
-pub const Nip03StoredVerificationRefreshReadinessError =
+pub const StoredRefreshReadinessError =
     workflows.proof.nip03.Planning.Target.Readiness.Error;
 
 pub const Nip03VerifyClientConfig = struct {};
@@ -35,7 +35,7 @@ pub const Nip03VerifyClientStorage = struct {
 
 pub const Nip03VerifyJob = workflows.proof.nip03.OpenTimestampsRemoteProofRequest;
 pub const Nip03VerifyCachedResult = workflows.proof.nip03.RemoteVerificationOutcome;
-pub const Nip03VerifyJobResult = workflows.proof.nip03.RememberedRemoteVerificationOutcome;
+pub const Nip03VerifyJobResult = workflows.proof.nip03.RememberedVerificationOutcome;
 
 pub const Planning = workflows.proof.nip03.Planning;
 
@@ -187,7 +187,7 @@ pub const Nip03VerifyClient = struct {
         verification_store: workflows.proof.nip03.VerificationStore,
         event_archive: store.EventArchive,
         request: Planning.Target.Readiness.Request,
-    ) Nip03StoredVerificationRefreshReadinessError!Planning.Target.Readiness.Plan {
+    ) StoredRefreshReadinessError!Planning.Target.Readiness.Plan {
         _ = self;
         return workflows.proof.nip03.OpenTimestampsVerifier.inspectStoredVerificationRefreshReadinessForTargets(
             verification_store,

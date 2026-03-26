@@ -1236,12 +1236,12 @@ pub const RemoteVerificationOutcome = union(enum) {
     fetch_failed: OpenTimestampsFetchFailure,
 };
 
-pub const RememberedRemoteVerification = struct {
+pub const RememberedVerification = struct {
     verification: RemoteVerification,
     store_outcome: VerificationStorePutOutcome,
 };
 
-pub const RememberedRemoteVerificationError =
+pub const RememberedVerificationError =
     OpenTimestampsVerifierError ||
     ProofStoreError ||
     VerificationStoreError;
@@ -1249,8 +1249,8 @@ pub const RememberedRemoteVerificationError =
 pub const StoredDiscoveryError =
     VerificationStoreError || error{BufferTooSmall};
 
-pub const RememberedRemoteVerificationOutcome = union(enum) {
-    verified: RememberedRemoteVerification,
+pub const RememberedVerificationOutcome = union(enum) {
+    verified: RememberedVerification,
     target_mismatch: RemoteVerification,
     invalid_attestation: RemoteInvalidAttestation,
     invalid_local_proof: RemoteInvalidProof,
@@ -1576,7 +1576,7 @@ pub const OpenTimestampsVerifier = struct {
         proof_store: ProofStore,
         verification_store: VerificationStore,
         request: *const OpenTimestampsRemoteProofRequest,
-    ) RememberedRemoteVerificationError!RememberedRemoteVerificationOutcome {
+    ) RememberedVerificationError!RememberedVerificationOutcome {
         const outcome = try verifyRemoteCached(http_client, proof_store, request);
         return switch (outcome) {
             .verified => |verification| .{
