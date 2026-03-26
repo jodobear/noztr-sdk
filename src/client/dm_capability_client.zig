@@ -62,12 +62,12 @@ pub const MailboxRelayListQuery = struct {
     limit: usize = 0,
 };
 
-pub const MailboxRelayListSubscriptionRequest = struct {
+pub const MailboxRelaySubscriptionRequest = struct {
     subscription_id: []const u8,
     query: MailboxRelayListQuery = .{},
 };
 
-pub const MailboxRelayListSubscriptionStorage = struct {
+pub const MailboxRelaySubscriptionStorage = struct {
     filters: [1]noztr.nip01_filter.Filter = [_]noztr.nip01_filter.Filter{.{}} ** 1,
     specs: [1]runtime.RelaySubscriptionSpec = undefined,
     relay_pool: runtime.RelayPoolSubscriptionStorage = .{},
@@ -248,8 +248,8 @@ pub const DmCapabilityClient = struct {
 
     pub fn inspectMailboxRelayListSubscription(
         self: *const DmCapabilityClient,
-        request: *const MailboxRelayListSubscriptionRequest,
-        storage: *MailboxRelayListSubscriptionStorage,
+        request: *const MailboxRelaySubscriptionRequest,
+        storage: *MailboxRelaySubscriptionStorage,
     ) DmCapabilityClientError!runtime.RelayPoolSubscriptionPlan {
         storage.filters[0] = try filterFromMailboxRelayListQuery(&request.query);
         storage.specs[0] = .{
@@ -468,7 +468,7 @@ test "dm capability client prepares mailbox relay-list publish and subscription 
     try std.testing.expectEqualStrings("wss://relay.one", targeted_publish.relay.relay_url);
 
     const author_hex = std.fmt.bytesToHex(prepared.event.pubkey, .lower);
-    var subscription_storage = MailboxRelayListSubscriptionStorage{};
+    var subscription_storage = MailboxRelaySubscriptionStorage{};
     const subscription_plan = try client.inspectMailboxRelayListSubscription(
         &.{
             .subscription_id = "dm-relays",

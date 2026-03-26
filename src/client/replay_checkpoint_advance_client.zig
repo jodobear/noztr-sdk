@@ -11,7 +11,7 @@ pub const ReplayCheckpointAdvanceClientError =
         IncompleteTranscript,
     };
 
-pub const ReplayCheckpointAdvanceClientConfig = struct {};
+pub const ReplayCheckpointAdvanceConfig = struct {};
 
 pub const ReplayCheckpointAdvanceState = struct {
     relay: runtime.RelayDescriptor,
@@ -38,9 +38,9 @@ pub const ReplayCheckpointSaveTarget = struct {
 };
 
 pub const ReplayCheckpointAdvanceClient = struct {
-    config: ReplayCheckpointAdvanceClientConfig,
+    config: ReplayCheckpointAdvanceConfig,
 
-    pub fn init(config: ReplayCheckpointAdvanceClientConfig) ReplayCheckpointAdvanceClient {
+    pub fn init(config: ReplayCheckpointAdvanceConfig) ReplayCheckpointAdvanceClient {
         return .{ .config = config };
     }
 

@@ -12,7 +12,7 @@ pub const RelayReplayTurnClientError =
 
 pub const RelayReplayTurnClientConfig = struct {
     replay_exchange: relay_replay_exchange.RelayReplayExchangeClientConfig = .{},
-    checkpoint_advance: replay_checkpoint_advance.ReplayCheckpointAdvanceClientConfig = .{},
+    checkpoint_advance: replay_checkpoint_advance.ReplayCheckpointAdvanceConfig = .{},
 };
 
 pub const RelayReplayTurnClientStorage = struct {

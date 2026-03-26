@@ -30,54 +30,54 @@ pub const MixedDmReplyRouteRequest = dm_capability.DmReplySelectionRequest;
 pub const MixedDmReplyRouteReason = dm_capability.DmReplySelectionReason;
 pub const MixedDmReplyRoute = dm_capability.DmReplySelection;
 
-pub const MixedDmObservedReplyRef = struct {
+pub const ObservedReplyRef = struct {
     event_id: [32]u8,
     relay_hint: ?[]const u8 = null,
 };
 
-pub const MixedDmObservedMessageIdentity = struct {
+pub const ObservedMessageIdentity = struct {
     protocol: MixedDmProtocol,
     event_id: [32]u8,
 };
 
-pub const MixedDmObservedMailboxDirectMessage = struct {
+pub const ObservedMailboxMessage = struct {
     wrap_event_id: [32]u8,
     rumor_event_id: [32]u8,
     sender_pubkey: [32]u8,
     recipient_pubkey: [32]u8,
     recipient_count: u16,
     created_at: u64,
-    reply_to: ?MixedDmObservedReplyRef = null,
+    reply_to: ?ObservedReplyRef = null,
     content: []const u8,
 };
 
-pub const MixedDmObservedMailboxFileMessage = struct {
+pub const ObservedMailboxFile = struct {
     wrap_event_id: [32]u8,
     rumor_event_id: [32]u8,
     sender_pubkey: [32]u8,
     recipient_pubkey: [32]u8,
     recipient_count: u16,
     created_at: u64,
-    reply_to: ?MixedDmObservedReplyRef = null,
+    reply_to: ?ObservedReplyRef = null,
     file_url: []const u8,
     file_type: []const u8,
 };
 
-pub const MixedDmObservedLegacyDirectMessage = struct {
+pub const ObservedLegacyMessage = struct {
     event_id: [32]u8,
     sender_pubkey: [32]u8,
     recipient_pubkey: [32]u8,
     created_at: u64,
-    reply_to: ?MixedDmObservedReplyRef = null,
+    reply_to: ?ObservedReplyRef = null,
     content: []const u8,
 };
 
-pub const MixedDmObservedMessage = union(enum) {
-    mailbox_direct_message: MixedDmObservedMailboxDirectMessage,
-    mailbox_file_message: MixedDmObservedMailboxFileMessage,
-    legacy_direct_message: MixedDmObservedLegacyDirectMessage,
+pub const ObservedMessage = union(enum) {
+    mailbox_direct_message: ObservedMailboxMessage,
+    mailbox_file_message: ObservedMailboxFile,
+    legacy_direct_message: ObservedLegacyMessage,
 
-    pub fn protocol(self: *const MixedDmObservedMessage) MixedDmProtocol {
+    pub fn protocol(self: *const ObservedMessage) MixedDmProtocol {
         return switch (self.*) {
             .mailbox_direct_message,
             .mailbox_file_message,
@@ -86,7 +86,7 @@ pub const MixedDmObservedMessage = union(enum) {
         };
     }
 
-    pub fn eventId(self: *const MixedDmObservedMessage) [32]u8 {
+    pub fn eventId(self: *const ObservedMessage) [32]u8 {
         return switch (self.*) {
             .mailbox_direct_message => |message| message.wrap_event_id,
             .mailbox_file_message => |message| message.wrap_event_id,
@@ -94,14 +94,14 @@ pub const MixedDmObservedMessage = union(enum) {
         };
     }
 
-    pub fn identity(self: *const MixedDmObservedMessage) MixedDmObservedMessageIdentity {
+    pub fn identity(self: *const ObservedMessage) ObservedMessageIdentity {
         return .{
             .protocol = self.protocol(),
             .event_id = self.eventId(),
         };
     }
 
-    pub fn senderPubkey(self: *const MixedDmObservedMessage) [32]u8 {
+    pub fn senderPubkey(self: *const ObservedMessage) [32]u8 {
         return switch (self.*) {
             .mailbox_direct_message => |message| message.sender_pubkey,
             .mailbox_file_message => |message| message.sender_pubkey,
@@ -109,7 +109,7 @@ pub const MixedDmObservedMessage = union(enum) {
         };
     }
 
-    pub fn recipientPubkey(self: *const MixedDmObservedMessage) [32]u8 {
+    pub fn recipientPubkey(self: *const ObservedMessage) [32]u8 {
         return switch (self.*) {
             .mailbox_direct_message => |message| message.recipient_pubkey,
             .mailbox_file_message => |message| message.recipient_pubkey,
@@ -117,7 +117,7 @@ pub const MixedDmObservedMessage = union(enum) {
         };
     }
 
-    pub fn createdAt(self: *const MixedDmObservedMessage) u64 {
+    pub fn createdAt(self: *const ObservedMessage) u64 {
         return switch (self.*) {
             .mailbox_direct_message => |message| message.created_at,
             .mailbox_file_message => |message| message.created_at,
@@ -125,7 +125,7 @@ pub const MixedDmObservedMessage = union(enum) {
         };
     }
 
-    pub fn replyTo(self: *const MixedDmObservedMessage) ?MixedDmObservedReplyRef {
+    pub fn replyTo(self: *const ObservedMessage) ?ObservedReplyRef {
         return switch (self.*) {
             .mailbox_direct_message => |message| message.reply_to,
             .mailbox_file_message => |message| message.reply_to,
@@ -134,23 +134,23 @@ pub const MixedDmObservedMessage = union(enum) {
     }
 };
 
-pub const MixedDmSenderProtocolMemoryRecord = struct {
+pub const SenderProtocolRecord = struct {
     occupied: bool = false,
     peer_pubkey: [32]u8 = [_]u8{0} ** 32,
     protocol: MixedDmProtocol = .legacy,
     last_observed_at: u64 = 0,
 };
 
-pub const MixedDmSenderProtocolMemory = struct {
-    records: []MixedDmSenderProtocolMemoryRecord,
+pub const SenderProtocolMemory = struct {
+    records: []SenderProtocolRecord,
 
-    pub fn init(records: []MixedDmSenderProtocolMemoryRecord) MixedDmSenderProtocolMemory {
+    pub fn init(records: []SenderProtocolRecord) SenderProtocolMemory {
         for (records) |*record| record.* = .{};
         return .{ .records = records };
     }
 
     pub fn protocolFor(
-        self: *const MixedDmSenderProtocolMemory,
+        self: *const SenderProtocolMemory,
         peer_pubkey: *const [32]u8,
     ) ?MixedDmProtocol {
         for (self.records) |record| {
@@ -161,7 +161,7 @@ pub const MixedDmSenderProtocolMemory = struct {
     }
 
     pub fn remember(
-        self: *MixedDmSenderProtocolMemory,
+        self: *SenderProtocolMemory,
         peer_pubkey: *const [32]u8,
         protocol: MixedDmProtocol,
         observed_at: u64,
@@ -200,44 +200,44 @@ pub const MixedDmSenderProtocolMemory = struct {
     }
 };
 
-pub const MixedDmRememberedReplyRequest = struct {
+pub const RememberedReplyRequest = struct {
     peer_pubkey: [32]u8,
     fallback_sender_protocol: MixedDmProtocol,
     policy: MixedDmReplyPolicy = .sender_protocol,
     recipient_mailbox_available: bool = false,
 };
 
-pub const MixedDmRememberedReplyRoute = struct {
+pub const RememberedReplyRoute = struct {
     route: MixedDmReplyRoute,
     sender_protocol: MixedDmProtocol,
     remembered: bool,
 };
 
-pub const MixedDmDedupRecord = struct {
+pub const DedupRecord = struct {
     occupied: bool = false,
-    identity: MixedDmObservedMessageIdentity = .{
+    identity: ObservedMessageIdentity = .{
         .protocol = .legacy,
         .event_id = [_]u8{0} ** 32,
     },
     last_seen_at: u64 = 0,
 };
 
-pub const MixedDmDedupResult = enum {
+pub const DedupResult = enum {
     first_seen,
     duplicate,
 };
 
-pub const MixedDmDedupMemory = struct {
-    records: []MixedDmDedupRecord,
+pub const DedupMemory = struct {
+    records: []DedupRecord,
 
-    pub fn init(records: []MixedDmDedupRecord) MixedDmDedupMemory {
+    pub fn init(records: []DedupRecord) DedupMemory {
         for (records) |*record| record.* = .{};
         return .{ .records = records };
     }
 
     pub fn hasSeen(
-        self: *const MixedDmDedupMemory,
-        identity: *const MixedDmObservedMessageIdentity,
+        self: *const DedupMemory,
+        identity: *const ObservedMessageIdentity,
     ) bool {
         for (self.records) |record| {
             if (!record.occupied) continue;
@@ -248,10 +248,10 @@ pub const MixedDmDedupMemory = struct {
     }
 
     pub fn note(
-        self: *MixedDmDedupMemory,
-        identity: *const MixedDmObservedMessageIdentity,
+        self: *DedupMemory,
+        identity: *const ObservedMessageIdentity,
         seen_at: u64,
-    ) MixedDmDedupResult {
+    ) DedupResult {
         var first_free: ?usize = null;
         var oldest_index: usize = 0;
         var oldest_found = false;
@@ -294,7 +294,7 @@ pub const OutboundStorage = struct {
 pub const OutboundRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
-    reply_to: ?MixedDmObservedReplyRef = null,
+    reply_to: ?ObservedReplyRef = null,
     content: []const u8,
     created_at: u64,
     legacy_iv: [noztr.limits.nip04_iv_bytes]u8,
@@ -308,7 +308,7 @@ pub const OutboundRequest = struct {
 pub const RememberedOutboundRequest = struct {
     recipient_pubkey: [32]u8,
     recipient_relay_hint: ?[]const u8 = null,
-    reply_to: ?MixedDmObservedReplyRef = null,
+    reply_to: ?ObservedReplyRef = null,
     content: []const u8,
     created_at: u64,
     fallback_sender_protocol: MixedDmProtocol,
@@ -393,7 +393,7 @@ pub const MixedDmClient = struct {
 
     pub fn selectReplyRouteForObservation(
         self: MixedDmClient,
-        observation: *const MixedDmObservedMessage,
+        observation: *const ObservedMessage,
         policy: MixedDmReplyPolicy,
         recipient_mailbox_available: bool,
     ) MixedDmClientError!MixedDmReplyRoute {
@@ -407,7 +407,7 @@ pub const MixedDmClient = struct {
     pub fn observeMailboxEnvelope(
         _: MixedDmClient,
         envelope: *const workflows.dm.mailbox.MailboxEnvelopeOutcome,
-    ) MixedDmClientError!MixedDmObservedMessage {
+    ) MixedDmClientError!ObservedMessage {
         return switch (envelope.*) {
             .direct_message => |message| .{
                 .mailbox_direct_message = try observeMailboxDirectMessage(&message),
@@ -421,7 +421,7 @@ pub const MixedDmClient = struct {
     pub fn observeLegacyMessage(
         _: MixedDmClient,
         message: *const workflows.dm.legacy.LegacyDmMessageOutcome,
-    ) MixedDmObservedMessage {
+    ) ObservedMessage {
         return .{
             .legacy_direct_message = observeLegacyDirectMessage(message),
         };
@@ -430,7 +430,7 @@ pub const MixedDmClient = struct {
     pub fn observeMailboxReplayIntake(
         self: MixedDmClient,
         intake: *const mailbox_replay_turn.Intake,
-    ) MixedDmClientError!?MixedDmObservedMessage {
+    ) MixedDmClientError!?ObservedMessage {
         const envelope = intake.envelope orelse return null;
         return try self.observeMailboxEnvelope(&envelope);
     }
@@ -438,7 +438,7 @@ pub const MixedDmClient = struct {
     pub fn observeMailboxSubscriptionIntake(
         self: MixedDmClient,
         intake: *const mailbox_subscription_turn.Intake,
-    ) MixedDmClientError!?MixedDmObservedMessage {
+    ) MixedDmClientError!?ObservedMessage {
         const envelope = intake.envelope orelse return null;
         return try self.observeMailboxEnvelope(&envelope);
     }
@@ -446,7 +446,7 @@ pub const MixedDmClient = struct {
     pub fn observeLegacyReplayIntake(
         self: MixedDmClient,
         intake: *const legacy_dm_replay_turn.Intake,
-    ) ?MixedDmObservedMessage {
+    ) ?ObservedMessage {
         const message = intake.message orelse return null;
         return self.observeLegacyMessage(&message);
     }
@@ -454,15 +454,15 @@ pub const MixedDmClient = struct {
     pub fn observeLegacySubscriptionIntake(
         self: MixedDmClient,
         intake: *const legacy_dm_subscription_turn.Intake,
-    ) ?MixedDmObservedMessage {
+    ) ?ObservedMessage {
         const message = intake.message orelse return null;
         return self.observeLegacyMessage(&message);
     }
 
     pub fn rememberObservedSenderProtocol(
         _: MixedDmClient,
-        memory: *MixedDmSenderProtocolMemory,
-        observation: *const MixedDmObservedMessage,
+        memory: *SenderProtocolMemory,
+        observation: *const ObservedMessage,
     ) void {
         const sender_pubkey = observation.senderPubkey();
         memory.remember(
@@ -474,7 +474,7 @@ pub const MixedDmClient = struct {
 
     pub fn rememberSenderProtocol(
         _: MixedDmClient,
-        memory: *MixedDmSenderProtocolMemory,
+        memory: *SenderProtocolMemory,
         peer_pubkey: *const [32]u8,
         protocol: MixedDmProtocol,
         observed_at: u64,
@@ -484,7 +484,7 @@ pub const MixedDmClient = struct {
 
     pub fn inspectRememberedSenderProtocol(
         _: MixedDmClient,
-        memory: *const MixedDmSenderProtocolMemory,
+        memory: *const SenderProtocolMemory,
         peer_pubkey: *const [32]u8,
     ) ?MixedDmProtocol {
         return memory.protocolFor(peer_pubkey);
@@ -492,9 +492,9 @@ pub const MixedDmClient = struct {
 
     pub fn selectRememberedReplyRoute(
         self: MixedDmClient,
-        memory: *const MixedDmSenderProtocolMemory,
-        request: *const MixedDmRememberedReplyRequest,
-    ) MixedDmClientError!MixedDmRememberedReplyRoute {
+        memory: *const SenderProtocolMemory,
+        request: *const RememberedReplyRequest,
+    ) MixedDmClientError!RememberedReplyRoute {
         const remembered_protocol = memory.protocolFor(&request.peer_pubkey);
         const sender_protocol = remembered_protocol orelse request.fallback_sender_protocol;
         return .{
@@ -510,15 +510,15 @@ pub const MixedDmClient = struct {
 
     pub fn identifyObservedMessage(
         _: MixedDmClient,
-        observation: *const MixedDmObservedMessage,
-    ) MixedDmObservedMessageIdentity {
+        observation: *const ObservedMessage,
+    ) ObservedMessageIdentity {
         return observation.identity();
     }
 
     pub fn hasSeenObservedMessage(
         _: MixedDmClient,
-        memory: *const MixedDmDedupMemory,
-        observation: *const MixedDmObservedMessage,
+        memory: *const DedupMemory,
+        observation: *const ObservedMessage,
     ) bool {
         const identity = observation.identity();
         return memory.hasSeen(&identity);
@@ -526,9 +526,9 @@ pub const MixedDmClient = struct {
 
     pub fn noteObservedMessage(
         _: MixedDmClient,
-        memory: *MixedDmDedupMemory,
-        observation: *const MixedDmObservedMessage,
-    ) MixedDmDedupResult {
+        memory: *DedupMemory,
+        observation: *const ObservedMessage,
+    ) DedupResult {
         const identity = observation.identity();
         return memory.note(&identity, observation.createdAt());
     }
@@ -563,7 +563,7 @@ pub const MixedDmClient = struct {
         event_json_output: []u8,
         sender_secret_key: *const [32]u8,
         storage: *OutboundStorage,
-        memory: *const MixedDmSenderProtocolMemory,
+        memory: *const SenderProtocolMemory,
         request: *const RememberedOutboundRequest,
         scratch: std.mem.Allocator,
     ) MixedDmClientError!RememberedPreparedOutbound {
@@ -655,7 +655,7 @@ fn prepareMailboxDirectMessage(
     };
 }
 
-fn mailboxReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip17_private_messages.ReplyRef {
+fn mailboxReplyFromMixed(reply_to: ?ObservedReplyRef) ?noztr.nip17_private_messages.ReplyRef {
     const reply = reply_to orelse return null;
     return .{
         .event_id = reply.event_id,
@@ -663,7 +663,7 @@ fn mailboxReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip17_privat
     };
 }
 
-fn legacyReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip04.ReplyRef {
+fn legacyReplyFromMixed(reply_to: ?ObservedReplyRef) ?noztr.nip04.ReplyRef {
     const reply = reply_to orelse return null;
     return .{
         .event_id = reply.event_id,
@@ -673,7 +673,7 @@ fn legacyReplyFromMixed(reply_to: ?MixedDmObservedReplyRef) ?noztr.nip04.ReplyRe
 
 fn observeMailboxDirectMessage(
     message: *const workflows.dm.mailbox.MailboxMessageOutcome,
-) MixedDmClientError!MixedDmObservedMailboxDirectMessage {
+) MixedDmClientError!ObservedMailboxMessage {
     if (message.message.recipients.len == 0) return error.InvalidMailboxEnvelopeRecipients;
     return .{
         .wrap_event_id = message.wrap_event_id,
@@ -689,7 +689,7 @@ fn observeMailboxDirectMessage(
 
 fn observeMailboxFileMessage(
     message: *const workflows.dm.mailbox.MailboxFileMessageOutcome,
-) MixedDmClientError!MixedDmObservedMailboxFileMessage {
+) MixedDmClientError!ObservedMailboxFile {
     if (message.file_message.recipients.len == 0) return error.InvalidMailboxEnvelopeRecipients;
     return .{
         .wrap_event_id = message.wrap_event_id,
@@ -706,7 +706,7 @@ fn observeMailboxFileMessage(
 
 fn observeLegacyDirectMessage(
     message: *const workflows.dm.legacy.LegacyDmMessageOutcome,
-) MixedDmObservedLegacyDirectMessage {
+) ObservedLegacyMessage {
     return .{
         .event_id = message.event.id,
         .sender_pubkey = message.event.pubkey,
@@ -719,7 +719,7 @@ fn observeLegacyDirectMessage(
 
 fn observedReplyFromMailbox(
     reply_to: ?noztr.nip17_private_messages.ReplyRef,
-) ?MixedDmObservedReplyRef {
+) ?ObservedReplyRef {
     const reply = reply_to orelse return null;
     return .{
         .event_id = reply.event_id,
@@ -729,7 +729,7 @@ fn observedReplyFromMailbox(
 
 fn observedReplyFromLegacy(
     reply_to: ?noztr.nip04.ReplyRef,
-) ?MixedDmObservedReplyRef {
+) ?ObservedReplyRef {
     const reply = reply_to orelse return null;
     return .{
         .event_id = reply.event_id,
@@ -952,8 +952,8 @@ test "mixed dm client keeps caller-owned sender protocol memory bounded and expl
     const peer_legacy = [_]u8{0x22} ** 32;
     const unknown_peer = [_]u8{0x33} ** 32;
 
-    var records: [2]MixedDmSenderProtocolMemoryRecord = undefined;
-    var memory = MixedDmSenderProtocolMemory.init(records[0..]);
+    var records: [2]SenderProtocolRecord = undefined;
+    var memory = SenderProtocolMemory.init(records[0..]);
 
     client.rememberSenderProtocol(&memory, &peer_mailbox, .mailbox, 100);
     client.rememberSenderProtocol(&memory, &peer_legacy, .legacy, 101);
@@ -990,7 +990,7 @@ test "mixed dm client dedupes observed mailbox and legacy messages without ownin
     var storage = MixedDmClientStorage{};
     const client = MixedDmClient.init(.{}, &storage);
 
-    const mailbox_observation: MixedDmObservedMessage = .{
+    const mailbox_observation: ObservedMessage = .{
         .mailbox_direct_message = .{
             .wrap_event_id = [_]u8{0x11} ** 32,
             .rumor_event_id = [_]u8{0x12} ** 32,
@@ -1001,7 +1001,7 @@ test "mixed dm client dedupes observed mailbox and legacy messages without ownin
             .content = "mailbox",
         },
     };
-    const legacy_observation: MixedDmObservedMessage = .{
+    const legacy_observation: ObservedMessage = .{
         .legacy_direct_message = .{
             .event_id = [_]u8{0x31} ** 32,
             .sender_pubkey = [_]u8{0x41} ** 32,
@@ -1011,15 +1011,15 @@ test "mixed dm client dedupes observed mailbox and legacy messages without ownin
         },
     };
 
-    var records: [2]MixedDmDedupRecord = undefined;
-    var memory = MixedDmDedupMemory.init(records[0..]);
+    var records: [2]DedupRecord = undefined;
+    var memory = DedupMemory.init(records[0..]);
 
     try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&memory, &mailbox_observation));
     try std.testing.expect(client.hasSeenObservedMessage(&memory, &mailbox_observation));
     try std.testing.expectEqual(.duplicate, client.noteObservedMessage(&memory, &mailbox_observation));
     try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&memory, &legacy_observation));
 
-    const replacement: MixedDmObservedMessage = .{
+    const replacement: ObservedMessage = .{
         .mailbox_direct_message = .{
             .wrap_event_id = [_]u8{0x51} ** 32,
             .rumor_event_id = [_]u8{0x52} ** 32,
@@ -1145,8 +1145,8 @@ test "mixed dm client prepares remembered outbound route over caller-owned memor
         &.{ .created_at = 109, .relays = &.{"wss://dm.one"} },
     );
 
-    var memory_records: [2]MixedDmSenderProtocolMemoryRecord = undefined;
-    var memory = MixedDmSenderProtocolMemory.init(memory_records[0..]);
+    var memory_records: [2]SenderProtocolRecord = undefined;
+    var memory = SenderProtocolMemory.init(memory_records[0..]);
     client.rememberSenderProtocol(&memory, &recipient_pubkey, .mailbox, 110);
 
     var outbound_storage = OutboundStorage{};

@@ -95,8 +95,8 @@ test "recipe: mixed dm client normalizes intake and prepares bounded outbound ma
     );
     try std.testing.expectEqual(.legacy, explicit_fallback.protocol);
 
-    var memory_records: [4]noztr_sdk.client.dm.mixed.MixedDmSenderProtocolMemoryRecord = undefined;
-    var memory = noztr_sdk.client.dm.mixed.MixedDmSenderProtocolMemory.init(memory_records[0..]);
+    var memory_records: [4]noztr_sdk.client.dm.mixed.SenderProtocolRecord = undefined;
+    var memory = noztr_sdk.client.dm.mixed.SenderProtocolMemory.init(memory_records[0..]);
     client.rememberObservedSenderProtocol(&memory, &mailbox_observation);
 
     const remembered = try client.selectRememberedReplyRoute(&memory, &.{
@@ -108,8 +108,8 @@ test "recipe: mixed dm client normalizes intake and prepares bounded outbound ma
     try std.testing.expect(remembered.remembered);
     try std.testing.expectEqual(.mailbox, remembered.route.protocol);
 
-    var dedup_records: [4]noztr_sdk.client.dm.mixed.MixedDmDedupRecord = undefined;
-    var dedup = noztr_sdk.client.dm.mixed.MixedDmDedupMemory.init(dedup_records[0..]);
+    var dedup_records: [4]noztr_sdk.client.dm.mixed.DedupRecord = undefined;
+    var dedup = noztr_sdk.client.dm.mixed.DedupMemory.init(dedup_records[0..]);
     try std.testing.expectEqual(.first_seen, client.noteObservedMessage(&dedup, &mailbox_observation));
     try std.testing.expectEqual(.duplicate, client.noteObservedMessage(&dedup, &mailbox_observation));
 

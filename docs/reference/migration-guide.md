@@ -23,6 +23,8 @@ Use this first, then jump by route family.
   - grouped workflow submodule names now match public route context
 - [Mixed DM outbound naming migration](./mixed-dm-outbound-naming-migration.md)
   - canonical `client.dm.mixed.*` outbound names
+- [Mixed DM route-local naming migration](./mixed-dm-route-local-naming-migration.md)
+  - observed, memory, reply, and adjacent DM route-local cleanup
 
 ## DM Family Cleanup
 
