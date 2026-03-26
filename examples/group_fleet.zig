@@ -111,9 +111,9 @@ test "recipe: group fleet persists restores inspects runtime and background work
         &author_secret,
         &checkpoint_storage,
     );
-    var store_records: [2]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord =
-        [_]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord{ .{}, .{} };
-    var checkpoint_store = noztr_sdk.workflows.groups.fleet.MemoryGroupFleetCheckpointStore.init(store_records[0..]);
+    var store_records: [2]noztr_sdk.workflows.groups.fleet.CheckpointRecord =
+        [_]noztr_sdk.workflows.groups.fleet.CheckpointRecord{ .{}, .{} };
+    var checkpoint_store = noztr_sdk.workflows.groups.fleet.MemoryCheckpointStore.init(store_records[0..]);
     const persisted = try source_fleet.persistCheckpointStore(
         checkpoint_store.asStore(),
         &checkpoint_context,

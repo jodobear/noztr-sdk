@@ -49,6 +49,8 @@ Use this first, then jump by route family.
   - canonical route-local `client.signer.*` job naming
 - [Proof, identity, and NIP-05 planning migration](./proof-identity-planning-migration.md)
   - grouped proof/identity/nip05 planning routes, including the `nip03` and `nip05` flat workflow-planning removals
+- [Group fleet checkpoint-store naming migration](./group-fleet-checkpoint-store-naming-migration.md)
+  - route-local checkpoint-store substrate names in `workflows.groups.fleet.*`
 - [Noztr core rc4 migration](./noztr-core-rc4-migration.md)
   - pre-`1.0` cumulative `noztr-core` type rename fallout
 - [Local state client migration](./local-state-client-migration.md)

@@ -1062,11 +1062,11 @@ test "phase9 exposes the group session workflow surface" {
     try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetCheckpointContext) == type);
     try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetMergeContext) == type);
     try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetCheckpointSet) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetCheckpointStorePutOutcome) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetCheckpointStoreError) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetCheckpointRecord) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetCheckpointStore) == type);
-    try std.testing.expect(@TypeOf(workflows.groups.fleet.MemoryGroupFleetCheckpointStore) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.fleet.CheckpointPutOutcome) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.fleet.CheckpointStoreError) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.fleet.CheckpointRecord) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.fleet.CheckpointStore) == type);
+    try std.testing.expect(@TypeOf(workflows.groups.fleet.MemoryCheckpointStore) == type);
     try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetStorePersistOutcome) == type);
     try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetStoreRestoreOutcome) == type);
     try std.testing.expect(@TypeOf(workflows.groups.fleet.GroupFleetPublishStorage) == type);

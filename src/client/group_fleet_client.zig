@@ -212,17 +212,17 @@ pub const GroupFleetClient = struct {
         self: *GroupFleetClient,
         checkpoint_storage: *GroupFleetClientCheckpointStorage,
         request: *const GroupFleetClientCheckpointRequest,
-        store: group_fleet.GroupFleetCheckpointStore,
-    ) (GroupFleetClientError || group_fleet.GroupFleetCheckpointStoreError)!group_fleet.GroupFleetStorePersistOutcome {
+        store: group_fleet.CheckpointStore,
+    ) (GroupFleetClientError || group_fleet.CheckpointStoreError)!group_fleet.GroupFleetStorePersistOutcome {
         var context = request.checkpointContext(checkpoint_storage);
         return self.fleet.persistCheckpointStore(store, &context);
     }
 
     pub fn restoreCheckpointStore(
         self: *GroupFleetClient,
-        store: group_fleet.GroupFleetCheckpointStore,
+        store: group_fleet.CheckpointStore,
         scratch: std.mem.Allocator,
-    ) (GroupFleetClientError || group_fleet.GroupFleetCheckpointStoreError)!group_fleet.GroupFleetStoreRestoreOutcome {
+    ) (GroupFleetClientError || group_fleet.CheckpointStoreError)!group_fleet.GroupFleetStoreRestoreOutcome {
         return self.fleet.restoreCheckpointStore(store, scratch);
     }
 
@@ -550,9 +550,9 @@ test "group fleet client composes checkpoint-store persistence and restore throu
 
     var source_checkpoint_storage = GroupFleetClientCheckpointStorage{};
     const checkpoint_request = GroupFleetClientCheckpointRequest.init(10, &author_secret);
-    var records: [2]group_fleet.GroupFleetCheckpointRecord =
-        [_]group_fleet.GroupFleetCheckpointRecord{.{}, .{}};
-    var memory_store = group_fleet.MemoryGroupFleetCheckpointStore.init(records[0..]);
+    var records: [2]group_fleet.CheckpointRecord =
+        [_]group_fleet.CheckpointRecord{.{}, .{}};
+    var memory_store = group_fleet.MemoryCheckpointStore.init(records[0..]);
     const persisted = try source_groups.persistCheckpointStore(
         &source_checkpoint_storage,
         &checkpoint_request,
@@ -793,8 +793,8 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
 
     var checkpoint_storage = GroupFleetClientCheckpointStorage{};
     const checkpoint_request = GroupFleetClientCheckpointRequest.init(30, &author_secret);
-    var short_records: [1]group_fleet.GroupFleetCheckpointRecord = [_]group_fleet.GroupFleetCheckpointRecord{.{}} ** 1;
-    var short_store = group_fleet.MemoryGroupFleetCheckpointStore.init(short_records[0..]);
+    var short_records: [1]group_fleet.CheckpointRecord = [_]group_fleet.CheckpointRecord{.{}} ** 1;
+    var short_store = group_fleet.MemoryCheckpointStore.init(short_records[0..]);
     try std.testing.expectError(
         error.StoreFull,
         source_groups.persistCheckpointStore(
@@ -804,8 +804,8 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
         ),
     );
 
-    var full_records: [2]group_fleet.GroupFleetCheckpointRecord = [_]group_fleet.GroupFleetCheckpointRecord{.{}, .{}};
-    var full_store = group_fleet.MemoryGroupFleetCheckpointStore.init(full_records[0..]);
+    var full_records: [2]group_fleet.CheckpointRecord = [_]group_fleet.CheckpointRecord{.{}, .{}};
+    var full_store = group_fleet.MemoryCheckpointStore.init(full_records[0..]);
     _ = try source_groups.persistCheckpointStore(
         &checkpoint_storage,
         &checkpoint_request,
@@ -844,8 +844,8 @@ test "group fleet client propagates store full and missing-relay checkpoint-stor
     const target_fleet = try group_fleet.GroupFleet.init(target_members[0..]);
     var target_groups = GroupFleetClient.init(.{}, target_fleet);
 
-    var one_records: [1]group_fleet.GroupFleetCheckpointRecord = [_]group_fleet.GroupFleetCheckpointRecord{.{}} ** 1;
-    var one_store = group_fleet.MemoryGroupFleetCheckpointStore.init(one_records[0..]);
+    var one_records: [1]group_fleet.CheckpointRecord = [_]group_fleet.CheckpointRecord{.{}} ** 1;
+    var one_store = group_fleet.MemoryCheckpointStore.init(one_records[0..]);
     var checkpoint_buffers = group_local.GroupCheckpointBuffers{};
     const source_checkpoint = try source_a.exportCheckpoint(
         group_local.GroupCheckpointContext.init(40, &author_secret, &checkpoint_buffers),

@@ -85,9 +85,9 @@ test "recipe: group fleet client inspects runtime reconciles one target relay an
     try std.testing.expectEqualStrings("wss://relay.one:444", reconciled.target_relay_url);
     try std.testing.expectEqualStrings("Pizza Lovers", relay_two.view().metadata.name.?);
 
-    var records: [2]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord =
-        [_]noztr_sdk.workflows.groups.fleet.GroupFleetCheckpointRecord{.{}, .{}};
-    var memory_store = noztr_sdk.workflows.groups.fleet.MemoryGroupFleetCheckpointStore.init(records[0..]);
+    var records: [2]noztr_sdk.workflows.groups.fleet.CheckpointRecord =
+        [_]noztr_sdk.workflows.groups.fleet.CheckpointRecord{.{}, .{}};
+    var memory_store = noztr_sdk.workflows.groups.fleet.MemoryCheckpointStore.init(records[0..]);
     const persisted = try groups.persistCheckpointStore(
         &checkpoint_storage,
         &checkpoint_request,

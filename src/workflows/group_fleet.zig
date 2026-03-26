@@ -510,12 +510,12 @@ pub const GroupFleetCheckpointSet = struct {
 
 pub const fleet_checkpoint_event_json_max: u32 = noztr.limits.event_json_max;
 
-pub const GroupFleetCheckpointStorePutOutcome = enum {
+pub const CheckpointPutOutcome = enum {
     stored,
     replaced,
 };
 
-pub const GroupFleetCheckpointStoreError = error{
+pub const CheckpointStoreError = error{
     InvalidRelayUrl,
     RelayUrlTooLong,
     MetadataEventTooLong,
@@ -525,7 +525,7 @@ pub const GroupFleetCheckpointStoreError = error{
     StoreFull,
 };
 
-pub const GroupFleetCheckpointRecord = struct {
+pub const CheckpointRecord = struct {
     relay_url: [relay_url.relay_url_max_bytes]u8 = [_]u8{0} ** relay_url.relay_url_max_bytes,
     relay_url_len: u16 = 0,
     metadata_event_json: [fleet_checkpoint_event_json_max]u8 = [_]u8{0} ** fleet_checkpoint_event_json_max,
@@ -538,11 +538,11 @@ pub const GroupFleetCheckpointRecord = struct {
     roles_event_json_len: u32 = 0,
     occupied: bool = false,
 
-    pub fn relayUrl(self: *const GroupFleetCheckpointRecord) []const u8 {
+    pub fn relayUrl(self: *const CheckpointRecord) []const u8 {
         return self.relay_url[0..self.relay_url_len];
     }
 
-    pub fn checkpoint(self: *const GroupFleetCheckpointRecord) group_client.GroupCheckpoint {
+    pub fn checkpoint(self: *const CheckpointRecord) group_client.GroupCheckpoint {
         return .{
             .relay_url = self.relayUrl(),
             .metadata_event_json = self.metadata_event_json[0..self.metadata_event_json_len],
@@ -553,45 +553,45 @@ pub const GroupFleetCheckpointRecord = struct {
     }
 };
 
-pub const GroupFleetCheckpointStoreVTable = struct {
+pub const CheckpointStoreVTable = struct {
     put_checkpoint: *const fn (
         ctx: *anyopaque,
         checkpoint: *const group_client.GroupCheckpoint,
-    ) GroupFleetCheckpointStoreError!GroupFleetCheckpointStorePutOutcome,
+    ) CheckpointStoreError!CheckpointPutOutcome,
     get_checkpoint: *const fn (
         ctx: *anyopaque,
         relay_url_text: []const u8,
-    ) GroupFleetCheckpointStoreError!?group_client.GroupCheckpoint,
+    ) CheckpointStoreError!?group_client.GroupCheckpoint,
 };
 
-pub const GroupFleetCheckpointStore = struct {
+pub const CheckpointStore = struct {
     ctx: *anyopaque,
-    vtable: *const GroupFleetCheckpointStoreVTable,
+    vtable: *const CheckpointStoreVTable,
 
     pub fn putCheckpoint(
-        self: GroupFleetCheckpointStore,
+        self: CheckpointStore,
         checkpoint: *const group_client.GroupCheckpoint,
-    ) GroupFleetCheckpointStoreError!GroupFleetCheckpointStorePutOutcome {
+    ) CheckpointStoreError!CheckpointPutOutcome {
         return self.vtable.put_checkpoint(self.ctx, checkpoint);
     }
 
     pub fn getCheckpoint(
-        self: GroupFleetCheckpointStore,
+        self: CheckpointStore,
         relay_url_text: []const u8,
-    ) GroupFleetCheckpointStoreError!?group_client.GroupCheckpoint {
+    ) CheckpointStoreError!?group_client.GroupCheckpoint {
         return self.vtable.get_checkpoint(self.ctx, relay_url_text);
     }
 };
 
-pub const MemoryGroupFleetCheckpointStore = struct {
-    records: []GroupFleetCheckpointRecord,
+pub const MemoryCheckpointStore = struct {
+    records: []CheckpointRecord,
     count: usize = 0,
 
-    pub fn init(records: []GroupFleetCheckpointRecord) MemoryGroupFleetCheckpointStore {
+    pub fn init(records: []CheckpointRecord) MemoryCheckpointStore {
         return .{ .records = records };
     }
 
-    pub fn asStore(self: *MemoryGroupFleetCheckpointStore) GroupFleetCheckpointStore {
+    pub fn asStore(self: *MemoryCheckpointStore) CheckpointStore {
         return .{
             .ctx = self,
             .vtable = &group_fleet_checkpoint_store_vtable,
@@ -599,9 +599,9 @@ pub const MemoryGroupFleetCheckpointStore = struct {
     }
 
     pub fn putCheckpoint(
-        self: *MemoryGroupFleetCheckpointStore,
+        self: *MemoryCheckpointStore,
         checkpoint: *const group_client.GroupCheckpoint,
-    ) GroupFleetCheckpointStoreError!GroupFleetCheckpointStorePutOutcome {
+    ) CheckpointStoreError!CheckpointPutOutcome {
         try validateCheckpointForStore(checkpoint);
 
         if (self.findIndex(checkpoint.relay_url)) |index| {
@@ -615,15 +615,15 @@ pub const MemoryGroupFleetCheckpointStore = struct {
     }
 
     pub fn getCheckpoint(
-        self: *MemoryGroupFleetCheckpointStore,
+        self: *MemoryCheckpointStore,
         relay_url_text: []const u8,
-    ) GroupFleetCheckpointStoreError!?group_client.GroupCheckpoint {
+    ) CheckpointStoreError!?group_client.GroupCheckpoint {
         try validateStoreRelayUrl(relay_url_text);
         const index = self.findIndex(relay_url_text) orelse return null;
         return self.records[index].checkpoint();
     }
 
-    fn findIndex(self: *const MemoryGroupFleetCheckpointStore, relay_url_text: []const u8) ?usize {
+    fn findIndex(self: *const MemoryCheckpointStore, relay_url_text: []const u8) ?usize {
         for (self.records[0..self.count], 0..) |*record, index| {
             if (!record.occupied) continue;
             if (!relay_url.relayUrlsEquivalent(record.relayUrl(), relay_url_text)) continue;
@@ -1166,9 +1166,9 @@ pub const GroupFleet = struct {
 
     pub fn persistCheckpointStore(
         self: *GroupFleet,
-        store: GroupFleetCheckpointStore,
+        store: CheckpointStore,
         context: *GroupFleetCheckpointContext,
-    ) (GroupFleetError || GroupFleetCheckpointStoreError)!GroupFleetStorePersistOutcome {
+    ) (GroupFleetError || CheckpointStoreError)!GroupFleetStorePersistOutcome {
         var outcome: GroupFleetStorePersistOutcome = .{};
         for (self._clients, 0..) |client, index| {
             const relay_index: u8 = @intCast(index);
@@ -1183,9 +1183,9 @@ pub const GroupFleet = struct {
 
     pub fn restoreCheckpointStore(
         self: *GroupFleet,
-        store: GroupFleetCheckpointStore,
+        store: CheckpointStore,
         scratch: std.mem.Allocator,
-    ) (GroupFleetError || GroupFleetCheckpointStoreError)!GroupFleetStoreRestoreOutcome {
+    ) (GroupFleetError || CheckpointStoreError)!GroupFleetStoreRestoreOutcome {
         var outcome: GroupFleetStoreRestoreOutcome = .{};
         for (self._clients) |client| {
             if (try store.getCheckpoint(client.currentRelayUrl())) |checkpoint| {
@@ -1365,14 +1365,14 @@ fn validatePublishStorage(
     if (self._clients.len > context.storage.events.len) return error.BufferTooSmall;
 }
 
-fn validateStoreRelayUrl(relay_url_text: []const u8) GroupFleetCheckpointStoreError!void {
+fn validateStoreRelayUrl(relay_url_text: []const u8) CheckpointStoreError!void {
     if (relay_url_text.len > relay_url.relay_url_max_bytes) return error.RelayUrlTooLong;
     try relay_url.relayUrlValidate(relay_url_text);
 }
 
 fn validateCheckpointForStore(
     checkpoint: *const group_client.GroupCheckpoint,
-) GroupFleetCheckpointStoreError!void {
+) CheckpointStoreError!void {
     try validateStoreRelayUrl(checkpoint.relay_url);
     if (checkpoint.metadata_event_json.len > fleet_checkpoint_event_json_max) {
         return error.MetadataEventTooLong;
@@ -1389,7 +1389,7 @@ fn validateCheckpointForStore(
 }
 
 fn writeCheckpointRecord(
-    record: *GroupFleetCheckpointRecord,
+    record: *CheckpointRecord,
     checkpoint: *const group_client.GroupCheckpoint,
 ) void {
     @memset(record.relay_url[0..], 0);
@@ -1433,20 +1433,20 @@ fn storeRelayUrlText(dest: []u8, len_out: *u16, input: []const u8) void {
 fn groupFleetCheckpointStorePut(
     ctx: *anyopaque,
     checkpoint: *const group_client.GroupCheckpoint,
-) GroupFleetCheckpointStoreError!GroupFleetCheckpointStorePutOutcome {
-    const self: *MemoryGroupFleetCheckpointStore = @ptrCast(@alignCast(ctx));
+) CheckpointStoreError!CheckpointPutOutcome {
+    const self: *MemoryCheckpointStore = @ptrCast(@alignCast(ctx));
     return self.putCheckpoint(checkpoint);
 }
 
 fn groupFleetCheckpointStoreGet(
     ctx: *anyopaque,
     relay_url_text: []const u8,
-) GroupFleetCheckpointStoreError!?group_client.GroupCheckpoint {
-    const self: *MemoryGroupFleetCheckpointStore = @ptrCast(@alignCast(ctx));
+) CheckpointStoreError!?group_client.GroupCheckpoint {
+    const self: *MemoryCheckpointStore = @ptrCast(@alignCast(ctx));
     return self.getCheckpoint(relay_url_text);
 }
 
-const group_fleet_checkpoint_store_vtable = GroupFleetCheckpointStoreVTable{
+const group_fleet_checkpoint_store_vtable = CheckpointStoreVTable{
     .put_checkpoint = groupFleetCheckpointStorePut,
     .get_checkpoint = groupFleetCheckpointStoreGet,
 };
@@ -2419,8 +2419,8 @@ test "group fleet persists checkpoints into a bounded store and restores them in
         &test_author_secret,
         &checkpoint_storage,
     );
-    var store_records: [2]GroupFleetCheckpointRecord = [_]GroupFleetCheckpointRecord{ .{}, .{} };
-    var memory_store = MemoryGroupFleetCheckpointStore.init(store_records[0..]);
+    var store_records: [2]CheckpointRecord = [_]CheckpointRecord{ .{}, .{} };
+    var memory_store = MemoryCheckpointStore.init(store_records[0..]);
     const persisted = try source_fleet.persistCheckpointStore(
         memory_store.asStore(),
         &checkpoint_context,
@@ -2490,14 +2490,14 @@ test "memory group fleet checkpoint store replaces normalized relay entries and 
         .init(40, &test_author_secret, &second_buffers),
     );
 
-    var store_records: [1]GroupFleetCheckpointRecord = [_]GroupFleetCheckpointRecord{.{}} ** 1;
-    var memory_store = MemoryGroupFleetCheckpointStore.init(store_records[0..]);
+    var store_records: [1]CheckpointRecord = [_]CheckpointRecord{.{}} ** 1;
+    var memory_store = MemoryCheckpointStore.init(store_records[0..]);
     try std.testing.expectEqual(
-        GroupFleetCheckpointStorePutOutcome.stored,
+        CheckpointPutOutcome.stored,
         try memory_store.putCheckpoint(&first_checkpoint),
     );
     try std.testing.expectEqual(
-        GroupFleetCheckpointStorePutOutcome.replaced,
+        CheckpointPutOutcome.replaced,
         try memory_store.putCheckpoint(&second_checkpoint),
     );
 
