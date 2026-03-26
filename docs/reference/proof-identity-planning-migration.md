@@ -247,6 +247,16 @@ That same cleanup also shortened the main client methods:
 - `inspectRememberedLatest` -> `inspectRememberedFreshness`
 - `inspectWatchedOrchestration` -> `inspectWatchedRuntime`
 
+After the grouped route was made canonical, the remaining flat stored/target workflow-floor names
+were also shortened aggressively. If you were still using names like
+`IdentityStoredProfileTargetRefreshCadenceStorage`, `IdentityStoredProfileTargetTurnPolicyPlan`, or
+`IdentityStoredProfileDiscoveryFreshnessEntry` directly, treat that as legacy usage and move to the
+grouped route instead:
+
+- `workflows.identity.verify.Planning.Stored.*`
+- `workflows.identity.verify.Planning.Target.*`
+- `client.identity.nip39.Planning.*`
+
 ## `NIP-05` Planning Shape
 
 The old one-off client-side `Nip05RememberedResolutionPlanning` facade is gone.
