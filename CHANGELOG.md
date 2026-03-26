@@ -6,9 +6,63 @@ This changelog tracks the SDK's own release line. It does not use the Zig toolch
 library version.
 
 `noztr-sdk` is currently on the pre-`1.0` line:
-- current public release candidate: `0.1.0-rc.1`
+- current public release candidate: `0.1.0-rc.2`
 
 ## Unreleased
+
+## [0.1.0-rc.2] - 2026-03-26
+
+Release type: rc
+
+### Summary
+
+Second intentional public release candidate for `noztr-sdk`.
+
+This RC keeps the same broad whole-library public floor as `0.1.0-rc.1`, but updates the
+evaluated baseline after the deliberate pre-stable cleanup wave, migration-route expansion, and
+post-wave cross-lane validation. It should be treated as the current downstream evaluation line.
+
+### Added
+
+- current whole-library release note under `docs/releases/0.1.0-rc.2.md`
+- expanded migration coverage for:
+  - proof/identity planning cleanup
+  - signer-family route-local cleanup
+  - mixed-DM route-local cleanup
+  - `group_fleet` checkpoint-store cleanup
+
+### Changed
+
+- current package version line is now `0.1.0-rc.2`
+- proof, identity, `NIP-05`, signer, mixed-DM, and `group_fleet` route-local naming was simplified
+  further across the public floor
+- grouped proof/identity planning routes are now more canonical and less dependent on old flat
+  planning walls
+- the post-`rc.1` cleanup wave has now been validated across product-surface, Zig-native,
+  docs/discoverability, downstream-foundation, LLM/human usability, and guardrail audit lanes
+
+### Breaking Changes
+
+- `0.1.0-rc.2` includes additional pre-stable breaking cleanup relative to `0.1.0-rc.1`
+- the main route for downstream updates is:
+  - `docs/reference/migration-guide.md`
+- the release should be evaluated as the current public pre-`1.0` baseline rather than a
+  compatibility-free patch line
+
+### Compatibility Notes
+
+- Zig toolchain floor for this RC line remains `0.15.2`
+- `noztr-core` is now expected at `v0.1.0-rc.6`
+- `noztr-core` remains the deterministic kernel floor; `noztr-sdk` remains the higher-level
+  reusable composition layer above it
+
+### Docs And Examples
+
+- public routing still starts at `README.md`, `docs/INDEX.md`, `docs/getting-started.md`, and
+  `docs/reference/contract-map.md`
+- current release note is `docs/releases/0.1.0-rc.2.md`
+- migration routing remains `docs/reference/migration-guide.md`
+- the examples catalog remains the main route-rich public recipe surface under `examples/README.md`
 
 ## [0.1.0-rc.1] - 2026-03-25
 

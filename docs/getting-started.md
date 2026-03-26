@@ -124,7 +124,7 @@ zig build
 
 ## Version Line And Toolchain
 
-- project line: `0.1.0-rc.1`
+- project line: `0.1.0-rc.2`
 - current public release candidate
 - current toolchain baseline: Zig `0.15.2`
 
