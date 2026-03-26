@@ -266,6 +266,20 @@ still using flat names like `IdentityRememberedIdentityRefreshCadenceStorage`,
 - `workflows.identity.verify.Planning.Watched.*`
 - `client.identity.nip39.Planning.*`
 
+On the proof side, the stored and remembered verification family also dropped repeated
+`OpenTimestamps...` route context where the grouped `workflows.proof.nip03.*` route already carries
+it. If you were still using names like `OpenTimestampsStoredVerificationRecord`,
+`OpenTimestampsRemoteVerificationOutcome`, or `OpenTimestampsRememberedRemoteVerificationOutcome`,
+move to the shorter route-local names instead:
+
+- `workflows.proof.nip03.StoredRecord`
+- `workflows.proof.nip03.StoredMatch`
+- `workflows.proof.nip03.StoredDiscoveryError`
+- `workflows.proof.nip03.RemoteVerification`
+- `workflows.proof.nip03.RemoteVerificationOutcome`
+- `workflows.proof.nip03.RememberedRemoteVerification`
+- `workflows.proof.nip03.RememberedRemoteVerificationOutcome`
+
 ## `NIP-05` Planning Shape
 
 The old one-off client-side `Nip05RememberedResolutionPlanning` facade is gone.

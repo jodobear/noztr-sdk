@@ -14,8 +14,8 @@ const ots_header_magic = [_]u8{
 const ots_bitcoin_tag = [_]u8{ 0x05, 0x88, 0x96, 0x0d, 0x73, 0xd7, 0x19, 0x01 };
 
 pub const Nip03VerifyClientError =
-    workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationError ||
-    workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryError;
+    workflows.proof.nip03.RememberedRemoteVerificationError ||
+    workflows.proof.nip03.StoredDiscoveryError;
 pub const Nip03StoredVerificationRefreshReadinessError =
     workflows.proof.nip03.Planning.Target.Readiness.Error;
 
@@ -34,8 +34,8 @@ pub const Nip03VerifyClientStorage = struct {
 };
 
 pub const Nip03VerifyJob = workflows.proof.nip03.OpenTimestampsRemoteProofRequest;
-pub const Nip03VerifyCachedResult = workflows.proof.nip03.OpenTimestampsRemoteVerificationOutcome;
-pub const Nip03VerifyJobResult = workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationOutcome;
+pub const Nip03VerifyCachedResult = workflows.proof.nip03.RemoteVerificationOutcome;
+pub const Nip03VerifyJobResult = workflows.proof.nip03.RememberedRemoteVerificationOutcome;
 
 pub const Planning = workflows.proof.nip03.Planning;
 
@@ -295,8 +295,8 @@ test "nip03 verify client drives remembered remote verification through one comm
     var proof_store_records: [1]workflows.proof.nip03.OpenTimestampsProofRecord =
         [_]workflows.proof.nip03.OpenTimestampsProofRecord{.{}} ** 1;
     var proof_store = workflows.proof.nip03.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [1]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
-        [_]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{.{}} ** 1;
+    var verification_store_records: [1]workflows.proof.nip03.StoredRecord =
+        [_]workflows.proof.nip03.StoredRecord{.{}} ** 1;
     var verification_store =
         workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
@@ -315,7 +315,7 @@ test "nip03 verify client drives remembered remote verification through one comm
     );
     try std.testing.expect(remembered == .verified);
     try std.testing.expectEqual(
-        workflows.proof.nip03.OpenTimestampsVerificationStorePutOutcome.stored,
+        workflows.proof.nip03.VerificationStorePutOutcome.stored,
         remembered.verified.store_outcome,
     );
 
@@ -338,8 +338,8 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
         .target_event_id = [_]u8{0x99} ** 32,
     };
 
-    var verification_store_records: [2]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
-        [_]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
+    var verification_store_records: [2]workflows.proof.nip03.StoredRecord =
+        [_]workflows.proof.nip03.StoredRecord{.{}} ** 2;
     var verification_store =
         workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
@@ -624,8 +624,8 @@ test "nip03 verify client lifts stored verification refresh readiness into the c
     const ready_target = try buildSignedTextEvent(0x31, 1, "ready");
     const blocked_target = try buildSignedTextEvent(0x32, 2, "blocked");
 
-    var verification_store_records: [2]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord =
-        [_]workflows.proof.nip03.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]workflows.proof.nip03.StoredRecord =
+        [_]workflows.proof.nip03.StoredRecord{ .{}, .{} };
     var verification_store =
         workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 

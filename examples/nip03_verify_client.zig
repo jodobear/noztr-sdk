@@ -57,8 +57,8 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     var proof_store_records: [1]proof_workflow.OpenTimestampsProofRecord =
         [_]proof_workflow.OpenTimestampsProofRecord{.{}} ** 1;
     var proof_store = proof_workflow.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [2]proof_workflow.OpenTimestampsStoredVerificationRecord =
-        [_]proof_workflow.OpenTimestampsStoredVerificationRecord{.{}} ** 2;
+    var verification_store_records: [2]proof_workflow.StoredRecord =
+        [_]proof_workflow.StoredRecord{.{}} ** 2;
     var verification_store = proof_workflow.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     const client = proof_client.Nip03VerifyClient.init(.{});
@@ -77,7 +77,7 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
 
     try std.testing.expect(result == .verified);
     try std.testing.expectEqual(
-        proof_workflow.OpenTimestampsVerificationStorePutOutcome.stored,
+        proof_workflow.VerificationStorePutOutcome.stored,
         result.verified.store_outcome,
     );
 

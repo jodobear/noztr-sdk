@@ -38,8 +38,8 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     var proof_store_records: [2]proof.OpenTimestampsProofRecord =
         [_]proof.OpenTimestampsProofRecord{ .{}, .{} };
     var proof_store = proof.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [2]proof.OpenTimestampsStoredVerificationRecord =
-        [_]proof.OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]proof.StoredRecord =
+        [_]proof.StoredRecord{ .{}, .{} };
     var verification_store =
         proof.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof_doc);

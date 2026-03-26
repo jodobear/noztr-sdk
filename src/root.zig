@@ -939,10 +939,10 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsProofRecord) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsProofStore) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.MemoryOpenTimestampsProofStore) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerificationStorePutOutcome) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.VerificationStorePutOutcome) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerificationStoreError) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsStoredVerificationRecord) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsStoredVerificationMatch) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.StoredRecord) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.StoredMatch) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Stored.Entry) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Stored.Freshness) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Stored.FallbackPolicy) == type);
@@ -1009,13 +1009,13 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.MemoryOpenTimestampsVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRemoteProofRequest) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRemoteVerification) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRememberedRemoteVerification) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationError) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsStoredVerificationDiscoveryError) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.RemoteVerification) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.RememberedRemoteVerification) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.RememberedRemoteVerificationError) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.StoredDiscoveryError) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsFetchFailure) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRemoteVerificationOutcome) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRememberedRemoteVerificationOutcome) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.RemoteVerificationOutcome) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.RememberedRemoteVerificationOutcome) == type);
 }
 
 test "phase8 exposes the nip05 resolver workflow surface" {

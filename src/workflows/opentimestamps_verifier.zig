@@ -53,7 +53,7 @@ pub const OpenTimestampsProofStoreError = error{
 pub const opentimestamps_verification_store_url_max_bytes: u16 = 512;
 pub const opentimestamps_verification_store_relay_max_bytes: u16 = 512;
 
-pub const OpenTimestampsVerificationStorePutOutcome = enum {
+pub const VerificationStorePutOutcome = enum {
     stored,
     updated,
 };
@@ -113,7 +113,7 @@ pub const OpenTimestampsProofStore = struct {
     }
 };
 
-pub const OpenTimestampsStoredVerificationRecord = struct {
+pub const StoredRecord = struct {
     target_event_id: [32]u8 = [_]u8{0} ** 32,
     attestation_event_id: [32]u8 = [_]u8{0} ** 32,
     attestation_created_at: u64 = 0,
@@ -126,37 +126,37 @@ pub const OpenTimestampsStoredVerificationRecord = struct {
     relay_url_len: u16 = 0,
     occupied: bool = false,
 
-    pub fn proofUrl(self: *const OpenTimestampsStoredVerificationRecord) []const u8 {
+    pub fn proofUrl(self: *const StoredRecord) []const u8 {
         return self.proof_url[0..self.proof_url_len];
     }
 
-    pub fn relayUrl(self: *const OpenTimestampsStoredVerificationRecord) ?[]const u8 {
+    pub fn relayUrl(self: *const StoredRecord) ?[]const u8 {
         if (self.relay_url_len == 0) return null;
         return self.relay_url[0..self.relay_url_len];
     }
 };
 
-pub const OpenTimestampsStoredVerificationMatch = struct {
+pub const StoredMatch = struct {
     attestation_event_id: [32]u8,
     created_at: u64,
 };
 
-const OpenTimestampsVerificationDiscoveryRequest = struct {
+const StoredMatchRequest = struct {
     target_event_id: *const [32]u8,
-    results: []OpenTimestampsStoredVerificationMatch,
+    results: []StoredMatch,
 };
 
 const StoredDiscoveryEntry = struct {
-    match: OpenTimestampsStoredVerificationMatch,
-    verification: OpenTimestampsStoredVerificationRecord,
+    match: StoredMatch,
+    verification: StoredRecord,
 };
 
 const StoredDiscoveryStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     entries: []StoredDiscoveryEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         entries: []StoredDiscoveryEntry,
     ) StoredDiscoveryStorage {
         return .{
@@ -173,14 +173,14 @@ const StoredDiscoveryRequest = struct {
 
 const StoredLatestRequest = struct {
     target_event_id: *const [32]u8,
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
 };
 
 const StoredLatestFreshnessRequest = struct {
     target_event_id: *const [32]u8,
     now_unix_seconds: u64,
     max_age_seconds: u64,
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
 };
 
 const StoredTarget = struct {
@@ -205,11 +205,11 @@ const StoredFreshEntry = struct {
 };
 
 const StoredFreshStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     entries: []StoredFreshEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         entries: []StoredFreshEntry,
     ) StoredFreshStorage {
         return .{
@@ -232,11 +232,11 @@ const TargetLatestEntry = struct {
 };
 
 const TargetLatestStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     entries: []TargetLatestEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         entries: []TargetLatestEntry,
     ) TargetLatestStorage {
         return .{
@@ -278,12 +278,12 @@ const TargetPreferredEntry = struct {
 };
 
 const TargetPreferredStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     freshness_entries: []StoredFreshEntry,
     entries: []TargetPreferredEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         freshness_entries: []StoredFreshEntry,
         entries: []TargetPreferredEntry,
     ) TargetPreferredStorage {
@@ -311,11 +311,11 @@ const StoredRuntimeAction = enum {
 };
 
 const StoredRuntimeStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     entries: []StoredFreshEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         entries: []StoredFreshEntry,
     ) StoredRuntimeStorage {
         return .{
@@ -378,12 +378,12 @@ const StoredRefreshEntry = struct {
 };
 
 const StoredRefreshStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     freshness_entries: []StoredFreshEntry,
     entries: []StoredRefreshEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         freshness_entries: []StoredFreshEntry,
         entries: []StoredRefreshEntry,
     ) StoredRefreshStorage {
@@ -436,13 +436,13 @@ const TargetRefreshEntry = struct {
 };
 
 const TargetRefreshStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     freshness_entries: []TargetLatestEntry,
     refresh_entries: []StoredRefreshEntry,
     entries: []TargetRefreshEntry,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         freshness_entries: []TargetLatestEntry,
         refresh_entries: []StoredRefreshEntry,
         entries: []TargetRefreshEntry,
@@ -486,7 +486,7 @@ const TargetRefreshStep = struct {
 };
 
 const TargetReadinessError =
-    OpenTimestampsStoredVerificationDiscoveryError || store_archive.EventArchiveError;
+    StoredDiscoveryError || store_archive.EventArchiveError;
 
 const TargetReadinessAction = enum {
     ready_refresh,
@@ -509,7 +509,7 @@ const TargetReadinessGroup = struct {
 };
 
 const TargetReadinessStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     freshness_entries: []TargetLatestEntry,
     refresh_entries: []StoredRefreshEntry,
     target_refresh_entries: []TargetRefreshEntry,
@@ -519,7 +519,7 @@ const TargetReadinessStorage = struct {
     groups: []TargetReadinessGroup,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         freshness_entries: []TargetLatestEntry,
         refresh_entries: []StoredRefreshEntry,
         target_refresh_entries: []TargetRefreshEntry,
@@ -621,13 +621,13 @@ const TargetPolicyGroup = struct {
 };
 
 const TargetPolicyStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     latest_entries: []TargetLatestEntry,
     entries: []TargetPolicyEntry,
     groups: []TargetPolicyGroup,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         latest_entries: []TargetLatestEntry,
         entries: []TargetPolicyEntry,
         groups: []TargetPolicyGroup,
@@ -704,13 +704,13 @@ const TargetRefreshCadenceGroup = struct {
 };
 
 const TargetRefreshCadenceStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     latest_entries: []TargetLatestEntry,
     entries: []TargetRefreshCadenceEntry,
     groups: []TargetRefreshCadenceGroup,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         latest_entries: []TargetLatestEntry,
         entries: []TargetRefreshCadenceEntry,
         groups: []TargetRefreshCadenceGroup,
@@ -793,13 +793,13 @@ const TargetRefreshCadenceStep = struct {
 };
 
 const TargetRefreshBatchStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     latest_entries: []TargetLatestEntry,
     cadence_entries: []TargetRefreshCadenceEntry,
     cadence_groups: []TargetRefreshCadenceGroup,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         latest_entries: []TargetLatestEntry,
         cadence_entries: []TargetRefreshCadenceEntry,
         cadence_groups: []TargetRefreshCadenceGroup,
@@ -879,7 +879,7 @@ const TargetTurnPolicyGroup = struct {
 };
 
 const TargetTurnPolicyStorage = struct {
-    matches: []OpenTimestampsStoredVerificationMatch,
+    matches: []StoredMatch,
     latest_entries: []TargetLatestEntry,
     cadence_entries: []TargetRefreshCadenceEntry,
     cadence_groups: []TargetRefreshCadenceGroup,
@@ -887,7 +887,7 @@ const TargetTurnPolicyStorage = struct {
     groups: []TargetTurnPolicyGroup,
 
     pub fn init(
-        matches: []OpenTimestampsStoredVerificationMatch,
+        matches: []StoredMatch,
         latest_entries: []TargetLatestEntry,
         cadence_entries: []TargetRefreshCadenceEntry,
         cadence_groups: []TargetRefreshCadenceGroup,
@@ -1004,16 +1004,16 @@ pub const OpenTimestampsVerificationStoreVTable = struct {
         ctx: *anyopaque,
         target_event: *const noztr.nip01_event.Event,
         attestation_event: *const noztr.nip01_event.Event,
-        verification: *const OpenTimestampsRemoteVerification,
-    ) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome,
+        verification: *const RemoteVerification,
+    ) OpenTimestampsVerificationStoreError!VerificationStorePutOutcome,
     get_verification: *const fn (
         ctx: *anyopaque,
         attestation_event_id: *const [32]u8,
-    ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord,
+    ) OpenTimestampsVerificationStoreError!?StoredRecord,
     find_verifications: *const fn (
         ctx: *anyopaque,
         target_event_id: *const [32]u8,
-        out: []OpenTimestampsStoredVerificationMatch,
+        out: []StoredMatch,
     ) OpenTimestampsVerificationStoreError!usize,
 };
 
@@ -1025,8 +1025,8 @@ pub const OpenTimestampsVerificationStore = struct {
         self: OpenTimestampsVerificationStore,
         target_event: *const noztr.nip01_event.Event,
         attestation_event: *const noztr.nip01_event.Event,
-        verification: *const OpenTimestampsRemoteVerification,
-    ) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome {
+        verification: *const RemoteVerification,
+    ) OpenTimestampsVerificationStoreError!VerificationStorePutOutcome {
         return self.vtable.put_remote_verification(
             self.ctx,
             target_event,
@@ -1038,15 +1038,15 @@ pub const OpenTimestampsVerificationStore = struct {
     pub fn getVerification(
         self: OpenTimestampsVerificationStore,
         attestation_event_id: *const [32]u8,
-    ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+    ) OpenTimestampsVerificationStoreError!?StoredRecord {
         return self.vtable.get_verification(self.ctx, attestation_event_id);
     }
 
     pub fn findVerifications(
         self: OpenTimestampsVerificationStore,
         target_event_id: *const [32]u8,
-        out: []OpenTimestampsStoredVerificationMatch,
-    ) OpenTimestampsVerificationStoreError![]const OpenTimestampsStoredVerificationMatch {
+        out: []StoredMatch,
+    ) OpenTimestampsVerificationStoreError![]const StoredMatch {
         const count = try self.vtable.find_verifications(self.ctx, target_event_id, out);
         return out[0..count];
     }
@@ -1104,10 +1104,10 @@ pub const MemoryOpenTimestampsProofStore = struct {
 };
 
 pub const MemoryOpenTimestampsVerificationStore = struct {
-    records: []OpenTimestampsStoredVerificationRecord,
+    records: []StoredRecord,
     count: usize = 0,
 
-    pub fn init(records: []OpenTimestampsStoredVerificationRecord) MemoryOpenTimestampsVerificationStore {
+    pub fn init(records: []StoredRecord) MemoryOpenTimestampsVerificationStore {
         return .{ .records = records };
     }
 
@@ -1122,8 +1122,8 @@ pub const MemoryOpenTimestampsVerificationStore = struct {
         self: *MemoryOpenTimestampsVerificationStore,
         target_event: *const noztr.nip01_event.Event,
         attestation_event: *const noztr.nip01_event.Event,
-        verification: *const OpenTimestampsRemoteVerification,
-    ) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome {
+        verification: *const RemoteVerification,
+    ) OpenTimestampsVerificationStoreError!VerificationStorePutOutcome {
         if (verification.proof_url.len > opentimestamps_verification_store_url_max_bytes) {
             return error.ProofUrlTooLong;
         }
@@ -1156,7 +1156,7 @@ pub const MemoryOpenTimestampsVerificationStore = struct {
     pub fn getVerification(
         self: *MemoryOpenTimestampsVerificationStore,
         attestation_event_id: *const [32]u8,
-    ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+    ) OpenTimestampsVerificationStoreError!?StoredRecord {
         const index = self.findIndex(attestation_event_id) orelse return null;
         return self.records[index];
     }
@@ -1164,8 +1164,8 @@ pub const MemoryOpenTimestampsVerificationStore = struct {
     pub fn findVerifications(
         self: *MemoryOpenTimestampsVerificationStore,
         target_event_id: *const [32]u8,
-        out: []OpenTimestampsStoredVerificationMatch,
-    ) OpenTimestampsVerificationStoreError![]const OpenTimestampsStoredVerificationMatch {
+        out: []StoredMatch,
+    ) OpenTimestampsVerificationStoreError![]const StoredMatch {
         var count: usize = 0;
         for (self.records[0..self.count]) |*record| {
             if (!record.occupied) continue;
@@ -1207,7 +1207,7 @@ pub const OpenTimestampsVerificationOutcome = union(enum) {
     invalid_local_proof: OpenTimestampsInvalidProof,
 };
 
-pub const OpenTimestampsRemoteVerification = struct {
+pub const RemoteVerification = struct {
     proof_url: []const u8,
     verification: OpenTimestampsVerification,
 };
@@ -1218,48 +1218,48 @@ pub const OpenTimestampsFetchFailure = struct {
     cause: transport.HttpError,
 };
 
-pub const OpenTimestampsRemoteInvalidProof = struct {
+pub const RemoteInvalidProof = struct {
     proof_url: []const u8,
     invalid: OpenTimestampsInvalidProof,
 };
 
-pub const OpenTimestampsRemoteInvalidAttestation = struct {
+pub const RemoteInvalidAttestation = struct {
     proof_url: []const u8,
     invalid: OpenTimestampsInvalidAttestation,
 };
 
-pub const OpenTimestampsRemoteVerificationOutcome = union(enum) {
-    verified: OpenTimestampsRemoteVerification,
-    target_mismatch: OpenTimestampsRemoteVerification,
-    invalid_attestation: OpenTimestampsRemoteInvalidAttestation,
-    invalid_local_proof: OpenTimestampsRemoteInvalidProof,
+pub const RemoteVerificationOutcome = union(enum) {
+    verified: RemoteVerification,
+    target_mismatch: RemoteVerification,
+    invalid_attestation: RemoteInvalidAttestation,
+    invalid_local_proof: RemoteInvalidProof,
     fetch_failed: OpenTimestampsFetchFailure,
 };
 
-pub const OpenTimestampsRememberedRemoteVerification = struct {
-    verification: OpenTimestampsRemoteVerification,
-    store_outcome: OpenTimestampsVerificationStorePutOutcome,
+pub const RememberedRemoteVerification = struct {
+    verification: RemoteVerification,
+    store_outcome: VerificationStorePutOutcome,
 };
 
-pub const OpenTimestampsRememberedRemoteVerificationError =
+pub const RememberedRemoteVerificationError =
     OpenTimestampsVerifierError ||
     OpenTimestampsProofStoreError ||
     OpenTimestampsVerificationStoreError;
 
-pub const OpenTimestampsStoredVerificationDiscoveryError =
+pub const StoredDiscoveryError =
     OpenTimestampsVerificationStoreError || error{BufferTooSmall};
 
-pub const OpenTimestampsRememberedRemoteVerificationOutcome = union(enum) {
-    verified: OpenTimestampsRememberedRemoteVerification,
-    target_mismatch: OpenTimestampsRemoteVerification,
-    invalid_attestation: OpenTimestampsRemoteInvalidAttestation,
-    invalid_local_proof: OpenTimestampsRemoteInvalidProof,
+pub const RememberedRemoteVerificationOutcome = union(enum) {
+    verified: RememberedRemoteVerification,
+    target_mismatch: RemoteVerification,
+    invalid_attestation: RemoteInvalidAttestation,
+    invalid_local_proof: RemoteInvalidProof,
     fetch_failed: OpenTimestampsFetchFailure,
 };
 
 pub const Planning = struct {
     pub const Stored = struct {
-        pub const Match = OpenTimestampsStoredVerificationMatch;
+        pub const Match = StoredMatch;
         pub const Entry = StoredDiscoveryEntry;
         pub const Freshness = StoredFreshness;
         pub const FallbackPolicy = StoredFallbackPolicy;
@@ -1367,8 +1367,8 @@ pub const Planning = struct {
 pub const OpenTimestampsVerifier = struct {
     fn hydrateStoredVerificationEntry(
         verification_store: OpenTimestampsVerificationStore,
-        match: OpenTimestampsStoredVerificationMatch,
-    ) OpenTimestampsStoredVerificationDiscoveryError!StoredDiscoveryEntry {
+        match: StoredMatch,
+    ) StoredDiscoveryError!StoredDiscoveryEntry {
         const verification =
             (try verification_store.getVerification(&match.attestation_event_id)) orelse
             return error.InconsistentStoreData;
@@ -1433,7 +1433,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn verifyRemote(
         http_client: transport.HttpClient,
         request: *const OpenTimestampsRemoteProofRequest,
-    ) OpenTimestampsVerifierError!OpenTimestampsRemoteVerificationOutcome {
+    ) OpenTimestampsVerifierError!RemoteVerificationOutcome {
         const attestation = noztr.nip03_opentimestamps.opentimestamps_extract(
             request.proof_buffer,
             request.attestation_event,
@@ -1522,7 +1522,7 @@ pub const OpenTimestampsVerifier = struct {
         http_client: transport.HttpClient,
         proof_store: OpenTimestampsProofStore,
         request: *const OpenTimestampsRemoteProofRequest,
-    ) (OpenTimestampsVerifierError || OpenTimestampsProofStoreError)!OpenTimestampsRemoteVerificationOutcome {
+    ) (OpenTimestampsVerifierError || OpenTimestampsProofStoreError)!RemoteVerificationOutcome {
         const attestation = noztr.nip03_opentimestamps.opentimestamps_extract(
             request.proof_buffer,
             request.attestation_event,
@@ -1576,7 +1576,7 @@ pub const OpenTimestampsVerifier = struct {
         proof_store: OpenTimestampsProofStore,
         verification_store: OpenTimestampsVerificationStore,
         request: *const OpenTimestampsRemoteProofRequest,
-    ) OpenTimestampsRememberedRemoteVerificationError!OpenTimestampsRememberedRemoteVerificationOutcome {
+    ) RememberedRemoteVerificationError!RememberedRemoteVerificationOutcome {
         const outcome = try verifyRemoteCached(http_client, proof_store, request);
         return switch (outcome) {
             .verified => |verification| .{
@@ -1601,29 +1601,29 @@ pub const OpenTimestampsVerifier = struct {
         verification_store: OpenTimestampsVerificationStore,
         target_event: *const noztr.nip01_event.Event,
         attestation_event: *const noztr.nip01_event.Event,
-        verification: *const OpenTimestampsRemoteVerification,
-    ) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome {
+        verification: *const RemoteVerification,
+    ) OpenTimestampsVerificationStoreError!VerificationStorePutOutcome {
         return verification_store.putRemoteVerification(target_event, attestation_event, verification);
     }
 
     pub fn getStoredVerification(
         verification_store: OpenTimestampsVerificationStore,
         attestation_event_id: *const [32]u8,
-    ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+    ) OpenTimestampsVerificationStoreError!?StoredRecord {
         return verification_store.getVerification(attestation_event_id);
     }
 
     pub fn discoverStoredVerifications(
         verification_store: OpenTimestampsVerificationStore,
-        request: OpenTimestampsVerificationDiscoveryRequest,
-    ) OpenTimestampsVerificationStoreError![]const OpenTimestampsStoredVerificationMatch {
+        request: StoredMatchRequest,
+    ) OpenTimestampsVerificationStoreError![]const StoredMatch {
         return verification_store.findVerifications(request.target_event_id, request.results);
     }
 
     pub fn discoverStoredVerificationEntries(
         verification_store: OpenTimestampsVerificationStore,
         request: StoredDiscoveryRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError![]const StoredDiscoveryEntry {
+    ) StoredDiscoveryError![]const StoredDiscoveryEntry {
         const matches = try verification_store.findVerifications(
             request.target_event_id,
             request.storage.matches,
@@ -1642,7 +1642,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn getLatestStoredVerification(
         verification_store: OpenTimestampsVerificationStore,
         request: StoredLatestRequest,
-    ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+    ) OpenTimestampsVerificationStoreError!?StoredRecord {
         const matches = try verification_store.findVerifications(request.target_event_id, request.matches);
         if (matches.len == 0) return null;
 
@@ -1686,7 +1686,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn discoverLatestStoredVerificationFreshnessForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetLatestRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError![]const TargetLatestEntry {
+    ) StoredDiscoveryError![]const TargetLatestEntry {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (request.targets, 0..) |target, index| {
@@ -1709,7 +1709,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn getPreferredStoredVerification(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetPreferredRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!?TargetPreferredValue {
+    ) StoredDiscoveryError!?TargetPreferredValue {
         const entries = try discoverStoredVerificationEntriesWithFreshness(
             verification_store,
             .{
@@ -1754,7 +1754,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn getPreferredStoredVerificationForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetPreferredEntriesRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!?TargetPreferredEntry {
+    ) StoredDiscoveryError!?TargetPreferredEntry {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
 
         var best_fresh: ?TargetPreferredEntry = null;
@@ -1806,7 +1806,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn discoverStoredVerificationEntriesWithFreshness(
         verification_store: OpenTimestampsVerificationStore,
         request: StoredFreshRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError![]const StoredFreshEntry {
+    ) StoredDiscoveryError![]const StoredFreshEntry {
         const matches = try verification_store.findVerifications(
             request.target_event_id,
             request.storage.matches,
@@ -1834,7 +1834,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn inspectStoredVerificationRuntime(
         verification_store: OpenTimestampsVerificationStore,
         request: StoredRuntimeRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!StoredRuntimePlan {
+    ) StoredDiscoveryError!StoredRuntimePlan {
         const entries = try discoverStoredVerificationEntriesWithFreshness(
             verification_store,
             .{
@@ -1909,7 +1909,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn planStoredVerificationRefresh(
         verification_store: OpenTimestampsVerificationStore,
         request: StoredRefreshRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!StoredRefreshPlan {
+    ) StoredDiscoveryError!StoredRefreshPlan {
         const freshness_entries = try discoverStoredVerificationEntriesWithFreshness(
             verification_store,
             .{
@@ -1946,7 +1946,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn planStoredVerificationRefreshForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetRefreshRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!TargetRefreshPlan {
+    ) StoredDiscoveryError!TargetRefreshPlan {
         const freshness_entries = try discoverLatestStoredVerificationFreshnessForTargets(
             verification_store,
             .{
@@ -1987,7 +1987,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn inspectStoredVerificationPolicyForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetPolicyRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!TargetPolicyPlan {
+    ) StoredDiscoveryError!TargetPolicyPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
@@ -2123,7 +2123,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn inspectStoredVerificationRefreshCadenceForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetRefreshCadenceRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!TargetRefreshCadencePlan {
+    ) StoredDiscoveryError!TargetRefreshCadencePlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 5) return error.BufferTooSmall;
 
@@ -2278,7 +2278,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn inspectStoredVerificationRefreshBatchForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetRefreshBatchRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!TargetRefreshBatchPlan {
+    ) StoredDiscoveryError!TargetRefreshBatchPlan {
         const cadence = try inspectStoredVerificationRefreshCadenceForTargets(
             verification_store,
             .{
@@ -2313,7 +2313,7 @@ pub const OpenTimestampsVerifier = struct {
     pub fn inspectStoredVerificationTurnPolicyForTargets(
         verification_store: OpenTimestampsVerificationStore,
         request: TargetTurnPolicyRequest,
-    ) OpenTimestampsStoredVerificationDiscoveryError!TargetTurnPolicyPlan {
+    ) StoredDiscoveryError!TargetTurnPolicyPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
@@ -2626,7 +2626,7 @@ fn verifyFetchedProof(
     proof_url: []const u8,
     attestation: noztr.nip03_opentimestamps.OpenTimestampsAttestation,
     proof: []const u8,
-) OpenTimestampsVerifierError!OpenTimestampsRemoteVerificationOutcome {
+) OpenTimestampsVerifierError!RemoteVerificationOutcome {
     const verification: OpenTimestampsVerification = .{
         .attestation = attestation,
         .proof = proof,
@@ -2706,10 +2706,10 @@ const proof_store_vtable = OpenTimestampsProofStoreVTable{
 };
 
 fn writeStoredVerificationRecord(
-    record: *OpenTimestampsStoredVerificationRecord,
+    record: *StoredRecord,
     target_event: *const noztr.nip01_event.Event,
     attestation_event: *const noztr.nip01_event.Event,
-    verification: *const OpenTimestampsRemoteVerification,
+    verification: *const RemoteVerification,
 ) void {
     record.target_event_id = target_event.id;
     record.attestation_event_id = attestation_event.id;
@@ -2732,8 +2732,8 @@ fn verificationStorePut(
     ctx: *anyopaque,
     target_event: *const noztr.nip01_event.Event,
     attestation_event: *const noztr.nip01_event.Event,
-    verification: *const OpenTimestampsRemoteVerification,
-) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome {
+    verification: *const RemoteVerification,
+) OpenTimestampsVerificationStoreError!VerificationStorePutOutcome {
     const self: *MemoryOpenTimestampsVerificationStore = @ptrCast(@alignCast(ctx));
     return self.putRemoteVerification(target_event, attestation_event, verification);
 }
@@ -2741,7 +2741,7 @@ fn verificationStorePut(
 fn verificationStoreGet(
     ctx: *anyopaque,
     attestation_event_id: *const [32]u8,
-) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+) OpenTimestampsVerificationStoreError!?StoredRecord {
     const self: *MemoryOpenTimestampsVerificationStore = @ptrCast(@alignCast(ctx));
     return self.getVerification(attestation_event_id);
 }
@@ -2749,7 +2749,7 @@ fn verificationStoreGet(
 fn verificationStoreFind(
     ctx: *anyopaque,
     target_event_id: *const [32]u8,
-    out: []OpenTimestampsStoredVerificationMatch,
+    out: []StoredMatch,
 ) OpenTimestampsVerificationStoreError!usize {
     const self: *MemoryOpenTimestampsVerificationStore = @ptrCast(@alignCast(ctx));
     const matches = try self.findVerifications(target_event_id, out);
@@ -3201,8 +3201,8 @@ test "opentimestamps verifier remembers one verified detached proof result and h
     var proof_store_records: [2]OpenTimestampsProofRecord =
         [_]OpenTimestampsProofRecord{ .{}, .{} };
     var proof_store = MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     var fake_http = TestHttp.init("https://proof.example/hello.ots", proof[0..testLocalProofLen(1)]);
 
@@ -3219,13 +3219,13 @@ test "opentimestamps verifier remembers one verified detached proof result and h
     );
 
     try std.testing.expect(remembered == .verified);
-    try std.testing.expectEqual(OpenTimestampsVerificationStorePutOutcome.stored, remembered.verified.store_outcome);
+    try std.testing.expectEqual(VerificationStorePutOutcome.stored, remembered.verified.store_outcome);
     try std.testing.expectEqualStrings(
         "https://proof.example/hello.ots",
         remembered.verified.verification.proof_url,
     );
 
-    var discovery_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var discovery_matches: [2]StoredMatch = undefined;
     var discovery_entries: [2]StoredDiscoveryEntry = undefined;
     const entries = try OpenTimestampsVerifier.discoverStoredVerificationEntries(
         verification_store.asStore(),
@@ -3244,7 +3244,7 @@ test "opentimestamps verifier remembers one verified detached proof result and h
     try std.testing.expectEqualStrings("https://proof.example/hello.ots", entries[0].verification.proofUrl());
     try std.testing.expectEqualStrings("wss://relay.example", entries[0].verification.relayUrl().?);
 
-    var latest_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_matches: [2]StoredMatch = undefined;
     const latest = (try OpenTimestampsVerifier.getLatestStoredVerification(
         verification_store.asStore(),
         .{
@@ -3254,7 +3254,7 @@ test "opentimestamps verifier remembers one verified detached proof result and h
     )).?;
     try std.testing.expectEqualStrings("https://proof.example/hello.ots", latest.proofUrl());
 
-    var latest_freshness_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var latest_freshness_matches: [2]StoredMatch = undefined;
     const latest_freshness = (try OpenTimestampsVerifier.getLatestStoredVerificationFreshness(
         verification_store.asStore(),
         .{
@@ -3285,8 +3285,8 @@ test "opentimestamps verifier does not remember non-verified detached proof outc
     var remote_proof_storage: [128]u8 = undefined;
     var proof_store_records: [1]OpenTimestampsProofRecord = [_]OpenTimestampsProofRecord{.{}};
     var proof_store = MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     var fake_http = TestHttp.init("https://proof.example/hello.ots", proof[0..testLocalProofLen(1)]);
 
@@ -3321,7 +3321,7 @@ test "opentimestamps verifier surfaces bounded remembered-verification store err
     var remote_proof_storage: [128]u8 = undefined;
     var proof_store_records: [1]OpenTimestampsProofRecord = [_]OpenTimestampsProofRecord{.{}};
     var proof_store = MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
-    var empty_verification_store_records: [0]OpenTimestampsStoredVerificationRecord = .{};
+    var empty_verification_store_records: [0]StoredRecord = .{};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(empty_verification_store_records[0..]);
     var fake_http = TestHttp.init("https://proof.example/hello.ots", proof[0..testLocalProofLen(1)]);
 
@@ -3365,12 +3365,12 @@ test "opentimestamps verifier surfaces stored verification discovery buffer pres
     second_attestation_fixture.event.created_at = 5;
     second_attestation_fixture.fixup();
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     var first_decoded_proof: [128]u8 = undefined;
     var second_decoded_proof: [128]u8 = undefined;
-    const verification: OpenTimestampsRemoteVerification = .{
+    const verification: RemoteVerification = .{
         .proof_url = "https://proof.example/hello.ots",
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
@@ -3380,7 +3380,7 @@ test "opentimestamps verifier surfaces stored verification discovery buffer pres
             .proof = proof[0..testLocalProofLen(1)],
         },
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .proof_url = "https://proof.example/hello-2.ots",
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
@@ -3403,7 +3403,7 @@ test "opentimestamps verifier surfaces stored verification discovery buffer pres
         &second_verification,
     );
 
-    var discovery_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var discovery_matches: [2]StoredMatch = undefined;
     var discovery_entries: [1]StoredDiscoveryEntry = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
@@ -3442,12 +3442,12 @@ test "opentimestamps verifier classifies remembered discovery entries by freshne
     second_attestation_fixture.event.created_at = 9;
     second_attestation_fixture.fixup();
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     var decoded_proof_a: [128]u8 = undefined;
     var decoded_proof_b: [128]u8 = undefined;
-    const first_verification: OpenTimestampsRemoteVerification = .{
+    const first_verification: RemoteVerification = .{
         .proof_url = "https://proof.example/old.ots",
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
@@ -3457,7 +3457,7 @@ test "opentimestamps verifier classifies remembered discovery entries by freshne
             .proof = proof[0..testLocalProofLen(1)],
         },
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .proof_url = "https://proof.example/new.ots",
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
@@ -3480,7 +3480,7 @@ test "opentimestamps verifier classifies remembered discovery entries by freshne
         &second_verification,
     );
 
-    var discovery_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var discovery_matches: [2]StoredMatch = undefined;
     var freshness_entries: [2]StoredFreshEntry = undefined;
     const entries = try OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
         verification_store.asStore(),
@@ -3511,11 +3511,11 @@ test "opentimestamps verifier classifies remembered discovery entries by freshne
 }
 
 test "opentimestamps verifier returns empty remembered freshness discovery for missing verifications" {
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     const target_event = try testTargetEvent(1, "hello");
-    var discovery_matches: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var discovery_matches: [1]StoredMatch = undefined;
     var freshness_entries: [1]StoredFreshEntry = undefined;
 
     const entries = try OpenTimestampsVerifier.discoverStoredVerificationEntriesWithFreshness(
@@ -3531,11 +3531,11 @@ test "opentimestamps verifier returns empty remembered freshness discovery for m
 }
 
 test "opentimestamps verifier runtime policy requests verification when no remembered verification exists" {
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     const target_event = try testTargetEvent(1, "hello");
-    var runtime_matches: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var runtime_matches: [1]StoredMatch = undefined;
     var runtime_entries: [1]StoredFreshEntry = undefined;
 
     const runtime = try OpenTimestampsVerifier.inspectStoredVerificationRuntime(
@@ -3583,7 +3583,7 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
     second_attestation_fixture.fixup();
     var decoded_proof_a: [128]u8 = undefined;
     var decoded_proof_b: [128]u8 = undefined;
-    const stale_verification: OpenTimestampsRemoteVerification = .{
+    const stale_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_proof_a[0..],
@@ -3593,7 +3593,7 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
         },
         .proof_url = "https://proof.example/old.ots",
     };
-    const fresh_verification: OpenTimestampsRemoteVerification = .{
+    const fresh_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_proof_b[0..],
@@ -3604,8 +3604,8 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
         .proof_url = "https://proof.example/new.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -3620,7 +3620,7 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
         &fresh_verification,
     );
 
-    var runtime_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var runtime_matches: [2]StoredMatch = undefined;
     var runtime_entries: [2]StoredFreshEntry = undefined;
     const runtime = try OpenTimestampsVerifier.inspectStoredVerificationRuntime(
         verification_store.asStore(),
@@ -3655,7 +3655,7 @@ test "opentimestamps verifier runtime policy prefers a fresh remembered verifica
         preferred.entry.verification.proofUrl(),
     );
 
-    var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var preferred_matches: [2]StoredMatch = undefined;
     var preferred_entries: [2]StoredFreshEntry = undefined;
     const selected = (try OpenTimestampsVerifier.getPreferredStoredVerification(
         verification_store.asStore(),
@@ -3697,7 +3697,7 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
     newer_attestation_fixture.fixup();
     var older_decoded_proof: [128]u8 = undefined;
     var newer_decoded_proof: [128]u8 = undefined;
-    const older_verification: OpenTimestampsRemoteVerification = .{
+    const older_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 older_decoded_proof[0..],
@@ -3707,7 +3707,7 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
         },
         .proof_url = "https://proof.example/old.ots",
     };
-    const newer_verification: OpenTimestampsRemoteVerification = .{
+    const newer_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 newer_decoded_proof[0..],
@@ -3718,8 +3718,8 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
         .proof_url = "https://proof.example/new.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -3734,7 +3734,7 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
         &newer_verification,
     );
 
-    var runtime_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var runtime_matches: [2]StoredMatch = undefined;
     var runtime_entries: [2]StoredFreshEntry = undefined;
     const runtime = try OpenTimestampsVerifier.inspectStoredVerificationRuntime(
         verification_store.asStore(),
@@ -3770,7 +3770,7 @@ test "opentimestamps verifier runtime policy can use stale verification and refr
         preferred.entry.verification.proofUrl(),
     );
 
-    var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var preferred_matches: [2]StoredMatch = undefined;
     var preferred_entries: [2]StoredFreshEntry = undefined;
     const selected = (try OpenTimestampsVerifier.getPreferredStoredVerification(
         verification_store.asStore(),
@@ -3801,7 +3801,7 @@ test "opentimestamps verifier runtime policy can require refresh for stale remem
     attestation_fixture.event.created_at = 2;
     attestation_fixture.fixup();
     var decoded_proof: [128]u8 = undefined;
-    const remembered_verification: OpenTimestampsRemoteVerification = .{
+    const remembered_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_proof[0..],
@@ -3812,8 +3812,8 @@ test "opentimestamps verifier runtime policy can require refresh for stale remem
         .proof_url = "https://proof.example/old.ots",
     };
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -3822,7 +3822,7 @@ test "opentimestamps verifier runtime policy can require refresh for stale remem
         &remembered_verification,
     );
 
-    var runtime_matches: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var runtime_matches: [1]StoredMatch = undefined;
     var runtime_entries: [1]StoredFreshEntry = undefined;
     const runtime = try OpenTimestampsVerifier.inspectStoredVerificationRuntime(
         verification_store.asStore(),
@@ -3881,7 +3881,7 @@ test "opentimestamps verifier preferred selection uses caller-owned freshness st
 
     var first_decoded_proof: [128]u8 = undefined;
     var second_decoded_proof: [128]u8 = undefined;
-    const first_verification: OpenTimestampsRemoteVerification = .{
+    const first_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 first_decoded_proof[0..],
@@ -3891,7 +3891,7 @@ test "opentimestamps verifier preferred selection uses caller-owned freshness st
         },
         .proof_url = "https://proof.example/old.ots",
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 second_decoded_proof[0..],
@@ -3902,8 +3902,8 @@ test "opentimestamps verifier preferred selection uses caller-owned freshness st
         .proof_url = "https://proof.example/new.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -3918,7 +3918,7 @@ test "opentimestamps verifier preferred selection uses caller-owned freshness st
         &second_verification,
     );
 
-    var preferred_matches: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var preferred_matches: [2]StoredMatch = undefined;
     var too_small_entries: [1]StoredFreshEntry = undefined;
     try std.testing.expectError(
         error.BufferTooSmall,
@@ -3945,22 +3945,22 @@ test "opentimestamps verifier returns typed error for inconsistent remembered ve
             _: *anyopaque,
             _: *const noztr.nip01_event.Event,
             _: *const noztr.nip01_event.Event,
-            _: *const OpenTimestampsRemoteVerification,
-        ) OpenTimestampsVerificationStoreError!OpenTimestampsVerificationStorePutOutcome {
+            _: *const RemoteVerification,
+        ) OpenTimestampsVerificationStoreError!VerificationStorePutOutcome {
             return .stored;
         }
 
         fn get(
             _: *anyopaque,
             _: *const [32]u8,
-        ) OpenTimestampsVerificationStoreError!?OpenTimestampsStoredVerificationRecord {
+        ) OpenTimestampsVerificationStoreError!?StoredRecord {
             return null;
         }
 
         fn find(
             _: *anyopaque,
             _: *const [32]u8,
-            out: []OpenTimestampsStoredVerificationMatch,
+            out: []StoredMatch,
         ) OpenTimestampsVerificationStoreError!usize {
             out[0] = .{
                 .attestation_event_id = [_]u8{0x91} ** 32,
@@ -3978,7 +3978,7 @@ test "opentimestamps verifier returns typed error for inconsistent remembered ve
 
     var store = InconsistentVerificationStore{};
     const target_event = try testTargetEvent(1, "hello");
-    var matches: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches: [1]StoredMatch = undefined;
     var entries: [1]StoredFreshEntry = undefined;
     try std.testing.expectError(
         error.InconsistentStoreData,
@@ -4019,7 +4019,7 @@ test "opentimestamps verifier refresh plan returns stale remembered verification
     newer_attestation_fixture.fixup();
     var older_decoded_proof: [128]u8 = undefined;
     var newer_decoded_proof: [128]u8 = undefined;
-    const older_verification: OpenTimestampsRemoteVerification = .{
+    const older_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 older_decoded_proof[0..],
@@ -4029,7 +4029,7 @@ test "opentimestamps verifier refresh plan returns stale remembered verification
         },
         .proof_url = "https://proof.example/old.ots",
     };
-    const newer_verification: OpenTimestampsRemoteVerification = .{
+    const newer_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 newer_decoded_proof[0..],
@@ -4040,8 +4040,8 @@ test "opentimestamps verifier refresh plan returns stale remembered verification
         .proof_url = "https://proof.example/new.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -4056,7 +4056,7 @@ test "opentimestamps verifier refresh plan returns stale remembered verification
         &newer_verification,
     );
 
-    var matches_storage: [2]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [2]StoredMatch = undefined;
     var freshness_storage: [2]StoredFreshEntry = undefined;
     var refresh_entries: [2]StoredRefreshEntry = undefined;
     const plan = try OpenTimestampsVerifier.planStoredVerificationRefresh(
@@ -4111,7 +4111,7 @@ test "opentimestamps verifier refresh plan returns empty when remembered verific
     attestation_fixture.event.created_at = 40;
     attestation_fixture.fixup();
     var decoded_proof: [128]u8 = undefined;
-    const remembered_verification: OpenTimestampsRemoteVerification = .{
+    const remembered_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_proof[0..],
@@ -4122,8 +4122,8 @@ test "opentimestamps verifier refresh plan returns empty when remembered verific
         .proof_url = "https://proof.example/fresh.ots",
     };
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -4132,7 +4132,7 @@ test "opentimestamps verifier refresh plan returns empty when remembered verific
         &remembered_verification,
     );
 
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_storage: [1]StoredFreshEntry = undefined;
     var refresh_entries: [1]StoredRefreshEntry = undefined;
     const plan = try OpenTimestampsVerifier.planStoredVerificationRefresh(
@@ -4187,7 +4187,7 @@ test "opentimestamps verifier discovers latest remembered freshness for grouped 
 
     var decoded_first_proof: [128]u8 = undefined;
     var decoded_second_proof: [128]u8 = undefined;
-    const first_verification: OpenTimestampsRemoteVerification = .{
+    const first_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_first_proof[0..],
@@ -4197,7 +4197,7 @@ test "opentimestamps verifier discovers latest remembered freshness for grouped 
         },
         .proof_url = "https://proof.example/old.ots",
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_second_proof[0..],
@@ -4208,8 +4208,8 @@ test "opentimestamps verifier discovers latest remembered freshness for grouped 
         .proof_url = "https://proof.example/fresh.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -4229,7 +4229,7 @@ test "opentimestamps verifier discovers latest remembered freshness for grouped 
         .{ .target_event_id = second_target.id },
         .{ .target_event_id = [_]u8{0x85} ** 32 },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var entries_storage: [3]TargetLatestEntry = undefined;
     const entries = try OpenTimestampsVerifier.discoverLatestStoredVerificationFreshnessForTargets(
         verification_store.asStore(),
@@ -4284,7 +4284,7 @@ test "opentimestamps verifier prefers the freshest grouped remembered proof targ
 
     var decoded_first_proof: [128]u8 = undefined;
     var decoded_second_proof: [128]u8 = undefined;
-    const first_verification: OpenTimestampsRemoteVerification = .{
+    const first_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_first_proof[0..],
@@ -4294,7 +4294,7 @@ test "opentimestamps verifier prefers the freshest grouped remembered proof targ
         },
         .proof_url = "https://proof.example/stale.ots",
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_second_proof[0..],
@@ -4305,8 +4305,8 @@ test "opentimestamps verifier prefers the freshest grouped remembered proof targ
         .proof_url = "https://proof.example/fresh.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -4326,7 +4326,7 @@ test "opentimestamps verifier prefers the freshest grouped remembered proof targ
         .{ .target_event_id = second_target.id },
         .{ .target_event_id = [_]u8{0x95} ** 32 },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [1]StoredFreshEntry = undefined;
     var entries_storage: [3]TargetPreferredEntry = undefined;
     const preferred = (try OpenTimestampsVerifier.getPreferredStoredVerificationForTargets(
@@ -4384,7 +4384,7 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
 
     var decoded_first_proof: [128]u8 = undefined;
     var decoded_second_proof: [128]u8 = undefined;
-    const first_verification: OpenTimestampsRemoteVerification = .{
+    const first_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_first_proof[0..],
@@ -4394,7 +4394,7 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
         },
         .proof_url = "https://proof.example/older.ots",
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_second_proof[0..],
@@ -4405,8 +4405,8 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
         .proof_url = "https://proof.example/newer.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -4425,7 +4425,7 @@ test "opentimestamps verifier grouped preferred helper can require fresh or fall
         .{ .target_event_id = first_target.id },
         .{ .target_event_id = second_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [1]StoredFreshEntry = undefined;
     var entries_storage: [2]TargetPreferredEntry = undefined;
 
@@ -4472,8 +4472,8 @@ test "opentimestamps verifier groups remembered-proof target policy entries by a
     fresh_target.id = [_]u8{0xc1} ** 32;
     stale_target.id = [_]u8{0xc2} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -4497,7 +4497,7 @@ test "opentimestamps verifier groups remembered-proof target policy entries by a
         .{ .target_event_id = fresh_target.id },
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var entries_storage: [3]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
@@ -4537,13 +4537,13 @@ test "opentimestamps verifier groups remembered-proof target policy entries by a
 }
 
 test "opentimestamps verifier target policy inspection stays bounded by caller-owned grouped storage" {
-    var verification_store_records: [0]OpenTimestampsStoredVerificationRecord = .{};
+    var verification_store_records: [0]StoredRecord = .{};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     const targets = [_]StoredTarget{
         .{ .target_event_id = [_]u8{0xc5} ** 32 },
     };
-    var matches_storage: [0]OpenTimestampsStoredVerificationMatch = .{};
+    var matches_storage: [0]StoredMatch = .{};
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var entries_storage: [1]TargetPolicyEntry = undefined;
     var groups_storage: [3]TargetPolicyGroup = undefined;
@@ -4572,8 +4572,8 @@ test "opentimestamps verifier target policy exposes usable preferred targets in 
     fresh_target.id = [_]u8{0xc6} ** 32;
     stale_target.id = [_]u8{0xc7} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(&verification_store, &fresh_target, 0xc8, 45, 0x63, "https://proof.example/fresh.ots");
     try rememberTestRemoteVerification(&verification_store, &stale_target, 0xc9, 5, 0x64, "https://proof.example/stale.ots");
@@ -4582,7 +4582,7 @@ test "opentimestamps verifier target policy exposes usable preferred targets in 
         .{ .target_event_id = fresh_target.id },
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
@@ -4608,14 +4608,14 @@ test "opentimestamps verifier target policy exposes usable preferred targets in 
 }
 
 test "opentimestamps verifier target policy exposes verify-now targets in stable caller order" {
-    var verification_store_records: [0]OpenTimestampsStoredVerificationRecord = .{};
+    var verification_store_records: [0]StoredRecord = .{};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     const targets = [_]StoredTarget{
         .{ .target_event_id = [_]u8{0xca} ** 32 },
         .{ .target_event_id = [_]u8{0xcb} ** 32 },
     };
-    var matches_storage: [0]OpenTimestampsStoredVerificationMatch = .{};
+    var matches_storage: [0]StoredMatch = .{};
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
@@ -4645,8 +4645,8 @@ test "opentimestamps verifier target policy exposes refresh-needed targets under
     fresh_target.id = [_]u8{0xcc} ** 32;
     stale_target.id = [_]u8{0xcd} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(&verification_store, &fresh_target, 0xce, 45, 0x65, "https://proof.example/fresh.ots");
     try rememberTestRemoteVerification(&verification_store, &stale_target, 0xcf, 5, 0x66, "https://proof.example/stale.ots");
@@ -4655,7 +4655,7 @@ test "opentimestamps verifier target policy exposes refresh-needed targets under
         .{ .target_event_id = fresh_target.id },
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var entries_storage: [2]TargetPolicyEntry = undefined;
     var groups_storage: [4]TargetPolicyGroup = undefined;
@@ -4688,8 +4688,8 @@ test "opentimestamps verifier grouped refresh cadence classifies missing stale s
     soon_target.id = [_]u8{0xd2} ** 32;
     stale_target.id = [_]u8{0xd3} ** 32;
 
-    var verification_store_records: [3]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{}, .{} };
+    var verification_store_records: [3]StoredRecord =
+        [_]StoredRecord{ .{}, .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -4722,7 +4722,7 @@ test "opentimestamps verifier grouped refresh cadence classifies missing stale s
         .{ .target_event_id = soon_target.id },
         .{ .target_event_id = stable_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [4]TargetLatestEntry = undefined;
     var cadence_entries_storage: [4]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -4770,13 +4770,13 @@ test "opentimestamps verifier grouped refresh cadence classifies missing stale s
 }
 
 test "opentimestamps verifier grouped refresh cadence stays bounded by caller-owned grouped storage" {
-    var verification_store_records: [0]OpenTimestampsStoredVerificationRecord = .{};
+    var verification_store_records: [0]StoredRecord = .{};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
     const targets = [_]StoredTarget{
         .{ .target_event_id = [_]u8{0xe1} ** 32 },
     };
-    var matches_storage: [0]OpenTimestampsStoredVerificationMatch = .{};
+    var matches_storage: [0]StoredMatch = .{};
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [4]TargetRefreshCadenceGroup = undefined;
@@ -4806,8 +4806,8 @@ test "opentimestamps verifier grouped refresh cadence next-due selector prefers 
     soon_target.id = [_]u8{0xe2} ** 32;
     stale_target.id = [_]u8{0xe3} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -4831,7 +4831,7 @@ test "opentimestamps verifier grouped refresh cadence next-due selector prefers 
         .{ .target_event_id = stale_target.id },
         .{ .target_event_id = soon_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -4883,8 +4883,8 @@ test "opentimestamps verifier grouped refresh cadence exposes typed next-due ste
     var stale_target = try testTargetEvent(1, "stale");
     stale_target.id = [_]u8{0xe7} ** 32;
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -4898,7 +4898,7 @@ test "opentimestamps verifier grouped refresh cadence exposes typed next-due ste
     const targets = [_]StoredTarget{
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -4929,8 +4929,8 @@ test "opentimestamps verifier grouped refresh cadence exposes usable-while-refre
     soon_target.id = [_]u8{0xe9} ** 32;
     stale_target.id = [_]u8{0xea} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -4953,7 +4953,7 @@ test "opentimestamps verifier grouped refresh cadence exposes usable-while-refre
         .{ .target_event_id = stale_target.id },
         .{ .target_event_id = soon_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [2]TargetLatestEntry = undefined;
     var cadence_entries_storage: [2]TargetRefreshCadenceEntry = undefined;
     var groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5002,8 +5002,8 @@ test "opentimestamps verifier selects a bounded refresh batch from due remembere
     soon_target.id = [_]u8{0xed} ** 32;
     stale_target.id = [_]u8{0xee} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5027,7 +5027,7 @@ test "opentimestamps verifier selects a bounded refresh batch from due remembere
         .{ .target_event_id = stale_target.id },
         .{ .target_event_id = soon_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5061,8 +5061,8 @@ test "opentimestamps verifier refresh batch selection allows zero selected entri
     var stale_target = try testTargetEvent(1, "stale");
     stale_target.id = [_]u8{0xf2} ** 32;
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5076,7 +5076,7 @@ test "opentimestamps verifier refresh batch selection allows zero selected entri
     const targets = [_]StoredTarget{
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5108,8 +5108,8 @@ test "opentimestamps verifier refresh batch exposes next selected entry" {
     soon_target.id = [_]u8{0xf4} ** 32;
     stale_target.id = [_]u8{0xf5} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5133,7 +5133,7 @@ test "opentimestamps verifier refresh batch exposes next selected entry" {
         .{ .target_event_id = stale_target.id },
         .{ .target_event_id = soon_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5162,8 +5162,8 @@ test "opentimestamps verifier refresh batch exposes typed next selected step" {
     var stale_target = try testTargetEvent(1, "stale");
     stale_target.id = [_]u8{0xf9} ** 32;
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5177,7 +5177,7 @@ test "opentimestamps verifier refresh batch exposes typed next selected step" {
     const targets = [_]StoredTarget{
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5208,8 +5208,8 @@ test "opentimestamps verifier refresh batch exposes selected and deferred views"
     soon_target.id = [_]u8{0xfb} ** 32;
     stale_target.id = [_]u8{0xfc} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5233,7 +5233,7 @@ test "opentimestamps verifier refresh batch exposes selected and deferred views"
         .{ .target_event_id = stale_target.id },
         .{ .target_event_id = soon_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5268,8 +5268,8 @@ test "opentimestamps verifier turn policy classifies verify refresh cached and d
     stable_target.id = [_]u8{0xa1} ** 32;
     stale_target.id = [_]u8{0xa2} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5293,7 +5293,7 @@ test "opentimestamps verifier turn policy classifies verify refresh cached and d
         .{ .target_event_id = stale_target.id },
         .{ .target_event_id = stable_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5336,8 +5336,8 @@ test "opentimestamps verifier turn policy tracks selected refresh entries when b
     soon_target.id = [_]u8{0xa5} ** 32;
     stale_target.id = [_]u8{0xa6} ** 32;
 
-    var verification_store_records: [3]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{}, .{} };
+    var verification_store_records: [3]StoredRecord =
+        [_]StoredRecord{ .{}, .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(&verification_store, &stable_target, 0x53, 45, 0x53, "https://proof.example/stable.ots");
     try rememberTestRemoteVerification(&verification_store, &soon_target, 0x54, 35, 0x54, "https://proof.example/soon.ots");
@@ -5348,7 +5348,7 @@ test "opentimestamps verifier turn policy tracks selected refresh entries when b
         .{ .target_event_id = soon_target.id },
         .{ .target_event_id = stable_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5386,8 +5386,8 @@ test "opentimestamps verifier turn policy exposes typed next work step" {
     var stale_target = try testTargetEvent(1, "stale");
     stale_target.id = [_]u8{0xa7} ** 32;
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(
         &verification_store,
@@ -5401,7 +5401,7 @@ test "opentimestamps verifier turn policy exposes typed next work step" {
     const targets = [_]StoredTarget{
         .{ .target_event_id = stale_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [1]TargetLatestEntry = undefined;
     var cadence_entries_storage: [1]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5439,8 +5439,8 @@ test "opentimestamps verifier turn policy exposes work idle cached and deferred 
     soon_target.id = [_]u8{0xa9} ** 32;
     stale_target.id = [_]u8{0xaa} ** 32;
 
-    var verification_store_records: [3]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{}, .{} };
+    var verification_store_records: [3]StoredRecord =
+        [_]StoredRecord{ .{}, .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     try rememberTestRemoteVerification(&verification_store, &stable_target, 0x57, 45, 0x57, "https://proof.example/stable.ots");
     try rememberTestRemoteVerification(&verification_store, &soon_target, 0x58, 35, 0x58, "https://proof.example/soon.ots");
@@ -5451,7 +5451,7 @@ test "opentimestamps verifier turn policy exposes work idle cached and deferred 
         .{ .target_event_id = soon_target.id },
         .{ .target_event_id = stable_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var latest_entries_storage: [3]TargetLatestEntry = undefined;
     var cadence_entries_storage: [3]TargetRefreshCadenceEntry = undefined;
     var cadence_groups_storage: [5]TargetRefreshCadenceGroup = undefined;
@@ -5519,7 +5519,7 @@ test "opentimestamps verifier target-set refresh plan returns stale remembered p
 
     var decoded_first_proof: [128]u8 = undefined;
     var decoded_second_proof: [128]u8 = undefined;
-    const first_verification: OpenTimestampsRemoteVerification = .{
+    const first_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_first_proof[0..],
@@ -5529,7 +5529,7 @@ test "opentimestamps verifier target-set refresh plan returns stale remembered p
         },
         .proof_url = "https://proof.example/old.ots",
     };
-    const second_verification: OpenTimestampsRemoteVerification = .{
+    const second_verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_second_proof[0..],
@@ -5540,8 +5540,8 @@ test "opentimestamps verifier target-set refresh plan returns stale remembered p
         .proof_url = "https://proof.example/new.ots",
     };
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -5561,7 +5561,7 @@ test "opentimestamps verifier target-set refresh plan returns stale remembered p
         .{ .target_event_id = second_target.id },
         .{ .target_event_id = [_]u8{0xb5} ** 32 },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [3]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var refresh_entries: [2]TargetRefreshEntry = undefined;
@@ -5612,7 +5612,7 @@ test "opentimestamps verifier target-set refresh plan returns empty for fresh or
     attestation_fixture.fixup();
 
     var decoded_proof: [128]u8 = undefined;
-    const verification: OpenTimestampsRemoteVerification = .{
+    const verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_proof[0..],
@@ -5623,8 +5623,8 @@ test "opentimestamps verifier target-set refresh plan returns empty for fresh or
         .proof_url = "https://proof.example/fresh.ots",
     };
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store = MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     _ = try OpenTimestampsVerifier.rememberRemoteVerification(
         verification_store.asStore(),
@@ -5637,7 +5637,7 @@ test "opentimestamps verifier target-set refresh plan returns empty for fresh or
         .{ .target_event_id = target.id },
         .{ .target_event_id = [_]u8{0xc3} ** 32 },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [2]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var refresh_entries: [1]TargetRefreshEntry = undefined;
@@ -5671,8 +5671,8 @@ test "opentimestamps verifier refresh readiness groups stale targets by archive 
     var missing_events_target = try testTargetEvent(1, "missing both");
     missing_events_target.id = [_]u8{0xd4} ** 32;
 
-    var verification_store_records: [4]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}} ** 4;
+    var verification_store_records: [4]StoredRecord =
+        [_]StoredRecord{.{}} ** 4;
     var verification_store =
         MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
 
@@ -5754,7 +5754,7 @@ test "opentimestamps verifier refresh readiness groups stale targets by archive 
         .{ .target_event_id = missing_attestation_target.id },
         .{ .target_event_id = missing_events_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [4]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var target_refresh_entries: [4]TargetRefreshEntry = undefined;
@@ -5829,8 +5829,8 @@ test "opentimestamps verifier refresh readiness stays bounded by caller-owned ar
     var target = try testTargetEvent(1, "ready");
     target.id = [_]u8{0xd5} ** 32;
 
-    var verification_store_records: [1]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{.{}};
+    var verification_store_records: [1]StoredRecord =
+        [_]StoredRecord{.{}};
     var verification_store =
         MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     const attestation = try rememberTestRemoteVerificationFixture(
@@ -5867,7 +5867,7 @@ test "opentimestamps verifier refresh readiness stays bounded by caller-owned ar
     const targets = [_]StoredTarget{
         .{ .target_event_id = target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [1]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var target_refresh_entries: [1]TargetRefreshEntry = undefined;
@@ -5906,8 +5906,8 @@ test "opentimestamps verifier refresh readiness exposes blocked stale targets ex
     var blocked_target = try testTargetEvent(1, "blocked");
     blocked_target.id = [_]u8{0xd7} ** 32;
 
-    var verification_store_records: [2]OpenTimestampsStoredVerificationRecord =
-        [_]OpenTimestampsStoredVerificationRecord{ .{}, .{} };
+    var verification_store_records: [2]StoredRecord =
+        [_]StoredRecord{ .{}, .{} };
     var verification_store =
         MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
     const ready_attestation = try rememberTestRemoteVerificationFixture(
@@ -5953,7 +5953,7 @@ test "opentimestamps verifier refresh readiness exposes blocked stale targets ex
         .{ .target_event_id = ready_target.id },
         .{ .target_event_id = blocked_target.id },
     };
-    var matches_storage: [1]OpenTimestampsStoredVerificationMatch = undefined;
+    var matches_storage: [1]StoredMatch = undefined;
     var freshness_entries: [2]TargetLatestEntry = undefined;
     const refresh_detail_entries = [_]StoredRefreshEntry{};
     var target_refresh_entries: [2]TargetRefreshEntry = undefined;
@@ -6034,7 +6034,7 @@ fn rememberTestRemoteVerificationFixture(
     attestation_fixture.fixup();
 
     var decoded_proof: [128]u8 = undefined;
-    const verification: OpenTimestampsRemoteVerification = .{
+    const verification: RemoteVerification = .{
         .verification = .{
             .attestation = try noztr.nip03_opentimestamps.opentimestamps_extract(
                 decoded_proof[0..],
