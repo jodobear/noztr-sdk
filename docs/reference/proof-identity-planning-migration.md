@@ -257,6 +257,15 @@ grouped route instead:
 - `workflows.identity.verify.Planning.Target.*`
 - `client.identity.nip39.Planning.*`
 
+That same cleanup now also applies to the remembered and watched planning families. If you were
+still using flat names like `IdentityRememberedIdentityRefreshCadenceStorage`,
+`IdentityRememberedIdentityRefreshBatchPlan`, `IdentityStoredWatchedTargetRuntimeRequest`, or
+`IdentityStoredWatchedTargetTurnPolicyPlan`, treat those as legacy usage too and move to:
+
+- `workflows.identity.verify.Planning.Remembered.*`
+- `workflows.identity.verify.Planning.Watched.*`
+- `client.identity.nip39.Planning.*`
+
 ## `NIP-05` Planning Shape
 
 The old one-off client-side `Nip05RememberedResolutionPlanning` facade is gone.

@@ -811,7 +811,7 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityWatchedTargetResultPage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityRecord) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityResultPage) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityPlanningError) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.RememberedPlanningError) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.Planning.Match) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.Planning.Record.Remembered) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.Planning.Record.Watched) == type);

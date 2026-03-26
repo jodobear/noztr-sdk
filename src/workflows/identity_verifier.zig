@@ -1089,14 +1089,14 @@ pub const TargetTurnStep = struct {
     entry: TargetTurnEntry,
 };
 
-const IdentityStoredWatchedTargetPlanningError =
+const WatchedPlanningError =
     IdentityStoredProfileDiscoveryError || IdentityWatchedTargetStoreError || error{
         WatchedTargetListTruncated,
     };
 
-pub const IdentityStoredWatchedTargetPolicyError = IdentityStoredWatchedTargetPlanningError;
+pub const WatchedPolicyError = WatchedPlanningError;
 
-pub const IdentityStoredWatchedTargetPolicyStorage = struct {
+pub const WatchedPolicyStorage = struct {
     watched_target_records: []IdentityWatchedTargetRecord,
     targets: []StoredTarget,
     policy: TargetPolicyStorage,
@@ -1105,7 +1105,7 @@ pub const IdentityStoredWatchedTargetPolicyStorage = struct {
         watched_target_records: []IdentityWatchedTargetRecord,
         targets: []StoredTarget,
         policy: TargetPolicyStorage,
-    ) IdentityStoredWatchedTargetPolicyStorage {
+    ) WatchedPolicyStorage {
         return .{
             .watched_target_records = watched_target_records,
             .targets = targets,
@@ -1114,39 +1114,39 @@ pub const IdentityStoredWatchedTargetPolicyStorage = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetPolicyRequest = struct {
+pub const WatchedPolicyRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityStoredWatchedTargetPolicyStorage,
+    storage: WatchedPolicyStorage,
 };
 
-pub const IdentityStoredWatchedTargetPolicyPlan = struct {
+pub const WatchedPolicyPlan = struct {
     watched_target_count: u32 = 0,
     policy: TargetPolicyPlan,
 
     pub fn usablePreferredEntries(
-        self: *const IdentityStoredWatchedTargetPolicyPlan,
+        self: *const WatchedPolicyPlan,
     ) []const TargetPolicyEntry {
         return self.policy.usablePreferredEntries();
     }
 
     pub fn verifyNowEntries(
-        self: *const IdentityStoredWatchedTargetPolicyPlan,
+        self: *const WatchedPolicyPlan,
     ) []const TargetPolicyEntry {
         return self.policy.verifyNowEntries();
     }
 
     pub fn refreshNeededEntries(
-        self: *const IdentityStoredWatchedTargetPolicyPlan,
+        self: *const WatchedPolicyPlan,
     ) []const TargetPolicyEntry {
         return self.policy.refreshNeededEntries();
     }
 };
 
-pub const IdentityStoredWatchedTargetRefreshCadenceError = IdentityStoredWatchedTargetPlanningError;
+pub const WatchedCadenceError = WatchedPlanningError;
 
-pub const IdentityStoredWatchedTargetRefreshCadenceStorage = struct {
+pub const WatchedCadenceStorage = struct {
     watched_target_records: []IdentityWatchedTargetRecord,
     targets: []StoredTarget,
     cadence: TargetCadenceStorage,
@@ -1155,7 +1155,7 @@ pub const IdentityStoredWatchedTargetRefreshCadenceStorage = struct {
         watched_target_records: []IdentityWatchedTargetRecord,
         targets: []StoredTarget,
         cadence: TargetCadenceStorage,
-    ) IdentityStoredWatchedTargetRefreshCadenceStorage {
+    ) WatchedCadenceStorage {
         return .{
             .watched_target_records = watched_target_records,
             .targets = targets,
@@ -1164,46 +1164,46 @@ pub const IdentityStoredWatchedTargetRefreshCadenceStorage = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetRefreshCadenceRequest = struct {
+pub const WatchedCadenceRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityStoredWatchedTargetRefreshCadenceStorage,
+    storage: WatchedCadenceStorage,
 };
 
-pub const IdentityStoredWatchedTargetRefreshCadencePlan = struct {
+pub const WatchedCadencePlan = struct {
     watched_target_count: u32 = 0,
     cadence: TargetCadencePlan,
 
     pub fn nextDueEntry(
-        self: *const IdentityStoredWatchedTargetRefreshCadencePlan,
+        self: *const WatchedCadencePlan,
     ) ?*const TargetCadenceEntry {
         return self.cadence.nextDueEntry();
     }
 
     pub fn nextDueStep(
-        self: *const IdentityStoredWatchedTargetRefreshCadencePlan,
+        self: *const WatchedCadencePlan,
     ) ?TargetCadenceStep {
         return self.cadence.nextDueStep();
     }
 
     pub fn usableWhileRefreshingEntries(
-        self: *const IdentityStoredWatchedTargetRefreshCadencePlan,
+        self: *const WatchedCadencePlan,
     ) []const TargetCadenceEntry {
         return self.cadence.usableWhileRefreshingEntries();
     }
 
     pub fn refreshSoonEntries(
-        self: *const IdentityStoredWatchedTargetRefreshCadencePlan,
+        self: *const WatchedCadencePlan,
     ) []const TargetCadenceEntry {
         return self.cadence.refreshSoonEntries();
     }
 };
 
-pub const IdentityStoredWatchedTargetRefreshBatchError = IdentityStoredWatchedTargetPlanningError;
+pub const WatchedBatchError = WatchedPlanningError;
 
-pub const IdentityStoredWatchedTargetRefreshBatchStorage = struct {
+pub const WatchedBatchStorage = struct {
     watched_target_records: []IdentityWatchedTargetRecord,
     targets: []StoredTarget,
     batch: TargetBatchStorage,
@@ -1212,7 +1212,7 @@ pub const IdentityStoredWatchedTargetRefreshBatchStorage = struct {
         watched_target_records: []IdentityWatchedTargetRecord,
         targets: []StoredTarget,
         batch: TargetBatchStorage,
-    ) IdentityStoredWatchedTargetRefreshBatchStorage {
+    ) WatchedBatchStorage {
         return .{
             .watched_target_records = watched_target_records,
             .targets = targets,
@@ -1221,47 +1221,47 @@ pub const IdentityStoredWatchedTargetRefreshBatchStorage = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetRefreshBatchRequest = struct {
+pub const WatchedBatchRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     max_selected: usize,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityStoredWatchedTargetRefreshBatchStorage,
+    storage: WatchedBatchStorage,
 };
 
-pub const IdentityStoredWatchedTargetRefreshBatchPlan = struct {
+pub const WatchedBatchPlan = struct {
     watched_target_count: u32 = 0,
     batch: TargetBatchPlan,
 
     pub fn nextBatchEntry(
-        self: *const IdentityStoredWatchedTargetRefreshBatchPlan,
+        self: *const WatchedBatchPlan,
     ) ?*const TargetCadenceEntry {
         return self.batch.nextBatchEntry();
     }
 
     pub fn nextBatchStep(
-        self: *const IdentityStoredWatchedTargetRefreshBatchPlan,
+        self: *const WatchedBatchPlan,
     ) ?TargetBatchStep {
         return self.batch.nextBatchStep();
     }
 
     pub fn selectedEntries(
-        self: *const IdentityStoredWatchedTargetRefreshBatchPlan,
+        self: *const WatchedBatchPlan,
     ) []const TargetCadenceEntry {
         return self.batch.selectedEntries();
     }
 
     pub fn deferredEntries(
-        self: *const IdentityStoredWatchedTargetRefreshBatchPlan,
+        self: *const WatchedBatchPlan,
     ) []const TargetCadenceEntry {
         return self.batch.deferredEntries();
     }
 };
 
-pub const IdentityStoredWatchedTargetRuntimeError = IdentityStoredWatchedTargetPlanningError;
+pub const WatchedRuntimeError = WatchedPlanningError;
 
-pub const IdentityStoredWatchedTargetRuntimeStorage = struct {
+pub const WatchedRuntimeStorage = struct {
     watched_target_records: []IdentityWatchedTargetRecord,
     targets: []StoredTarget,
     policy: TargetPolicyStorage,
@@ -1276,7 +1276,7 @@ pub const IdentityStoredWatchedTargetRuntimeStorage = struct {
         cadence: TargetCadenceStorage,
         batch: TargetBatchStorage,
         turn: TargetTurnStorage,
-    ) IdentityStoredWatchedTargetRuntimeStorage {
+    ) WatchedRuntimeStorage {
         return .{
             .watched_target_records = watched_target_records,
             .targets = targets,
@@ -1288,16 +1288,16 @@ pub const IdentityStoredWatchedTargetRuntimeStorage = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetRuntimeRequest = struct {
+pub const WatchedRuntimeRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     max_selected: usize,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityStoredWatchedTargetRuntimeStorage,
+    storage: WatchedRuntimeStorage,
 };
 
-pub const IdentityStoredWatchedTargetRuntimePlan = struct {
+pub const WatchedRuntimePlan = struct {
     watched_target_count: u32 = 0,
     policy: TargetPolicyPlan,
     cadence: TargetCadencePlan,
@@ -1305,51 +1305,51 @@ pub const IdentityStoredWatchedTargetRuntimePlan = struct {
     turn: TargetTurnPlan,
 
     pub fn nextWorkStep(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) ?TargetTurnStep {
         return self.turn.nextWorkStep();
     }
 
     pub fn nextDueStep(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) ?TargetCadenceStep {
         return self.cadence.nextDueStep();
     }
 
     pub fn nextRefreshBatchStep(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) ?TargetBatchStep {
         return self.batch.nextBatchStep();
     }
 
     pub fn verifyNowEntries(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) []const TargetTurnEntry {
         return self.turn.verifyNowEntries();
     }
 
     pub fn refreshSelectedEntries(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) []const TargetTurnEntry {
         return self.turn.refreshSelectedEntries();
     }
 
     pub fn useCachedEntries(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) []const TargetTurnEntry {
         return self.turn.useCachedEntries();
     }
 
     pub fn deferredEntries(
-        self: *const IdentityStoredWatchedTargetRuntimePlan,
+        self: *const WatchedRuntimePlan,
     ) []const TargetTurnEntry {
         return self.turn.deferredEntries();
     }
 };
 
-pub const IdentityStoredWatchedTargetTurnPolicyError = IdentityStoredWatchedTargetPlanningError;
+pub const WatchedTurnError = WatchedPlanningError;
 
-pub const IdentityStoredWatchedTargetTurnPolicyStorage = struct {
+pub const WatchedTurnStorage = struct {
     watched_target_records: []IdentityWatchedTargetRecord,
     targets: []StoredTarget,
     turn_policy: TargetTurnStorage,
@@ -1358,7 +1358,7 @@ pub const IdentityStoredWatchedTargetTurnPolicyStorage = struct {
         watched_target_records: []IdentityWatchedTargetRecord,
         targets: []StoredTarget,
         turn_policy: TargetTurnStorage,
-    ) IdentityStoredWatchedTargetTurnPolicyStorage {
+    ) WatchedTurnStorage {
         return .{
             .watched_target_records = watched_target_records,
             .targets = targets,
@@ -1367,63 +1367,63 @@ pub const IdentityStoredWatchedTargetTurnPolicyStorage = struct {
     }
 };
 
-pub const IdentityStoredWatchedTargetTurnPolicyRequest = struct {
+pub const WatchedTurnRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     max_selected: usize,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityStoredWatchedTargetTurnPolicyStorage,
+    storage: WatchedTurnStorage,
 };
 
-pub const IdentityStoredWatchedTargetTurnPolicyPlan = struct {
+pub const WatchedTurnPlan = struct {
     watched_target_count: u32 = 0,
     turn_policy: TargetTurnPlan,
 
     pub fn nextWorkEntry(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) ?*const TargetTurnEntry {
         return self.turn_policy.nextWorkEntry();
     }
 
     pub fn nextWorkStep(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) ?TargetTurnStep {
         return self.turn_policy.nextWorkStep();
     }
 
     pub fn verifyNowEntries(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) []const TargetTurnEntry {
         return self.turn_policy.verifyNowEntries();
     }
 
     pub fn refreshSelectedEntries(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) []const TargetTurnEntry {
         return self.turn_policy.refreshSelectedEntries();
     }
 
     pub fn workEntries(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) []const TargetTurnEntry {
         return self.turn_policy.workEntries();
     }
 
     pub fn idleEntries(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) []const TargetTurnEntry {
         return self.turn_policy.idleEntries();
     }
 
     pub fn useCachedEntries(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) []const TargetTurnEntry {
         return self.turn_policy.useCachedEntries();
     }
 
     pub fn deferredEntries(
-        self: *const IdentityStoredWatchedTargetTurnPolicyPlan,
+        self: *const WatchedTurnPlan,
     ) []const TargetTurnEntry {
         return self.turn_policy.deferredEntries();
     }
@@ -1457,10 +1457,10 @@ pub const TargetLatestStep = struct {
     entry: TargetLatestEntry,
 };
 
-pub const IdentityRememberedIdentityPlanningError =
+pub const RememberedPlanningError =
     IdentityProfileStoreError || error{RememberedIdentityListTruncated, BufferTooSmall};
 
-pub const IdentityRememberedIdentityFreshnessStorage = struct {
+pub const RememberedFreshStorage = struct {
     remembered_identity_records: []IdentityRememberedIdentityRecord,
     targets: []StoredTarget,
     freshness: TargetLatestStorage,
@@ -1469,7 +1469,7 @@ pub const IdentityRememberedIdentityFreshnessStorage = struct {
         remembered_identity_records: []IdentityRememberedIdentityRecord,
         targets: []StoredTarget,
         freshness: TargetLatestStorage,
-    ) IdentityRememberedIdentityFreshnessStorage {
+    ) RememberedFreshStorage {
         return .{
             .remembered_identity_records = remembered_identity_records,
             .targets = targets,
@@ -1478,30 +1478,30 @@ pub const IdentityRememberedIdentityFreshnessStorage = struct {
     }
 };
 
-pub const IdentityRememberedIdentityFreshnessRequest = struct {
+pub const RememberedFreshRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
-    storage: IdentityRememberedIdentityFreshnessStorage,
+    storage: RememberedFreshStorage,
 };
 
-pub const IdentityRememberedIdentityFreshnessPlan = struct {
+pub const RememberedFreshPlan = struct {
     remembered_identity_count: u32 = 0,
     freshness: TargetLatestPlan,
 
     pub fn nextEntry(
-        self: *const IdentityRememberedIdentityFreshnessPlan,
+        self: *const RememberedFreshPlan,
     ) ?*const TargetLatestEntry {
         return self.freshness.nextEntry();
     }
 
     pub fn nextStep(
-        self: *const IdentityRememberedIdentityFreshnessPlan,
+        self: *const RememberedFreshPlan,
     ) ?TargetLatestStep {
         return self.freshness.nextStep();
     }
 };
 
-pub const IdentityRememberedIdentityRefreshCadenceStorage = struct {
+pub const RememberedCadenceStorage = struct {
     remembered_identity_records: []IdentityRememberedIdentityRecord,
     targets: []StoredTarget,
     cadence: TargetCadenceStorage,
@@ -1510,7 +1510,7 @@ pub const IdentityRememberedIdentityRefreshCadenceStorage = struct {
         remembered_identity_records: []IdentityRememberedIdentityRecord,
         targets: []StoredTarget,
         cadence: TargetCadenceStorage,
-    ) IdentityRememberedIdentityRefreshCadenceStorage {
+    ) RememberedCadenceStorage {
         return .{
             .remembered_identity_records = remembered_identity_records,
             .targets = targets,
@@ -1519,44 +1519,44 @@ pub const IdentityRememberedIdentityRefreshCadenceStorage = struct {
     }
 };
 
-pub const IdentityRememberedIdentityRefreshCadenceRequest = struct {
+pub const RememberedCadenceRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityRememberedIdentityRefreshCadenceStorage,
+    storage: RememberedCadenceStorage,
 };
 
-pub const IdentityRememberedIdentityRefreshCadencePlan = struct {
+pub const RememberedCadencePlan = struct {
     remembered_identity_count: u32 = 0,
     cadence: TargetCadencePlan,
 
     pub fn nextDueEntry(
-        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+        self: *const RememberedCadencePlan,
     ) ?*const TargetCadenceEntry {
         return self.cadence.nextDueEntry();
     }
 
     pub fn nextDueStep(
-        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+        self: *const RememberedCadencePlan,
     ) ?TargetCadenceStep {
         return self.cadence.nextDueStep();
     }
 
     pub fn usableWhileRefreshingEntries(
-        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+        self: *const RememberedCadencePlan,
     ) []const TargetCadenceEntry {
         return self.cadence.usableWhileRefreshingEntries();
     }
 
     pub fn refreshSoonEntries(
-        self: *const IdentityRememberedIdentityRefreshCadencePlan,
+        self: *const RememberedCadencePlan,
     ) []const TargetCadenceEntry {
         return self.cadence.refreshSoonEntries();
     }
 };
 
-pub const IdentityRememberedIdentityRefreshBatchStorage = struct {
+pub const RememberedBatchStorage = struct {
     remembered_identity_records: []IdentityRememberedIdentityRecord,
     targets: []StoredTarget,
     batch: TargetBatchStorage,
@@ -1565,7 +1565,7 @@ pub const IdentityRememberedIdentityRefreshBatchStorage = struct {
         remembered_identity_records: []IdentityRememberedIdentityRecord,
         targets: []StoredTarget,
         batch: TargetBatchStorage,
-    ) IdentityRememberedIdentityRefreshBatchStorage {
+    ) RememberedBatchStorage {
         return .{
             .remembered_identity_records = remembered_identity_records,
             .targets = targets,
@@ -1574,39 +1574,39 @@ pub const IdentityRememberedIdentityRefreshBatchStorage = struct {
     }
 };
 
-pub const IdentityRememberedIdentityRefreshBatchRequest = struct {
+pub const RememberedBatchRequest = struct {
     now_unix_seconds: u64,
     max_age_seconds: u64,
     refresh_soon_age_seconds: u64,
     max_selected: usize,
     fallback_policy: StoredFallbackPolicy = .allow_stale_latest,
-    storage: IdentityRememberedIdentityRefreshBatchStorage,
+    storage: RememberedBatchStorage,
 };
 
-pub const IdentityRememberedIdentityRefreshBatchPlan = struct {
+pub const RememberedBatchPlan = struct {
     remembered_identity_count: u32 = 0,
     batch: TargetBatchPlan,
 
     pub fn nextBatchEntry(
-        self: *const IdentityRememberedIdentityRefreshBatchPlan,
+        self: *const RememberedBatchPlan,
     ) ?*const TargetCadenceEntry {
         return self.batch.nextBatchEntry();
     }
 
     pub fn nextBatchStep(
-        self: *const IdentityRememberedIdentityRefreshBatchPlan,
+        self: *const RememberedBatchPlan,
     ) ?TargetBatchStep {
         return self.batch.nextBatchStep();
     }
 
     pub fn selectedEntries(
-        self: *const IdentityRememberedIdentityRefreshBatchPlan,
+        self: *const RememberedBatchPlan,
     ) []const TargetCadenceEntry {
         return self.batch.selectedEntries();
     }
 
     pub fn deferredEntries(
-        self: *const IdentityRememberedIdentityRefreshBatchPlan,
+        self: *const RememberedBatchPlan,
     ) []const TargetCadenceEntry {
         return self.batch.deferredEntries();
     }
@@ -2297,58 +2297,58 @@ pub const Planning = struct {
 
     pub const Remembered = struct {
         pub const Freshness = struct {
-            pub const Storage = IdentityRememberedIdentityFreshnessStorage;
-            pub const Request = IdentityRememberedIdentityFreshnessRequest;
-            pub const Plan = IdentityRememberedIdentityFreshnessPlan;
+            pub const Storage = RememberedFreshStorage;
+            pub const Request = RememberedFreshRequest;
+            pub const Plan = RememberedFreshPlan;
         };
 
         pub const Cadence = struct {
-            pub const Storage = IdentityRememberedIdentityRefreshCadenceStorage;
-            pub const Request = IdentityRememberedIdentityRefreshCadenceRequest;
-            pub const Plan = IdentityRememberedIdentityRefreshCadencePlan;
+            pub const Storage = RememberedCadenceStorage;
+            pub const Request = RememberedCadenceRequest;
+            pub const Plan = RememberedCadencePlan;
         };
 
         pub const Batch = struct {
-            pub const Storage = IdentityRememberedIdentityRefreshBatchStorage;
-            pub const Request = IdentityRememberedIdentityRefreshBatchRequest;
-            pub const Plan = IdentityRememberedIdentityRefreshBatchPlan;
+            pub const Storage = RememberedBatchStorage;
+            pub const Request = RememberedBatchRequest;
+            pub const Plan = RememberedBatchPlan;
         };
     };
 
     pub const Watched = struct {
         pub const Policy = struct {
-            pub const Error = IdentityStoredWatchedTargetPolicyError;
-            pub const Storage = IdentityStoredWatchedTargetPolicyStorage;
-            pub const Request = IdentityStoredWatchedTargetPolicyRequest;
-            pub const Plan = IdentityStoredWatchedTargetPolicyPlan;
+            pub const Error = WatchedPolicyError;
+            pub const Storage = WatchedPolicyStorage;
+            pub const Request = WatchedPolicyRequest;
+            pub const Plan = WatchedPolicyPlan;
         };
 
         pub const Cadence = struct {
-            pub const Error = IdentityStoredWatchedTargetRefreshCadenceError;
-            pub const Storage = IdentityStoredWatchedTargetRefreshCadenceStorage;
-            pub const Request = IdentityStoredWatchedTargetRefreshCadenceRequest;
-            pub const Plan = IdentityStoredWatchedTargetRefreshCadencePlan;
+            pub const Error = WatchedCadenceError;
+            pub const Storage = WatchedCadenceStorage;
+            pub const Request = WatchedCadenceRequest;
+            pub const Plan = WatchedCadencePlan;
         };
 
         pub const Batch = struct {
-            pub const Error = IdentityStoredWatchedTargetRefreshBatchError;
-            pub const Storage = IdentityStoredWatchedTargetRefreshBatchStorage;
-            pub const Request = IdentityStoredWatchedTargetRefreshBatchRequest;
-            pub const Plan = IdentityStoredWatchedTargetRefreshBatchPlan;
+            pub const Error = WatchedBatchError;
+            pub const Storage = WatchedBatchStorage;
+            pub const Request = WatchedBatchRequest;
+            pub const Plan = WatchedBatchPlan;
         };
 
         pub const Runtime = struct {
-            pub const Error = IdentityStoredWatchedTargetRuntimeError;
-            pub const Storage = IdentityStoredWatchedTargetRuntimeStorage;
-            pub const Request = IdentityStoredWatchedTargetRuntimeRequest;
-            pub const Plan = IdentityStoredWatchedTargetRuntimePlan;
+            pub const Error = WatchedRuntimeError;
+            pub const Storage = WatchedRuntimeStorage;
+            pub const Request = WatchedRuntimeRequest;
+            pub const Plan = WatchedRuntimePlan;
         };
 
         pub const Turn = struct {
-            pub const Error = IdentityStoredWatchedTargetTurnPolicyError;
-            pub const Storage = IdentityStoredWatchedTargetTurnPolicyStorage;
-            pub const Request = IdentityStoredWatchedTargetTurnPolicyRequest;
-            pub const Plan = IdentityStoredWatchedTargetTurnPolicyPlan;
+            pub const Error = WatchedTurnError;
+            pub const Storage = WatchedTurnStorage;
+            pub const Request = WatchedTurnRequest;
+            pub const Plan = WatchedTurnPlan;
         };
     };
 };
@@ -2519,8 +2519,8 @@ pub const IdentityVerifier = struct {
 
     pub fn inspectRememberedIdentityFreshness(
         store: IdentityProfileStore,
-        request: IdentityRememberedIdentityFreshnessRequest,
-    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityFreshnessPlan {
+        request: RememberedFreshRequest,
+    ) RememberedPlanningError!RememberedFreshPlan {
         const count = try loadRememberedIdentities(
             store,
             request.storage.remembered_identity_records,
@@ -2543,8 +2543,8 @@ pub const IdentityVerifier = struct {
 
     pub fn inspectRememberedIdentityRefreshCadence(
         store: IdentityProfileStore,
-        request: IdentityRememberedIdentityRefreshCadenceRequest,
-    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityRefreshCadencePlan {
+        request: RememberedCadenceRequest,
+    ) RememberedPlanningError!RememberedCadencePlan {
         const count = try loadRememberedIdentities(
             store,
             request.storage.remembered_identity_records,
@@ -2569,8 +2569,8 @@ pub const IdentityVerifier = struct {
 
     pub fn inspectRememberedIdentityRefreshBatch(
         store: IdentityProfileStore,
-        request: IdentityRememberedIdentityRefreshBatchRequest,
-    ) IdentityRememberedIdentityPlanningError!IdentityRememberedIdentityRefreshBatchPlan {
+        request: RememberedBatchRequest,
+    ) RememberedPlanningError!RememberedBatchPlan {
         const count = try loadRememberedIdentities(
             store,
             request.storage.remembered_identity_records,
@@ -3458,7 +3458,7 @@ pub const IdentityVerifier = struct {
         watched_target_store: IdentityWatchedTargetStore,
         watched_target_records: []IdentityWatchedTargetRecord,
         targets: []StoredTarget,
-    ) IdentityStoredWatchedTargetPlanningError!usize {
+    ) WatchedPlanningError!usize {
         var page = IdentityWatchedTargetResultPage.init(watched_target_records);
         try watched_target_store.listTargets(&page);
         if (page.truncated) return error.WatchedTargetListTruncated;
@@ -3474,7 +3474,7 @@ pub const IdentityVerifier = struct {
         store: IdentityProfileStore,
         remembered_identity_records: []IdentityRememberedIdentityRecord,
         targets: []StoredTarget,
-    ) IdentityRememberedIdentityPlanningError!usize {
+    ) RememberedPlanningError!usize {
         var page = IdentityRememberedIdentityResultPage.init(remembered_identity_records);
         try store.listRememberedIdentities(&page);
         if (page.truncated) return error.RememberedIdentityListTruncated;
@@ -3489,8 +3489,8 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredWatchedTargetPolicy(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
-        request: IdentityStoredWatchedTargetPolicyRequest,
-    ) IdentityStoredWatchedTargetPolicyError!IdentityStoredWatchedTargetPolicyPlan {
+        request: WatchedPolicyRequest,
+    ) WatchedPolicyError!WatchedPolicyPlan {
         const count = try loadStoredWatchedTargets(
             watched_target_store,
             request.storage.watched_target_records,
@@ -3517,8 +3517,8 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredWatchedTargetRefreshCadence(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
-        request: IdentityStoredWatchedTargetRefreshCadenceRequest,
-    ) IdentityStoredWatchedTargetRefreshCadenceError!IdentityStoredWatchedTargetRefreshCadencePlan {
+        request: WatchedCadenceRequest,
+    ) WatchedCadenceError!WatchedCadencePlan {
         const count = try loadStoredWatchedTargets(
             watched_target_store,
             request.storage.watched_target_records,
@@ -3546,8 +3546,8 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredWatchedTargetRefreshBatch(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
-        request: IdentityStoredWatchedTargetRefreshBatchRequest,
-    ) IdentityStoredWatchedTargetRefreshBatchError!IdentityStoredWatchedTargetRefreshBatchPlan {
+        request: WatchedBatchRequest,
+    ) WatchedBatchError!WatchedBatchPlan {
         const count = try loadStoredWatchedTargets(
             watched_target_store,
             request.storage.watched_target_records,
@@ -3576,8 +3576,8 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredWatchedTargetRuntime(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
-        request: IdentityStoredWatchedTargetRuntimeRequest,
-    ) IdentityStoredWatchedTargetRuntimeError!IdentityStoredWatchedTargetRuntimePlan {
+        request: WatchedRuntimeRequest,
+    ) WatchedRuntimeError!WatchedRuntimePlan {
         const count = try loadStoredWatchedTargets(
             watched_target_store,
             request.storage.watched_target_records,
@@ -3643,8 +3643,8 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredWatchedTargetTurnPolicy(
         store: IdentityProfileStore,
         watched_target_store: IdentityWatchedTargetStore,
-        request: IdentityStoredWatchedTargetTurnPolicyRequest,
-    ) IdentityStoredWatchedTargetTurnPolicyError!IdentityStoredWatchedTargetTurnPolicyPlan {
+        request: WatchedTurnRequest,
+    ) WatchedTurnError!WatchedTurnPlan {
         const count = try loadStoredWatchedTargets(
             watched_target_store,
             request.storage.watched_target_records,

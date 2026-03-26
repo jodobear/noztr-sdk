@@ -7,10 +7,10 @@ const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else
 
 pub const Nip39VerifyClientError =
     workflows.identity.verify.IdentityRememberedProfileVerificationError ||
-    workflows.identity.verify.IdentityRememberedIdentityPlanningError ||
+    workflows.identity.verify.RememberedPlanningError ||
     workflows.identity.verify.IdentityStoredProfileDiscoveryError ||
-    workflows.identity.verify.IdentityStoredWatchedTargetTurnPolicyError ||
-    workflows.identity.verify.IdentityStoredWatchedTargetRuntimeError;
+    workflows.identity.verify.WatchedTurnError ||
+    workflows.identity.verify.WatchedRuntimeError;
 
 pub const Nip39VerifyClientConfig = struct {};
 
