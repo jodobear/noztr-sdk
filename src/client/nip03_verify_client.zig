@@ -75,7 +75,7 @@ pub const Nip03VerifyClient = struct {
     pub fn verifyRemoteCached(
         self: *const Nip03VerifyClient,
         http_client: transport.HttpClient,
-        proof_store: workflows.proof.nip03.OpenTimestampsProofStore,
+        proof_store: workflows.proof.nip03.ProofStore,
         job: *const Nip03VerifyJob,
     ) Nip03VerifyClientError!Nip03VerifyCachedResult {
         _ = self;
@@ -85,8 +85,8 @@ pub const Nip03VerifyClient = struct {
     pub fn verifyRemoteCachedAndRemember(
         self: *const Nip03VerifyClient,
         http_client: transport.HttpClient,
-        proof_store: workflows.proof.nip03.OpenTimestampsProofStore,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        proof_store: workflows.proof.nip03.ProofStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         job: *const Nip03VerifyJob,
     ) Nip03VerifyClientError!Nip03VerifyJobResult {
         _ = self;
@@ -100,7 +100,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn getLatestFreshness(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Stored.Latest.Request,
     ) Nip03VerifyClientError!?Planning.Stored.Latest.Value {
         _ = self;
@@ -112,7 +112,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn discoverLatestForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Latest.Request,
     ) Nip03VerifyClientError![]const Planning.Target.Latest.Entry {
         _ = self;
@@ -124,7 +124,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn getPreferred(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Preferred.Request,
     ) Nip03VerifyClientError!?Planning.Target.Preferred.Value {
         _ = self;
@@ -136,7 +136,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn getPreferredForTargets(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Preferred.EntriesRequest,
     ) Nip03VerifyClientError!?Planning.Target.Preferred.Entry {
         _ = self;
@@ -148,7 +148,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectRuntime(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Stored.Runtime.Request,
     ) Nip03VerifyClientError!Planning.Stored.Runtime.Plan {
         _ = self;
@@ -160,7 +160,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn planRefresh(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Stored.Refresh.Request,
     ) Nip03VerifyClientError!Planning.Stored.Refresh.Plan {
         _ = self;
@@ -172,7 +172,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn planTargetRefresh(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Refresh.Request,
     ) Nip03VerifyClientError!Planning.Target.Refresh.Plan {
         _ = self;
@@ -184,7 +184,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectTargetReadiness(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         event_archive: store.EventArchive,
         request: Planning.Target.Readiness.Request,
     ) Nip03StoredVerificationRefreshReadinessError!Planning.Target.Readiness.Plan {
@@ -198,7 +198,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectTargetPolicy(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Policy.Request,
     ) Nip03VerifyClientError!Planning.Target.Policy.Plan {
         _ = self;
@@ -210,7 +210,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectTargetCadence(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Cadence.Request,
     ) Nip03VerifyClientError!Planning.Target.Cadence.Plan {
         _ = self;
@@ -222,7 +222,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectTargetBatch(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Batch.Request,
     ) Nip03VerifyClientError!Planning.Target.Batch.Plan {
         _ = self;
@@ -234,7 +234,7 @@ pub const Nip03VerifyClient = struct {
 
     pub fn inspectTargetTurnPolicy(
         self: *const Nip03VerifyClient,
-        verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+        verification_store: workflows.proof.nip03.VerificationStore,
         request: Planning.Target.Turn.Request,
     ) Nip03VerifyClientError!Planning.Target.Turn.Plan {
         _ = self;
@@ -292,13 +292,13 @@ test "nip03 verify client drives remembered remote verification through one comm
     var fake_http = workflow_testing.FakeHttp.init("https://proof.example/hello.ots", proof);
     var fetched_proof: [128]u8 = undefined;
     var storage = Nip03VerifyClientStorage.init(fetched_proof[0..]);
-    var proof_store_records: [1]workflows.proof.nip03.OpenTimestampsProofRecord =
-        [_]workflows.proof.nip03.OpenTimestampsProofRecord{.{}} ** 1;
-    var proof_store = workflows.proof.nip03.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
+    var proof_store_records: [1]workflows.proof.nip03.ProofRecord =
+        [_]workflows.proof.nip03.ProofRecord{.{}} ** 1;
+    var proof_store = workflows.proof.nip03.MemoryProofStore.init(proof_store_records[0..]);
     var verification_store_records: [1]workflows.proof.nip03.StoredRecord =
         [_]workflows.proof.nip03.StoredRecord{.{}} ** 1;
     var verification_store =
-        workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        workflows.proof.nip03.MemoryVerificationStore.init(verification_store_records[0..]);
 
     const client = Nip03VerifyClient.init(.{});
     const job = client.prepareVerifyJob(
@@ -341,7 +341,7 @@ test "nip03 verify client lifts remembered proof planning into the client surfac
     var verification_store_records: [2]workflows.proof.nip03.StoredRecord =
         [_]workflows.proof.nip03.StoredRecord{.{}} ** 2;
     var verification_store =
-        workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        workflows.proof.nip03.MemoryVerificationStore.init(verification_store_records[0..]);
 
     var fresh_proof_bytes: [96]u8 = undefined;
     const fresh_proof = buildLocalBitcoinProof(fresh_proof_bytes[0..], &fresh_target.id);
@@ -627,7 +627,7 @@ test "nip03 verify client lifts stored verification refresh readiness into the c
     var verification_store_records: [2]workflows.proof.nip03.StoredRecord =
         [_]workflows.proof.nip03.StoredRecord{ .{}, .{} };
     var verification_store =
-        workflows.proof.nip03.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        workflows.proof.nip03.MemoryVerificationStore.init(verification_store_records[0..]);
 
     var ready_proof_bytes: [96]u8 = undefined;
     const ready_proof = buildLocalBitcoinProof(ready_proof_bytes[0..], &ready_target.id);
@@ -739,7 +739,7 @@ fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !
 }
 
 fn rememberVerificationForTargetAndReturnAttestation(
-    verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+    verification_store: workflows.proof.nip03.VerificationStore,
     target_event: *const noztr.nip01_event.Event,
     attestation_created_at: u64,
     proof_url: []const u8,
@@ -781,7 +781,7 @@ fn rememberVerificationForTargetAndReturnAttestation(
 }
 
 fn rememberVerificationForTarget(
-    verification_store: workflows.proof.nip03.OpenTimestampsVerificationStore,
+    verification_store: workflows.proof.nip03.VerificationStore,
     target_event: *const noztr.nip01_event.Event,
     attestation_created_at: u64,
     proof_url: []const u8,

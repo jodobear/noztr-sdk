@@ -935,12 +935,12 @@ test "phase6 exposes the identity verifier workflow surface" {
 
 test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerifier) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsProofStoreError) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsProofRecord) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsProofStore) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.MemoryOpenTimestampsProofStore) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.ProofStoreError) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.ProofRecord) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.ProofStore) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.MemoryProofStore) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.VerificationStorePutOutcome) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerificationStoreError) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.VerificationStoreError) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.StoredRecord) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.StoredMatch) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Stored.Entry) == type);
@@ -1006,8 +1006,8 @@ test "phase7 exposes the opentimestamps verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Target.Turn.Request) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Target.Turn.Plan) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.Planning.Target.Turn.Step) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsVerificationStore) == type);
-    try std.testing.expect(@TypeOf(workflows.proof.nip03.MemoryOpenTimestampsVerificationStore) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.VerificationStore) == type);
+    try std.testing.expect(@TypeOf(workflows.proof.nip03.MemoryVerificationStore) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.OpenTimestampsRemoteProofRequest) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.RemoteVerification) == type);
     try std.testing.expect(@TypeOf(workflows.proof.nip03.RememberedRemoteVerification) == type);

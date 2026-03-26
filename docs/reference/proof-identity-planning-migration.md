@@ -288,6 +288,18 @@ move to the shorter route-local names instead:
 - `workflows.proof.nip03.RememberedRemoteVerification`
 - `workflows.proof.nip03.RememberedRemoteVerificationOutcome`
 
+The same route-local cleanup now also applies to the proof store substrate:
+
+- `OpenTimestampsProofStoreError` -> `ProofStoreError`
+- `OpenTimestampsProofRecord` -> `ProofRecord`
+- `OpenTimestampsProofStoreVTable` -> `ProofStoreVTable`
+- `OpenTimestampsProofStore` -> `ProofStore`
+- `OpenTimestampsVerificationStoreError` -> `VerificationStoreError`
+- `OpenTimestampsVerificationStoreVTable` -> `VerificationStoreVTable`
+- `OpenTimestampsVerificationStore` -> `VerificationStore`
+- `MemoryOpenTimestampsProofStore` -> `MemoryProofStore`
+- `MemoryOpenTimestampsVerificationStore` -> `MemoryVerificationStore`
+
 ## `NIP-05` Planning Shape
 
 The old one-off client-side `Nip05RememberedResolutionPlanning` facade is gone.

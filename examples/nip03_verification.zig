@@ -35,13 +35,13 @@ test "recipe: sdk opentimestamps verifier fetches, remembers, classifies freshne
     };
     const attestation_event = common.simpleEvent(1040, [_]u8{0x33} ** 32, 2, encoded, tags[0..]);
     var fetched_proof: [128]u8 = undefined;
-    var proof_store_records: [2]proof.OpenTimestampsProofRecord =
-        [_]proof.OpenTimestampsProofRecord{ .{}, .{} };
-    var proof_store = proof.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
+    var proof_store_records: [2]proof.ProofRecord =
+        [_]proof.ProofRecord{ .{}, .{} };
+    var proof_store = proof.MemoryProofStore.init(proof_store_records[0..]);
     var verification_store_records: [2]proof.StoredRecord =
         [_]proof.StoredRecord{ .{}, .{} };
     var verification_store =
-        proof.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+        proof.MemoryVerificationStore.init(verification_store_records[0..]);
     var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof_doc);
 
     const outcome = try proof.OpenTimestampsVerifier.verifyRemoteCachedAndRemember(

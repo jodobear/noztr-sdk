@@ -54,12 +54,12 @@ test "recipe: nip03 verify client prepares, remembers, and inspects proof planni
     var http = http_fake.ExampleHttp.init("https://proof.example/hello.ots", proof_doc);
     var fetched_proof: [128]u8 = undefined;
     var storage = proof_client.Nip03VerifyClientStorage.init(fetched_proof[0..]);
-    var proof_store_records: [1]proof_workflow.OpenTimestampsProofRecord =
-        [_]proof_workflow.OpenTimestampsProofRecord{.{}} ** 1;
-    var proof_store = proof_workflow.MemoryOpenTimestampsProofStore.init(proof_store_records[0..]);
+    var proof_store_records: [1]proof_workflow.ProofRecord =
+        [_]proof_workflow.ProofRecord{.{}} ** 1;
+    var proof_store = proof_workflow.MemoryProofStore.init(proof_store_records[0..]);
     var verification_store_records: [2]proof_workflow.StoredRecord =
         [_]proof_workflow.StoredRecord{.{}} ** 2;
-    var verification_store = proof_workflow.MemoryOpenTimestampsVerificationStore.init(verification_store_records[0..]);
+    var verification_store = proof_workflow.MemoryVerificationStore.init(verification_store_records[0..]);
 
     const client = proof_client.Nip03VerifyClient.init(.{});
     const job = client.prepareVerifyJob(
@@ -334,7 +334,7 @@ fn buildSignedTextEvent(secret_byte: u8, created_at: u64, content: []const u8) !
 }
 
 fn rememberVerificationForTarget(
-    verification_store: noztr_sdk.workflows.proof.nip03.OpenTimestampsVerificationStore,
+    verification_store: noztr_sdk.workflows.proof.nip03.VerificationStore,
     target_event: *const noztr.nip01_event.Event,
     attestation_created_at: u64,
     proof_url: []const u8,
