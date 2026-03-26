@@ -266,6 +266,14 @@ still using flat names like `IdentityRememberedIdentityRefreshCadenceStorage`,
 - `workflows.identity.verify.Planning.Watched.*`
 - `client.identity.nip39.Planning.*`
 
+The remaining obvious top-level identity workflow nouns were also shortened where the grouped
+`workflows.identity.verify.*` route already carries the context:
+
+- `IdentityRememberedProfileVerification` -> `RememberedVerification`
+- `IdentityRememberedProfileVerificationError` -> `RememberedVerificationError`
+- `IdentityStoredProfileDiscoveryError` -> `StoredDiscoveryError`
+- `IdentityRememberedIdentityResultPage` -> `RememberedResultPage`
+
 On the proof side, the stored and remembered verification family also dropped repeated
 `OpenTimestamps...` route context where the grouped `workflows.proof.nip03.*` route already carries
 it. If you were still using names like `OpenTimestampsStoredVerificationRecord`,

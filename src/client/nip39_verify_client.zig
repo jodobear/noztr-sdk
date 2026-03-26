@@ -6,9 +6,9 @@ const workflows = @import("../workflows/mod.zig");
 const workflow_testing = if (builtin.is_test) @import("../testing/mod.zig") else struct {};
 
 pub const Nip39VerifyClientError =
-    workflows.identity.verify.IdentityRememberedProfileVerificationError ||
+    workflows.identity.verify.RememberedVerificationError ||
     workflows.identity.verify.RememberedPlanningError ||
-    workflows.identity.verify.IdentityStoredProfileDiscoveryError ||
+    workflows.identity.verify.StoredDiscoveryError ||
     workflows.identity.verify.WatchedTurnError ||
     workflows.identity.verify.WatchedRuntimeError;
 
@@ -44,7 +44,7 @@ pub const Nip39VerifyClientStorage = struct {
 
 pub const Nip39VerifyJob = workflows.identity.verify.IdentityProfileVerificationRequest;
 pub const Nip39VerifySummary = workflows.identity.verify.IdentityProfileVerificationSummary;
-pub const Nip39VerifyJobResult = workflows.identity.verify.IdentityRememberedProfileVerification;
+pub const Nip39VerifyJobResult = workflows.identity.verify.RememberedVerification;
 
 pub const Planning = workflows.identity.verify.Planning;
 

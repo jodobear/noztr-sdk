@@ -388,16 +388,16 @@ pub const IdentityRememberedIdentityRecord = struct {
     }
 };
 
-pub const IdentityRememberedIdentityResultPage = struct {
+pub const RememberedResultPage = struct {
     entries: []IdentityRememberedIdentityRecord,
     count: usize = 0,
     truncated: bool = false,
 
-    pub fn init(entries: []IdentityRememberedIdentityRecord) IdentityRememberedIdentityResultPage {
+    pub fn init(entries: []IdentityRememberedIdentityRecord) RememberedResultPage {
         return .{ .entries = entries };
     }
 
-    pub fn slice(self: *const IdentityRememberedIdentityResultPage) []const IdentityRememberedIdentityRecord {
+    pub fn slice(self: *const RememberedResultPage) []const IdentityRememberedIdentityRecord {
         return self.entries[0..self.count];
     }
 };
@@ -1090,7 +1090,7 @@ pub const TargetTurnStep = struct {
 };
 
 const WatchedPlanningError =
-    IdentityStoredProfileDiscoveryError || IdentityWatchedTargetStoreError || error{
+    StoredDiscoveryError || IdentityWatchedTargetStoreError || error{
         WatchedTargetListTruncated,
     };
 
@@ -1799,7 +1799,7 @@ pub const IdentityProfileStore = struct {
 
     pub fn listRememberedIdentities(
         self: IdentityProfileStore,
-        page: *IdentityRememberedIdentityResultPage,
+        page: *RememberedResultPage,
     ) IdentityProfileStoreError!void {
         page.count = try self.vtable.list_remembered_identities(
             self.ctx,
@@ -1874,7 +1874,7 @@ pub const MemoryIdentityProfileStore = struct {
 
     pub fn listRememberedIdentities(
         self: *MemoryIdentityProfileStore,
-        page: *IdentityRememberedIdentityResultPage,
+        page: *RememberedResultPage,
     ) IdentityProfileStoreError!void {
         var count: usize = 0;
         var truncated = false;
@@ -2151,15 +2151,15 @@ pub const IdentityProfileVerificationSummary = struct {
     }
 };
 
-pub const IdentityRememberedProfileVerification = struct {
+pub const RememberedVerification = struct {
     summary: IdentityProfileVerificationSummary,
     store_outcome: IdentityProfileStorePutOutcome,
 };
 
-pub const IdentityRememberedProfileVerificationError =
+pub const RememberedVerificationError =
     IdentityVerifierError || IdentityProfileStoreError;
 
-pub const IdentityStoredProfileDiscoveryError = IdentityProfileStoreError || error{BufferTooSmall};
+pub const StoredDiscoveryError = IdentityProfileStoreError || error{BufferTooSmall};
 
 pub const Planning = struct {
     pub const Match = IdentityProfileMatch;
@@ -2359,7 +2359,7 @@ pub const IdentityVerifier = struct {
         match: IdentityProfileMatch,
         provider: noztr.nip39_external_identities.IdentityProvider,
         identity: []const u8,
-    ) IdentityStoredProfileDiscoveryError!StoredDiscoveryEntry {
+    ) StoredDiscoveryError!StoredDiscoveryEntry {
         const profile = (try store.getProfile(&match.pubkey)) orelse return error.InconsistentStoreData;
         const matched_claim_index = findMatchedStoredClaimIndex(
             &profile,
@@ -2480,7 +2480,7 @@ pub const IdentityVerifier = struct {
         cache: IdentityVerificationCache,
         store: IdentityProfileStore,
         request: IdentityProfileVerificationRequest,
-    ) IdentityRememberedProfileVerificationError!IdentityRememberedProfileVerification {
+    ) RememberedVerificationError!RememberedVerification {
         const summary = try verifyProfileCached(http_client, cache, request);
         const store_outcome = try rememberProfileSummary(
             store,
@@ -2597,7 +2597,7 @@ pub const IdentityVerifier = struct {
     pub fn discoverStoredProfileEntriesForTargets(
         store: IdentityProfileStore,
         request: TargetDiscoveryRequest,
-    ) IdentityStoredProfileDiscoveryError![]const TargetDiscoveryGroup {
+    ) StoredDiscoveryError![]const TargetDiscoveryGroup {
         if (request.targets.len > request.storage.groups.len) return error.BufferTooSmall;
 
         var total_entries: usize = 0;
@@ -2631,7 +2631,7 @@ pub const IdentityVerifier = struct {
     pub fn discoverStoredProfileEntries(
         store: IdentityProfileStore,
         request: StoredDiscoveryRequest,
-    ) IdentityStoredProfileDiscoveryError![]const StoredDiscoveryEntry {
+    ) StoredDiscoveryError![]const StoredDiscoveryEntry {
         const matches = try store.findProfiles(
             request.provider,
             request.identity,
@@ -2653,7 +2653,7 @@ pub const IdentityVerifier = struct {
     pub fn discoverStoredProfileEntriesWithFreshnessForTargets(
         store: IdentityProfileStore,
         request: TargetFreshRequest,
-    ) IdentityStoredProfileDiscoveryError![]const TargetFreshGroup {
+    ) StoredDiscoveryError![]const TargetFreshGroup {
         if (request.targets.len > request.storage.groups.len) return error.BufferTooSmall;
 
         var total_entries: usize = 0;
@@ -2696,7 +2696,7 @@ pub const IdentityVerifier = struct {
     pub fn getLatestStoredProfile(
         store: IdentityProfileStore,
         request: StoredLatestRequest,
-    ) IdentityStoredProfileDiscoveryError!?StoredDiscoveryEntry {
+    ) StoredDiscoveryError!?StoredDiscoveryEntry {
         const matches = try store.findProfiles(request.provider, request.identity, request.matches);
         if (matches.len == 0) return null;
 
@@ -2716,7 +2716,7 @@ pub const IdentityVerifier = struct {
     pub fn getLatestStoredProfileFreshness(
         store: IdentityProfileStore,
         request: StoredLatestFreshnessRequest,
-    ) IdentityStoredProfileDiscoveryError!?StoredLatestValue {
+    ) StoredDiscoveryError!?StoredLatestValue {
         const latest = (try getLatestStoredProfile(
             store,
             .{
@@ -2739,7 +2739,7 @@ pub const IdentityVerifier = struct {
     pub fn getLatestStoredProfilesForTargets(
         store: IdentityProfileStore,
         request: TargetLatestDiscoveryRequest,
-    ) IdentityStoredProfileDiscoveryError![]const TargetLatestDiscoveryEntry {
+    ) StoredDiscoveryError![]const TargetLatestDiscoveryEntry {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (request.targets, 0..) |target, index| {
@@ -2762,7 +2762,7 @@ pub const IdentityVerifier = struct {
     pub fn discoverLatestStoredProfileFreshnessForTargets(
         store: IdentityProfileStore,
         request: TargetLatestRequest,
-    ) IdentityStoredProfileDiscoveryError![]const TargetLatestEntry {
+    ) StoredDiscoveryError![]const TargetLatestEntry {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (request.targets, 0..) |target, index| {
@@ -2787,7 +2787,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectLatestStoredProfileFreshnessForTargets(
         store: IdentityProfileStore,
         request: TargetLatestRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetLatestPlan {
+    ) StoredDiscoveryError!TargetLatestPlan {
         const entries = try discoverLatestStoredProfileFreshnessForTargets(store, request);
 
         var plan: TargetLatestPlan = .{
@@ -2809,7 +2809,7 @@ pub const IdentityVerifier = struct {
     pub fn getPreferredStoredProfileForTargets(
         store: IdentityProfileStore,
         request: TargetPreferredRequest,
-    ) IdentityStoredProfileDiscoveryError!?TargetPreferredValue {
+    ) StoredDiscoveryError!?TargetPreferredValue {
         const entries = try discoverLatestStoredProfileFreshnessForTargets(
             store,
             .{
@@ -2856,7 +2856,7 @@ pub const IdentityVerifier = struct {
     pub fn planStoredProfileRefreshForTargets(
         store: IdentityProfileStore,
         request: TargetRefreshRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetRefreshPlan {
+    ) StoredDiscoveryError!TargetRefreshPlan {
         const freshness_entries = try discoverLatestStoredProfileFreshnessForTargets(
             store,
             .{
@@ -2897,7 +2897,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredProfileRuntimeForTargets(
         store: IdentityProfileStore,
         request: TargetRuntimeRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetRuntimePlan {
+    ) StoredDiscoveryError!TargetRuntimePlan {
         const entries = try discoverLatestStoredProfileFreshnessForTargets(
             store,
             .{
@@ -2989,7 +2989,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredProfilePolicyForTargets(
         store: IdentityProfileStore,
         request: TargetPolicyRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetPolicyPlan {
+    ) StoredDiscoveryError!TargetPolicyPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
@@ -3125,7 +3125,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredProfileRefreshCadenceForTargets(
         store: IdentityProfileStore,
         request: TargetCadenceRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetCadencePlan {
+    ) StoredDiscoveryError!TargetCadencePlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 5) return error.BufferTooSmall;
 
@@ -3280,7 +3280,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredProfileRefreshBatchForTargets(
         store: IdentityProfileStore,
         request: TargetBatchRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetBatchPlan {
+    ) StoredDiscoveryError!TargetBatchPlan {
         const cadence = try inspectStoredProfileRefreshCadenceForTargets(
             store,
             .{
@@ -3315,7 +3315,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredProfileTurnPolicyForTargets(
         store: IdentityProfileStore,
         request: TargetTurnRequest,
-    ) IdentityStoredProfileDiscoveryError!TargetTurnPlan {
+    ) StoredDiscoveryError!TargetTurnPlan {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
         if (request.storage.groups.len < 4) return error.BufferTooSmall;
 
@@ -3475,7 +3475,7 @@ pub const IdentityVerifier = struct {
         remembered_identity_records: []IdentityRememberedIdentityRecord,
         targets: []StoredTarget,
     ) RememberedPlanningError!usize {
-        var page = IdentityRememberedIdentityResultPage.init(remembered_identity_records);
+        var page = RememberedResultPage.init(remembered_identity_records);
         try store.listRememberedIdentities(&page);
         if (page.truncated) return error.RememberedIdentityListTruncated;
         if (page.count > targets.len) return error.BufferTooSmall;
@@ -3673,7 +3673,7 @@ pub const IdentityVerifier = struct {
     pub fn discoverStoredProfileEntriesWithFreshness(
         store: IdentityProfileStore,
         request: StoredFreshRequest,
-    ) IdentityStoredProfileDiscoveryError![]const StoredFreshEntry {
+    ) StoredDiscoveryError![]const StoredFreshEntry {
         const matches = try store.findProfiles(
             request.provider,
             request.identity,
@@ -3704,7 +3704,7 @@ pub const IdentityVerifier = struct {
     pub fn getPreferredStoredProfile(
         store: IdentityProfileStore,
         request: StoredPreferredRequest,
-    ) IdentityStoredProfileDiscoveryError!?StoredPreferredValue {
+    ) StoredDiscoveryError!?StoredPreferredValue {
         const matches = try store.findProfiles(request.provider, request.identity, request.matches);
         if (matches.len == 0) return null;
 
@@ -3754,7 +3754,7 @@ pub const IdentityVerifier = struct {
     pub fn getPreferredStoredProfilesForTargets(
         store: IdentityProfileStore,
         request: TargetPreferredEntriesRequest,
-    ) IdentityStoredProfileDiscoveryError![]const TargetPreferredEntry {
+    ) StoredDiscoveryError![]const TargetPreferredEntry {
         if (request.targets.len > request.storage.entries.len) return error.BufferTooSmall;
 
         for (request.targets, 0..) |target, index| {
@@ -3780,7 +3780,7 @@ pub const IdentityVerifier = struct {
     pub fn inspectStoredProfileRuntime(
         store: IdentityProfileStore,
         request: StoredRuntimeRequest,
-    ) IdentityStoredProfileDiscoveryError!StoredRuntimePlan {
+    ) StoredDiscoveryError!StoredRuntimePlan {
         const entries = try discoverStoredProfileEntriesWithFreshness(
             store,
             .{
@@ -3856,7 +3856,7 @@ pub const IdentityVerifier = struct {
     pub fn planStoredProfileRefresh(
         store: IdentityProfileStore,
         request: StoredRefreshRequest,
-    ) IdentityStoredProfileDiscoveryError!StoredRefreshPlan {
+    ) StoredDiscoveryError!StoredRefreshPlan {
         const freshness_entries = try discoverStoredProfileEntriesWithFreshness(
             store,
             .{
@@ -4166,7 +4166,7 @@ fn profile_store_list_remembered_identities(
     truncated: *bool,
 ) IdentityProfileStoreError!usize {
     const self: *MemoryIdentityProfileStore = @ptrCast(@alignCast(ctx));
-    var page = IdentityRememberedIdentityResultPage.init(out);
+    var page = RememberedResultPage.init(out);
     try self.listRememberedIdentities(&page);
     truncated.* = page.truncated;
     return page.count;
@@ -7938,7 +7938,7 @@ test "identity profile store lists remembered identities in stable deduplicated 
     _ = try IdentityVerifier.rememberProfileSummary(store.asStore(), &alice_pubkey_b, 45, &alice_and_bob_summary);
 
     var remembered_records: [2]IdentityRememberedIdentityRecord = undefined;
-    var page = IdentityRememberedIdentityResultPage.init(remembered_records[0..]);
+    var page = RememberedResultPage.init(remembered_records[0..]);
     try store.asStore().listRememberedIdentities(&page);
 
     try std.testing.expectEqual(@as(usize, 2), page.count);

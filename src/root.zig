@@ -810,7 +810,7 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityWatchedTargetRecord) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityWatchedTargetResultPage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityRecord) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedIdentityResultPage) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.RememberedResultPage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.RememberedPlanningError) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.Planning.Match) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.Planning.Record.Remembered) == type);
@@ -928,9 +928,9 @@ test "phase6 exposes the identity verifier workflow surface" {
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityProfileVerificationStorage) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityProfileVerificationRequest) == type);
     try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityProfileVerificationSummary) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedProfileVerification) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityRememberedProfileVerificationError) == type);
-    try std.testing.expect(@TypeOf(workflows.identity.verify.IdentityStoredProfileDiscoveryError) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.RememberedVerification) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.RememberedVerificationError) == type);
+    try std.testing.expect(@TypeOf(workflows.identity.verify.StoredDiscoveryError) == type);
 }
 
 test "phase7 exposes the opentimestamps verifier workflow surface" {
