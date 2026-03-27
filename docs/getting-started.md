@@ -142,7 +142,7 @@ If you are updating an older pre-`1.0` downstream, start here:
 Use `zig fetch --save`:
 
 ```bash
-zig fetch --save "git+https://github.com/jodobear/noztr-sdk.git#v0.1.0-rc.3"
+zig fetch --save "git+https://github.com/zignosis/noztr-sdk.git#v0.1.0-rc.3"
 ```
 
 `build.zig`:

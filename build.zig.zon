@@ -3,7 +3,7 @@
     .version = "0.1.0-rc.3",
     .dependencies = .{
         .noztr = .{
-            .url = "git+https://github.com/jodobear/noztr-core.git#v0.1.0-rc.6",
+            .url = "git+https://github.com/zignosis/noztr-core.git#v0.1.0-rc.6",
             .hash = "noztr-0.1.0-rc.6-y9hMXuVvMwDf1ZskWzSpiJOJN3zr4QIe6wQQd_ZuDPtC",
         },
     },
